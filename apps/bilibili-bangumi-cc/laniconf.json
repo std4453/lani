@@ -1,4 +1,7 @@
 {
   "type": "lib:ts",
-  "abilities": []
+  "abilities": [],
+  "ci": {
+    "image": "bilibili-bangumi-cc"
+  }
 }

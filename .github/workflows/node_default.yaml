@@ -1,4 +1,4 @@
-name: "@lani/bilibili-bangumi-cc"
+name: "Default Node.js CI"
 
 on:
   workflow_dispatch:
@@ -7,11 +7,16 @@ on:
         description: "Ref to trigger workflow"
         required: false
         default: "master"
-
-env:
-  project_name: "@lani/bilibili-bangumi-cc"
-  image_name: "ghcr.io/std4453/bilibili-bangumi-cc"
-  project_path: "apps/bilibili-bangumi-cc"
+      image_name:
+        description: "Image name"
+        required: true
+      image_owner: 
+        description: "Image owner"
+        required: false
+        default: "std4453"
+      project_path:
+        description: "Project path"
+        required: true
 
 jobs:
   build:
@@ -63,11 +68,11 @@ jobs:
       
       - name: Build
         run: |
-          node common/scripts/install-run-rush.js build -t ${{ env.project_name }} -p 1 -v
+          node common/scripts/install-run-rush.js build -t ${{ github.event.inputs.project_path }} -p 1 -v
        
       - name: Deploy
         run: |
-          node common/scripts/install-run-rush.js deploy -p ${{ env.project_name }}
+          node common/scripts/install-run-rush.js deploy -p ${{ github.event.inputs.project_path }}
       
       - name: Build and push
         id: docker_build
@@ -75,9 +80,9 @@ jobs:
         with:
           context: .
           push: true
-          file: ./${{ env.project_path }}/Dockerfile
+          file: ./${{ github.event.inputs.project_path }}/Dockerfile
           tags: >
-            ${{ env.image_name }}:latest,
-            ${{ env.image_name }}:1.0.${{ github.run_number }},
-            ${{ env.image_name }}:${{ github.sha }},
-            ${{ env.image_name }}:${{ github.event.inputs.ref }}
+            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:latest,
+            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:1.0.${{ github.run_number }},
+            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ github.sha }},
+            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ github.event.inputs.ref }}

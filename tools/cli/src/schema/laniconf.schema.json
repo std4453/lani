@@ -40,6 +40,22 @@
           }
         ]
       }
+    },
+    "ci": {
+      "description": "CI-related settings",
+      "type": "object",
+      "properties": {
+        "workflow": {
+          "description": "Github workflow name",
+          "type": "string"
+        },
+        "image": {
+          "description": "Build image name",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["image"]
     }
   },
   "additionalProperties": false,

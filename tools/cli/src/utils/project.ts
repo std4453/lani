@@ -3,6 +3,7 @@ import path from "path";
 export interface ProjectConfig {
   path: string;
   cliPath: string;
+  monorepoRoot: string;
 }
 
 export function resolveProjectConfig(): ProjectConfig {
@@ -11,5 +12,6 @@ export function resolveProjectConfig(): ProjectConfig {
   return {
     path: process.cwd(),
     cliPath: projectRoot,
+    monorepoRoot: path.resolve(projectRoot, "../.."),
   };
 }
