@@ -13,9 +13,7 @@ export default class Devops extends Command {
   static description = "Trigger CI workflow";
 
   static flags = {
-    git: Flags.boolean({
-      default: true,
-    }),
+    "no-git": Flags.boolean(),
     strict: Flags.boolean({
       default: false,
     }),
@@ -25,7 +23,7 @@ export default class Devops extends Command {
 
   async run(): Promise<void> {
     const {
-      flags: { git: useGit, strict, ref, "dry-run": dry },
+      flags: { "no-git": noGit, strict, ref, "dry-run": dry },
     } = await this.parse(Devops);
 
     const project = resolveProjectConfig();
@@ -51,7 +49,7 @@ export default class Devops extends Command {
       project_name: project.packageName,
     };
 
-    if (useGit) {
+    if (!noGit) {
       const git: SimpleGit = simpleGit({
         baseDir: project.monorepoRoot,
       });
@@ -105,12 +103,16 @@ export default class Devops extends Command {
       "workflow",
       "run",
       workflow,
-      ..._.toPairs(args).flatMap(([key, value]) => ["-F", `${key}=${value}`]),
+      ..._.toPairs(args).flatMap(([key, value]) => ["-f", `${key}=${value}`]),
     ];
     if (!dry) {
       const subprocess = execa("gh", ghArgs);
       subprocess.stdout?.pipe(process.stdout);
       await subprocess;
+
+      console.log(
+        `Workflow triggered, visit https://github.com/std4453/lani/actions/workflows/${workflow} to see the workflow run`
+      );
     } else {
       console.log("gh", ...ghArgs);
     }
