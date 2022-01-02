@@ -1,0 +1,21 @@
+{
+  "name": "@lani/api",
+  "version": "1.0.0",
+  "private": "true",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build": "lani-cli build"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "prettier": "~2.5.1",
+    "@lani/tsconfig": "~1.0.0",
+    "@lani/cli": "~1.0.0"
+  },
+  "dependencies": {
+    "io-ts": "~2.2.16",
+    "fp-ts": "~2.11.5"
+  }
+}

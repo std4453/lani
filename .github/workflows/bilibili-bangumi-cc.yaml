@@ -1,0 +1,66 @@
+name: "@lani/bilibili-bangumi-cc"
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ref to trigger workflow"
+        required: false
+        default: "master"
+
+env:
+  project_name: "@lani/bilibili-bangumi-cc"
+  image_name: "ghcr.io/std4453/bilibili-bangumi-cc"
+  project_path: "apps/bilibili-bangumi-cc"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - uses: docker/setup-buildx-action@v1
+        name: Setup Docker Buildx
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: actions/setup-node@v2
+        name: Setup Node
+        with:
+          node-version: '14'
+      
+      - name: Install Dependencies without Link
+        run: |
+          node common/scripts/install-run-rush.js install -t ${{ env.project_name }} --no-link
+        
+      - name: Link Dependencies
+        run: |
+          node common/scripts/install-run-rush.js link
+      
+      - name: Build
+        run: |
+          node common/scripts/install-run-rush.js build -t ${{ env.project_name }}
+       
+      - name: Deploy
+        run: |
+          node common/scripts/install-run-rush.js -p ${{ env.project_name }}
+      
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          file: ./${{ env.project_path }}/Dockerfile
+          tags: >
+            ${{ env.image_name }}:latest,
+            ${{ env.image_name }}:1.0.${{ github.run_number }},
+            ${{ env.image_name }}:${{ github.sha }},
+            ${{ env.image_name }}:${{ github.event.inputs.ref }}
