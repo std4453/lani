@@ -48,6 +48,7 @@ export default class Devops extends Command {
       ref,
       image_name: image,
       project_path: path.relative(project.monorepoRoot, project.path),
+      project_name: project.packageName,
     };
 
     if (useGit) {
