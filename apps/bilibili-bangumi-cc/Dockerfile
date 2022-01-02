@@ -1,6 +1,6 @@
-FROM node:14
+FROM node:14-slim
 
-COPY common/deploy /deploy
 WORKDIR /deploy/apps/bilibili-bangumi-cc
+COPY ./common/deploy /deploy
 EXPOSE 8080
-RUN npm run start
+CMD npm run start

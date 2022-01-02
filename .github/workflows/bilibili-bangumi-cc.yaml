@@ -36,6 +36,22 @@ jobs:
         name: Setup Node
         with:
           node-version: '14'
+
+      # https://github.com/microsoft/rushstack/issues/1847#issuecomment-993825253
+
+      - name: Cache Rush
+        uses: actions/cache@v2
+        with:
+          path: |
+            common/temp/install-run
+          key: ${{ runner.os }}-${{ hashFiles('rush.json') }}
+
+      - name: Cache pnpm
+        uses: actions/cache@v2
+        with:
+          path: |
+            common/temp/pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       
       - name: Install Dependencies
         run: |
@@ -47,7 +63,7 @@ jobs:
       
       - name: Build
         run: |
-          node common/scripts/install-run-rush.js build -t ${{ env.project_name }}
+          node common/scripts/install-run-rush.js build -t ${{ env.project_name }} -p 1 -v
        
       - name: Deploy
         run: |
