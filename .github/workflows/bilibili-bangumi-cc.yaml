@@ -37,9 +37,9 @@ jobs:
         with:
           node-version: '14'
       
-      - name: Install Dependencies without Link
+      - name: Install Dependencies
         run: |
-          node common/scripts/install-run-rush.js install -t ${{ env.project_name }} --no-link
+          node common/scripts/install-run-rush.js install --no-link
         
       - name: Link Dependencies
         run: |
