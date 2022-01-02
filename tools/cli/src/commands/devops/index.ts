@@ -19,16 +19,13 @@ export default class Devops extends Command {
     strict: Flags.boolean({
       default: false,
     }),
-    verbose: Flags.boolean({
-      char: "v",
-    }),
     ref: Flags.string(),
     "dry-run": Flags.boolean(),
   };
 
   async run(): Promise<void> {
     const {
-      flags: { git: useGit, strict, verbose, ref, "dry-run": dry },
+      flags: { git: useGit, strict, ref, "dry-run": dry },
     } = await this.parse(Devops);
 
     const project = resolveProjectConfig();
@@ -54,10 +51,6 @@ export default class Devops extends Command {
     };
 
     if (useGit) {
-      if (verbose) {
-        process.env["DEBUG"] = "simple-git";
-      }
-
       const git: SimpleGit = simpleGit({
         baseDir: project.monorepoRoot,
       });
@@ -84,7 +77,8 @@ export default class Devops extends Command {
         process.exit(1);
       }
 
-      args.ref = tracking;
+      // tracking would be like origin/master, we won't need origin/ here
+      args.ref = tracking.substring(tracking.lastIndexOf("/") + 1);
 
       if (ahead !== 0 || behind !== 0) {
         console.log(
@@ -97,9 +91,7 @@ export default class Devops extends Command {
           process.exit(1);
         }
       } else {
-        if (verbose) {
-          console.log(kleur.green("All up-to-date, good to go!"));
-        }
+        console.log(kleur.green("All up-to-date, good to go!"));
       }
     }
 
@@ -115,7 +107,9 @@ export default class Devops extends Command {
       ..._.toPairs(args).flatMap(([key, value]) => ["-F", `${key}=${value}`]),
     ];
     if (!dry) {
-      await execa("gh", ghArgs).stdout?.pipe(process.stdout);
+      const subprocess = execa("gh", ghArgs);
+      subprocess.stdout?.pipe(process.stdout);
+      await subprocess;
     } else {
       console.log("gh", ...ghArgs);
     }
