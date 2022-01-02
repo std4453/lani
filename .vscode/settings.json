@@ -1,0 +1,8 @@
+{
+    "editor.tabSize": 2,
+    "files.associations": {
+        "rush.json": "jsonc",
+        "**/common/config/rush/*.json": "jsonc"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+}

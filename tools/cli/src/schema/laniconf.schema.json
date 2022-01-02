@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://std4453.github.io/lani/schemas/laniconf-01.json",
+  "title": "Lani Config",
+  "description": "Configuration file for Lani",
+  "type": "object",
+  "properties": {
+    "type": {
+      "description": "Type of project",
+      "enum": [
+        "koa:ts",
+        "react:ts:spa",
+        "lib:ts",
+        "lib:js",
+        "qiankun:react:ts",
+        "qiankun:raw",
+        "mp:taro:react:ts"
+      ]
+    },
+    "abilities": {
+      "description": "Abilities to use with this project",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "enum": ["tracing"]
+          },
+          {
+            "type": "array",
+            "items": [
+              {
+                "enum": ["tracing"]
+              },
+              {
+                "type": "object"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type", "abilities"]
+}

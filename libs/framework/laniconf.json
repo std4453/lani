@@ -1,0 +1,4 @@
+{
+  "type": "lib:ts",
+  "abilities": ["tracing"]
+}

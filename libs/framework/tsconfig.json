@@ -1,0 +1,10 @@
+{
+  "extends": "@lani/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "outDir": "./dist",
+  },
+  "include": ["src/**/*"]
+}

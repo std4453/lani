@@ -1,0 +1,51 @@
+{
+	"folders": [
+		{
+			"name": "✨ root",
+			"path": "."
+		},
+		{
+			"name": "🚀 @lani/bilibili-bangumi-cc",
+			"path": "apps/bilibili-bangumi-cc"
+		},
+		{
+			"name": "🚀 @lani/api",
+			"path": "interfaces/api"
+		},
+		{
+			"name": "📦 @lani/framework",
+			"path": "libs/framework"
+		},
+		{
+			"name": "⚙️ @lani/cli",
+			"path": "tools/cli"
+		},
+		{
+			"name": "⚙️ @lani/tsconfig",
+			"path": "tools/tsconfig"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"rush.json": "jsonc",
+			"**/common/config/rush/*.json": "jsonc"
+		},
+		"json.schemas": [
+			{
+				"fileMatch": [
+					"**/laniconf.json"
+				],
+				"url": "../../tools/cli/dist/schema/laniconf.schema.json"
+			}
+		]
+	},
+	"extensions": {
+		"recommendations": [
+			"esbenp.prettier-vscode",
+			"redhat.vscode-yaml",
+			"eamodio.gitlens",
+			"ms-kubernetes-tools.vscode-kubernetes-tools",
+			"folke.vscode-monorepo-workspace"
+		]
+	}
+}

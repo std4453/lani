@@ -1,0 +1,22 @@
+{
+  "name": "@lani/bilibili-bangumi-cc",
+  "version": "1.0.0",
+  "private": "true",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "lani-cli build"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "@lani/tsconfig": "~1.0.0",
+    "@lani/cli": "~1.0.0"
+  },
+  "dependencies": {
+    "@lani/api": "~1.0.0",
+    "@lani/framework": "~1.0.0",
+    "axios": "~0.24.0",
+    "io-ts": "~2.2.16",
+    "fp-ts": "~2.11.5"
+  }
+}
