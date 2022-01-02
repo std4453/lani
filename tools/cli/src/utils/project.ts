@@ -1,6 +1,8 @@
+import { readFileSync } from "fs";
 import path from "path";
 
 export interface ProjectConfig {
+  packageName: string;
   path: string;
   cliPath: string;
   monorepoRoot: string;
@@ -8,8 +10,13 @@ export interface ProjectConfig {
 
 export function resolveProjectConfig(): ProjectConfig {
   const projectRoot = path.resolve(__dirname, "../..");
-  console.log(process.cwd(), projectRoot);
+  const packageJsonText = readFileSync(
+    path.resolve(projectRoot, "./package.json"),
+    "utf-8"
+  );
+  const packageJson = JSON.parse(packageJsonText);
   return {
+    packageName: packageJson.name,
     path: process.cwd(),
     cliPath: projectRoot,
     monorepoRoot: path.resolve(projectRoot, "../.."),
