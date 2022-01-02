@@ -51,7 +51,7 @@ jobs:
        
       - name: Deploy
         run: |
-          node common/scripts/install-run-rush.js -p ${{ env.project_name }}
+          node common/scripts/install-run-rush.js deploy -p ${{ env.project_name }}
       
       - name: Build and push
         id: docker_build
