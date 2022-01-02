@@ -25,4 +25,17 @@ export interface LaniConfig {
         }
       ]
   )[];
+  /**
+   * CI-related settings
+   */
+  ci?: {
+    /**
+     * Github workflow name
+     */
+    workflow?: string;
+    /**
+     * Build image name
+     */
+    image: string;
+  };
 }
