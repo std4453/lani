@@ -11,7 +11,7 @@ export interface ProjectConfig {
 export function resolveProjectConfig(): ProjectConfig {
   const projectRoot = path.resolve(__dirname, "../..");
   const packageJsonText = readFileSync(
-    path.resolve(projectRoot, "./package.json"),
+    path.resolve(process.cwd(), "./package.json"),
     "utf-8"
   );
   const packageJson = JSON.parse(packageJsonText);
