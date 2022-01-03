@@ -5,6 +5,7 @@ import kleur from "kleur";
 import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
 import * as _ from "lodash";
+import inclusion from "inclusion";
 
 const DEFAULT_WORKFLOW = "node_default.yaml";
 
@@ -105,10 +106,11 @@ export default class Devops extends Command {
       ..._.toPairs(args).flatMap(([key, value]) => ["-f", `${key}=${value}`]),
     ];
     if (!dry) {
-      const { execa } = await import("execa");
+      const { execa } = await inclusion("execa");
 
       const subprocess = execa("gh", ghArgs);
       subprocess.stdout?.pipe(process.stdout);
+      subprocess.stderr?.pipe(process.stderr);
       await subprocess;
 
       console.log(
