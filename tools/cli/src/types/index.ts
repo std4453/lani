@@ -1,11 +1,13 @@
 import { LaniConfig } from "../generated/laniconf";
 import { Commands } from "./commands";
 import lib_ts from "./lib_ts";
+import node_ts from "./node_ts";
 
 export type LaniProjectType = NonNullable<LaniConfig["type"]>;
 
 export const types: Partial<Record<LaniProjectType, Commands>> = {
   "lib:ts": lib_ts,
+  "node:ts": node_ts,
 };
 
 export function resolveCommand(

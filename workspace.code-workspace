@@ -19,10 +19,6 @@
 		{
 			"name": "⚙️ @lani/cli",
 			"path": "tools/cli"
-		},
-		{
-			"name": "⚙️ @lani/tsconfig",
-			"path": "tools/tsconfig"
 		}
 	],
 	"settings": {

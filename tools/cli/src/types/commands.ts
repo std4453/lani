@@ -5,6 +5,11 @@ export interface TypeBuildFn {
   (project: ProjectConfig, config: LaniConfig): Promise<void>;
 }
 
+export interface TypeDevFn {
+  (project: ProjectConfig, config: LaniConfig): void;
+}
+
 export type Commands = Partial<{
   build: TypeBuildFn;
+  dev: TypeDevFn;
 }>;

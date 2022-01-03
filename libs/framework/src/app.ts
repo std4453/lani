@@ -1,5 +1,5 @@
 import setupMiddlewares, { SetupMiddlewaresOptions } from "@/middlewares";
-import { ServiceConfig } from "@lani/api/dist/types";
+import { ServiceConfig } from "@lani/api";
 import Koa from "koa";
 import Router from "koa-router";
 

@@ -29,16 +29,20 @@
   },
   "dependencies": {
     "typescript": "~4.5.4",
-    "typescript-transform-paths": "~3.3.1",
     "ttypescript": "~1.5.13",
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.0.1",
     "jsonschema": "~1.4.0",
     "kleur": "~4.1.4",
-    "execa": "~5",
+    "execa": "~6",
     "lodash": "~4.17.21",
-    "simple-git": "~2.48.0"
+    "simple-git": "~2.48.0",
+    "nodemon": "~2.0.15",
+    "inclusion": "~1.0.1"
+  },
+  "peerDependencies": {
+    "typescript-transform-paths": "~3.3.1"
   },
   "files": [
     "/bin",

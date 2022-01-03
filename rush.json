@@ -461,10 +461,6 @@
       "projectFolder": "libs/framework"
     },
     {
-      "packageName": "@lani/tsconfig",
-      "projectFolder": "tools/tsconfig"
-    },
-    {
       "packageName": "@lani/cli",
       "projectFolder": "tools/cli"
     }
