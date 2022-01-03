@@ -1,5 +1,5 @@
 {
-  "extends": "@lani/tsconfig/tsconfig.json",
+  "extends": "@lani/cli/tsconfig/lib_ts.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]

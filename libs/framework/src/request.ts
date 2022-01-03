@@ -1,6 +1,6 @@
 import { WrappedResponse } from "@/types";
 import { buildRequestURL } from "@/utils";
-import { RequestFn, ServiceConfig } from "@lani/api/dist/types";
+import { RequestFn, ServiceConfig } from "@lani/api";
 import axios, { AxiosRequestConfig } from "axios";
 import rTracer from "cls-rtracer";
 

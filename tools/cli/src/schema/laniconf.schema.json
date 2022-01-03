@@ -8,7 +8,7 @@
     "type": {
       "description": "Type of project",
       "enum": [
-        "koa:ts",
+        "node:ts",
         "react:ts:spa",
         "lib:ts",
         "lib:js",

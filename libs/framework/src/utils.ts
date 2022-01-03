@@ -1,4 +1,4 @@
-import { ServiceConfig } from "@lani/api/build/types";
+import { ServiceConfig } from "@lani/api";
 
 export function buildRequestURL(
   service: ServiceConfig,

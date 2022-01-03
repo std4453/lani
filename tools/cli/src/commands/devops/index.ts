@@ -2,7 +2,6 @@ import { Command, Flags } from "@oclif/core";
 import { loadLaniConfig } from "../../utils/laniconfig";
 import { resolveProjectConfig } from "../../utils/project";
 import kleur from "kleur";
-import execa from "execa";
 import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
 import * as _ from "lodash";
@@ -106,6 +105,8 @@ export default class Devops extends Command {
       ..._.toPairs(args).flatMap(([key, value]) => ["-f", `${key}=${value}`]),
     ];
     if (!dry) {
+      const { execa } = await import("execa");
+
       const subprocess = execa("gh", ghArgs);
       subprocess.stdout?.pipe(process.stdout);
       await subprocess;

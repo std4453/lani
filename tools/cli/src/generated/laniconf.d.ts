@@ -12,7 +12,7 @@ export interface LaniConfig {
   /**
    * Type of project
    */
-  type: "koa:ts" | "react:ts:spa" | "lib:ts" | "lib:js" | "qiankun:react:ts" | "qiankun:raw" | "mp:taro:react:ts";
+  type: "node:ts" | "react:ts:spa" | "lib:ts" | "lib:js" | "qiankun:react:ts" | "qiankun:raw" | "mp:taro:react:ts";
   /**
    * Abilities to use with this project
    */
