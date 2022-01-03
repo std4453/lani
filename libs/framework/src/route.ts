@@ -1,5 +1,6 @@
 import { NormalError } from "@/error";
 import { WrappedResponse } from "@/types";
+import { isLeft } from "fp-ts/lib/Either";
 import { IncomingHttpHeaders } from "http";
 import * as t from "io-ts";
 import Router from "koa-router";
@@ -21,10 +22,12 @@ export function buildRoute<Request, Response>(
 ): Router.IMiddleware {
   return async (ctx) => {
     const decoded = reqType.decode(ctx.request.body);
-    if (decoded._tag === "Left") {
+    if (isLeft(decoded)) {
       const response: WrappedResponse<Response> = {
         code: 400,
-        error: decoded.left.map(({ message }) => message).join("\n"),
+        error: `Error for keys: ${decoded.left
+          .map(({ context }) => context.map(({ key }) => key).join("."))
+          .join(", ")}`,
       };
       ctx.status = 400;
       ctx.body = response;
