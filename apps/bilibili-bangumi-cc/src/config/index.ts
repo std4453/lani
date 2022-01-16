@@ -1,8 +1,8 @@
 const config = {
-  cosSecretId: process.env.COS_SECRET_ID,
-  cosSecretKey: process.env.COS_SECRET_KEY,
-  cosBucket: process.env.COS_BUCKET,
-  cosRegion: process.env.COS_REGION,
+  cosSecretId: "AKIDXtzoNfgPs88qIVQ4RYOxFH3YmiOnwpSo",
+  cosSecretKey: "6vTkkTv72g5E6hBPN3SaS3NQChvsXx6y",
+  cosBucket: "object-1308701035",
+  cosRegion: "ap-shanghai",
 } as const;
 
 export default config;
