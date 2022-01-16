@@ -25,7 +25,7 @@
 			"path": "tools/cli"
 		},
 		{
-			"name": "🚚 kustomization ",
+			"name": "🚚 @lani/kust",
 			"path": "deploy/kust"
 		}
 	],
