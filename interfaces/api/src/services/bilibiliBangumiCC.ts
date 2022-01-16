@@ -10,7 +10,7 @@ export const tDownloadSRTRequest = t.type({
 export type DownloadSRTRequest = t.TypeOf<typeof tDownloadSRTRequest>;
 
 export const tDownloadSRTResponse = t.type({
-  srtText: t.string,
+  cosKey: t.string,
 });
 
 export type DownloadSRTResponse = t.TypeOf<typeof tDownloadSRTResponse>;
