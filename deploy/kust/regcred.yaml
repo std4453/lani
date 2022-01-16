@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ghcr-io-regcred
+  namespace: lani
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: >
+    {
+      "auths": {
+        "ghcr.io": {
+          "auth": "c3RkNDQ1MzpnaHBfZEFVaVRjWjZjOGJ0Z0ZxaUpJMG9kenlSa2xsaWhpMDM4dFJJ"
+        },
+          "https://index.docker.io/v1/": {
+          "auth": "c3RkNDQ1Mzp4RVchWk1DJDBGNXE="
+        }
+      }
+    }

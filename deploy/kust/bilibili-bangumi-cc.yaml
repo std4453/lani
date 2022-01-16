@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bilibili-bangumi-cc
+  namespace: lani
+  labels:
+    app: bilibili-bangumi-cc
+    version: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bilibili-bangumi-cc
+      version: prod
+  template:
+    metadata:
+      labels:
+        app: bilibili-bangumi-cc
+        version: prod
+    spec:
+      containers:
+      - name: bilibili-bangumi-cc
+        image: ghcr.io/std4453/bilibili-bangumi-cc:master
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          limits:
+            memory: "100Mi"
+            cpu: "500m"
+          requests:
+            memory: "10Mi"
+            cpu: "10m"
+      imagePullSecrets:
+      - name: ghcr-io-regcred
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: bilibili-bangumi-cc
+  namespace: lani
+spec:
+  selector:
+    app: bilibili-bangumi-cc
+    version: prod
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
