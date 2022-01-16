@@ -5,12 +5,16 @@
 			"path": "."
 		},
 		{
+			"name": "🚀 @lani/api",
+			"path": "interfaces/api"
+		},
+		{
 			"name": "🚀 @lani/bilibili-bangumi-cc",
 			"path": "apps/bilibili-bangumi-cc"
 		},
 		{
-			"name": "🚀 @lani/api",
-			"path": "interfaces/api"
+			"name": "🚀 @lani/anime-metadata-server",
+			"path": "apps/anime-metadata-server"
 		},
 		{
 			"name": "📦 @lani/framework",
@@ -19,6 +23,10 @@
 		{
 			"name": "⚙️ @lani/cli",
 			"path": "tools/cli"
+		},
+		{
+			"name": "🚚 kustomization ",
+			"path": "deploy/kust"
 		}
 	],
 	"settings": {
