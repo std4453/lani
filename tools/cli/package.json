@@ -39,7 +39,8 @@
     "lodash": "~4.17.21",
     "simple-git": "~2.48.0",
     "nodemon": "~2.0.15",
-    "inclusion": "~1.0.1"
+    "inclusion": "~1.0.1",
+    "octokit": "~1.7.1"
   },
   "peerDependencies": {
     "typescript-transform-paths": "~3.3.1"
