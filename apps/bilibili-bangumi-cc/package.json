@@ -19,7 +19,8 @@
     "@lani/framework": "~1.0.0",
     "axios": "~0.24.0",
     "io-ts": "~2.2.16",
-    "fp-ts": "~2.11.5"
+    "fp-ts": "~2.11.5",
+    "cos-nodejs-sdk-v5": "~2.11.6"
   },
   "files": [
     "/dist"

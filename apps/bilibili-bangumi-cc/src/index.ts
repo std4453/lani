@@ -14,6 +14,14 @@ import axios from "axios";
 import { isLeft } from "fp-ts/lib/Either";
 import * as t from "io-ts";
 
+import COS from "cos-nodejs-sdk-v5";
+import config from "@/config";
+
+const cos = new COS({
+  SecretId: config.cosSecretId,
+  SecretKey: config.cosSecretKey,
+});
+
 async function getCID(epid: string): Promise<number> {
   const {
     data: { code, message, result },
@@ -121,6 +129,31 @@ function toSRTText(ccJSON: CCJSON): string {
     .join("");
 }
 
+async function uploadCOS(
+  epid: string,
+  language: string,
+  srtText: string
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const key = `bilibili-bangumi-cc/${epid}-${language}.srt`;
+    cos.putObject(
+      {
+        Bucket: config.cosBucket,
+        Region: config.cosRegion,
+        Key: key,
+        Body: srtText,
+      },
+      (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(key);
+        }
+      }
+    );
+  });
+}
+
 const app = buildApp<BilibiliBangumiCCService>({
   "/downloadSRT": r(
     tDownloadSRTRequest,
@@ -130,8 +163,9 @@ const app = buildApp<BilibiliBangumiCCService>({
       const url = await getSubtitleURL(cid, language);
       const ccJSON = await getCCJson(url);
       const srtText = toSRTText(ccJSON);
+      const cosKey = await uploadCOS(epid, language, srtText);
       return {
-        srtText,
+        cosKey,
       };
     }
   ),
