@@ -1,9 +1,10 @@
 import {
   bilibiliBangumiCCService,
   BilibiliBangumiCCService,
+  DownloadSRTRequest,
   tDownloadSRTRequest,
   tDownloadSRTResponse,
-} from "@lani/api/dist/services/bilibiliBangumiCC";
+} from "@lani/api";
 import {
   buildApp,
   buildRoute as r,
@@ -22,11 +23,25 @@ const cos = new COS({
   SecretKey: config.cosSecretKey,
 });
 
-async function getCID(epid: string): Promise<number> {
+type Region = NonNullable<DownloadSRTRequest["region"]>;
+
+const regionToApiEndpoint: Record<Region, string> = {
+  mainland: "api.bilibili.com",
+  // TODO: 全球番剧 API 代理
+  global: "api.bilibili.com",
+  // Source: https://github.com/yujincheng08/BiliRoaming/wiki/公共解析服务器
+  thm: "bilibili.myhosts.ml",
+};
+
+async function getCID({
+  ssid,
+  index,
+  region = "thm",
+}: DownloadSRTRequest): Promise<number> {
   const {
     data: { code, message, result },
   } = await axios({
-    url: `https://api.bilibili.com/pgc/view/web/season?ep_id=${epid}`,
+    url: `https://${regionToApiEndpoint[region]}/pgc/view/web/season?season_id=${ssid}`,
     method: "GET",
   });
   if (code === -404) {
@@ -39,7 +54,7 @@ async function getCID(epid: string): Promise<number> {
     cid: number;
     id: number;
   }[];
-  const episode = episodes.find(({ id }) => `${id}` === epid);
+  const episode = episodes[index - 1];
   if (!episode) {
     throw new NormalError(404, "Episode Not Found");
   }
@@ -130,12 +145,11 @@ function toSRTText(ccJSON: CCJSON): string {
 }
 
 async function uploadCOS(
-  epid: string,
-  language: string,
+  { ssid, index, language }: DownloadSRTRequest,
   srtText: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const key = `bilibili-bangumi-cc/${epid}-${language}.srt`;
+    const key = `bilibili-bangumi-cc/${ssid}-${index}-${language}.srt`;
     cos.putObject(
       {
         Bucket: config.cosBucket,
@@ -155,20 +169,16 @@ async function uploadCOS(
 }
 
 const app = buildApp<BilibiliBangumiCCService>({
-  "/downloadSRT": r(
-    tDownloadSRTRequest,
-    tDownloadSRTResponse,
-    async ({ epid, language }) => {
-      const cid = await getCID(epid);
-      const url = await getSubtitleURL(cid, language);
-      const ccJSON = await getCCJson(url);
-      const srtText = toSRTText(ccJSON);
-      const cosKey = await uploadCOS(epid, language, srtText);
-      return {
-        cosKey,
-      };
-    }
-  ),
+  "/downloadSRT": r(tDownloadSRTRequest, tDownloadSRTResponse, async (req) => {
+    const cid = await getCID(req);
+    const url = await getSubtitleURL(cid, req.language);
+    const ccJSON = await getCCJson(url);
+    const srtText = toSRTText(ccJSON);
+    const cosKey = await uploadCOS(req, srtText);
+    return {
+      cosKey,
+    };
+  }),
 });
 
 startApp(app, bilibiliBangumiCCService);
