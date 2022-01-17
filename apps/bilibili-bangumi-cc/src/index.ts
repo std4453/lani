@@ -138,7 +138,7 @@ function toSRTText(ccJSON: CCJSON): string {
     .map(({ from, to, content }, index) => {
       return [
         `${index + 1}`,
-        `${srtftime(from)} ->> ${srtftime(to)}`,
+        `${srtftime(from)} --> ${srtftime(to)}`,
         content,
         "",
         "",
