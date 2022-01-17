@@ -1,7 +1,11 @@
 {
+  "$schema": "../../tools/cli/src/schema/laniconf.schema.json",
   "type": "node:ts",
   "abilities": [],
   "ci": {
-    "image": "bilibili-bangumi-cc"
+    "image": "bilibili-bangumi-cc",
+    "deployment": {
+      "name": "bilibili-bangumi-cc"
+    }
   }
 }
