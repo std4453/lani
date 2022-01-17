@@ -9,6 +9,7 @@
  * Configuration file for Lani
  */
 export interface LaniConfig {
+  $schema?: string;
   /**
    * Type of project
    */
@@ -37,5 +38,18 @@ export interface LaniConfig {
      * Build image name
      */
     image: string;
+    /**
+     * Deployment-related settings
+     */
+    deployment?: {
+      /**
+       * k8s deploy namespace
+       */
+      namespace?: string;
+      /**
+       * k8s deploy name
+       */
+      name: string;
+    };
   };
 }
