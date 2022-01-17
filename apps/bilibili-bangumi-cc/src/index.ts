@@ -148,7 +148,7 @@ function toSRTText(ccJSON: CCJSON): string {
 }
 
 async function uploadCOS(
-  { ssid, index, language }: DownloadSRTRequest,
+  { ssid, index, language = "zh-Hant" }: DownloadSRTRequest,
   srtText: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
