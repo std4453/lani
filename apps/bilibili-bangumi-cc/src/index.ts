@@ -152,7 +152,7 @@ async function uploadCOS(
   srtText: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const key = `bilibili-bangumi-cc/${ssid}-${index}-${language}.srt`;
+    const key = `bilibili-bangumi-cc/ss${ssid}-ep-${index}-${language}.srt`;
     cos.putObject(
       {
         Bucket: config.cosBucket,
