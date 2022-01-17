@@ -98,17 +98,27 @@ export default class Devops extends Command {
 
     const octokit = new Octokit({ auth: globalConfig.githubPAT });
 
+    const inputs: {
+      [x: string]: string;
+    } = {
+      ref,
+      image_name: image,
+      project_path: path.relative(project.monorepoRoot, project.path),
+      project_name: project.packageName,
+    };
+
+    if (config.ci.deployment) {
+      const { namespace, name } = config.ci.deployment;
+      if (namespace) inputs.deploy_namespace = namespace;
+      inputs.deploy_name = name;
+    }
+
     await octokit.rest.actions.createWorkflowDispatch({
       owner: globalConfig.owner,
       repo: globalConfig.repo,
       workflow_id: workflow,
       ref,
-      inputs: {
-        ref,
-        image_name: image,
-        project_path: path.relative(project.monorepoRoot, project.path),
-        project_name: project.packageName,
-      },
+      inputs,
     });
 
     const {
