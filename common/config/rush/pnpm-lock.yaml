@@ -8,6 +8,7 @@ specifiers:
   '@rush-temp/bilibili-bangumi-cc': file:./projects/bilibili-bangumi-cc.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
+  '@rush-temp/kust': file:./projects/kust.tgz
   '@types/koa': ~2.13.4
   '@types/koa-bodyparser': ~4.3.5
   '@types/koa-logger': ~3.1.2
@@ -35,6 +36,7 @@ specifiers:
   lodash: ~4.17.21
   nodemon: ~2.0.15
   oclif: ^2.0.0-main.10
+  octokit: ~1.7.1
   prettier: ~2.5.1
   shx: ^0.3.3
   simple-git: ~2.48.0
@@ -52,6 +54,7 @@ dependencies:
   '@rush-temp/bilibili-bangumi-cc': file:projects/bilibili-bangumi-cc.tgz
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/framework': file:projects/framework.tgz
+  '@rush-temp/kust': file:projects/kust.tgz
   '@types/koa': 2.13.4
   '@types/koa-bodyparser': 4.3.5
   '@types/koa-logger': 3.1.2
@@ -79,6 +82,7 @@ dependencies:
   lodash: 4.17.21
   nodemon: 2.0.15
   oclif: 2.1.0
+  octokit: 1.7.1
   prettier: 2.5.1
   shx: 0.3.3
   simple-git: 2.48.0
@@ -7267,4 +7271,10 @@ packages:
     transitivePeerDependencies:
       - debug
       - supports-color
+    dev: false
+
+  file:projects/kust.tgz:
+    resolution: {integrity: sha512-AjZy88TwMbI1CQgyj+F+AAO30zZpR1yzXAArrInmtktmfy3uOkiUMQzfKTT3KYFEev9dSpVW2cLpFGtJl188ZQ==, tarball: file:projects/kust.tgz}
+    name: '@rush-temp/kust'
+    version: 0.0.0
     dev: false
