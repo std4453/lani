@@ -3,5 +3,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - regcred.yaml
+  - lani-cd.yaml
   - bilibili-bangumi-cc.yaml
-
