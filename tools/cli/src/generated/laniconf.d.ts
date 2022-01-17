@@ -43,10 +43,6 @@ export interface LaniConfig {
      */
     deployment?: {
       /**
-       * k8s deploy namespace
-       */
-      namespace?: string;
-      /**
        * k8s deploy name
        */
       name: string;
