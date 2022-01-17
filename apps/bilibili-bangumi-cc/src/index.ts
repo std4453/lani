@@ -62,7 +62,10 @@ async function getCID({
   return episode.cid;
 }
 
-async function getSubtitleURL(cid: number, language: string): Promise<string> {
+async function getSubtitleURL(
+  cid: number,
+  { language = "zh-Hant" }: DownloadSRTRequest
+): Promise<string> {
   const {
     data: { code, message, data: result },
   } = await axios({
@@ -86,7 +89,7 @@ async function getSubtitleURL(cid: number, language: string): Promise<string> {
     }[]
   ).find(({ lan }) => lan === language)?.subtitle_url;
   if (!url) {
-    throw new NormalError(404, "Subtitle with Language Not Found");
+    throw new NormalError(404, `Subtitle with Language ${language} Not Found`);
   }
 
   return url;
@@ -171,7 +174,7 @@ async function uploadCOS(
 const app = buildApp<BilibiliBangumiCCService>({
   "/downloadSRT": r(tDownloadSRTRequest, tDownloadSRTResponse, async (req) => {
     const cid = await getCID(req);
-    const url = await getSubtitleURL(cid, req.language);
+    const url = await getSubtitleURL(cid, req);
     const ccJSON = await getCCJson(url);
     const srtText = toSRTText(ccJSON);
     const cosKey = await uploadCOS(req, srtText);
