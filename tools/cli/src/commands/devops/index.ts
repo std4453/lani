@@ -108,8 +108,7 @@ export default class Devops extends Command {
     };
 
     if (config.ci.deployment) {
-      const { namespace, name } = config.ci.deployment;
-      if (namespace) inputs.deploy_namespace = namespace;
+      const { name } = config.ci.deployment;
       inputs.deploy_name = name;
     }
 

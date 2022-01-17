@@ -60,10 +60,6 @@
           "description": "Deployment-related settings",
           "type": "object",
           "properties": {
-            "namespace": {
-              "description": "k8s deploy namespace",
-              "type": "string"
-            },
             "name": {
               "description": "k8s deploy name",
               "type": "string"
