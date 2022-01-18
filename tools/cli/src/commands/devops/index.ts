@@ -77,18 +77,27 @@ export default class Devops extends Command {
       if (noAutoPush) {
         console.log(
           kleur.yellow(
-            `Branch '${current}' is ahead ${ahead} and behind ${behind} of remote '${tracking}', pipeline will use inconsistent commits`
+            `Branch '${current}' is ahead ${ahead} and behind ${behind} commit(s) of remote '${tracking}', pipeline will use inconsistent commits`
           )
         );
         if (strict) {
           process.exit(1);
         }
       } else {
-        console.log(
-          kleur.yellow(
-            `Branch '${current}' is ahead ${ahead} and behind ${behind} of remote '${tracking}', pushing to remote...`
-          )
-        );
+        if (ahead !== 0) {
+          console.log(
+            kleur.yellow(
+              `Branch '${current}' is ahead ${ahead} commit(s) of remote '${tracking}', pushing to remote...`
+            )
+          );
+        } else {
+          console.log(
+            kleur.yellow(
+              `Branch '${current}' is ahead ${ahead} and behind ${behind} commit(s) of remote '${tracking}', cannot auto-push, exiting`
+            )
+          );
+          process.exit(1);
+        }
         await git.push();
         console.log(`Push ${kleur.green("success")}`);
       }
