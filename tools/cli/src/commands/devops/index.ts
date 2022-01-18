@@ -112,6 +112,7 @@ export default class Devops extends Command {
       inputs.deploy_name = name;
     }
 
+    const createTime = new Date().getTime();
     await octokit.rest.actions.createWorkflowDispatch({
       owner: globalConfig.owner,
       repo: globalConfig.repo,
@@ -120,28 +121,36 @@ export default class Devops extends Command {
       inputs,
     });
 
-    const {
-      data: {
-        workflow_runs: [run],
-      },
-    } = await octokit.rest.actions.listWorkflowRuns({
-      owner: globalConfig.owner,
-      repo: globalConfig.repo,
-      workflow_id: workflow,
-      event: "workflow_dispatch",
-    });
+    console.log(kleur.gray("Workflow triggered, waiting for run ID..."));
+    let found = false;
+    for (let i = 0; i < 10; ++i) {
+      const {
+        data: {
+          workflow_runs: [run],
+        },
+      } = await octokit.rest.actions.listWorkflowRuns({
+        owner: globalConfig.owner,
+        repo: globalConfig.repo,
+        workflow_id: workflow,
+        event: "workflow_dispatch",
+      });
 
-    if (!run) {
+      if (run) {
+        const runCreateTime = new Date(run.created_at).getTime();
+        if (runCreateTime > createTime) {
+          console.log(`Workflow URL: ${kleur.cyan(run.html_url)}`);
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
       console.log(
         `Unable to find workflow run, visit ${kleur.cyan(
           `https://github.com/std4453/lani/actions/workflows/${workflow}`
         )} to view details`
       );
       process.exit(1);
-    } else {
-      console.log(
-        `Workflow triggered, visit ${kleur.cyan(run.html_url)} to view details`
-      );
     }
   }
 }
