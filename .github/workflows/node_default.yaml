@@ -106,7 +106,7 @@ jobs:
       - name: Prepare kubeconfig
         run: |
           echo 'KUBE_CONFIG<<EOF' >> $GITHUB_ENV
-          cat deploy/kust/lani-cd.kubeconfig | base64 >> $GITHUB_ENV
+          cat deploy/kust/lani-cd.kubeconfig | base64 -w 0 >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
       - uses: actions-hub/kubectl@master
