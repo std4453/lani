@@ -1,0 +1,5 @@
+{
+  "$schema": "../../tools/cli/src/schema/laniconf.schema.json",
+  "type": "raw",
+  "abilities": []
+}
