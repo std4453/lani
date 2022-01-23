@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "generate-type": "node scripts/generate-type.js",
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "npm run generate-type && shx rm -rf dist && tsc -b",
     "lint": "eslint . --ext .ts --config .eslintrc",
     "postpack": "shx rm -f oclif.manifest.json",
     "prepack": "rushx build && oclif manifest && oclif readme",

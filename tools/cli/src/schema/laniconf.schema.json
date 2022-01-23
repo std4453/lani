@@ -11,6 +11,7 @@
     "type": {
       "description": "Type of project",
       "enum": [
+        "raw",
         "node:ts",
         "react:ts:spa",
         "lib:ts",
