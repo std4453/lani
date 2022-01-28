@@ -1,33 +1,33 @@
 .logoContainer {
-  height: 64px;
+  height: 44px;
+  width: 100%;
   position: relative;
 }
 
 .logoBlock {
   position: absolute;
-  top: 10px;
-  left: 33px;
+  top: 50%;
+  left: 21px;
   width: 133px;
   height: 44px;
   overflow: hidden;
+  transform: translateY(-50%);
   transition: all 125ms ease;
 
   &.collapsed {
     width: 44px;
-    left: 18px;
+    left: -6px;
   }
 }
 
 .logo {
-  height: 44px;
-  width: 133px;
-}
-
-.header {
-  background-color: white;
+  && {
+    height: 44px;
+    width: 133px;
+  }
 }
 
 .content {
   background-color: white;
-  padding: 16px 32px;
+  padding: 0px 32px 16px;
 }

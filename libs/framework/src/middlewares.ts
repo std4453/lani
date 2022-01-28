@@ -2,6 +2,7 @@ import { createLogger } from "@/logger";
 import rTracer from "cls-rtracer";
 import Koa from "koa";
 import bodyParser from "koa-bodyparser";
+import cors from "@koa/cors";
 
 export function bodyParserMiddleware() {
   return bodyParser({
@@ -16,18 +17,32 @@ export function requestIdMiddleware() {
   });
 }
 
+export function corsMiddleware() {
+  return cors();
+}
+
 export interface SetupMiddlewaresOptions {
   logger?: boolean;
   tracing?: boolean;
+  cors?: boolean;
+  setup?: (app: Koa) => void;
 }
 
 function setupMiddlewares(
   app: Koa,
-  { logger = true, tracing = true }: SetupMiddlewaresOptions
+  {
+    logger = true,
+    tracing = true,
+    cors = false,
+    setup,
+  }: SetupMiddlewaresOptions
 ) {
   app.use(bodyParserMiddleware());
   if (tracing) {
     app.use(requestIdMiddleware());
+  }
+  if (cors) {
+    app.use(corsMiddleware());
   }
   if (logger) {
     const log = createLogger({ tracing });
@@ -64,6 +79,9 @@ function setupMiddlewares(
         );
       }
     });
+  }
+  if (setup) {
+    setup(app);
   }
 }
 

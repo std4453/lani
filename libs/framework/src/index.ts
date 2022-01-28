@@ -5,3 +5,5 @@ export * from "@/types";
 export * from "@/app";
 export * from "@/utils";
 export * from "@/error";
+export * from "@/env";
+export * from "@/config";

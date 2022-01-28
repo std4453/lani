@@ -45,6 +45,18 @@
         ]
       }
     },
+    "node": {
+      "description": "Node.JS app-related settings",
+      "type": "object",
+      "properties": {
+        "entry": {
+          "description": "App entrypoint",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["entry"]
+    },
     "ci": {
       "description": "CI-related settings",
       "type": "object",

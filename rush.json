@@ -471,6 +471,14 @@
     {
       "packageName": "@lani/admin",
       "projectFolder": "apps/admin"
+    },
+    {
+      "packageName": "@lani/data-server",
+      "projectFolder": "apps/data-server"
+    },
+    {
+      "packageName": "@lani/schema",
+      "projectFolder": "interfaces/schema"
     }
   ]
 }
