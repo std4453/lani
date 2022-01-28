@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import setupMiddlewares, { SetupMiddlewaresOptions } from "@/middlewares";
 import { ServiceConfig } from "@lani/api";
 import Koa from "koa";
@@ -25,4 +26,11 @@ export function buildApp<
 
 export function startApp(app: Koa, service: ServiceConfig) {
   app.listen(service.port);
+  if (process.env.NODE_ENV === "development") {
+    console.log("Service listening on port", service.port);
+  } else {
+    console.log("Service started");
+    console.log("env:", env);
+    console.log("service: ", service);
+  }
 }

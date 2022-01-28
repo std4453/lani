@@ -1,0 +1,29 @@
+{
+  "name": "@lani/data-server",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "lani-cli build",
+    "devops": "lani-cli devops",
+    "dev": "lani-cli dev",
+    "generate:schema": "ts-node src/scripts/generate-schema.ts"
+  },
+  "dependencies": {
+    "postgraphile": "4.12.8",
+    "graphql": "15.8.0",
+    "@lani/api": "~1.0.0",
+    "@lani/framework": "~1.0.0",
+    "@graphile-contrib/pg-simplify-inflector": "~6.1.0",
+    "postgraphile-plugin-connection-filter": "~2.2.2"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "@lani/cli": "~1.0.0",
+    "typescript-transform-paths": "~3.3.1",
+    "ts-node": "^10.2.1"
+  },
+  "files": [
+    "/dist"
+  ]
+}

@@ -5,7 +5,11 @@
 			"path": "."
 		},
 		{
-			"name": "🚀 @lani/api",
+			"name": "🔗 @lani/schema",
+			"path": "interfaces/schema"
+		},
+		{
+			"name": "🔗 @lani/api",
 			"path": "interfaces/api"
 		},
 		{

@@ -1,0 +1,1542 @@
+"""The root query type which gives access points into the data universe."""
+type Query implements Node {
+  """
+  Exposes the root query type nested one level down. This is helpful for Relay 1
+  which can only query top level fields if they are in a particular form.
+  """
+  query: Query!
+
+  """
+  The root query type must be a `Node` to work well with Relay 1 mutations. This just resolves to `query`.
+  """
+  nodeId: ID!
+
+  """Fetches an object given its globally unique `ID`."""
+  node(
+    """The globally unique `ID`."""
+    nodeId: ID!
+  ): Node
+
+  """Reads and enables pagination through a set of `AnimeMetadatum`."""
+  allAnimeMetadata(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: AnimeMetadatumCondition
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: AnimeMetadatumFilter
+  ): AnimeMetadataConnection
+
+  """Reads and enables pagination through a set of `Semester`."""
+  allSemesters(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `Semester`."""
+    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: SemesterCondition
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: SemesterFilter
+  ): SemestersConnection
+
+  """Reads and enables pagination through a set of `SonarrSery`."""
+  allSonarrSeries(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `SonarrSery`."""
+    orderBy: [SonarrSeriesOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: SonarrSeryCondition
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: SonarrSeryFilter
+  ): SonarrSeriesConnection
+  animeMetadatumById(id: Int!): AnimeMetadatum
+  semesterById(id: Int!): Semester
+  sonarrSeryById(id: Int!): SonarrSery
+  sonarrSeryBySonarrId(sonarrId: Int!): SonarrSery
+  sonarrSeryBySonarrSlug(sonarrSlug: String!): SonarrSery
+
+  """Reads a single `AnimeMetadatum` using its globally unique `ID`."""
+  animeMetadatum(
+    """
+    The globally unique `ID` to be used in selecting a single `AnimeMetadatum`.
+    """
+    nodeId: ID!
+  ): AnimeMetadatum
+
+  """Reads a single `Semester` using its globally unique `ID`."""
+  semester(
+    """The globally unique `ID` to be used in selecting a single `Semester`."""
+    nodeId: ID!
+  ): Semester
+
+  """Reads a single `SonarrSery` using its globally unique `ID`."""
+  sonarrSery(
+    """
+    The globally unique `ID` to be used in selecting a single `SonarrSery`.
+    """
+    nodeId: ID!
+  ): SonarrSery
+}
+
+"""An object with a globally unique `ID`."""
+interface Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
+"""A connection to a list of `AnimeMetadatum` values."""
+type AnimeMetadataConnection {
+  """A list of `AnimeMetadatum` objects."""
+  nodes: [AnimeMetadatum]!
+
+  """
+  A list of edges which contains the `AnimeMetadatum` and cursor to aid in pagination.
+  """
+  edges: [AnimeMetadataEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `AnimeMetadatum` you could get from the connection."""
+  totalCount: Int!
+}
+
+type AnimeMetadatum implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+
+  """https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld"""
+  uniformName: String!
+
+  """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
+  sonarrSeason: Int
+  jellyfinSeasonId: String
+  mikanAnimeId: Int
+  bamgumiId: Int
+  bilibiliMainlandSsid: Int
+  bilibiliThmSsid: Int
+  schedule: JSON
+  semester: Int
+  sonarrSeries: Int
+
+  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
+  semesterBySemester: Semester
+
+  """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
+  sonarrSeryBySonarrSeries: SonarrSery
+}
+
+"""
+A JavaScript object encoded in the JSON format as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type Semester implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  year: Int!
+  season: SeasonEnum!
+
+  """Reads and enables pagination through a set of `AnimeMetadatum`."""
+  animeMetadataBySemester(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: AnimeMetadatumCondition
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: AnimeMetadatumFilter
+  ): AnimeMetadataConnection!
+}
+
+enum SeasonEnum {
+  SPRING
+  SUMMER
+  AUTUMN
+  WINTER
+}
+
+"""A location in a connection that can be used for resuming pagination."""
+scalar Cursor
+
+"""Methods to use when ordering `AnimeMetadatum`."""
+enum AnimeMetadataOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  UNIFORM_NAME_ASC
+  UNIFORM_NAME_DESC
+  SONARR_SEASON_ASC
+  SONARR_SEASON_DESC
+  JELLYFIN_SEASON_ID_ASC
+  JELLYFIN_SEASON_ID_DESC
+  MIKAN_ANIME_ID_ASC
+  MIKAN_ANIME_ID_DESC
+  BAMGUMI_ID_ASC
+  BAMGUMI_ID_DESC
+  BILIBILI_MAINLAND_SSID_ASC
+  BILIBILI_MAINLAND_SSID_DESC
+  BILIBILI_THM_SSID_ASC
+  BILIBILI_THM_SSID_DESC
+  SCHEDULE_ASC
+  SCHEDULE_DESC
+  SEMESTER_ASC
+  SEMESTER_DESC
+  SONARR_SERIES_ASC
+  SONARR_SERIES_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `AnimeMetadatum` object types. All fields are
+tested for equality and combined with a logical ‘and.’
+"""
+input AnimeMetadatumCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `uniformName` field."""
+  uniformName: String
+
+  """Checks for equality with the object’s `sonarrSeason` field."""
+  sonarrSeason: Int
+
+  """Checks for equality with the object’s `jellyfinSeasonId` field."""
+  jellyfinSeasonId: String
+
+  """Checks for equality with the object’s `mikanAnimeId` field."""
+  mikanAnimeId: Int
+
+  """Checks for equality with the object’s `bamgumiId` field."""
+  bamgumiId: Int
+
+  """Checks for equality with the object’s `bilibiliMainlandSsid` field."""
+  bilibiliMainlandSsid: Int
+
+  """Checks for equality with the object’s `bilibiliThmSsid` field."""
+  bilibiliThmSsid: Int
+
+  """Checks for equality with the object’s `schedule` field."""
+  schedule: JSON
+
+  """Checks for equality with the object’s `semester` field."""
+  semester: Int
+
+  """Checks for equality with the object’s `sonarrSeries` field."""
+  sonarrSeries: Int
+}
+
+"""
+A filter to be used against `AnimeMetadatum` object types. All fields are combined with a logical ‘and.’
+"""
+input AnimeMetadatumFilter {
+  """Filter by the object’s `id` field."""
+  id: IntFilter
+
+  """Filter by the object’s `uniformName` field."""
+  uniformName: StringFilter
+
+  """Filter by the object’s `sonarrSeason` field."""
+  sonarrSeason: IntFilter
+
+  """Filter by the object’s `jellyfinSeasonId` field."""
+  jellyfinSeasonId: StringFilter
+
+  """Filter by the object’s `mikanAnimeId` field."""
+  mikanAnimeId: IntFilter
+
+  """Filter by the object’s `bamgumiId` field."""
+  bamgumiId: IntFilter
+
+  """Filter by the object’s `bilibiliMainlandSsid` field."""
+  bilibiliMainlandSsid: IntFilter
+
+  """Filter by the object’s `bilibiliThmSsid` field."""
+  bilibiliThmSsid: IntFilter
+
+  """Filter by the object’s `semester` field."""
+  semester: IntFilter
+
+  """Filter by the object’s `sonarrSeries` field."""
+  sonarrSeries: IntFilter
+
+  """Checks for all expressions in this list."""
+  and: [AnimeMetadatumFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [AnimeMetadatumFilter!]
+
+  """Negates the expression."""
+  not: AnimeMetadatumFilter
+}
+
+"""
+A filter to be used against Int fields. All fields are combined with a logical ‘and.’
+"""
+input IntFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Int
+
+  """Not equal to the specified value."""
+  notEqualTo: Int
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Int
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Int
+
+  """Included in the specified list."""
+  in: [Int!]
+
+  """Not included in the specified list."""
+  notIn: [Int!]
+
+  """Less than the specified value."""
+  lessThan: Int
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Int
+
+  """Greater than the specified value."""
+  greaterThan: Int
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Int
+}
+
+"""
+A filter to be used against String fields. All fields are combined with a logical ‘and.’
+"""
+input StringFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: String
+
+  """Not equal to the specified value."""
+  notEqualTo: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: String
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: String
+
+  """Included in the specified list."""
+  in: [String!]
+
+  """Not included in the specified list."""
+  notIn: [String!]
+
+  """Less than the specified value."""
+  lessThan: String
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: String
+
+  """Greater than the specified value."""
+  greaterThan: String
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: String
+
+  """Contains the specified string (case-sensitive)."""
+  includes: String
+
+  """Does not contain the specified string (case-sensitive)."""
+  notIncludes: String
+
+  """Contains the specified string (case-insensitive)."""
+  includesInsensitive: String
+
+  """Does not contain the specified string (case-insensitive)."""
+  notIncludesInsensitive: String
+
+  """Starts with the specified string (case-sensitive)."""
+  startsWith: String
+
+  """Does not start with the specified string (case-sensitive)."""
+  notStartsWith: String
+
+  """Starts with the specified string (case-insensitive)."""
+  startsWithInsensitive: String
+
+  """Does not start with the specified string (case-insensitive)."""
+  notStartsWithInsensitive: String
+
+  """Ends with the specified string (case-sensitive)."""
+  endsWith: String
+
+  """Does not end with the specified string (case-sensitive)."""
+  notEndsWith: String
+
+  """Ends with the specified string (case-insensitive)."""
+  endsWithInsensitive: String
+
+  """Does not end with the specified string (case-insensitive)."""
+  notEndsWithInsensitive: String
+
+  """
+  Matches the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  like: String
+
+  """
+  Does not match the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLike: String
+
+  """
+  Matches the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  likeInsensitive: String
+
+  """
+  Does not match the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLikeInsensitive: String
+
+  """Equal to the specified value (case-insensitive)."""
+  equalToInsensitive: String
+
+  """Not equal to the specified value (case-insensitive)."""
+  notEqualToInsensitive: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  distinctFromInsensitive: String
+
+  """
+  Equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  notDistinctFromInsensitive: String
+
+  """Included in the specified list (case-insensitive)."""
+  inInsensitive: [String!]
+
+  """Not included in the specified list (case-insensitive)."""
+  notInInsensitive: [String!]
+
+  """Less than the specified value (case-insensitive)."""
+  lessThanInsensitive: String
+
+  """Less than or equal to the specified value (case-insensitive)."""
+  lessThanOrEqualToInsensitive: String
+
+  """Greater than the specified value (case-insensitive)."""
+  greaterThanInsensitive: String
+
+  """Greater than or equal to the specified value (case-insensitive)."""
+  greaterThanOrEqualToInsensitive: String
+}
+
+type SonarrSery implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  sonarrId: Int!
+  sonarrSlug: String!
+  tvdbid: Int!
+
+  """Reads and enables pagination through a set of `AnimeMetadatum`."""
+  animeMetadataBySonarrSeries(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: AnimeMetadatumCondition
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: AnimeMetadatumFilter
+  ): AnimeMetadataConnection!
+}
+
+"""A `AnimeMetadatum` edge in the connection."""
+type AnimeMetadataEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `AnimeMetadatum` at the end of the edge."""
+  node: AnimeMetadatum
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+
+"""A connection to a list of `Semester` values."""
+type SemestersConnection {
+  """A list of `Semester` objects."""
+  nodes: [Semester]!
+
+  """
+  A list of edges which contains the `Semester` and cursor to aid in pagination.
+  """
+  edges: [SemestersEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `Semester` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""A `Semester` edge in the connection."""
+type SemestersEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `Semester` at the end of the edge."""
+  node: Semester
+}
+
+"""Methods to use when ordering `Semester`."""
+enum SemestersOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  YEAR_ASC
+  YEAR_DESC
+  SEASON_ASC
+  SEASON_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `Semester` object types. All fields are tested
+for equality and combined with a logical ‘and.’
+"""
+input SemesterCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `year` field."""
+  year: Int
+
+  """Checks for equality with the object’s `season` field."""
+  season: SeasonEnum
+}
+
+"""
+A filter to be used against `Semester` object types. All fields are combined with a logical ‘and.’
+"""
+input SemesterFilter {
+  """Filter by the object’s `id` field."""
+  id: IntFilter
+
+  """Filter by the object’s `year` field."""
+  year: IntFilter
+
+  """Filter by the object’s `season` field."""
+  season: SeasonEnumFilter
+
+  """Checks for all expressions in this list."""
+  and: [SemesterFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [SemesterFilter!]
+
+  """Negates the expression."""
+  not: SemesterFilter
+}
+
+"""
+A filter to be used against SeasonEnum fields. All fields are combined with a logical ‘and.’
+"""
+input SeasonEnumFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: SeasonEnum
+
+  """Not equal to the specified value."""
+  notEqualTo: SeasonEnum
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: SeasonEnum
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: SeasonEnum
+
+  """Included in the specified list."""
+  in: [SeasonEnum!]
+
+  """Not included in the specified list."""
+  notIn: [SeasonEnum!]
+
+  """Less than the specified value."""
+  lessThan: SeasonEnum
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: SeasonEnum
+
+  """Greater than the specified value."""
+  greaterThan: SeasonEnum
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: SeasonEnum
+}
+
+"""A connection to a list of `SonarrSery` values."""
+type SonarrSeriesConnection {
+  """A list of `SonarrSery` objects."""
+  nodes: [SonarrSery]!
+
+  """
+  A list of edges which contains the `SonarrSery` and cursor to aid in pagination.
+  """
+  edges: [SonarrSeriesEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `SonarrSery` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""A `SonarrSery` edge in the connection."""
+type SonarrSeriesEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `SonarrSery` at the end of the edge."""
+  node: SonarrSery
+}
+
+"""Methods to use when ordering `SonarrSery`."""
+enum SonarrSeriesOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  SONARR_ID_ASC
+  SONARR_ID_DESC
+  SONARR_SLUG_ASC
+  SONARR_SLUG_DESC
+  TVDBID_ASC
+  TVDBID_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `SonarrSery` object types. All fields are tested
+for equality and combined with a logical ‘and.’
+"""
+input SonarrSeryCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `sonarrId` field."""
+  sonarrId: Int
+
+  """Checks for equality with the object’s `sonarrSlug` field."""
+  sonarrSlug: String
+
+  """Checks for equality with the object’s `tvdbid` field."""
+  tvdbid: Int
+}
+
+"""
+A filter to be used against `SonarrSery` object types. All fields are combined with a logical ‘and.’
+"""
+input SonarrSeryFilter {
+  """Filter by the object’s `id` field."""
+  id: IntFilter
+
+  """Filter by the object’s `sonarrId` field."""
+  sonarrId: IntFilter
+
+  """Filter by the object’s `sonarrSlug` field."""
+  sonarrSlug: StringFilter
+
+  """Filter by the object’s `tvdbid` field."""
+  tvdbid: IntFilter
+
+  """Checks for all expressions in this list."""
+  and: [SonarrSeryFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [SonarrSeryFilter!]
+
+  """Negates the expression."""
+  not: SonarrSeryFilter
+}
+
+"""
+The root mutation type which contains root level fields which mutate data.
+"""
+type Mutation {
+  """Creates a single `AnimeMetadatum`."""
+  createAnimeMetadatum(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateAnimeMetadatumInput!
+  ): CreateAnimeMetadatumPayload
+
+  """Creates a single `Semester`."""
+  createSemester(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateSemesterInput!
+  ): CreateSemesterPayload
+
+  """Creates a single `SonarrSery`."""
+  createSonarrSery(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateSonarrSeryInput!
+  ): CreateSonarrSeryPayload
+
+  """
+  Updates a single `AnimeMetadatum` using its globally unique id and a patch.
+  """
+  updateAnimeMetadatum(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateAnimeMetadatumInput!
+  ): UpdateAnimeMetadatumPayload
+
+  """Updates a single `AnimeMetadatum` using a unique key and a patch."""
+  updateAnimeMetadatumById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateAnimeMetadatumByIdInput!
+  ): UpdateAnimeMetadatumPayload
+
+  """Updates a single `Semester` using its globally unique id and a patch."""
+  updateSemester(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSemesterInput!
+  ): UpdateSemesterPayload
+
+  """Updates a single `Semester` using a unique key and a patch."""
+  updateSemesterById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSemesterByIdInput!
+  ): UpdateSemesterPayload
+
+  """
+  Updates a single `SonarrSery` using its globally unique id and a patch.
+  """
+  updateSonarrSery(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSonarrSeryInput!
+  ): UpdateSonarrSeryPayload
+
+  """Updates a single `SonarrSery` using a unique key and a patch."""
+  updateSonarrSeryById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSonarrSeryByIdInput!
+  ): UpdateSonarrSeryPayload
+
+  """Updates a single `SonarrSery` using a unique key and a patch."""
+  updateSonarrSeryBySonarrId(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSonarrSeryBySonarrIdInput!
+  ): UpdateSonarrSeryPayload
+
+  """Updates a single `SonarrSery` using a unique key and a patch."""
+  updateSonarrSeryBySonarrSlug(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateSonarrSeryBySonarrSlugInput!
+  ): UpdateSonarrSeryPayload
+
+  """Deletes a single `AnimeMetadatum` using its globally unique id."""
+  deleteAnimeMetadatum(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteAnimeMetadatumInput!
+  ): DeleteAnimeMetadatumPayload
+
+  """Deletes a single `AnimeMetadatum` using a unique key."""
+  deleteAnimeMetadatumById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteAnimeMetadatumByIdInput!
+  ): DeleteAnimeMetadatumPayload
+
+  """Deletes a single `Semester` using its globally unique id."""
+  deleteSemester(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSemesterInput!
+  ): DeleteSemesterPayload
+
+  """Deletes a single `Semester` using a unique key."""
+  deleteSemesterById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSemesterByIdInput!
+  ): DeleteSemesterPayload
+
+  """Deletes a single `SonarrSery` using its globally unique id."""
+  deleteSonarrSery(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSonarrSeryInput!
+  ): DeleteSonarrSeryPayload
+
+  """Deletes a single `SonarrSery` using a unique key."""
+  deleteSonarrSeryById(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSonarrSeryByIdInput!
+  ): DeleteSonarrSeryPayload
+
+  """Deletes a single `SonarrSery` using a unique key."""
+  deleteSonarrSeryBySonarrId(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSonarrSeryBySonarrIdInput!
+  ): DeleteSonarrSeryPayload
+
+  """Deletes a single `SonarrSery` using a unique key."""
+  deleteSonarrSeryBySonarrSlug(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteSonarrSeryBySonarrSlugInput!
+  ): DeleteSonarrSeryPayload
+}
+
+"""The output of our create `AnimeMetadatum` mutation."""
+type CreateAnimeMetadatumPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `AnimeMetadatum` that was created by this mutation."""
+  animeMetadatum: AnimeMetadatum
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
+  semesterBySemester: Semester
+
+  """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
+  sonarrSeryBySonarrSeries: SonarrSery
+
+  """An edge for our `AnimeMetadatum`. May be used by Relay 1."""
+  animeMetadatumEdge(
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+  ): AnimeMetadataEdge
+}
+
+"""All input for the create `AnimeMetadatum` mutation."""
+input CreateAnimeMetadatumInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `AnimeMetadatum` to be created by this mutation."""
+  animeMetadatum: AnimeMetadatumInput!
+}
+
+"""An input for mutations affecting `AnimeMetadatum`"""
+input AnimeMetadatumInput {
+  id: Int
+
+  """https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld"""
+  uniformName: String!
+
+  """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
+  sonarrSeason: Int
+  jellyfinSeasonId: String
+  mikanAnimeId: Int
+  bamgumiId: Int
+  bilibiliMainlandSsid: Int
+  bilibiliThmSsid: Int
+  schedule: JSON
+  semester: Int
+  sonarrSeries: Int
+}
+
+"""The output of our create `Semester` mutation."""
+type CreateSemesterPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `Semester` that was created by this mutation."""
+  semester: Semester
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `Semester`. May be used by Relay 1."""
+  semesterEdge(
+    """The method to use when ordering `Semester`."""
+    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SemestersEdge
+}
+
+"""All input for the create `Semester` mutation."""
+input CreateSemesterInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `Semester` to be created by this mutation."""
+  semester: SemesterInput!
+}
+
+"""An input for mutations affecting `Semester`"""
+input SemesterInput {
+  id: Int
+  year: Int!
+  season: SeasonEnum!
+}
+
+"""The output of our create `SonarrSery` mutation."""
+type CreateSonarrSeryPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `SonarrSery` that was created by this mutation."""
+  sonarrSery: SonarrSery
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `SonarrSery`. May be used by Relay 1."""
+  sonarrSeryEdge(
+    """The method to use when ordering `SonarrSery`."""
+    orderBy: [SonarrSeriesOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SonarrSeriesEdge
+}
+
+"""All input for the create `SonarrSery` mutation."""
+input CreateSonarrSeryInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `SonarrSery` to be created by this mutation."""
+  sonarrSery: SonarrSeryInput!
+}
+
+"""An input for mutations affecting `SonarrSery`"""
+input SonarrSeryInput {
+  id: Int
+  sonarrId: Int!
+  sonarrSlug: String!
+  tvdbid: Int!
+}
+
+"""The output of our update `AnimeMetadatum` mutation."""
+type UpdateAnimeMetadatumPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `AnimeMetadatum` that was updated by this mutation."""
+  animeMetadatum: AnimeMetadatum
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
+  semesterBySemester: Semester
+
+  """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
+  sonarrSeryBySonarrSeries: SonarrSery
+
+  """An edge for our `AnimeMetadatum`. May be used by Relay 1."""
+  animeMetadatumEdge(
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+  ): AnimeMetadataEdge
+}
+
+"""All input for the `updateAnimeMetadatum` mutation."""
+input UpdateAnimeMetadatumInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `AnimeMetadatum` to be updated.
+  """
+  nodeId: ID!
+
+  """
+  An object where the defined keys will be set on the `AnimeMetadatum` being updated.
+  """
+  animeMetadatumPatch: AnimeMetadatumPatch!
+}
+
+"""
+Represents an update to a `AnimeMetadatum`. Fields that are set will be updated.
+"""
+input AnimeMetadatumPatch {
+  id: Int
+
+  """https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld"""
+  uniformName: String
+
+  """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
+  sonarrSeason: Int
+  jellyfinSeasonId: String
+  mikanAnimeId: Int
+  bamgumiId: Int
+  bilibiliMainlandSsid: Int
+  bilibiliThmSsid: Int
+  schedule: JSON
+  semester: Int
+  sonarrSeries: Int
+}
+
+"""All input for the `updateAnimeMetadatumById` mutation."""
+input UpdateAnimeMetadatumByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  An object where the defined keys will be set on the `AnimeMetadatum` being updated.
+  """
+  animeMetadatumPatch: AnimeMetadatumPatch!
+  id: Int!
+}
+
+"""The output of our update `Semester` mutation."""
+type UpdateSemesterPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `Semester` that was updated by this mutation."""
+  semester: Semester
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `Semester`. May be used by Relay 1."""
+  semesterEdge(
+    """The method to use when ordering `Semester`."""
+    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SemestersEdge
+}
+
+"""All input for the `updateSemester` mutation."""
+input UpdateSemesterInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `Semester` to be updated.
+  """
+  nodeId: ID!
+
+  """
+  An object where the defined keys will be set on the `Semester` being updated.
+  """
+  semesterPatch: SemesterPatch!
+}
+
+"""
+Represents an update to a `Semester`. Fields that are set will be updated.
+"""
+input SemesterPatch {
+  id: Int
+  year: Int
+  season: SeasonEnum
+}
+
+"""All input for the `updateSemesterById` mutation."""
+input UpdateSemesterByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  An object where the defined keys will be set on the `Semester` being updated.
+  """
+  semesterPatch: SemesterPatch!
+  id: Int!
+}
+
+"""The output of our update `SonarrSery` mutation."""
+type UpdateSonarrSeryPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `SonarrSery` that was updated by this mutation."""
+  sonarrSery: SonarrSery
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `SonarrSery`. May be used by Relay 1."""
+  sonarrSeryEdge(
+    """The method to use when ordering `SonarrSery`."""
+    orderBy: [SonarrSeriesOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SonarrSeriesEdge
+}
+
+"""All input for the `updateSonarrSery` mutation."""
+input UpdateSonarrSeryInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `SonarrSery` to be updated.
+  """
+  nodeId: ID!
+
+  """
+  An object where the defined keys will be set on the `SonarrSery` being updated.
+  """
+  sonarrSeryPatch: SonarrSeryPatch!
+}
+
+"""
+Represents an update to a `SonarrSery`. Fields that are set will be updated.
+"""
+input SonarrSeryPatch {
+  id: Int
+  sonarrId: Int
+  sonarrSlug: String
+  tvdbid: Int
+}
+
+"""All input for the `updateSonarrSeryById` mutation."""
+input UpdateSonarrSeryByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  An object where the defined keys will be set on the `SonarrSery` being updated.
+  """
+  sonarrSeryPatch: SonarrSeryPatch!
+  id: Int!
+}
+
+"""All input for the `updateSonarrSeryBySonarrId` mutation."""
+input UpdateSonarrSeryBySonarrIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  An object where the defined keys will be set on the `SonarrSery` being updated.
+  """
+  sonarrSeryPatch: SonarrSeryPatch!
+  sonarrId: Int!
+}
+
+"""All input for the `updateSonarrSeryBySonarrSlug` mutation."""
+input UpdateSonarrSeryBySonarrSlugInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  An object where the defined keys will be set on the `SonarrSery` being updated.
+  """
+  sonarrSeryPatch: SonarrSeryPatch!
+  sonarrSlug: String!
+}
+
+"""The output of our delete `AnimeMetadatum` mutation."""
+type DeleteAnimeMetadatumPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `AnimeMetadatum` that was deleted by this mutation."""
+  animeMetadatum: AnimeMetadatum
+  deletedAnimeMetadatumId: ID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
+  semesterBySemester: Semester
+
+  """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
+  sonarrSeryBySonarrSeries: SonarrSery
+
+  """An edge for our `AnimeMetadatum`. May be used by Relay 1."""
+  animeMetadatumEdge(
+    """The method to use when ordering `AnimeMetadatum`."""
+    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
+  ): AnimeMetadataEdge
+}
+
+"""All input for the `deleteAnimeMetadatum` mutation."""
+input DeleteAnimeMetadatumInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `AnimeMetadatum` to be deleted.
+  """
+  nodeId: ID!
+}
+
+"""All input for the `deleteAnimeMetadatumById` mutation."""
+input DeleteAnimeMetadatumByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""The output of our delete `Semester` mutation."""
+type DeleteSemesterPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `Semester` that was deleted by this mutation."""
+  semester: Semester
+  deletedSemesterId: ID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `Semester`. May be used by Relay 1."""
+  semesterEdge(
+    """The method to use when ordering `Semester`."""
+    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SemestersEdge
+}
+
+"""All input for the `deleteSemester` mutation."""
+input DeleteSemesterInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `Semester` to be deleted.
+  """
+  nodeId: ID!
+}
+
+"""All input for the `deleteSemesterById` mutation."""
+input DeleteSemesterByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""The output of our delete `SonarrSery` mutation."""
+type DeleteSonarrSeryPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `SonarrSery` that was deleted by this mutation."""
+  sonarrSery: SonarrSery
+  deletedSonarrSeryId: ID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `SonarrSery`. May be used by Relay 1."""
+  sonarrSeryEdge(
+    """The method to use when ordering `SonarrSery`."""
+    orderBy: [SonarrSeriesOrderBy!] = [PRIMARY_KEY_ASC]
+  ): SonarrSeriesEdge
+}
+
+"""All input for the `deleteSonarrSery` mutation."""
+input DeleteSonarrSeryInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The globally unique `ID` which will identify a single `SonarrSery` to be deleted.
+  """
+  nodeId: ID!
+}
+
+"""All input for the `deleteSonarrSeryById` mutation."""
+input DeleteSonarrSeryByIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""All input for the `deleteSonarrSeryBySonarrId` mutation."""
+input DeleteSonarrSeryBySonarrIdInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  sonarrId: Int!
+}
+
+"""All input for the `deleteSonarrSeryBySonarrSlug` mutation."""
+input DeleteSonarrSeryBySonarrSlugInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  sonarrSlug: String!
+}

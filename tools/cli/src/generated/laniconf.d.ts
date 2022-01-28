@@ -35,6 +35,15 @@ export interface LaniConfig {
       ]
   )[];
   /**
+   * Node.JS app-related settings
+   */
+  node?: {
+    /**
+     * App entrypoint
+     */
+    entry: string;
+  };
+  /**
    * CI-related settings
    */
   ci?: {

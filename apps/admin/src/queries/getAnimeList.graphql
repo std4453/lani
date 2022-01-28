@@ -1,0 +1,41 @@
+query GetAnimeList(
+  $count: Int
+  $offset: Int
+  $orderBy: [AnimeMetadataOrderBy!] = []
+  $filter: AnimeMetadatumFilter
+) {
+  allAnimeMetadata(
+    first: $count
+    offset: $offset
+    orderBy: $orderBy
+    condition: {}
+    filter: $filter
+  ) {
+    pageInfo {
+      hasNextPage
+    }
+    totalCount
+    edges {
+      cursor
+      node {
+        bamgumiId
+        bilibiliMainlandSsid
+        bilibiliThmSsid
+        jellyfinSeasonId
+        mikanAnimeId
+        nodeId
+        semesterBySemester {
+          season
+          year
+        }
+        sonarrSeason
+        sonarrSeryBySonarrSeries {
+          sonarrId
+          sonarrSlug
+          tvdbid
+        }
+        uniformName
+      }
+    }
+  }
+}
