@@ -9,10 +9,6 @@
 			"path": "interfaces/api"
 		},
 		{
-			"name": "🚀 @lani/bilibili-bangumi-cc",
-			"path": "apps/bilibili-bangumi-cc"
-		},
-		{
 			"name": "📦 @lani/framework",
 			"path": "libs/framework"
 		},
@@ -24,9 +20,21 @@
 			"name": "🚚 @lani/kust",
 			"path": "deploy/kust"
 		},
+    {
+			"name": "🚀 @lani/bilibili-bangumi-cc",
+			"path": "apps/bilibili-bangumi-cc"
+		},
 		{
 			"name": "🚀 @lani/admin",
 			"path": "apps/admin"
+		},
+    {
+			"name": "🚀 @lani/data-server",
+			"path": "apps/data-server"
+		},
+    {
+			"name": "🚀 @lani/mikan-sync",
+			"path": "apps/mikan-sync"
 		}
 	],
 	"settings": {
