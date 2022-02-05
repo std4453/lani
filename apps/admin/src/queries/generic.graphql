@@ -1,0 +1,113 @@
+mutation UpdateDownloadConfig(
+  $id: Int!
+  $downloadConfigPatch: DownloadConfigPatch!
+) {
+  updateDownloadConfigById(
+    input: { downloadConfigPatch: $downloadConfigPatch, id: $id }
+  ) {
+    __typename
+  }
+}
+
+mutation NewDownloadConfig($downloadConfig: DownloadConfigInput!) {
+  createDownloadConfig(input: { downloadConfig: $downloadConfig }) {
+    __typename
+  }
+}
+
+query GetSemesterAndSonarrData {
+  allSonarrSeries {
+    edges {
+      node {
+        id
+        sonarrId
+        sonarrSlug
+        tvdbid
+      }
+    }
+  }
+}
+
+query GetAnimeDataById($id: Int!) {
+  animeMetadatumById(id: $id) {
+    bangumiId
+    bilibiliMainlandSsid
+    bilibiliThmSsid
+    id
+    mikanAnimeId
+    nodeId
+    schedule
+    jellyfinSeasonId
+    sonarrSeason
+    sonarrSeries
+    uniformName
+    season
+    year
+  }
+}
+
+query GetDownloadConfigByAnimeid($id: Int!) {
+  allDownloadConfigs(condition: { anime: $id }) {
+    edges {
+      node {
+        anime
+        bangumiId
+        language
+        id
+        pattern
+        publishGroupId
+        quality
+        type
+      }
+    }
+  }
+}
+
+mutation UpdateAnimeData(
+  $animeMetadatumPatch: AnimeMetadatumPatch!
+  $id: Int!
+) {
+  updateAnimeMetadatumById(
+    input: { id: $id, animeMetadatumPatch: $animeMetadatumPatch }
+  ) {
+    __typename
+  }
+}
+
+mutation DeleteDownloadConfigById($id: Int!) {
+  updateDownloadConfigById(
+    input: { downloadConfigPatch: { isArchived: true }, id: $id }
+  ) {
+    __typename
+  }
+}
+
+mutation DeleteAnimeById($id: Int!) {
+  updateAnimeMetadatumById(
+    input: { animeMetadatumPatch: { isArchived: true }, id: $id }
+  ) {
+    __typename
+  }
+}
+
+query GetDownloadConfigById($id: Int!) {
+  downloadConfigById(id: $id) {
+    animeMetadatumByAnime {
+      mikanAnimeId
+    }
+    bangumiId
+    id
+    pattern
+    publishGroupId
+    quality
+    type
+    language
+    isArchived
+  }
+}
+
+mutation CreateDownloadConfig($downloadConfig: DownloadConfigInput!) {
+  createDownloadConfig(input: { downloadConfig: $downloadConfig }) {
+    __typename
+  }
+}

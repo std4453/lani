@@ -1,0 +1,5 @@
+query GetAnimeBangumiId($id: Int!) {
+  animeMetadatumById(id: $id) {
+    mikanAnimeId
+  }
+}

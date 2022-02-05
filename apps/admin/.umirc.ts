@@ -22,6 +22,11 @@ export default defineConfig({
           component: '@/pages/metadata',
           name: '元数据',
         },
+        {
+          path: '/details/:id',
+          exact: true,
+          component: '@/pages/details',
+        },
       ],
     },
   ],

@@ -475,10 +475,6 @@
     {
       "packageName": "@lani/data-server",
       "projectFolder": "apps/data-server"
-    },
-    {
-      "packageName": "@lani/schema",
-      "projectFolder": "interfaces/schema"
     }
   ]
 }

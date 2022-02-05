@@ -18,23 +18,22 @@ query GetAnimeList(
     edges {
       cursor
       node {
-        bamgumiId
+        bangumiId
         bilibiliMainlandSsid
         bilibiliThmSsid
         jellyfinSeasonId
         mikanAnimeId
-        nodeId
-        semesterBySemester {
-          season
-          year
-        }
+        id
         sonarrSeason
+
         sonarrSeryBySonarrSeries {
           sonarrId
           sonarrSlug
           tvdbid
         }
         uniformName
+        season
+        year
       }
     }
   }

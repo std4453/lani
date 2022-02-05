@@ -5,20 +5,12 @@
 			"path": "."
 		},
 		{
-			"name": "🔗 @lani/schema",
-			"path": "interfaces/schema"
-		},
-		{
 			"name": "🔗 @lani/api",
 			"path": "interfaces/api"
 		},
 		{
 			"name": "🚀 @lani/bilibili-bangumi-cc",
 			"path": "apps/bilibili-bangumi-cc"
-		},
-		{
-			"name": "🚀 @lani/anime-metadata-server",
-			"path": "apps/anime-metadata-server"
 		},
 		{
 			"name": "📦 @lani/framework",
