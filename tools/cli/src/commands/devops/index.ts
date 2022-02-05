@@ -71,7 +71,8 @@ export default class Devops extends Command {
     }
 
     // tracking would be like origin/master, we won't need origin/ here
-    const ref = tracking.substring(tracking.lastIndexOf("/") + 1);
+    // note that we use "/" in branch names so only exclude first part
+    const ref = tracking.substring(tracking.indexOf("/") + 1);
 
     if (ahead !== 0 || behind !== 0) {
       if (noAutoPush) {
