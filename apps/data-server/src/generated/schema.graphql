@@ -46,13 +46,18 @@ type Query implements Node {
     condition: AnimeMetadatumCondition
 
     """
+    Indicates whether archived items should be included in the results or not.
+    """
+    includeArchived: IncludeArchivedOption = NO
+
+    """
     A filter to be used in determining which values should be returned by the collection.
     """
     filter: AnimeMetadatumFilter
   ): AnimeMetadataConnection
 
-  """Reads and enables pagination through a set of `Semester`."""
-  allSemesters(
+  """Reads and enables pagination through a set of `DownloadConfig`."""
+  allDownloadConfigs(
     """Only read the first `n` values of the set."""
     first: Int
 
@@ -71,19 +76,24 @@ type Query implements Node {
     """Read all values in the set after (below) this cursor."""
     after: Cursor
 
-    """The method to use when ordering `Semester`."""
-    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
+    """The method to use when ordering `DownloadConfig`."""
+    orderBy: [DownloadConfigsOrderBy!] = [PRIMARY_KEY_ASC]
 
     """
     A condition to be used in determining which values should be returned by the collection.
     """
-    condition: SemesterCondition
+    condition: DownloadConfigCondition
+
+    """
+    Indicates whether archived items should be included in the results or not.
+    """
+    includeArchived: IncludeArchivedOption = NO
 
     """
     A filter to be used in determining which values should be returned by the collection.
     """
-    filter: SemesterFilter
-  ): SemestersConnection
+    filter: DownloadConfigFilter
+  ): DownloadConfigsConnection
 
   """Reads and enables pagination through a set of `SonarrSery`."""
   allSonarrSeries(
@@ -114,12 +124,17 @@ type Query implements Node {
     condition: SonarrSeryCondition
 
     """
+    Indicates whether archived items should be included in the results or not.
+    """
+    includeArchived: IncludeArchivedOption = NO
+
+    """
     A filter to be used in determining which values should be returned by the collection.
     """
     filter: SonarrSeryFilter
   ): SonarrSeriesConnection
   animeMetadatumById(id: Int!): AnimeMetadatum
-  semesterById(id: Int!): Semester
+  downloadConfigById(id: Int!): DownloadConfig
   sonarrSeryById(id: Int!): SonarrSery
   sonarrSeryBySonarrId(sonarrId: Int!): SonarrSery
   sonarrSeryBySonarrSlug(sonarrSlug: String!): SonarrSery
@@ -132,11 +147,13 @@ type Query implements Node {
     nodeId: ID!
   ): AnimeMetadatum
 
-  """Reads a single `Semester` using its globally unique `ID`."""
-  semester(
-    """The globally unique `ID` to be used in selecting a single `Semester`."""
+  """Reads a single `DownloadConfig` using its globally unique `ID`."""
+  downloadConfig(
+    """
+    The globally unique `ID` to be used in selecting a single `DownloadConfig`.
+    """
     nodeId: ID!
-  ): Semester
+  ): DownloadConfig
 
   """Reads a single `SonarrSery` using its globally unique `ID`."""
   sonarrSery(
@@ -184,38 +201,85 @@ type AnimeMetadatum implements Node {
 
   """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
   sonarrSeason: Int
-  jellyfinSeasonId: String
-  mikanAnimeId: Int
-  bamgumiId: Int
-  bilibiliMainlandSsid: Int
-  bilibiliThmSsid: Int
+  jellyfinSeasonId: String!
   schedule: JSON
-  semester: Int
   sonarrSeries: Int
-
-  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
-  semesterBySemester: Semester
+  mikanAnimeId: String!
+  bangumiId: String!
+  bilibiliMainlandSsid: String!
+  bilibiliThmSsid: String!
+  isArchived: Boolean!
+  season: SeasonEnum
+  year: Int
 
   """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
   sonarrSeryBySonarrSeries: SonarrSery
+
+  """Reads and enables pagination through a set of `DownloadConfig`."""
+  downloadConfigsByAnime(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `DownloadConfig`."""
+    orderBy: [DownloadConfigsOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: DownloadConfigCondition
+
+    """
+    Indicates whether archived items should be included in the results or not.
+    """
+    includeArchived: IncludeArchivedOption = INHERIT
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    filter: DownloadConfigFilter
+  ): DownloadConfigsConnection!
 }
 
 """
-A JavaScript object encoded in the JSON format as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSON
 
-type Semester implements Node {
+enum SeasonEnum {
+  SPRING
+  SUMMER
+  AUTUMN
+  WINTER
+}
+
+type SonarrSery implements Node {
   """
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
   """
   nodeId: ID!
   id: Int!
-  year: Int!
-  season: SeasonEnum!
+  sonarrId: Int!
+  sonarrSlug: String!
+  tvdbid: Int!
+  isArchived: Boolean!
 
   """Reads and enables pagination through a set of `AnimeMetadatum`."""
-  animeMetadataBySemester(
+  animeMetadataBySonarrSeries(
     """Only read the first `n` values of the set."""
     first: Int
 
@@ -243,17 +307,15 @@ type Semester implements Node {
     condition: AnimeMetadatumCondition
 
     """
+    Indicates whether archived items should be included in the results or not.
+    """
+    includeArchived: IncludeArchivedOption = INHERIT
+
+    """
     A filter to be used in determining which values should be returned by the collection.
     """
     filter: AnimeMetadatumFilter
   ): AnimeMetadataConnection!
-}
-
-enum SeasonEnum {
-  SPRING
-  SUMMER
-  AUTUMN
-  WINTER
 }
 
 """A location in a connection that can be used for resuming pagination."""
@@ -270,20 +332,24 @@ enum AnimeMetadataOrderBy {
   SONARR_SEASON_DESC
   JELLYFIN_SEASON_ID_ASC
   JELLYFIN_SEASON_ID_DESC
+  SCHEDULE_ASC
+  SCHEDULE_DESC
+  SONARR_SERIES_ASC
+  SONARR_SERIES_DESC
   MIKAN_ANIME_ID_ASC
   MIKAN_ANIME_ID_DESC
-  BAMGUMI_ID_ASC
-  BAMGUMI_ID_DESC
+  BANGUMI_ID_ASC
+  BANGUMI_ID_DESC
   BILIBILI_MAINLAND_SSID_ASC
   BILIBILI_MAINLAND_SSID_DESC
   BILIBILI_THM_SSID_ASC
   BILIBILI_THM_SSID_DESC
-  SCHEDULE_ASC
-  SCHEDULE_DESC
-  SEMESTER_ASC
-  SEMESTER_DESC
-  SONARR_SERIES_ASC
-  SONARR_SERIES_DESC
+  IS_ARCHIVED_ASC
+  IS_ARCHIVED_DESC
+  SEASON_ASC
+  SEASON_DESC
+  YEAR_ASC
+  YEAR_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
@@ -305,26 +371,51 @@ input AnimeMetadatumCondition {
   """Checks for equality with the object’s `jellyfinSeasonId` field."""
   jellyfinSeasonId: String
 
-  """Checks for equality with the object’s `mikanAnimeId` field."""
-  mikanAnimeId: Int
-
-  """Checks for equality with the object’s `bamgumiId` field."""
-  bamgumiId: Int
-
-  """Checks for equality with the object’s `bilibiliMainlandSsid` field."""
-  bilibiliMainlandSsid: Int
-
-  """Checks for equality with the object’s `bilibiliThmSsid` field."""
-  bilibiliThmSsid: Int
-
   """Checks for equality with the object’s `schedule` field."""
   schedule: JSON
 
-  """Checks for equality with the object’s `semester` field."""
-  semester: Int
-
   """Checks for equality with the object’s `sonarrSeries` field."""
   sonarrSeries: Int
+
+  """Checks for equality with the object’s `mikanAnimeId` field."""
+  mikanAnimeId: String
+
+  """Checks for equality with the object’s `bangumiId` field."""
+  bangumiId: String
+
+  """Checks for equality with the object’s `bilibiliMainlandSsid` field."""
+  bilibiliMainlandSsid: String
+
+  """Checks for equality with the object’s `bilibiliThmSsid` field."""
+  bilibiliThmSsid: String
+
+  """Checks for equality with the object’s `isArchived` field."""
+  isArchived: Boolean
+
+  """Checks for equality with the object’s `season` field."""
+  season: SeasonEnum
+
+  """Checks for equality with the object’s `year` field."""
+  year: Int
+}
+
+"""
+Indicates whether archived items should be included in the results or not.
+"""
+enum IncludeArchivedOption {
+  """Exclude archived items."""
+  NO
+
+  """Include archived items."""
+  YES
+
+  """Only include archived items (i.e. exclude non-archived items)."""
+  EXCLUSIVELY
+
+  """
+  If there is a parent GraphQL record and it is archived then this is equivalent to YES, in all other cases this is equivalent to NO.
+  """
+  INHERIT
 }
 
 """
@@ -343,23 +434,29 @@ input AnimeMetadatumFilter {
   """Filter by the object’s `jellyfinSeasonId` field."""
   jellyfinSeasonId: StringFilter
 
-  """Filter by the object’s `mikanAnimeId` field."""
-  mikanAnimeId: IntFilter
-
-  """Filter by the object’s `bamgumiId` field."""
-  bamgumiId: IntFilter
-
-  """Filter by the object’s `bilibiliMainlandSsid` field."""
-  bilibiliMainlandSsid: IntFilter
-
-  """Filter by the object’s `bilibiliThmSsid` field."""
-  bilibiliThmSsid: IntFilter
-
-  """Filter by the object’s `semester` field."""
-  semester: IntFilter
-
   """Filter by the object’s `sonarrSeries` field."""
   sonarrSeries: IntFilter
+
+  """Filter by the object’s `mikanAnimeId` field."""
+  mikanAnimeId: StringFilter
+
+  """Filter by the object’s `bangumiId` field."""
+  bangumiId: StringFilter
+
+  """Filter by the object’s `bilibiliMainlandSsid` field."""
+  bilibiliMainlandSsid: StringFilter
+
+  """Filter by the object’s `bilibiliThmSsid` field."""
+  bilibiliThmSsid: StringFilter
+
+  """Filter by the object’s `isArchived` field."""
+  isArchived: BooleanFilter
+
+  """Filter by the object’s `season` field."""
+  season: SeasonEnumFilter
+
+  """Filter by the object’s `year` field."""
+  year: IntFilter
 
   """Checks for all expressions in this list."""
   and: [AnimeMetadatumFilter!]
@@ -545,150 +642,46 @@ input StringFilter {
   greaterThanOrEqualToInsensitive: String
 }
 
-type SonarrSery implements Node {
+"""
+A filter to be used against Boolean fields. All fields are combined with a logical ‘and.’
+"""
+input BooleanFilter {
   """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  Is null (if `true` is specified) or is not null (if `false` is specified).
   """
-  nodeId: ID!
-  id: Int!
-  sonarrId: Int!
-  sonarrSlug: String!
-  tvdbid: Int!
+  isNull: Boolean
 
-  """Reads and enables pagination through a set of `AnimeMetadatum`."""
-  animeMetadataBySonarrSeries(
-    """Only read the first `n` values of the set."""
-    first: Int
+  """Equal to the specified value."""
+  equalTo: Boolean
 
-    """Only read the last `n` values of the set."""
-    last: Int
-
-    """
-    Skip the first `n` values from our `after` cursor, an alternative to cursor
-    based pagination. May not be used with `last`.
-    """
-    offset: Int
-
-    """Read all values in the set before (above) this cursor."""
-    before: Cursor
-
-    """Read all values in the set after (below) this cursor."""
-    after: Cursor
-
-    """The method to use when ordering `AnimeMetadatum`."""
-    orderBy: [AnimeMetadataOrderBy!] = [PRIMARY_KEY_ASC]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: AnimeMetadatumCondition
-
-    """
-    A filter to be used in determining which values should be returned by the collection.
-    """
-    filter: AnimeMetadatumFilter
-  ): AnimeMetadataConnection!
-}
-
-"""A `AnimeMetadatum` edge in the connection."""
-type AnimeMetadataEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
-
-  """The `AnimeMetadatum` at the end of the edge."""
-  node: AnimeMetadatum
-}
-
-"""Information about pagination in a connection."""
-type PageInfo {
-  """When paginating forwards, are there more items?"""
-  hasNextPage: Boolean!
-
-  """When paginating backwards, are there more items?"""
-  hasPreviousPage: Boolean!
-
-  """When paginating backwards, the cursor to continue."""
-  startCursor: Cursor
-
-  """When paginating forwards, the cursor to continue."""
-  endCursor: Cursor
-}
-
-"""A connection to a list of `Semester` values."""
-type SemestersConnection {
-  """A list of `Semester` objects."""
-  nodes: [Semester]!
+  """Not equal to the specified value."""
+  notEqualTo: Boolean
 
   """
-  A list of edges which contains the `Semester` and cursor to aid in pagination.
+  Not equal to the specified value, treating null like an ordinary value.
   """
-  edges: [SemestersEdge!]!
+  distinctFrom: Boolean
 
-  """Information to aid in pagination."""
-  pageInfo: PageInfo!
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Boolean
 
-  """The count of *all* `Semester` you could get from the connection."""
-  totalCount: Int!
-}
+  """Included in the specified list."""
+  in: [Boolean!]
 
-"""A `Semester` edge in the connection."""
-type SemestersEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
+  """Not included in the specified list."""
+  notIn: [Boolean!]
 
-  """The `Semester` at the end of the edge."""
-  node: Semester
-}
+  """Less than the specified value."""
+  lessThan: Boolean
 
-"""Methods to use when ordering `Semester`."""
-enum SemestersOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  YEAR_ASC
-  YEAR_DESC
-  SEASON_ASC
-  SEASON_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Boolean
 
-"""
-A condition to be used against `Semester` object types. All fields are tested
-for equality and combined with a logical ‘and.’
-"""
-input SemesterCondition {
-  """Checks for equality with the object’s `id` field."""
-  id: Int
+  """Greater than the specified value."""
+  greaterThan: Boolean
 
-  """Checks for equality with the object’s `year` field."""
-  year: Int
-
-  """Checks for equality with the object’s `season` field."""
-  season: SeasonEnum
-}
-
-"""
-A filter to be used against `Semester` object types. All fields are combined with a logical ‘and.’
-"""
-input SemesterFilter {
-  """Filter by the object’s `id` field."""
-  id: IntFilter
-
-  """Filter by the object’s `year` field."""
-  year: IntFilter
-
-  """Filter by the object’s `season` field."""
-  season: SeasonEnumFilter
-
-  """Checks for all expressions in this list."""
-  and: [SemesterFilter!]
-
-  """Checks for any expressions in this list."""
-  or: [SemesterFilter!]
-
-  """Negates the expression."""
-  not: SemesterFilter
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Boolean
 }
 
 """
@@ -733,6 +726,180 @@ input SeasonEnumFilter {
   greaterThanOrEqualTo: SeasonEnum
 }
 
+"""A connection to a list of `DownloadConfig` values."""
+type DownloadConfigsConnection {
+  """A list of `DownloadConfig` objects."""
+  nodes: [DownloadConfig]!
+
+  """
+  A list of edges which contains the `DownloadConfig` and cursor to aid in pagination.
+  """
+  edges: [DownloadConfigsEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `DownloadConfig` you could get from the connection."""
+  totalCount: Int!
+}
+
+type DownloadConfig implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  anime: Int!
+  pattern: String!
+  language: String!
+  quality: Int!
+  type: String!
+
+  """mikan anime publish group id"""
+  publishGroupId: String!
+
+  """mikan anime bangumi ID"""
+  bangumiId: String!
+  isArchived: Boolean!
+
+  """
+  Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`.
+  """
+  animeMetadatumByAnime: AnimeMetadatum
+}
+
+"""A `DownloadConfig` edge in the connection."""
+type DownloadConfigsEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `DownloadConfig` at the end of the edge."""
+  node: DownloadConfig
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+
+"""Methods to use when ordering `DownloadConfig`."""
+enum DownloadConfigsOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  ANIME_ASC
+  ANIME_DESC
+  PATTERN_ASC
+  PATTERN_DESC
+  LANGUAGE_ASC
+  LANGUAGE_DESC
+  QUALITY_ASC
+  QUALITY_DESC
+  TYPE_ASC
+  TYPE_DESC
+  PUBLISH_GROUP_ID_ASC
+  PUBLISH_GROUP_ID_DESC
+  BANGUMI_ID_ASC
+  BANGUMI_ID_DESC
+  IS_ARCHIVED_ASC
+  IS_ARCHIVED_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `DownloadConfig` object types. All fields are
+tested for equality and combined with a logical ‘and.’
+"""
+input DownloadConfigCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `anime` field."""
+  anime: Int
+
+  """Checks for equality with the object’s `pattern` field."""
+  pattern: String
+
+  """Checks for equality with the object’s `language` field."""
+  language: String
+
+  """Checks for equality with the object’s `quality` field."""
+  quality: Int
+
+  """Checks for equality with the object’s `type` field."""
+  type: String
+
+  """Checks for equality with the object’s `publishGroupId` field."""
+  publishGroupId: String
+
+  """Checks for equality with the object’s `bangumiId` field."""
+  bangumiId: String
+
+  """Checks for equality with the object’s `isArchived` field."""
+  isArchived: Boolean
+}
+
+"""
+A filter to be used against `DownloadConfig` object types. All fields are combined with a logical ‘and.’
+"""
+input DownloadConfigFilter {
+  """Filter by the object’s `id` field."""
+  id: IntFilter
+
+  """Filter by the object’s `anime` field."""
+  anime: IntFilter
+
+  """Filter by the object’s `pattern` field."""
+  pattern: StringFilter
+
+  """Filter by the object’s `language` field."""
+  language: StringFilter
+
+  """Filter by the object’s `quality` field."""
+  quality: IntFilter
+
+  """Filter by the object’s `type` field."""
+  type: StringFilter
+
+  """Filter by the object’s `publishGroupId` field."""
+  publishGroupId: StringFilter
+
+  """Filter by the object’s `bangumiId` field."""
+  bangumiId: StringFilter
+
+  """Filter by the object’s `isArchived` field."""
+  isArchived: BooleanFilter
+
+  """Checks for all expressions in this list."""
+  and: [DownloadConfigFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [DownloadConfigFilter!]
+
+  """Negates the expression."""
+  not: DownloadConfigFilter
+}
+
+"""A `AnimeMetadatum` edge in the connection."""
+type AnimeMetadataEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `AnimeMetadatum` at the end of the edge."""
+  node: AnimeMetadatum
+}
+
 """A connection to a list of `SonarrSery` values."""
 type SonarrSeriesConnection {
   """A list of `SonarrSery` objects."""
@@ -770,6 +937,8 @@ enum SonarrSeriesOrderBy {
   SONARR_SLUG_DESC
   TVDBID_ASC
   TVDBID_DESC
+  IS_ARCHIVED_ASC
+  IS_ARCHIVED_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
@@ -790,6 +959,9 @@ input SonarrSeryCondition {
 
   """Checks for equality with the object’s `tvdbid` field."""
   tvdbid: Int
+
+  """Checks for equality with the object’s `isArchived` field."""
+  isArchived: Boolean
 }
 
 """
@@ -807,6 +979,9 @@ input SonarrSeryFilter {
 
   """Filter by the object’s `tvdbid` field."""
   tvdbid: IntFilter
+
+  """Filter by the object’s `isArchived` field."""
+  isArchived: BooleanFilter
 
   """Checks for all expressions in this list."""
   and: [SonarrSeryFilter!]
@@ -830,13 +1005,13 @@ type Mutation {
     input: CreateAnimeMetadatumInput!
   ): CreateAnimeMetadatumPayload
 
-  """Creates a single `Semester`."""
-  createSemester(
+  """Creates a single `DownloadConfig`."""
+  createDownloadConfig(
     """
     The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
     """
-    input: CreateSemesterInput!
-  ): CreateSemesterPayload
+    input: CreateDownloadConfigInput!
+  ): CreateDownloadConfigPayload
 
   """Creates a single `SonarrSery`."""
   createSonarrSery(
@@ -864,21 +1039,23 @@ type Mutation {
     input: UpdateAnimeMetadatumByIdInput!
   ): UpdateAnimeMetadatumPayload
 
-  """Updates a single `Semester` using its globally unique id and a patch."""
-  updateSemester(
+  """
+  Updates a single `DownloadConfig` using its globally unique id and a patch.
+  """
+  updateDownloadConfig(
     """
     The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
     """
-    input: UpdateSemesterInput!
-  ): UpdateSemesterPayload
+    input: UpdateDownloadConfigInput!
+  ): UpdateDownloadConfigPayload
 
-  """Updates a single `Semester` using a unique key and a patch."""
-  updateSemesterById(
+  """Updates a single `DownloadConfig` using a unique key and a patch."""
+  updateDownloadConfigById(
     """
     The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
     """
-    input: UpdateSemesterByIdInput!
-  ): UpdateSemesterPayload
+    input: UpdateDownloadConfigByIdInput!
+  ): UpdateDownloadConfigPayload
 
   """
   Updates a single `SonarrSery` using its globally unique id and a patch.
@@ -930,21 +1107,21 @@ type Mutation {
     input: DeleteAnimeMetadatumByIdInput!
   ): DeleteAnimeMetadatumPayload
 
-  """Deletes a single `Semester` using its globally unique id."""
-  deleteSemester(
+  """Deletes a single `DownloadConfig` using its globally unique id."""
+  deleteDownloadConfig(
     """
     The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
     """
-    input: DeleteSemesterInput!
-  ): DeleteSemesterPayload
+    input: DeleteDownloadConfigInput!
+  ): DeleteDownloadConfigPayload
 
-  """Deletes a single `Semester` using a unique key."""
-  deleteSemesterById(
+  """Deletes a single `DownloadConfig` using a unique key."""
+  deleteDownloadConfigById(
     """
     The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
     """
-    input: DeleteSemesterByIdInput!
-  ): DeleteSemesterPayload
+    input: DeleteDownloadConfigByIdInput!
+  ): DeleteDownloadConfigPayload
 
   """Deletes a single `SonarrSery` using its globally unique id."""
   deleteSonarrSery(
@@ -995,9 +1172,6 @@ type CreateAnimeMetadatumPayload {
   """
   query: Query
 
-  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
-  semesterBySemester: Semester
-
   """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
   sonarrSeryBySonarrSeries: SonarrSery
 
@@ -1030,55 +1204,72 @@ input AnimeMetadatumInput {
   """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
   sonarrSeason: Int
   jellyfinSeasonId: String
-  mikanAnimeId: Int
-  bamgumiId: Int
-  bilibiliMainlandSsid: Int
-  bilibiliThmSsid: Int
   schedule: JSON
-  semester: Int
   sonarrSeries: Int
+  mikanAnimeId: String
+  bangumiId: String
+  bilibiliMainlandSsid: String
+  bilibiliThmSsid: String
+  isArchived: Boolean
+  season: SeasonEnum
+  year: Int
 }
 
-"""The output of our create `Semester` mutation."""
-type CreateSemesterPayload {
+"""The output of our create `DownloadConfig` mutation."""
+type CreateDownloadConfigPayload {
   """
   The exact same `clientMutationId` that was provided in the mutation input,
   unchanged and unused. May be used by a client to track mutations.
   """
   clientMutationId: String
 
-  """The `Semester` that was created by this mutation."""
-  semester: Semester
+  """The `DownloadConfig` that was created by this mutation."""
+  downloadConfig: DownloadConfig
 
   """
   Our root query field type. Allows us to run any query from our mutation payload.
   """
   query: Query
 
-  """An edge for our `Semester`. May be used by Relay 1."""
-  semesterEdge(
-    """The method to use when ordering `Semester`."""
-    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
-  ): SemestersEdge
+  """
+  Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`.
+  """
+  animeMetadatumByAnime: AnimeMetadatum
+
+  """An edge for our `DownloadConfig`. May be used by Relay 1."""
+  downloadConfigEdge(
+    """The method to use when ordering `DownloadConfig`."""
+    orderBy: [DownloadConfigsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): DownloadConfigsEdge
 }
 
-"""All input for the create `Semester` mutation."""
-input CreateSemesterInput {
+"""All input for the create `DownloadConfig` mutation."""
+input CreateDownloadConfigInput {
   """
   An arbitrary string value with no semantic meaning. Will be included in the
   payload verbatim. May be used to track mutations by the client.
   """
   clientMutationId: String
 
-  """The `Semester` to be created by this mutation."""
-  semester: SemesterInput!
+  """The `DownloadConfig` to be created by this mutation."""
+  downloadConfig: DownloadConfigInput!
 }
 
-"""An input for mutations affecting `Semester`"""
-input SemesterInput {
+"""An input for mutations affecting `DownloadConfig`"""
+input DownloadConfigInput {
   id: Int
-  year: Int!
-  season: SeasonEnum!
+  anime: Int!
+  pattern: String
+  language: String!
+  quality: Int!
+  type: String
+
+  """mikan anime publish group id"""
+  publishGroupId: String
+
+  """mikan anime bangumi ID"""
+  bangumiId: String
+  isArchived: Boolean
 }
 
 """The output of our create `SonarrSery` mutation."""
@@ -1122,6 +1313,7 @@ input SonarrSeryInput {
   sonarrId: Int!
   sonarrSlug: String!
   tvdbid: Int!
+  isArchived: Boolean
 }
 
 """The output of our update `AnimeMetadatum` mutation."""
@@ -1139,9 +1331,6 @@ type UpdateAnimeMetadatumPayload {
   Our root query field type. Allows us to run any query from our mutation payload.
   """
   query: Query
-
-  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
-  semesterBySemester: Semester
 
   """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
   sonarrSeryBySonarrSeries: SonarrSery
@@ -1184,13 +1373,15 @@ input AnimeMetadatumPatch {
   """sonarr seasonNumber, usually 1-based, 0 is used for OAD"""
   sonarrSeason: Int
   jellyfinSeasonId: String
-  mikanAnimeId: Int
-  bamgumiId: Int
-  bilibiliMainlandSsid: Int
-  bilibiliThmSsid: Int
   schedule: JSON
-  semester: Int
   sonarrSeries: Int
+  mikanAnimeId: String
+  bangumiId: String
+  bilibiliMainlandSsid: String
+  bilibiliThmSsid: String
+  isArchived: Boolean
+  season: SeasonEnum
+  year: Int
 }
 
 """All input for the `updateAnimeMetadatumById` mutation."""
@@ -1208,31 +1399,36 @@ input UpdateAnimeMetadatumByIdInput {
   id: Int!
 }
 
-"""The output of our update `Semester` mutation."""
-type UpdateSemesterPayload {
+"""The output of our update `DownloadConfig` mutation."""
+type UpdateDownloadConfigPayload {
   """
   The exact same `clientMutationId` that was provided in the mutation input,
   unchanged and unused. May be used by a client to track mutations.
   """
   clientMutationId: String
 
-  """The `Semester` that was updated by this mutation."""
-  semester: Semester
+  """The `DownloadConfig` that was updated by this mutation."""
+  downloadConfig: DownloadConfig
 
   """
   Our root query field type. Allows us to run any query from our mutation payload.
   """
   query: Query
 
-  """An edge for our `Semester`. May be used by Relay 1."""
-  semesterEdge(
-    """The method to use when ordering `Semester`."""
-    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
-  ): SemestersEdge
+  """
+  Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`.
+  """
+  animeMetadatumByAnime: AnimeMetadatum
+
+  """An edge for our `DownloadConfig`. May be used by Relay 1."""
+  downloadConfigEdge(
+    """The method to use when ordering `DownloadConfig`."""
+    orderBy: [DownloadConfigsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): DownloadConfigsEdge
 }
 
-"""All input for the `updateSemester` mutation."""
-input UpdateSemesterInput {
+"""All input for the `updateDownloadConfig` mutation."""
+input UpdateDownloadConfigInput {
   """
   An arbitrary string value with no semantic meaning. Will be included in the
   payload verbatim. May be used to track mutations by the client.
@@ -1240,27 +1436,37 @@ input UpdateSemesterInput {
   clientMutationId: String
 
   """
-  The globally unique `ID` which will identify a single `Semester` to be updated.
+  The globally unique `ID` which will identify a single `DownloadConfig` to be updated.
   """
   nodeId: ID!
 
   """
-  An object where the defined keys will be set on the `Semester` being updated.
+  An object where the defined keys will be set on the `DownloadConfig` being updated.
   """
-  semesterPatch: SemesterPatch!
+  downloadConfigPatch: DownloadConfigPatch!
 }
 
 """
-Represents an update to a `Semester`. Fields that are set will be updated.
+Represents an update to a `DownloadConfig`. Fields that are set will be updated.
 """
-input SemesterPatch {
+input DownloadConfigPatch {
   id: Int
-  year: Int
-  season: SeasonEnum
+  anime: Int
+  pattern: String
+  language: String
+  quality: Int
+  type: String
+
+  """mikan anime publish group id"""
+  publishGroupId: String
+
+  """mikan anime bangumi ID"""
+  bangumiId: String
+  isArchived: Boolean
 }
 
-"""All input for the `updateSemesterById` mutation."""
-input UpdateSemesterByIdInput {
+"""All input for the `updateDownloadConfigById` mutation."""
+input UpdateDownloadConfigByIdInput {
   """
   An arbitrary string value with no semantic meaning. Will be included in the
   payload verbatim. May be used to track mutations by the client.
@@ -1268,9 +1474,9 @@ input UpdateSemesterByIdInput {
   clientMutationId: String
 
   """
-  An object where the defined keys will be set on the `Semester` being updated.
+  An object where the defined keys will be set on the `DownloadConfig` being updated.
   """
-  semesterPatch: SemesterPatch!
+  downloadConfigPatch: DownloadConfigPatch!
   id: Int!
 }
 
@@ -1324,6 +1530,7 @@ input SonarrSeryPatch {
   sonarrId: Int
   sonarrSlug: String
   tvdbid: Int
+  isArchived: Boolean
 }
 
 """All input for the `updateSonarrSeryById` mutation."""
@@ -1388,9 +1595,6 @@ type DeleteAnimeMetadatumPayload {
   """
   query: Query
 
-  """Reads a single `Semester` that is related to this `AnimeMetadatum`."""
-  semesterBySemester: Semester
-
   """Reads a single `SonarrSery` that is related to this `AnimeMetadatum`."""
   sonarrSeryBySonarrSeries: SonarrSery
 
@@ -1425,32 +1629,37 @@ input DeleteAnimeMetadatumByIdInput {
   id: Int!
 }
 
-"""The output of our delete `Semester` mutation."""
-type DeleteSemesterPayload {
+"""The output of our delete `DownloadConfig` mutation."""
+type DeleteDownloadConfigPayload {
   """
   The exact same `clientMutationId` that was provided in the mutation input,
   unchanged and unused. May be used by a client to track mutations.
   """
   clientMutationId: String
 
-  """The `Semester` that was deleted by this mutation."""
-  semester: Semester
-  deletedSemesterId: ID
+  """The `DownloadConfig` that was deleted by this mutation."""
+  downloadConfig: DownloadConfig
+  deletedDownloadConfigId: ID
 
   """
   Our root query field type. Allows us to run any query from our mutation payload.
   """
   query: Query
 
-  """An edge for our `Semester`. May be used by Relay 1."""
-  semesterEdge(
-    """The method to use when ordering `Semester`."""
-    orderBy: [SemestersOrderBy!] = [PRIMARY_KEY_ASC]
-  ): SemestersEdge
+  """
+  Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`.
+  """
+  animeMetadatumByAnime: AnimeMetadatum
+
+  """An edge for our `DownloadConfig`. May be used by Relay 1."""
+  downloadConfigEdge(
+    """The method to use when ordering `DownloadConfig`."""
+    orderBy: [DownloadConfigsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): DownloadConfigsEdge
 }
 
-"""All input for the `deleteSemester` mutation."""
-input DeleteSemesterInput {
+"""All input for the `deleteDownloadConfig` mutation."""
+input DeleteDownloadConfigInput {
   """
   An arbitrary string value with no semantic meaning. Will be included in the
   payload verbatim. May be used to track mutations by the client.
@@ -1458,13 +1667,13 @@ input DeleteSemesterInput {
   clientMutationId: String
 
   """
-  The globally unique `ID` which will identify a single `Semester` to be deleted.
+  The globally unique `ID` which will identify a single `DownloadConfig` to be deleted.
   """
   nodeId: ID!
 }
 
-"""All input for the `deleteSemesterById` mutation."""
-input DeleteSemesterByIdInput {
+"""All input for the `deleteDownloadConfigById` mutation."""
+input DeleteDownloadConfigByIdInput {
   """
   An arbitrary string value with no semantic meaning. Will be included in the
   payload verbatim. May be used to track mutations by the client.

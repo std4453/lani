@@ -8,7 +8,7 @@ export default mergeConfig({})<{
 }>({
   dev: {
     postgresUrl:
-      "postgres://postgraphile:3KS0n*TXW4!VYYC!%24gFc25mM@10.43.222.73:5432/lani",
+      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@10.43.222.73:5432/lani",
     postgraphile: {
       subscriptions: true,
       dynamicJson: true,
@@ -21,6 +21,8 @@ export default mergeConfig({})<{
       allowExplain: true,
       enableQueryBatching: true,
       legacyRelations: "omit",
+      watchPg: true,
+      exportGqlSchemaPath: "./src/generated/schema.graphql"
     },
   },
   prod: {
