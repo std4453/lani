@@ -27,6 +27,8 @@ specifiers:
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
+  '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
+  '@rushstack/eslint-config': ~2.5.1
   '@types/history': 2.0.45
   '@types/koa': ~2.13.4
   '@types/koa-bodyparser': ~4.3.5
@@ -36,24 +38,20 @@ specifiers:
   '@types/node': ~17.0.4
   '@types/react': ~17.0.38
   '@types/react-dom': ^17.0.0
-  '@typescript-eslint/eslint-plugin': ~5.10.2
-  '@typescript-eslint/parser': ~5.10.2
-  '@umijs/fabric': ~2.10.1
   '@umijs/preset-react': 1.x
   '@umijs/route-utils': ~2.0.4
+  '@urql/core': ~2.4.1
   ahooks: ~3.1.9
   antd: ~4.18.4
   axios: ~0.24.0
   cls-rtracer: ~2.6.0
   clsx: ~1.1.1
   cos-nodejs-sdk-v5: ~2.11.6
+  dayjs: ~1.10.7
   eslint: ^7.32.0
   eslint-config-oclif: ^4
   eslint-config-oclif-typescript: ^1.0.2
-  eslint-config-prettier: ~8.3.0
-  eslint-plugin-jest: ~26.0.0
-  eslint-plugin-react: ~7.28.0
-  eslint-plugin-unicorn: ~40.1.0
+  eslint-plugin-react-hooks: ~4.3.0
   execa: ~6
   fp-ts: ~2.11.5
   globby: ^11
@@ -68,6 +66,7 @@ specifiers:
   koa-logger: ~3.2.1
   koa-router: ~10.1.1
   lodash: ~4.17.21
+  moment-timezone: ~0.5.34
   nodemon: ~2.0.15
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
@@ -86,6 +85,7 @@ specifiers:
   typescript: ~4.5.4
   typescript-transform-paths: ~3.3.1
   umi: ^3.5.20
+  xml2js: ~0.4.23
 
 dependencies:
   '@ant-design/icons': 4.7.0_react-dom@17.0.2+react@17.0.2
@@ -114,6 +114,8 @@ dependencies:
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.4
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/kust': file:projects/kust.tgz
+  '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
+  '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@types/history': 2.0.45
   '@types/koa': 2.13.4
   '@types/koa-bodyparser': 4.3.5
@@ -123,24 +125,20 @@ dependencies:
   '@types/node': 17.0.4
   '@types/react': 17.0.38
   '@types/react-dom': 17.0.11
-  '@typescript-eslint/eslint-plugin': 5.10.2_ba10c759aee2676289ed1f4af8ad70b8
-  '@typescript-eslint/parser': 5.10.2_eslint@7.32.0+typescript@4.5.4
-  '@umijs/fabric': 2.10.1
   '@umijs/preset-react': 1.8.30_e05518f1abe34a9d898c10c804348eb1
   '@umijs/route-utils': 2.0.4
+  '@urql/core': 2.4.1_graphql@15.8.0
   ahooks: 3.1.9_react@17.0.2
   antd: 4.18.4_react-dom@17.0.2+react@17.0.2
   axios: 0.24.0
   cls-rtracer: 2.6.0
   clsx: 1.1.1
   cos-nodejs-sdk-v5: 2.11.6
+  dayjs: 1.10.7
   eslint: 7.32.0
   eslint-config-oclif: 4.0.0_eslint@7.32.0
   eslint-config-oclif-typescript: 1.0.2_eslint@7.32.0+typescript@4.5.4
-  eslint-config-prettier: 8.3.0_eslint@7.32.0
-  eslint-plugin-jest: 26.0.0_771026ff713e509ba655c0f3a9850d44
-  eslint-plugin-react: 7.28.0_eslint@7.32.0
-  eslint-plugin-unicorn: 40.1.0_eslint@7.32.0
+  eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
   execa: 6.0.0
   fp-ts: 2.11.5
   globby: 11.0.4
@@ -155,6 +153,7 @@ dependencies:
   koa-logger: 3.2.1
   koa-router: 10.1.1
   lodash: 4.17.21
+  moment-timezone: 0.5.34
   nodemon: 2.0.15
   npm-run-all: 4.1.5
   oclif: 2.1.0
@@ -173,6 +172,7 @@ dependencies:
   typescript: 4.5.4
   typescript-transform-paths: 3.3.1_typescript@4.5.4
   umi: 3.5.20
+  xml2js: 0.4.23
 
 packages:
 
@@ -5043,6 +5043,16 @@ packages:
     resolution: {integrity: sha512-Y0i27zZTCKoqdHHyTuebO/GOIY4gGLUwDFs1eoH+m4etPn+uRq0iax9KJOkelmax2K3YLsT4KbRwM1enlSsv3A==}
     dependencies:
       '@umijs/deps': 3.5.20
+    dev: false
+
+  /@urql/core/2.4.1_graphql@15.8.0:
+    resolution: {integrity: sha512-HnS54oNwO4pAACKl/2/tNLbRrxAxKawVJuG9UPiixqeEVekiecUQQnCjb9SpOW4Qr54HYzCMDbr3c5px3hfEEg==}
+    peerDependencies:
+      graphql: ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+    dependencies:
+      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      graphql: 15.8.0
+      wonka: 4.0.15
     dev: false
 
   /@wry/context/0.6.1:
@@ -10708,6 +10718,15 @@ packages:
       - encoding
     dev: false
 
+  /isomorphic-unfetch/3.1.0:
+    resolution: {integrity: sha512-geDJjpoZ8N0kWexiwkX8F9NkTsXhetLPVbZFQ+JTW239QNOwvB0gniuR1Wc6f0AMTn7/mFGyXvHTifrCp/GH8Q==}
+    dependencies:
+      node-fetch: 2.6.7
+      unfetch: 4.2.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /isomorphic-ws/4.0.1_ws@8.4.2:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
     peerDependencies:
@@ -12523,6 +12542,12 @@ packages:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
+    dev: false
+
+  /moment-timezone/0.5.34:
+    resolution: {integrity: sha512-3zAEHh2hKUs3EXLESx/wsgw6IQdusOT8Bxm3D9UrHPQR7zlMmzwybC8zHEM1tQ4LJwP7fcxrWr8tuBg05fFCbg==}
+    dependencies:
+      moment: 2.29.1
     dev: false
 
   /moment/2.29.1:
@@ -17491,6 +17516,10 @@ packages:
     engines: {node: '>=12.18'}
     dev: false
 
+  /unfetch/4.2.0:
+    resolution: {integrity: sha512-F9p7yYCn6cIW9El1zi0HI6vqpeIvBsr3dSuRO6Xuppb1u5rXpCPmMvLSyECLhybr9isec8Ohl0hPekMVrEinDA==}
+    dev: false
+
   /unicode-canonical-property-names-ecmascript/2.0.0:
     resolution: {integrity: sha512-yY5PpDlfVIU5+y/BSCxAJRBIS1Zc2dDG3Ujq+sR0U+JjUevW2JhocOF+soROYDSaAezOzOKuyyixhD6mBknSmQ==}
     engines: {node: '>=4'}
@@ -18020,6 +18049,10 @@ packages:
       pify: 4.0.1
     dev: false
 
+  /wonka/4.0.15:
+    resolution: {integrity: sha512-U0IUQHKXXn6PFo9nqsHphVCE5m3IntqZNB9Jjn7EB1lrR7YTDY3YWgFvEvwniTzXSvOH/XMzAZaIfJF/LvHYXg==}
+    dev: false
+
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}
     engines: {node: '>=0.10.0'}
@@ -18387,7 +18420,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_31417442648077da4fbc0f51be9576c5:
-    resolution: {integrity: sha512-Y1xn+lX2oLFGeQrZ5xEOmQoCeG0530bNa3nCpY0OJ555+plTnY0olJSzgHstFonEV5SeUU+lfkkgzdt3NZRB3A==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-LKEVMUGzSt0Sxix6iZnVMd+0IgAGgPzOtXetGL6qm6QEc5/jVgvJ7OapBfUVFtWzOBUOOxJ+NtTq7VHFMfugcw==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -18422,6 +18455,7 @@ packages:
       eslint-config-prettier: 8.3.0_eslint@7.32.0
       eslint-plugin-jest: 26.0.0_771026ff713e509ba655c0f3a9850d44
       eslint-plugin-react: 7.28.0_eslint@7.32.0
+      eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
       eslint-plugin-unicorn: 40.1.0_eslint@7.32.0
       lodash: 4.17.21
       npm-run-all: 4.1.5
@@ -18439,7 +18473,6 @@ packages:
       - encoding
       - graphql
       - graphql-tag
-      - jest
       - rc-field-form
       - react-native
       - react-router
@@ -18573,4 +18606,37 @@ packages:
     resolution: {integrity: sha512-AjZy88TwMbI1CQgyj+F+AAO30zZpR1yzXAArrInmtktmfy3uOkiUMQzfKTT3KYFEev9dSpVW2cLpFGtJl188ZQ==, tarball: file:projects/kust.tgz}
     name: '@rush-temp/kust'
     version: 0.0.0
+    dev: false
+
+  file:projects/mikan-sync.tgz_@types+node@17.0.4:
+    resolution: {integrity: sha512-9WvqwANVhcm7y1PrU9trUqf7l5LYaStmQAHZKR5nZnYi7bkxXXz6RD4b4oeU8SUmps/Ysd4pNkNt7foDpSUfxw==, tarball: file:projects/mikan-sync.tgz}
+    id: file:projects/mikan-sync.tgz
+    name: '@rush-temp/mikan-sync'
+    version: 0.0.0
+    dependencies:
+      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
+      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
+      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
+      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
+      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      '@urql/core': 2.4.1_graphql@15.8.0
+      axios: 0.24.0
+      dayjs: 1.10.7
+      fp-ts: 2.11.5
+      graphql: 15.8.0
+      io-ts: 2.2.16_fp-ts@2.11.5
+      isomorphic-unfetch: 3.1.0
+      moment: 2.29.1
+      moment-timezone: 0.5.34
+      typescript: 4.5.4
+      typescript-transform-paths: 3.3.1_typescript@4.5.4
+      xml2js: 0.4.23
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - supports-color
+      - utf-8-validate
+      - zen-observable
     dev: false

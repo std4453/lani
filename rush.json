@@ -475,6 +475,10 @@
     {
       "packageName": "@lani/data-server",
       "projectFolder": "apps/data-server"
+    },
+    {
+      "packageName": "@lani/mikan-sync",
+      "projectFolder": "apps/mikan-sync"
     }
   ]
 }

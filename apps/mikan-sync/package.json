@@ -1,0 +1,39 @@
+{
+  "name": "@lani/mikan-sync",
+  "version": "1.0.0",
+  "private": "true",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "lani-cli build",
+    "devops": "lani-cli devops",
+    "dev:run": "npm run build && NODE_ENV=development npm run start",
+    "dev:codegen": "graphql-codegen --config codegen.yml --watch"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "@lani/cli": "~1.0.0",
+    "typescript-transform-paths": "~3.3.1",
+    "@graphql-codegen/cli": "~2.4.0",
+    "@graphql-codegen/typescript": "~2.4.2",
+    "@graphql-codegen/typescript-operations": "~2.2.2",
+    "@graphql-codegen/typed-document-node": "~2.2.2"
+  },
+  "dependencies": {
+    "@lani/api": "~1.0.0",
+    "@lani/framework": "~1.0.0",
+    "axios": "~0.24.0",
+    "@urql/core": "~2.4.1",
+    "graphql": "15.8.0",
+    "xml2js": "~0.4.23",
+    "io-ts": "~2.2.16",
+    "fp-ts": "~2.11.5",
+    "moment-timezone": "~0.5.34",
+    "@graphql-typed-document-node/core": "~3.1.1",
+    "dayjs": "~1.10.7",
+    "isomorphic-unfetch": "~3.1.0"
+  },
+  "files": [
+    "/dist"
+  ]
+}
