@@ -79,6 +79,15 @@ jobs:
       - name: Deploy
         run: |
           node common/scripts/install-run-rush.js deploy -p ${{ github.event.inputs.project_name }}
+
+      # https://github.community/t/syntax-for-replacing-characters-in-string/17240
+      - name: Escape Ref
+        id: escape_ref
+        run: |
+          ref_escaped="${ref_raw////-}"
+          echo "::set-output name=ref_escaped::$ref_escaped"
+        env:
+          ref_raw: ${{ github.event.inputs.ref }}
       
       - name: Build and push
         id: docker_build
@@ -91,7 +100,7 @@ jobs:
             ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:latest,
             ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:1.0.${{ github.run_number }},
             ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ github.sha }},
-            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ github.event.inputs.ref }}
+            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ steps.escape_ref.outputs.ref_escaped }}
 
   deploy:
     runs-on: ubuntu-latest
