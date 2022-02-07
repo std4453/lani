@@ -5,3 +5,4 @@ resources:
   - regcred.yaml
   - lani-cd.yaml
   - bilibili-bangumi-cc.yaml
+  - mikan-fetch.yaml

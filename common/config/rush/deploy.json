@@ -19,7 +19,8 @@
    */
   "deploymentProjectNames": [
     "@lani/bilibili-bangumi-cc",
-    "@lani/mikan-sync"
+    "@lani/mikan-sync",
+    "@lani/mikan-fetch"
   ],
 
   /**

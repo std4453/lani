@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mikan-fetch
+  namespace: lani
+  labels:
+    app: mikan-fetch
+    version: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mikan-fetch
+      version: prod
+  template:
+    metadata:
+      labels:
+        app: mikan-fetch
+        version: prod
+    spec:
+      containers:
+      - name: mikan-fetch
+        # TODO: change to master after merge
+        image: ghcr.io/std4453/mikan-fetch:dev-admin
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          limits:
+            memory: "100Mi"
+            cpu: "500m"
+          requests:
+            memory: "10Mi"
+            cpu: "10m"
+      imagePullSecrets:
+      - name: ghcr-io-regcred
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mikan-fetch
+  namespace: lani
+spec:
+  selector:
+    app: mikan-fetch
+    version: prod
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080

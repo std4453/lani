@@ -479,6 +479,10 @@
     {
       "packageName": "@lani/mikan-sync",
       "projectFolder": "apps/mikan-sync"
+    },
+    {
+      "packageName": "@lani/mikan-fetch",
+      "projectFolder": "apps/mikan-fetch"
     }
   ]
 }

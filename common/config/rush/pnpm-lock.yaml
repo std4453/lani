@@ -27,6 +27,7 @@ specifiers:
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
+  '@rush-temp/mikan-fetch': file:./projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@types/history': 2.0.45
@@ -58,6 +59,7 @@ specifiers:
   graphql: 15.8.0
   inclusion: ~1.0.1
   io-ts: ~2.2.16
+  isomorphic-unfetch: ~3.1.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
   kleur: ~4.1.4
@@ -71,6 +73,7 @@ specifiers:
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
   octokit: ~1.7.1
+  openid-client: ~5.1.3
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: ~2.2.2
   prettier: ~2.5.1
@@ -114,6 +117,7 @@ dependencies:
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.4
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/kust': file:projects/kust.tgz
+  '@rush-temp/mikan-fetch': file:projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@types/history': 2.0.45
@@ -145,6 +149,7 @@ dependencies:
   graphql: 15.8.0
   inclusion: 1.0.1
   io-ts: 2.2.16_fp-ts@2.11.5
+  isomorphic-unfetch: 3.1.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
   kleur: 4.1.4
@@ -158,6 +163,7 @@ dependencies:
   npm-run-all: 4.1.5
   oclif: 2.1.0
   octokit: 1.7.1
+  openid-client: 5.1.3
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: 2.2.2
   prettier: 2.5.1
@@ -11374,6 +11380,10 @@ packages:
     resolution: {integrity: sha1-o6vicYryQaKykE+EpiWXDzia4yo=}
     dev: false
 
+  /jose/4.4.0:
+    resolution: {integrity: sha512-3CsqCQWuEUPpNlSLRcLRC8eO/ATFe1tLJMZCtjx2+ma1gkjGQ62HF50oWs3cwtWjLCpM8bdMPpQbxpgc3fhxrQ==}
+    dev: false
+
   /js-cookie/2.2.1:
     resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}
     dev: false
@@ -12934,6 +12944,11 @@ packages:
       kind-of: 3.2.2
     dev: false
 
+  /object-hash/2.2.0:
+    resolution: {integrity: sha512-gScRMn0bS5fH+IuwyIFgnh9zBdo4DV+6GhygmWM9HyNJSgS0hScp1f5vjtm7oIIOiT9trXrShAkLFSc2IqKNgw==}
+    engines: {node: '>= 6'}
+    dev: false
+
   /object-inspect/1.12.0:
     resolution: {integrity: sha512-Ho2z80bVIvJloH+YzRmpZVQe87+qASmBUKZDWgx9cu+KDrX2ZDH/3tMy+gXbZETVGs2M8YdxObOh7XAtim9Y0g==}
     dev: false
@@ -13057,6 +13072,11 @@ packages:
       '@octokit/types': 6.34.0
     dev: false
 
+  /oidc-token-hash/5.0.1:
+    resolution: {integrity: sha512-EvoOtz6FIEBzE+9q253HsLCVRiK/0doEJ2HCvvqMQb3dHZrP3WlJKYtJ55CRTw4jmYomzH4wkPuCj/I3ZvpKxQ==}
+    engines: {node: ^10.13.0 || >=12.0.0}
+    dev: false
+
   /omit.js/2.0.2:
     resolution: {integrity: sha512-hJmu9D+bNB40YpL9jYebQl4lsTW6yEHRTroJzNLqQJYHm7c+NQnJGfZmIWh8S3q3KoaxV1aLhV6B3+0N0/kyJg==}
     dev: false
@@ -13097,6 +13117,16 @@ packages:
 
   /only/0.0.2:
     resolution: {integrity: sha1-Kv3oTQPlC5qO3EROMGEKcCle37Q=}
+    dev: false
+
+  /openid-client/5.1.3:
+    resolution: {integrity: sha512-i5quCXurPkN50ndRLE2D3Q6khz6AieJ0gTKOmsl3G4ZIP/Udf5Qw5CMRdhMvbFvfKRrkcCWPFXmduFUFYTC0xw==}
+    engines: {node: ^12.19.0 || ^14.15.0 || ^16.13.0}
+    dependencies:
+      jose: 4.4.0
+      lru-cache: 6.0.0
+      object-hash: 2.2.0
+      oidc-token-hash: 5.0.1
     dev: false
 
   /opn-cli/3.1.0:
@@ -18551,7 +18581,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-4BdVRAZG7fRqwUTu5T4XmZd7qNOclsAd1nLm0Rtru6QcxOoP5s4pcOxStnK8k0pLuspvZOFUbMFbKjPrgACZNA==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-l9Gzv5kua3Qx9dCq6KrQaDx+GGA0kOL7tmylWCbWplh25jIjVKmQR5c4YnCi8MH4srMWePoUgOTzUhhVGPWDCQ==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -18559,6 +18589,7 @@ packages:
       '@graphile-contrib/pg-omit-archived': 2.1.0_postgraphile@4.12.8
       '@graphile-contrib/pg-simplify-inflector': 6.1.0
       graphql: 15.8.0
+      openid-client: 5.1.3
       postgraphile: 4.12.8
       postgraphile-plugin-connection-filter: 2.2.2
       ts-node: 10.4.0_d0eef7d48f2063e87802f700404a1b3b
@@ -18606,6 +18637,22 @@ packages:
     resolution: {integrity: sha512-AjZy88TwMbI1CQgyj+F+AAO30zZpR1yzXAArrInmtktmfy3uOkiUMQzfKTT3KYFEev9dSpVW2cLpFGtJl188ZQ==, tarball: file:projects/kust.tgz}
     name: '@rush-temp/kust'
     version: 0.0.0
+    dev: false
+
+  file:projects/mikan-fetch.tgz:
+    resolution: {integrity: sha512-DxYIfjGZi6jF7utj4PK24uJm6CCMPpDlu7aO3U6xvcWRTQ+OQb8JDiuyLP+AglBe2YxuJeN2mJ8BlyGAemMvUQ==, tarball: file:projects/mikan-fetch.tgz}
+    name: '@rush-temp/mikan-fetch'
+    version: 0.0.0
+    dependencies:
+      axios: 0.24.0
+      dayjs: 1.10.7
+      fp-ts: 2.11.5
+      io-ts: 2.2.16_fp-ts@2.11.5
+      typescript: 4.5.4
+      typescript-transform-paths: 3.3.1_typescript@4.5.4
+      xml2js: 0.4.23
+    transitivePeerDependencies:
+      - debug
     dev: false
 
   file:projects/mikan-sync.tgz_@types+node@17.0.4:
