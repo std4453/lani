@@ -35,7 +35,11 @@
     {
 			"name": "🚀 @lani/mikan-sync",
 			"path": "apps/mikan-sync"
-		}
+		},
+    {
+			"name": "🚀 @lani/mikan-fetch",
+			"path": "apps/mikan-fetch"
+		},
 	],
 	"settings": {
 		"files.associations": {
