@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: bilibili-bangumi-cc
-        image: ghcr.io/std4453/bilibili-bangumi-cc:master
+        image: ghcr.io/std4453/bilibili-bangumi-cc:dev-admin
         imagePullPolicy: Always
         ports:
         - name: http
