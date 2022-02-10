@@ -60,12 +60,12 @@ spec:
   gateways:
   - istio-system/internal-gateway
   hosts:
-  - lani.std4453.net
+  - lani.i.std4453.com
   http:
 
   - match:
     - uri: 
-        prefix: /bilibili-bangumi-cc/
+        prefix: /api/bilibili-bangumi-cc/
     rewrite:
       uri: /
     route:

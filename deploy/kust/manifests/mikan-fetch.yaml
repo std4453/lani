@@ -61,11 +61,11 @@ spec:
   gateways:
   - istio-system/internal-gateway
   hosts:
-  - lani.std4453.net
+  - lani.i.std4453.com
   http:
   - match:
     - uri: 
-        prefix: /mikan-fetch/
+        prefix: /api/mikan-fetch/
     rewrite:
       uri: /
     route:
