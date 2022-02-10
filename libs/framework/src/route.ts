@@ -51,6 +51,7 @@ export function buildRoute<Request, Response>(
           ctx.status = 200;
           ctx.body = response;
         } else {
+          console.error(error);
           const response: WrappedResponse<Response> = {
             code: 500,
             error: "Internal Server Error",
