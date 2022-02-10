@@ -49,27 +49,3 @@ spec:
   - name: http
     port: 80
     targetPort: 8080
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: mikan-fetch-internal
-  namespace: lani
-  labels:
-    app: lani
-spec:
-  gateways:
-  - istio-system/internal-gateway
-  hosts:
-  - lani.i.std4453.com
-  http:
-  - match:
-    - uri: 
-        prefix: /api/mikan-fetch/
-    rewrite:
-      uri: /
-    route:
-    - destination:
-        host: mikan-fetch
-        port:
-          number: 80

@@ -6,3 +6,4 @@ resources:
   - lani-cd.yaml
   - bilibili-bangumi-cc.yaml
   - mikan-fetch.yaml
+  - istio-vs.yaml

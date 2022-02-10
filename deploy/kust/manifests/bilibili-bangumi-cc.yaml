@@ -48,28 +48,3 @@ spec:
   - name: http
     port: 80
     targetPort: 8080
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: bilibili-bangumi-cc-internal-vs
-  namespace: lani
-  labels:
-    app: lani
-spec:
-  gateways:
-  - istio-system/internal-gateway
-  hosts:
-  - lani.i.std4453.com
-  http:
-
-  - match:
-    - uri: 
-        prefix: /api/bilibili-bangumi-cc/
-    rewrite:
-      uri: /
-    route:
-    - destination:
-        host: bilibili-bangumi-cc
-        port:
-          number: 80
