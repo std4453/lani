@@ -11,12 +11,12 @@ import {
   NormalError,
   startApp,
 } from "@lani/framework";
-import axios from "axios";
+import axios, { AxiosProxyConfig } from "axios";
 import { isLeft } from "fp-ts/lib/Either";
 import * as t from "io-ts";
-
 import COS from "cos-nodejs-sdk-v5";
 import config from "@/config";
+import createHttpsProxyAgent from "https-proxy-agent";
 
 const cos = new COS({
   SecretId: config.cosSecretId,
@@ -25,12 +25,9 @@ const cos = new COS({
 
 type Region = NonNullable<DownloadSRTRequest["region"]>;
 
-const regionToApiEndpoint: Record<Region, string> = {
-  mainland: "api.bilibili.com",
+const regionToAgent: Partial<Record<Region, any>> = {
   // TODO: 全球番剧 API 代理
-  global: "api.bilibili.com",
-  // Source: https://github.com/yujincheng08/BiliRoaming/wiki/公共解析服务器
-  thm: "bilibili.myhosts.ml",
+  thm: createHttpsProxyAgent(config.thmProxy),
 };
 
 async function getCID({
@@ -41,8 +38,10 @@ async function getCID({
   const {
     data: { code, message, result },
   } = await axios({
-    url: `https://${regionToApiEndpoint[region]}/pgc/view/web/season?season_id=${ssid}`,
+    url: `https://api.bilibili.com/pgc/view/web/season?season_id=${ssid}`,
     method: "GET",
+    httpsAgent: regionToAgent[region],
+    timeout: 10000,
   });
   if (code === -404) {
     throw new NormalError(404, "Season Not Found");

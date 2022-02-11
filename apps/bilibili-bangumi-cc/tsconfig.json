@@ -1,15 +1,11 @@
 {
-  "extends": "@lani/cli/tsconfig/lib_ts.json",
+  "extends": "@lani/cli/tsconfig/node_ts.json",
   "compilerOptions": {
     "declaration": false,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "outDir": "./dist"
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
