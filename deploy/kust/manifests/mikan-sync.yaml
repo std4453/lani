@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mikan-sync
+  namespace: lani
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mikan-sync
+            # TODO: change to master after merge
+            image: ghcr.io/std4453/bilibili-bangumi-cc:dev-admin
+            imagePullPolicy: Always
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-io-regcred

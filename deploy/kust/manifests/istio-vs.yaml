@@ -33,3 +33,14 @@ spec:
         host: mikan-fetch
         port:
           number: 80
+
+  - match:
+    - uri: 
+        prefix: /api/data-server/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: data-server-offline
+        port:
+          number: 80

@@ -5,19 +5,23 @@ import { postgraphile } from "postgraphile";
 import ConnectionFilterPlugin from "postgraphile-plugin-connection-filter";
 import config from "./config";
 
-const app = buildApp<DataServerService>(
-  {},
-  {
-    cors: true,
-    setup(app) {
-      app.use(
-        postgraphile(config.postgresUrl, "public", {
-          ...config.postgraphile,
-          appendPlugins: [OmitArchivedPlugin, ConnectionFilterPlugin],
-        })
-      );
-    },
-  }
-);
+async function run() {
+  const app = buildApp<DataServerService>(
+    {},
+    {
+      cors: true,
+      setup(app) {
+        app.use(
+          postgraphile(config.postgresUrl, "public", {
+            ...config.postgraphile,
+            appendPlugins: [OmitArchivedPlugin, ConnectionFilterPlugin],
+          })
+        );
+      },
+    }
+  );
 
-startApp(app, dataServerService);
+  startApp(app, dataServerService);
+}
+
+run();
