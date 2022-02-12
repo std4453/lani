@@ -57,10 +57,10 @@ specifiers:
   fp-ts: ~2.11.5
   globby: ^11
   graphql: 15.8.0
+  https-proxy-agent: ~5.0.0
   inclusion: ~1.0.1
   io-ts: ~2.2.16
   isomorphic-unfetch: ~3.1.0
-  jose: ~4.5.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
   kleur: ~4.1.4
@@ -74,7 +74,6 @@ specifiers:
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
   octokit: ~1.7.1
-  openid-client: ~5.1.3
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: ~2.2.2
   prettier: ~2.5.1
@@ -148,10 +147,10 @@ dependencies:
   fp-ts: 2.11.5
   globby: 11.0.4
   graphql: 15.8.0
+  https-proxy-agent: 5.0.0
   inclusion: 1.0.1
   io-ts: 2.2.16_fp-ts@2.11.5
   isomorphic-unfetch: 3.1.0
-  jose: 4.5.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
   kleur: 4.1.4
@@ -165,7 +164,6 @@ dependencies:
   npm-run-all: 4.1.5
   oclif: 2.1.0
   octokit: 1.7.1
-  openid-client: 5.1.3
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: 2.2.2
   prettier: 2.5.1
@@ -18456,7 +18454,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_31417442648077da4fbc0f51be9576c5:
-    resolution: {integrity: sha512-LKEVMUGzSt0Sxix6iZnVMd+0IgAGgPzOtXetGL6qm6QEc5/jVgvJ7OapBfUVFtWzOBUOOxJ+NtTq7VHFMfugcw==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-xJw477rNCe9B8FlBYvaPuWs9XmwI8OEl8TIb4whwTZYtL0x7vOPVviBIskV2G/mMsceKXYiFUiDt8TP5TrLKCg==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -18486,6 +18484,7 @@ packages:
       '@umijs/route-utils': 2.0.4
       ahooks: 3.1.9_react@17.0.2
       antd: 4.18.4_react-dom@17.0.2+react@17.0.2
+      axios: 0.24.0
       clsx: 1.1.1
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0_eslint@7.32.0
@@ -18505,6 +18504,7 @@ packages:
       - '@types/node'
       - bufferutil
       - canvas
+      - debug
       - dva-core
       - encoding
       - graphql
@@ -18589,7 +18589,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-8QxaEIfAPLeLd/8PjwWSrDWYGDQKPthutUgoJUszhqGTg+y5DSVWXczoQHreI1aGvSRe2osW3nCT9l2sGH2CEw==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-4BdVRAZG7fRqwUTu5T4XmZd7qNOclsAd1nLm0Rtru6QcxOoP5s4pcOxStnK8k0pLuspvZOFUbMFbKjPrgACZNA==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -18649,19 +18649,21 @@ packages:
     dev: false
 
   file:projects/mikan-fetch.tgz:
-    resolution: {integrity: sha512-DxYIfjGZi6jF7utj4PK24uJm6CCMPpDlu7aO3U6xvcWRTQ+OQb8JDiuyLP+AglBe2YxuJeN2mJ8BlyGAemMvUQ==, tarball: file:projects/mikan-fetch.tgz}
+    resolution: {integrity: sha512-i7azZK9Lqw7/wZ5Ln9Ned1aPm7/t84XUETN5J2M8xoyyZpLDsfQtGb37CGPoXdy+2hyQb21w/xrihh0G6SZ5aw==, tarball: file:projects/mikan-fetch.tgz}
     name: '@rush-temp/mikan-fetch'
     version: 0.0.0
     dependencies:
       axios: 0.24.0
       dayjs: 1.10.7
       fp-ts: 2.11.5
+      https-proxy-agent: 5.0.0
       io-ts: 2.2.16_fp-ts@2.11.5
       typescript: 4.5.4
       typescript-transform-paths: 3.3.1_typescript@4.5.4
       xml2js: 0.4.23
     transitivePeerDependencies:
       - debug
+      - supports-color
     dev: false
 
   file:projects/mikan-sync.tgz_@types+node@17.0.4:

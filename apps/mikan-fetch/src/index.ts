@@ -17,6 +17,8 @@ import utc from "dayjs/plugin/utc";
 import { isLeft } from "fp-ts/lib/Either";
 import * as t from "io-ts";
 import xml2js from "xml2js";
+import createHttpsProxyAgent from "https-proxy-agent";
+import config from "@/config";
 
 dayjs.extend(utc);
 
@@ -47,11 +49,14 @@ const tRSSItems = t.type({
   }),
 });
 
+const agent = createHttpsProxyAgent(config.proxy);
+
 async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
   const { data: xmlStr } = await axios({
     url,
     method: "GET",
     responseType: "text",
+    httpAgent: agent,
   });
   const parseResult = await parser.parseStringPromise(xmlStr);
   const decoded = tRSSItems.decode(parseResult);
