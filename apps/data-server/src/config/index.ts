@@ -41,6 +41,7 @@ export default mergeConfig({})<{
       enableQueryBatching: true,
       legacyRelations: "omit",
       watchPg: true,
+      externalUrlBase: "/api/data-server",
     },
   },
   prod: {
@@ -58,6 +59,7 @@ export default mergeConfig({})<{
       enableQueryBatching: true,
       disableQueryLog: true,
       legacyRelations: "omit",
+      externalUrlBase: "/api/data-server",
     },
   },
 });
