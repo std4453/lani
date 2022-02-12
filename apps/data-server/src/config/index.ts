@@ -22,12 +22,30 @@ export default mergeConfig({})<{
       enableQueryBatching: true,
       legacyRelations: "omit",
       watchPg: true,
-      exportGqlSchemaPath: "./src/generated/schema.graphql"
+      exportGqlSchemaPath: "./src/generated/schema.graphql",
+    },
+  },
+  offline: {
+    postgresUrl:
+      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani",
+    postgraphile: {
+      subscriptions: true,
+      dynamicJson: true,
+      setofFunctionsContainNulls: true,
+      ignoreRBAC: true,
+      showErrorStack: "json",
+      extendedErrors: ["hint", "detail", "errcode"],
+      graphiql: true,
+      enhanceGraphiql: true,
+      allowExplain: true,
+      enableQueryBatching: true,
+      legacyRelations: "omit",
+      watchPg: true,
     },
   },
   prod: {
     postgresUrl:
-      "postgres://postgraphile:3KS0n*TXW4!VYYC!%24gFc25mM@10.43.222.73:5432/lani",
+      "postgres://postgraphile:3KS0n*TXW4!VYYC!%24gFc25mM@data-postgresql.postgres:5432/lani",
     postgraphile: {
       subscriptions: true,
       retryOnInitFail: true,
