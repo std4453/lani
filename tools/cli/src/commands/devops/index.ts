@@ -153,6 +153,8 @@ export default class Devops extends Command {
           break;
         }
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
     if (!found) {
       console.log(
