@@ -21,7 +21,7 @@ spec:
     - destination:
         host: bilibili-bangumi-cc
         port:
-          number: 80
+          number: 8080
 
   - match:
     - uri: 
@@ -32,7 +32,7 @@ spec:
     - destination:
         host: mikan-fetch
         port:
-          number: 80
+          number: 8080
 
   - match:
     - uri: 
@@ -43,4 +43,4 @@ spec:
     - destination:
         host: data-server-offline
         port:
-          number: 80
+          number: 8080
