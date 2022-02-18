@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: mikan-sync
-  namespace: lani
+  namespace: lani-offline
 spec:
   schedule: "*/5 * * * *"
   jobTemplate:
@@ -12,8 +12,11 @@ spec:
           containers:
           - name: mikan-sync
             # TODO: change to master after merge
-            image: ghcr.io/std4453/bilibili-bangumi-cc:dev-admin
+            image: ghcr.io/std4453/mikan-sync:dev-admin
             imagePullPolicy: Always
+            env:
+            - name: NODE_ENV
+              value: "offline"  
           restartPolicy: Never
           imagePullSecrets:
             - name: ghcr-io-regcred
