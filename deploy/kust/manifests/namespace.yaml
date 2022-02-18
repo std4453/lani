@@ -4,4 +4,11 @@ metadata:
   name: lani
   labels:
     istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lani-offline
+  labels:
+    istio-injection: enabled
   

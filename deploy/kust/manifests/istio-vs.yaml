@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: lani-internal-vs
-  namespace: lani
+  namespace: lani-offline
   labels:
     app: lani
 spec:
@@ -41,6 +41,6 @@ spec:
       uri: /
     route:
     - destination:
-        host: data-server-offline
+        host: data-server
         port:
           number: 8080

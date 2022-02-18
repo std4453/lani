@@ -2,21 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: data-server
-  namespace: lani
+  namespace: lani-offline
   labels:
     app: data-server
-    version: offline
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: data-server
-      version: offline
   template:
     metadata:
       labels:
         app: data-server
-        version: offline
     spec:
       containers:
       - name: data-server
@@ -41,12 +38,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: data-server-offline
-  namespace: lani
+  name: data-server
+  namespace: lani-offline
 spec:
   selector:
     app: data-server
-    version: offline
   ports:
   - name: http
     port: 8080
