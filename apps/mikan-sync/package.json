@@ -25,12 +25,7 @@
     "axios": "~0.24.0",
     "@urql/core": "~2.4.1",
     "graphql": "15.8.0",
-    "xml2js": "~0.4.23",
-    "io-ts": "~2.2.16",
-    "fp-ts": "~2.11.5",
-    "moment-timezone": "~0.5.34",
     "@graphql-typed-document-node/core": "~3.1.1",
-    "dayjs": "~1.10.7",
     "isomorphic-unfetch": "~3.1.0"
   },
   "files": [
