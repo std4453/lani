@@ -483,6 +483,10 @@
     {
       "packageName": "@lani/mikan-fetch",
       "projectFolder": "apps/mikan-fetch"
+    },
+    {
+      "packageName": "@lani/k8s-gen",
+      "projectFolder": "deploy/k8s-gen"
     }
   ]
 }

@@ -40,6 +40,10 @@
 			"name": "🚀 @lani/mikan-fetch",
 			"path": "apps/mikan-fetch"
 		},
+    {
+      "name": "🚚 @lani/k8s-gen",
+			"path": "deploy/k8s-gen"
+    }
 	],
 	"settings": {
 		"files.associations": {

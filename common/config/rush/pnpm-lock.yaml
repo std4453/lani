@@ -26,10 +26,12 @@ specifiers:
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
+  '@rush-temp/k8s-gen': file:./projects/k8s-gen.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
   '@rush-temp/mikan-fetch': file:./projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
   '@rushstack/eslint-config': ~2.5.1
+  '@sentry/react': ~6.17.8
   '@types/history': 2.0.45
   '@types/koa': ~2.13.4
   '@types/koa-bodyparser': ~4.3.5
@@ -88,6 +90,7 @@ specifiers:
   typescript: ~4.5.4
   typescript-transform-paths: ~3.3.1
   umi: ^3.5.20
+  use-clipboard-copy: ~0.2.0
   xml2js: ~0.4.23
 
 dependencies:
@@ -116,10 +119,12 @@ dependencies:
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.4
   '@rush-temp/framework': file:projects/framework.tgz
+  '@rush-temp/k8s-gen': file:projects/k8s-gen.tgz
   '@rush-temp/kust': file:projects/kust.tgz
   '@rush-temp/mikan-fetch': file:projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
+  '@sentry/react': 6.17.8_react@17.0.2
   '@types/history': 2.0.45
   '@types/koa': 2.13.4
   '@types/koa-bodyparser': 4.3.5
@@ -178,6 +183,7 @@ dependencies:
   typescript: 4.5.4
   typescript-transform-paths: 3.3.1_typescript@4.5.4
   umi: 3.5.20
+  use-clipboard-copy: 0.2.0_react@17.0.2
   xml2js: 0.4.23
 
 packages:
@@ -3582,6 +3588,73 @@ packages:
       rxjs: 6.6.7
     dev: false
 
+  /@sentry/browser/6.17.8:
+    resolution: {integrity: sha512-IvpcSja513PHySy1BhtE1K75kMzso4e4FWqZ2KgPLJacJdPMICNgjS+MwZ1g218m2JWkoQHOmWENBTqHaBHZ6g==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/core': 6.17.8
+      '@sentry/types': 6.17.8
+      '@sentry/utils': 6.17.8
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/core/6.17.8:
+    resolution: {integrity: sha512-4WTjgQom75Rvgn6XYy6e7vMIbWlj8utau1wWvr7kjqFKuuuuycRvPgVzAdVr4B3WDHHCInAZpUchsOLs2qwIEA==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/hub': 6.17.8
+      '@sentry/minimal': 6.17.8
+      '@sentry/types': 6.17.8
+      '@sentry/utils': 6.17.8
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/hub/6.17.8:
+    resolution: {integrity: sha512-GW0XYpkoQu/kSJaTLfsF4extHDOBPNRnT0qKr/YO20Z5wGxYp8LsdnAuU3njcFHcAV2F/QDTj2BPq1U385/4+A==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/types': 6.17.8
+      '@sentry/utils': 6.17.8
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/minimal/6.17.8:
+    resolution: {integrity: sha512-VJXFZBO/O8SViK0fdzodxpNr+pbpgczNgLpz/MNuSooV6EBesgCMVjXtxDUp1Ie1odc0GUprN/ZMLYBmYdIrKQ==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/hub': 6.17.8
+      '@sentry/types': 6.17.8
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/react/6.17.8_react@17.0.2:
+    resolution: {integrity: sha512-9Be+Bf5bbjcf2isJXY0RM7ubPZUt4ZuX3lFjjFeCGhxrOp5EM9q+1c+OwIQo2Ml0mg9VmpFcSQPHd/qfUxwRbA==}
+    engines: {node: '>=6'}
+    peerDependencies:
+      react: 15.x || 16.x || 17.x
+    dependencies:
+      '@sentry/browser': 6.17.8
+      '@sentry/minimal': 6.17.8
+      '@sentry/types': 6.17.8
+      '@sentry/utils': 6.17.8
+      hoist-non-react-statics: 3.3.2
+      react: 17.0.2
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/types/6.17.8:
+    resolution: {integrity: sha512-0i0f+dpvV62Pm5QMVBHNfEsTGIXoXRGQbeN2LGL4XbhzrzUmIrBPzrnZHv9c/JYtSJnI6A0B9OG7Bdlh3aku+Q==}
+    engines: {node: '>=6'}
+    dev: false
+
+  /@sentry/utils/6.17.8:
+    resolution: {integrity: sha512-cAOM53A5FHv95hpDuXKJU8rI4B1XdZ6qe3Yo+/nDS9QDpOgzvyjcItgXPvKW1wUjdHCcnwu7VBfBxB7teYOW9g==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/types': 6.17.8
+      tslib: 1.14.1
+    dev: false
+
   /@sindresorhus/is/0.14.0:
     resolution: {integrity: sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==}
     engines: {node: '>=6'}
@@ -6665,6 +6738,10 @@ packages:
   /cli-width/3.0.0:
     resolution: {integrity: sha512-FxqpkPPwu1HjuN93Omfm4h8uIanXofW0RxVEW3k5RKx+mJJYSthzNhp32Kzxxy3YAEZ/Dc/EWN1vZRY0+kOhbw==}
     engines: {node: '>= 10'}
+    dev: false
+
+  /clipboard-copy/3.2.0:
+    resolution: {integrity: sha512-vooFaGFL6ulEP1liiaWFBmmfuPm3cY3y7T9eB83ZTnYc/oFeAKsq3NcDrOkBC8XaauEE8zHQwI7k0+JSYiVQSQ==}
     dev: false
 
   /clipboardy/2.3.0:
@@ -17749,6 +17826,15 @@ packages:
       querystring: 0.2.0
     dev: false
 
+  /use-clipboard-copy/0.2.0_react@17.0.2:
+    resolution: {integrity: sha512-f0PMMwZ2/Hh9/54L12capx4s6ASdd6edNJxg2OcqWVNM8BPvtOSmNFIN1Dg/q//fPp8MpUZceHfr7cnWOS0RxA==}
+    peerDependencies:
+      react: '>=16.8.0'
+    dependencies:
+      clipboard-copy: 3.2.0
+      react: 17.0.2
+    dev: false
+
   /use-json-comparison/1.0.6_react@17.0.2:
     resolution: {integrity: sha512-xPadt5yMRbEmVfOSGFSMqjjICrq7nLbfSH3rYIXsrtcuFX7PmbYDN/ku8ObBn3v8o/yZelO1OxUS5+5TI3+fUw==}
     peerDependencies:
@@ -18454,7 +18540,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_31417442648077da4fbc0f51be9576c5:
-    resolution: {integrity: sha512-xJw477rNCe9B8FlBYvaPuWs9XmwI8OEl8TIb4whwTZYtL0x7vOPVviBIskV2G/mMsceKXYiFUiDt8TP5TrLKCg==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-yzSkPG/KQqb/bknSArLXqLbNMZhRyLmqIUuJ9AtHjgpuZT6gb83BaybdFjNxB6N0D9dknAIj5x/aIZvTvQNlOw==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -18473,6 +18559,7 @@ packages:
       '@graphql-codegen/typescript-react-apollo': 3.2.4_graphql@15.8.0
       '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
       '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
+      '@sentry/react': 6.17.8_react@17.0.2
       '@types/history': 2.0.45
       '@types/lodash': 4.14.178
       '@types/react': 17.0.38
@@ -18500,6 +18587,7 @@ packages:
       sass: 1.49.0
       typescript: 4.5.4
       umi: 3.5.20
+      use-clipboard-copy: 0.2.0_react@17.0.2
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -18640,6 +18728,12 @@ packages:
     transitivePeerDependencies:
       - debug
       - supports-color
+    dev: false
+
+  file:projects/k8s-gen.tgz:
+    resolution: {integrity: sha512-WpHfS7gyVsTWYWEtZKhXAUcL9LsD/t+kVpMqGgYsnm7be9SBEfaqSW977zUH5TAlFVLQ1eAI2dbw2UU7ekVXbQ==, tarball: file:projects/k8s-gen.tgz}
+    name: '@rush-temp/k8s-gen'
+    version: 0.0.0
     dev: false
 
   file:projects/kust.tgz:
