@@ -3,9 +3,6 @@
   "type": "node:ts",
   "abilities": [],
   "ci": {
-    "image": "mikan-fetch",
-    "deployment": {
-      "name": "mikan-fetch"
-    }
+    "image": "mikan-fetch"
   }
 }
