@@ -1,0 +1,47 @@
+query GetDataForDefaultItems($first: Int!) {
+  allRssItems(orderBy: PUBLISH_DATE_DESC, first: $first) {
+    edges {
+      node {
+        hash
+        publishDate
+        size
+        title
+        torrentLink
+      }
+    }
+  }
+  allDownloadConfigs {
+    edges {
+      node {
+        language
+        quality
+        type
+        anime
+        pattern
+      }
+    }
+  }
+}
+
+query GetDataForForcedItems {
+  allAnimeMetadata(condition: { forceScratch: true }) {
+    edges {
+      node {
+        downloadConfigsByAnime {
+          edges {
+            node {
+              language
+              pattern
+              quality
+              type
+              publishGroupId
+              bangumiId
+            }
+          }
+        }
+        id
+        mikanAnimeId
+      }
+    }
+  }
+}

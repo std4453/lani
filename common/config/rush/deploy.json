@@ -21,7 +21,8 @@
     "@lani/bilibili-bangumi-cc",
     "@lani/mikan-sync",
     "@lani/mikan-fetch",
-    "@lani/data-server"
+    "@lani/data-server",
+    "@lani/rss-items"
   ],
 
   /**

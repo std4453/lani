@@ -30,6 +30,7 @@ specifiers:
   '@rush-temp/kust': file:./projects/kust.tgz
   '@rush-temp/mikan-fetch': file:./projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
+  '@rush-temp/rss-items': file:./projects/rss-items.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/react': ~6.17.8
   '@types/history': 2.0.45
@@ -71,7 +72,6 @@ specifiers:
   koa-logger: ~3.2.1
   koa-router: ~10.1.1
   lodash: ~4.17.21
-  moment-timezone: ~0.5.34
   nodemon: ~2.0.15
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
@@ -123,6 +123,7 @@ dependencies:
   '@rush-temp/kust': file:projects/kust.tgz
   '@rush-temp/mikan-fetch': file:projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
+  '@rush-temp/rss-items': file:projects/rss-items.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@sentry/react': 6.17.8_react@17.0.2
   '@types/history': 2.0.45
@@ -164,7 +165,6 @@ dependencies:
   koa-logger: 3.2.1
   koa-router: 10.1.1
   lodash: 4.17.21
-  moment-timezone: 0.5.34
   nodemon: 2.0.15
   npm-run-all: 4.1.5
   oclif: 2.1.0
@@ -18761,7 +18761,7 @@ packages:
     dev: false
 
   file:projects/mikan-sync.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-9WvqwANVhcm7y1PrU9trUqf7l5LYaStmQAHZKR5nZnYi7bkxXXz6RD4b4oeU8SUmps/Ysd4pNkNt7foDpSUfxw==, tarball: file:projects/mikan-sync.tgz}
+    resolution: {integrity: sha512-miqj0OLzDn0acBBXVRWagKoHYqcKwnVZUtsjmMkcVd5nQ7RkMkg88v984JI6HgttHzYnUrN5mRRn28mYlEcWSw==, tarball: file:projects/mikan-sync.tgz}
     id: file:projects/mikan-sync.tgz
     name: '@rush-temp/mikan-sync'
     version: 0.0.0
@@ -18783,6 +18783,33 @@ packages:
       typescript: 4.5.4
       typescript-transform-paths: 3.3.1_typescript@4.5.4
       xml2js: 0.4.23
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - supports-color
+      - utf-8-validate
+      - zen-observable
+    dev: false
+
+  file:projects/rss-items.tgz_@types+node@17.0.4:
+    resolution: {integrity: sha512-p1LESveYEI6WeCMScbPTHZYYf38iikgEuUXu0NYVLHpfYGfog8k3jX/EJf6GGNmLkCMD/q3Gd4gmGQuW9bkiBg==, tarball: file:projects/rss-items.tgz}
+    id: file:projects/rss-items.tgz
+    name: '@rush-temp/rss-items'
+    version: 0.0.0
+    dependencies:
+      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
+      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
+      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
+      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
+      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      '@urql/core': 2.4.1_graphql@15.8.0
+      axios: 0.24.0
+      graphql: 15.8.0
+      isomorphic-unfetch: 3.1.0
+      typescript: 4.5.4
+      typescript-transform-paths: 3.3.1_typescript@4.5.4
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
