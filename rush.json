@@ -487,6 +487,10 @@
     {
       "packageName": "@lani/k8s-gen",
       "projectFolder": "deploy/k8s-gen"
+    },
+    {
+      "packageName": "@lani/rss-items",
+      "projectFolder": "apps/rss-items"
     }
   ]
 }

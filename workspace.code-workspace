@@ -43,7 +43,11 @@
     {
       "name": "🚚 @lani/k8s-gen",
 			"path": "deploy/k8s-gen"
-    }
+    },
+    {
+			"name": "🚀 @lani/rss-items",
+			"path": "apps/rss-items"
+		},
 	],
 	"settings": {
 		"files.associations": {
