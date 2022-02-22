@@ -11,6 +11,12 @@ export default mergeConfig(config)({
   dev: {
     thmProxy: "http://10.43.154.118:8889",
   },
+  offline: {
+    thmProxy: "http://hk1.v2ray:8889",
+  },
+  pre: {
+    thmProxy: "http://hk1.v2ray:8889",
+  },
   prod: {
     thmProxy: "http://hk1.v2ray:8889",
   },
