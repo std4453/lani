@@ -9,6 +9,7 @@ resources:
   - bilibili-bangumi-cc.yaml
   - mikan-fetch.yaml
   - data-server.yaml
+  - rss-items.yaml
   # jobs
   - mikan-sync.yaml
   # istio
