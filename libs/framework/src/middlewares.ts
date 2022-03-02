@@ -13,7 +13,7 @@ export function bodyParserMiddleware() {
 
 export function requestIdMiddleware() {
   return rTracer.koaMiddleware({
-    // default settings
+    useHeader: true,
   });
 }
 
