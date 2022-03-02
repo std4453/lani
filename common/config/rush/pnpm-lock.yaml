@@ -4159,6 +4159,12 @@ packages:
       '@types/node': 17.0.4
     dev: false
 
+  /@types/xml2js/0.4.9:
+    resolution: {integrity: sha512-CHiCKIihl1pychwR2RNX5mAYmJDACgFVCMT5OArMaO3erzwXVcBqPcusr+Vl8yeeXukxZqtF8mZioqX+mpjjdw==}
+    dependencies:
+      '@types/node': 17.0.4
+    dev: false
+
   /@types/yargs-parser/20.2.1:
     resolution: {integrity: sha512-7tFImggNeNBVMsn0vLrpn1H1uPrUBdnARPTpZoitY37ZrdJREzf7I16tMrlK3hen349gr1NYh8CmZQa7CTG6Aw==}
     dev: false
@@ -18743,10 +18749,11 @@ packages:
     dev: false
 
   file:projects/mikan-fetch.tgz:
-    resolution: {integrity: sha512-i7azZK9Lqw7/wZ5Ln9Ned1aPm7/t84XUETN5J2M8xoyyZpLDsfQtGb37CGPoXdy+2hyQb21w/xrihh0G6SZ5aw==, tarball: file:projects/mikan-fetch.tgz}
+    resolution: {integrity: sha512-LOXRzG2dIKEjSs/DYq9BrtB0tsdJqRHCbPPEeJsBEemjb1htd6t0qXM/ktU8oa0v2mswlzEn6Fpz+ASjiUr8bQ==, tarball: file:projects/mikan-fetch.tgz}
     name: '@rush-temp/mikan-fetch'
     version: 0.0.0
     dependencies:
+      '@types/xml2js': 0.4.9
       axios: 0.24.0
       dayjs: 1.10.7
       fp-ts: 2.11.5

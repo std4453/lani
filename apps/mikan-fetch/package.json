@@ -12,7 +12,8 @@
   "devDependencies": {
     "typescript": "~4.5.4",
     "@lani/cli": "~1.0.0",
-    "typescript-transform-paths": "~3.3.1"
+    "typescript-transform-paths": "~3.3.1",
+    "@types/xml2js": "~0.4.9"
   },
   "dependencies": {
     "@lani/api": "~1.0.0",

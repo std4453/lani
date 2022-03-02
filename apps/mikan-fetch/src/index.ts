@@ -56,7 +56,7 @@ async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
     url,
     method: "GET",
     responseType: "text",
-    httpAgent: agent,
+    httpsAgent: agent,
     timeout: 30 * 1000,
   });
   const parseResult = await parser.parseStringPromise(xmlStr);
