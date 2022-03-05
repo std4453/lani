@@ -51,14 +51,26 @@ const tRSSItems = t.type({
 
 const agent = createHttpsProxyAgent(config.proxy);
 
-async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
-  const { data: xmlStr } = await axios({
-    url,
-    method: "GET",
-    responseType: "text",
-    httpsAgent: agent,
-    timeout: 30 * 1000,
+// https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c
+function pTimeout<T>(promise: Promise<T>, timeout: number) {
+  return new Promise<T>((resolve, reject) => {
+    promise.then(resolve, reject);
+    setTimeout(() => {
+      reject("Timeout waiting for promise");
+    }, timeout);
   });
+}
+
+async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
+  const { data: xmlStr } = await pTimeout(
+    axios.request<string>({
+      url,
+      method: "GET",
+      responseType: "text",
+      httpsAgent: agent,
+    }),
+    1000
+  );
   const parseResult = await parser.parseStringPromise(xmlStr);
   const decoded = tRSSItems.decode(parseResult);
 
