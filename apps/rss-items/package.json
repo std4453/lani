@@ -17,7 +17,8 @@
     "@graphql-codegen/cli": "~2.4.0",
     "@graphql-codegen/typescript": "~2.4.2",
     "@graphql-codegen/typescript-operations": "~2.2.2",
-    "@graphql-codegen/typed-document-node": "~2.2.2"
+    "@graphql-codegen/typed-document-node": "~2.2.2",
+    "@types/node-fetch": "~2.6.1"
   },
   "dependencies": {
     "@lani/api": "~1.0.0",
