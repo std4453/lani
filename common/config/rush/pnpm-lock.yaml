@@ -30,6 +30,7 @@ specifiers:
   '@rush-temp/kust': file:./projects/kust.tgz
   '@rush-temp/mikan-fetch': file:./projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
+  '@rush-temp/rss': file:./projects/rss.tgz
   '@rush-temp/rss-items': file:./projects/rss-items.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/react': ~6.17.8
@@ -38,6 +39,7 @@ specifiers:
   '@types/koa-bodyparser': ~4.3.5
   '@types/koa-logger': ~3.1.2
   '@types/koa-router': ~7.4.4
+  '@types/koa__cors': ~3.1.1
   '@types/lodash': ~4.14.178
   '@types/node': ~17.0.4
   '@types/react': ~17.0.38
@@ -124,6 +126,7 @@ dependencies:
   '@rush-temp/kust': file:projects/kust.tgz
   '@rush-temp/mikan-fetch': file:projects/mikan-fetch.tgz
   '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
+  '@rush-temp/rss': file:projects/rss.tgz_@types+node@17.0.4
   '@rush-temp/rss-items': file:projects/rss-items.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@sentry/react': 6.17.8_react@17.0.2
@@ -132,6 +135,7 @@ dependencies:
   '@types/koa-bodyparser': 4.3.5
   '@types/koa-logger': 3.1.2
   '@types/koa-router': 7.4.4
+  '@types/koa__cors': 3.1.1
   '@types/lodash': 4.14.178
   '@types/node': 17.0.4
   '@types/react': 17.0.38
@@ -3971,6 +3975,12 @@ packages:
       '@types/keygrip': 1.0.2
       '@types/koa-compose': 3.2.5
       '@types/node': 17.0.4
+    dev: false
+
+  /@types/koa__cors/3.1.1:
+    resolution: {integrity: sha512-O7MBkCocnLrpEvkMrYAp17arUDS+KuS5bXMG/Z4aPSbrO7vrYB6YrqcsTD3Dp2OnAL3j4WME2k/x2kOcyzwNUw==}
+    dependencies:
+      '@types/koa': 2.13.4
     dev: false
 
   /@types/lodash/4.14.178:
@@ -18718,12 +18728,13 @@ packages:
     dev: false
 
   file:projects/framework.tgz:
-    resolution: {integrity: sha512-YBj7zJGM0yPeRK48P1ktr/gMSLX7yAbgyvFi2pJK248zW2qugTnxCLN/5cKywqG2FSlqya3WTC9i8PeY8OLHdQ==, tarball: file:projects/framework.tgz}
+    resolution: {integrity: sha512-TqdbOCjGybXh2yTedpLs+cIeEuXkYJcjpy1LDIOOPUgBwTrPhH6BPUTyufSKJe+Jl7nw51hbkl+vkXTdFUQlWg==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
     version: 0.0.0
     dependencies:
       '@koa/cors': 3.1.0
       '@types/koa': 2.13.4
+      '@types/koa__cors': 3.1.1
       '@types/koa-bodyparser': 4.3.5
       '@types/koa-logger': 3.1.2
       '@types/koa-router': 7.4.4
@@ -18756,7 +18767,7 @@ packages:
     dev: false
 
   file:projects/mikan-fetch.tgz:
-    resolution: {integrity: sha512-KZiOgakIucsEL1c9mLduM69sCtq97yk7zmnyH0LxCG4U0T5tSLvQhY4EQeAvXu4vMOYdCD30MbERB4/5ZMenTA==, tarball: file:projects/mikan-fetch.tgz}
+    resolution: {integrity: sha512-LOXRzG2dIKEjSs/DYq9BrtB0tsdJqRHCbPPEeJsBEemjb1htd6t0qXM/ktU8oa0v2mswlzEn6Fpz+ASjiUr8bQ==, tarball: file:projects/mikan-fetch.tgz}
     name: '@rush-temp/mikan-fetch'
     version: 0.0.0
     dependencies:
@@ -18825,6 +18836,37 @@ packages:
       isomorphic-unfetch: 3.1.0
       typescript: 4.5.4
       typescript-transform-paths: 3.3.1_typescript@4.5.4
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - supports-color
+      - utf-8-validate
+      - zen-observable
+    dev: false
+
+  file:projects/rss.tgz_@types+node@17.0.4:
+    resolution: {integrity: sha512-LK9nmGidJhnvZNdCyaRPjJ/Vh8FncwrdDvJQhQTEst2PdgrHfRda01jey5B2nnHmNyeodiZfXsuFHTfIT0LHvA==, tarball: file:projects/rss.tgz}
+    id: file:projects/rss.tgz
+    name: '@rush-temp/rss'
+    version: 0.0.0
+    dependencies:
+      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
+      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
+      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
+      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
+      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      '@types/koa-router': 7.4.4
+      '@types/xml2js': 0.4.9
+      '@urql/core': 2.4.1_graphql@15.8.0
+      axios: 0.24.0
+      graphql: 15.8.0
+      isomorphic-unfetch: 3.1.0
+      koa-router: 10.1.1
+      typescript: 4.5.4
+      typescript-transform-paths: 3.3.1_typescript@4.5.4
+      xml2js: 0.4.23
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil

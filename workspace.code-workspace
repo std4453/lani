@@ -48,6 +48,10 @@
 			"name": "🚀 @lani/rss-items",
 			"path": "apps/rss-items"
 		},
+    {
+			"name": "🚀 @lani/rss",
+			"path": "apps/rss"
+		}
 	],
 	"settings": {
 		"files.associations": {

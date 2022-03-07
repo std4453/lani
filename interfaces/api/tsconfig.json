@@ -5,6 +5,7 @@
       "@/*": ["./src/*"]
     },
     "outDir": "./dist",
+    "strictNullChecks": true
   },
   "include": ["src/**/*"]
 }

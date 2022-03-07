@@ -1,7 +1,7 @@
 import { WrappedResponse } from "@/types";
 import { buildRequestURL } from "@/utils";
 import { RequestFn, ServiceConfig } from "@lani/api";
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
 import rTracer from "cls-rtracer";
 
 export interface BuildRequestOptions {
@@ -20,28 +20,29 @@ export function buildRequest<Request extends {}, Response extends {}>({
   schema,
 }: BuildRequestOptions): RequestFn<Request, Response> {
   return async (request: Request) => {
-    const options: AxiosRequestConfig<WrappedResponse<Response>> = {
-      ...config,
-      headers: {},
-    };
+    const headers: AxiosRequestHeaders = {};
 
     if (tracing) {
       const requestId = rTracer.id() as string | undefined;
       if (requestId) {
-        options.headers["x-request-id"] = requestId;
+        headers["x-request-id"] = requestId;
       }
     }
+
+    const options: AxiosRequestConfig<WrappedResponse<Response>> = {
+      ...config,
+      headers,
+    };
 
     const { data } = await axios.post<WrappedResponse<Response>>(
       buildRequestURL(service, path, schema ?? "http"),
       request,
       options
     );
-    const { code, error, data: response } = data;
-    if (code !== 0) {
-      throw new Error(error);
+    if (data.code !== 0 || "error" in data) {
+      throw new Error("error" in data ? data.error : undefined);
     }
-    return response;
+    return data.data;
   };
 }
 

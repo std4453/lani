@@ -5,7 +5,7 @@ export interface LoggerOptions {
 }
 
 export function createLogger({ tracing = true }: LoggerOptions = {}) {
-  return (...args) => {
+  return (...args: any[]) => {
     console.log(
       ...[
         new Date().toISOString(),

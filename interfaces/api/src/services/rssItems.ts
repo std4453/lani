@@ -12,6 +12,14 @@ export const tRSSItem = t.type({
    */
   animeId: t.number,
   /**
+   * Sonarr 系列名称
+   */
+  sonarrName: t.union([t.string, t.undefined]),
+  /**
+   * Sonarr 动画季度
+   */
+  sonarrSeason: t.union([t.number, t.undefined]),
+  /**
    * 集数（从 1 开始）
    */
   episode: t.number,
@@ -35,6 +43,10 @@ export const tRSSItem = t.type({
    * 种子下载链接
    */
   torrentLink: t.string,
+  /**
+   * 种子发布时间
+   */
+  publishDate: t.string,
 });
 
 export type RSSItem = t.TypeOf<typeof tRSSItem>;
@@ -43,7 +55,7 @@ export const tGetDefaultRSSRequest = t.type({
   /**
    * 限制数量
    */
-  limit: t.union([t.number, t.undefined]),
+  limit: t.union([t.undefined, t.number]),
 });
 
 export type GetDefaultRSSRequest = t.TypeOf<typeof tGetDefaultRSSRequest>;
