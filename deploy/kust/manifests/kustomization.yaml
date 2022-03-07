@@ -10,6 +10,7 @@ resources:
   - mikan-fetch.yaml
   - data-server.yaml
   - rss-items.yaml
+  - rss.yaml
   # jobs
   - mikan-sync.yaml
   # istio
