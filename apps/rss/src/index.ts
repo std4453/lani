@@ -3,9 +3,10 @@ import {
   RSSItem,
   rssItemsService,
   RSSItemsService,
+  rssService,
   RSSService,
 } from "@lani/api";
-import { buildApp, buildService } from "@lani/framework";
+import { buildApp, buildService, startApp } from "@lani/framework";
 import Router from "koa-router";
 import xml2js from "xml2js";
 
@@ -83,3 +84,5 @@ const app = buildApp<RSSService>({
   "/default": handleDefault,
   "/forced": handleForced,
 });
+
+startApp(app, rssService);
