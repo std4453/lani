@@ -22,7 +22,8 @@
     "@lani/mikan-sync",
     "@lani/mikan-fetch",
     "@lani/data-server",
-    "@lani/rss-items"
+    "@lani/rss-items",
+    "@lani/rss"
   ],
 
   /**

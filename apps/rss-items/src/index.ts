@@ -1,11 +1,10 @@
-import "isomorphic-unfetch";
-
+import config from "@/config";
 import {
-  buildApp,
-  buildRoute as r,
-  buildService,
-  startApp,
-} from "@lani/framework";
+  GetDataForDefaultItemsDocument,
+  GetDataForForcedItemsDocument,
+  GetDataForForcedItemsQuery,
+} from "@/generated/types";
+import { ExtractNode, extractNodeNonNullable } from "@/graphql";
 import {
   mikanFetchService,
   MikanFetchService,
@@ -17,13 +16,14 @@ import {
   tGetForcedRSSRequest,
   tGetForcedRSSResponse,
 } from "@lani/api";
-import { createClient } from "@urql/core";
-import config from "@/config";
 import {
-  GetDataForDefaultItemsDocument,
-  GetDataForForcedItemsDocument,
-  GetDataForForcedItemsQuery,
-} from "@/generated/types";
+  buildApp,
+  buildRoute as r,
+  buildService,
+  startApp,
+} from "@lani/framework";
+import { createClient } from "@urql/core";
+import "isomorphic-unfetch";
 
 const client = createClient({
   url: config.endpoint,
@@ -38,11 +38,20 @@ async function getDefaultRSS(limit: number): Promise<RSSItem[]> {
   }
   const items: RSSItem[] = [];
   for (const {
-    node: { hash, size, title, torrentLink },
-  } of result.data.allRssItems.edges) {
+    hash,
+    size,
+    title,
+    torrentLink,
+    publishDate,
+  } of extractNodeNonNullable(result?.data?.allRssItems)) {
     for (const {
-      node: { anime, language, pattern, quality, type },
-    } of result.data.allDownloadConfigs.edges) {
+      anime,
+      language,
+      pattern,
+      quality,
+      type,
+      animeMetadatumByAnime,
+    } of extractNodeNonNullable(result?.data?.allDownloadConfigs)) {
       const regexp = new RegExp(`^${pattern}$`);
       const match = title.match(regexp);
       if (!match?.groups?.episode) continue;
@@ -56,6 +65,11 @@ async function getDefaultRSS(limit: number): Promise<RSSItem[]> {
         language,
         animeId: anime,
         episode: parseInt(episode),
+        publishDate,
+        sonarrName: animeMetadatumByAnime?.sonarrSeryBySonarrSeries?.sonarrName,
+        sonarrSeason: animeMetadatumByAnime?.sonarrSeason
+          ? animeMetadatumByAnime?.sonarrSeason
+          : undefined,
       });
       break;
     }
@@ -66,11 +80,24 @@ async function getDefaultRSS(limit: number): Promise<RSSItem[]> {
 const mikanFetch = buildService<MikanFetchService>(mikanFetchService);
 
 async function getDownloadConfigItems(
-  id: number,
-  mikanAnimeId: string,
   {
-    node: { bangumiId, language, pattern, publishGroupId, quality, type },
-  }: GetDataForForcedItemsQuery["allAnimeMetadata"]["edges"][0]["node"]["downloadConfigsByAnime"]["edges"][0]
+    id,
+    mikanAnimeId,
+    sonarrSeason,
+    sonarrSeryBySonarrSeries,
+  }: ExtractNode<GetDataForForcedItemsQuery["allAnimeMetadata"]>,
+  {
+    bangumiId,
+    language,
+    pattern,
+    publishGroupId,
+    quality,
+    type,
+  }: ExtractNode<
+    ExtractNode<
+      GetDataForForcedItemsQuery["allAnimeMetadata"]
+    >["downloadConfigsByAnime"]
+  >
 ) {
   try {
     const finalBangumiId = bangumiId || mikanAnimeId;
@@ -82,7 +109,7 @@ async function getDownloadConfigItems(
     });
     const regexp = new RegExp(`^${pattern}$`);
     const result: RSSItem[] = [];
-    for (const { hash, size, title, torrentLink } of items) {
+    for (const { hash, size, title, torrentLink, publishDate } of items) {
       const match = title.match(regexp);
       if (!match?.groups?.episode) continue;
       const { episode } = match.groups;
@@ -95,27 +122,26 @@ async function getDownloadConfigItems(
         size,
         torrentLink,
         episode: parseInt(episode),
+        publishDate,
+        sonarrName: sonarrSeryBySonarrSeries?.sonarrName,
+        sonarrSeason: sonarrSeason ? sonarrSeason : undefined,
       });
     }
+    return result;
   } catch (error) {
     console.error(error);
     return [];
   }
 }
 
-async function getAnimeItems({
-  node: {
-    id,
-    mikanAnimeId,
-    downloadConfigsByAnime: { edges: downloadConfigs },
-  },
-}: GetDataForForcedItemsQuery["allAnimeMetadata"]["edges"][0]): Promise<
-  RSSItem[]
-> {
+async function getAnimeItems(
+  node: ExtractNode<GetDataForForcedItemsQuery["allAnimeMetadata"]>
+): Promise<RSSItem[]> {
+  const { downloadConfigsByAnime } = node;
   return (
     await Promise.all(
-      downloadConfigs.map((config) =>
-        getDownloadConfigItems(id, mikanAnimeId, config)
+      extractNodeNonNullable(downloadConfigsByAnime).map((config) =>
+        getDownloadConfigItems(node, config)
       )
     )
   ).reduce((a, b) => [...a, ...b], []);
@@ -127,7 +153,9 @@ async function getForcedRSS(): Promise<RSSItem[]> {
     throw result.error;
   }
   return (
-    await Promise.all(result.data.allAnimeMetadata.edges.map(getAnimeItems))
+    await Promise.all(
+      extractNodeNonNullable(result?.data?.allAnimeMetadata).map(getAnimeItems)
+    )
   ).reduce((a, b) => [...a, ...b], []);
 }
 

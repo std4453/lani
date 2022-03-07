@@ -1,5 +1,9 @@
-export interface WrappedResponse<Response> {
-  code: number;
-  error?: string;
-  data?: Response;
-}
+export type WrappedResponse<Response> =
+  | {
+      code: number;
+      error: string;
+    }
+  | {
+      code: number;
+      data: Response;
+    };

@@ -1455,6 +1455,8 @@ export enum SonarrSeriesOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   SonarrIdAsc = 'SONARR_ID_ASC',
   SonarrIdDesc = 'SONARR_ID_DESC',
+  SonarrNameAsc = 'SONARR_NAME_ASC',
+  SonarrNameDesc = 'SONARR_NAME_DESC',
   SonarrSlugAsc = 'SONARR_SLUG_ASC',
   SonarrSlugDesc = 'SONARR_SLUG_DESC',
   TvdbidAsc = 'TVDBID_ASC',
@@ -1470,6 +1472,7 @@ export type SonarrSery = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   sonarrId: Scalars['Int'];
+  sonarrName: Scalars['String'];
   sonarrSlug: Scalars['String'];
   tvdbid: Scalars['Int'];
 };
@@ -1498,6 +1501,8 @@ export type SonarrSeryCondition = {
   isArchived?: InputMaybe<Scalars['Boolean']>;
   /** Checks for equality with the object’s `sonarrId` field. */
   sonarrId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `sonarrName` field. */
+  sonarrName?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `sonarrSlug` field. */
   sonarrSlug?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `tvdbid` field. */
@@ -1518,6 +1523,8 @@ export type SonarrSeryFilter = {
   or?: InputMaybe<Array<SonarrSeryFilter>>;
   /** Filter by the object’s `sonarrId` field. */
   sonarrId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `sonarrName` field. */
+  sonarrName?: InputMaybe<StringFilter>;
   /** Filter by the object’s `sonarrSlug` field. */
   sonarrSlug?: InputMaybe<StringFilter>;
   /** Filter by the object’s `tvdbid` field. */
@@ -1529,6 +1536,7 @@ export type SonarrSeryInput = {
   id?: InputMaybe<Scalars['Int']>;
   isArchived?: InputMaybe<Scalars['Boolean']>;
   sonarrId: Scalars['Int'];
+  sonarrName: Scalars['String'];
   sonarrSlug: Scalars['String'];
   tvdbid: Scalars['Int'];
 };
@@ -1538,6 +1546,7 @@ export type SonarrSeryPatch = {
   id?: InputMaybe<Scalars['Int']>;
   isArchived?: InputMaybe<Scalars['Boolean']>;
   sonarrId?: InputMaybe<Scalars['Int']>;
+  sonarrName?: InputMaybe<Scalars['String']>;
   sonarrSlug?: InputMaybe<Scalars['String']>;
   tvdbid?: InputMaybe<Scalars['Int']>;
 };
@@ -1853,13 +1862,13 @@ export type GetDataForDefaultItemsQueryVariables = Exact<{
 }>;
 
 
-export type GetDataForDefaultItemsQuery = { __typename?: 'Query', allRssItems?: { __typename?: 'RssItemsConnection', edges: Array<{ __typename?: 'RssItemsEdge', node?: { __typename?: 'RssItem', hash: string, publishDate: string, size: any, title: string, torrentLink: string } | null | undefined }> } | null | undefined, allDownloadConfigs?: { __typename?: 'DownloadConfigsConnection', edges: Array<{ __typename?: 'DownloadConfigsEdge', node?: { __typename?: 'DownloadConfig', language: string, quality: number, type: string, anime: number, pattern: string } | null | undefined }> } | null | undefined };
+export type GetDataForDefaultItemsQuery = { __typename?: 'Query', allRssItems?: { __typename?: 'RssItemsConnection', edges: Array<{ __typename?: 'RssItemsEdge', node?: { __typename?: 'RssItem', hash: string, publishDate: string, size: any, title: string, torrentLink: string } | null | undefined }> } | null | undefined, allDownloadConfigs?: { __typename?: 'DownloadConfigsConnection', edges: Array<{ __typename?: 'DownloadConfigsEdge', node?: { __typename?: 'DownloadConfig', language: string, quality: number, type: string, anime: number, pattern: string, animeMetadatumByAnime?: { __typename?: 'AnimeMetadatum', sonarrSeason?: number | null | undefined, sonarrSeryBySonarrSeries?: { __typename?: 'SonarrSery', sonarrName: string } | null | undefined } | null | undefined } | null | undefined }> } | null | undefined };
 
 export type GetDataForForcedItemsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetDataForForcedItemsQuery = { __typename?: 'Query', allAnimeMetadata?: { __typename?: 'AnimeMetadataConnection', edges: Array<{ __typename?: 'AnimeMetadataEdge', node?: { __typename?: 'AnimeMetadatum', id: number, mikanAnimeId: string, downloadConfigsByAnime: { __typename?: 'DownloadConfigsConnection', edges: Array<{ __typename?: 'DownloadConfigsEdge', node?: { __typename?: 'DownloadConfig', language: string, pattern: string, quality: number, type: string, publishGroupId: string, bangumiId: string } | null | undefined }> } } | null | undefined }> } | null | undefined };
+export type GetDataForForcedItemsQuery = { __typename?: 'Query', allAnimeMetadata?: { __typename?: 'AnimeMetadataConnection', edges: Array<{ __typename?: 'AnimeMetadataEdge', node?: { __typename?: 'AnimeMetadatum', id: number, mikanAnimeId: string, sonarrSeason?: number | null | undefined, downloadConfigsByAnime: { __typename?: 'DownloadConfigsConnection', edges: Array<{ __typename?: 'DownloadConfigsEdge', node?: { __typename?: 'DownloadConfig', language: string, pattern: string, quality: number, type: string, publishGroupId: string, bangumiId: string } | null | undefined }> }, sonarrSeryBySonarrSeries?: { __typename?: 'SonarrSery', sonarrName: string } | null | undefined } | null | undefined }> } | null | undefined };
 
 
-export const GetDataForDefaultItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDataForDefaultItems"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allRssItems"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"PUBLISH_DATE_DESC"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hash"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"allDownloadConfigs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"anime"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDataForDefaultItemsQuery, GetDataForDefaultItemsQueryVariables>;
-export const GetDataForForcedItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDataForForcedItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allAnimeMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"forceScratch"},"value":{"kind":"BooleanValue","value":true}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadConfigsByAnime"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"publishGroupId"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDataForForcedItemsQuery, GetDataForForcedItemsQueryVariables>;
+export const GetDataForDefaultItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDataForDefaultItems"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allRssItems"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"PUBLISH_DATE_DESC"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hash"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"allDownloadConfigs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"anime"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"animeMetadatumByAnime"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sonarrSeryBySonarrSeries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sonarrName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeason"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDataForDefaultItemsQuery, GetDataForDefaultItemsQueryVariables>;
+export const GetDataForForcedItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDataForForcedItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allAnimeMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"forceScratch"},"value":{"kind":"BooleanValue","value":true}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadConfigsByAnime"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"publishGroupId"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeryBySonarrSeries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sonarrName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeason"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDataForForcedItemsQuery, GetDataForForcedItemsQueryVariables>;

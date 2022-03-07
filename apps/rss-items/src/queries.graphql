@@ -18,6 +18,12 @@ query GetDataForDefaultItems($first: Int!) {
         type
         anime
         pattern
+        animeMetadatumByAnime {
+          sonarrSeryBySonarrSeries {
+            sonarrName
+          }
+          sonarrSeason
+        }
       }
     }
   }
@@ -41,6 +47,10 @@ query GetDataForForcedItems {
         }
         id
         mikanAnimeId
+        sonarrSeryBySonarrSeries {
+          sonarrName
+        }
+        sonarrSeason
       }
     }
   }

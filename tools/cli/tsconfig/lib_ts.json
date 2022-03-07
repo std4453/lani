@@ -9,6 +9,7 @@
       { "transform": "typescript-transform-paths" },
       { "transform": "typescript-transform-paths", "afterDeclarations": true }
     ],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "strict": true
   }
 }

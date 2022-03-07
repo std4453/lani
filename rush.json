@@ -491,6 +491,10 @@
     {
       "packageName": "@lani/rss-items",
       "projectFolder": "apps/rss-items"
+    },
+    {
+      "packageName": "@lani/rss",
+      "projectFolder": "apps/rss"
     }
   ]
 }
