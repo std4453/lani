@@ -16,12 +16,7 @@ import {
   tGetForcedRSSRequest,
   tGetForcedRSSResponse,
 } from "@lani/api";
-import {
-  buildApp,
-  buildRoute as r,
-  buildService,
-  startApp,
-} from "@lani/framework";
+import { App, buildRoute as r, buildService } from "@lani/framework";
 import { createClient } from "@urql/core";
 import "isomorphic-unfetch";
 
@@ -159,21 +154,28 @@ async function getForcedRSS(): Promise<RSSItem[]> {
   ).reduce((a, b) => [...a, ...b], []);
 }
 
-const app = buildApp<RSSItemsService>({
-  "/getDefaultRSS": r(
-    tGetDefaultRSSRequest,
-    tGetDefaultRSSResponse,
-    async ({ limit = 500 }) => {
-      return {
-        items: await getDefaultRSS(limit),
-      };
-    }
-  ),
-  "/getForcedRSS": r(tGetForcedRSSRequest, tGetForcedRSSResponse, async () => {
-    return {
-      items: await getForcedRSS(),
-    };
-  }),
-});
-
-startApp(app, rssItemsService);
+const app = new App();
+app
+  .setupMiddlewares()
+  .setupRoutes<RSSItemsService>({
+    "/getDefaultRSS": r(
+      tGetDefaultRSSRequest,
+      tGetDefaultRSSResponse,
+      async ({ limit = 500 }) => {
+        return {
+          items: await getDefaultRSS(limit),
+        };
+      }
+    ),
+    "/getForcedRSS": r(
+      tGetForcedRSSRequest,
+      tGetForcedRSSResponse,
+      async () => {
+        return {
+          items: await getForcedRSS(),
+        };
+      }
+    ),
+  })
+  .setupRouter()
+  .start(rssItemsService);
