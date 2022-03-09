@@ -25,10 +25,26 @@ export class App {
       routes: {
         [x: string]: any;
       };
+    } = {
+      routes: Record<string, any>;
     }
-  >(routes: Record<keyof Service["routes"], Router.IMiddleware>) {
+  >(
+    routes: Record<
+      keyof Service["routes"],
+      | Router.IMiddleware
+      | {
+          method: "get" | "post" | "put" | "del" | "head" | "patch";
+          handler: Router.IMiddleware;
+        }
+    >
+  ) {
     for (const path in routes) {
-      this.router.post(path, routes[path]);
+      const route = routes[path];
+      if ("method" in route) {
+        this.router[route.method](path, route.handler);
+      } else {
+        this.router.post(path, route);
+      }
     }
     return this;
   }
