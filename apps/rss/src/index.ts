@@ -6,7 +6,7 @@ import {
   rssService,
   RSSService,
 } from "@lani/api";
-import { buildApp, buildService, startApp } from "@lani/framework";
+import { App, buildService } from "@lani/framework";
 import Router from "koa-router";
 import xml2js from "xml2js";
 
@@ -71,18 +71,37 @@ function outputRSS(ctx: Parameters<Router.IMiddleware>[0], items: RSSItem[]) {
 }
 
 const handleDefault: Router.IMiddleware = async (ctx) => {
-  const data = await rssItems.routes["/getDefaultRSS"]({ limit: undefined });
-  outputRSS(ctx, data.items);
+  try {
+    const data = await rssItems.routes["/getDefaultRSS"]({ limit: undefined });
+    outputRSS(ctx, data.items);
+  } catch (e) {
+    console.error(e);
+    ctx.throw(500);
+  }
 };
 
 const handleForced: Router.IMiddleware = async (ctx) => {
-  const data = await rssItems.routes["/getForcedRSS"]({ limit: undefined });
-  outputRSS(ctx, data.items);
+  try {
+    const data = await rssItems.routes["/getForcedRSS"]({});
+    outputRSS(ctx, data.items);
+  } catch (e) {
+    console.error(e);
+    ctx.throw(500);
+  }
 };
 
-const app = buildApp<RSSService>({
-  "/default": handleDefault,
-  "/forced": handleForced,
-});
-
-startApp(app, rssService);
+const app = new App();
+app
+  .setupMiddlewares()
+  .setupRoutes({
+    "/default": {
+      method: "get",
+      handler: handleDefault,
+    },
+    "/forced": {
+      method: "get",
+      handler: handleForced,
+    },
+  })
+  .setupRouter()
+  .start(rssService);
