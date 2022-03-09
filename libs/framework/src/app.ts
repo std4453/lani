@@ -4,33 +4,43 @@ import { ServiceConfig } from "@lani/api";
 import Koa from "koa";
 import Router from "koa-router";
 
-export function buildApp<
-  Service extends {
-    routes: {
-      [x: string]: any;
-    };
-  }
->(
-  routes: Record<keyof Service["routes"], Router.IMiddleware>,
-  middlewares: SetupMiddlewaresOptions = {}
-) {
-  const app = new Koa();
-  setupMiddlewares(app, middlewares);
-  const router = new Router();
-  for (const path in routes) {
-    router.post(path, routes[path]);
-  }
-  app.use(router.routes()).use(router.allowedMethods());
-  return app;
-}
+export class App {
+  readonly app = new Koa();
+  readonly router = new Router();
 
-export function startApp(app: Koa, service: ServiceConfig) {
-  app.listen(service.port);
-  if (process.env.NODE_ENV === "development") {
-    console.log("Service listening on port", service.port);
-  } else {
-    console.log("Service started");
-    console.log("env:", env);
-    console.log("service: ", service);
+  constructor() {}
+
+  setupMiddlewares(middlewares: SetupMiddlewaresOptions = {}) {
+    setupMiddlewares(this.app, middlewares);
+    return this;
+  }
+
+  setupRouter() {
+    this.app.use(this.router.routes()).use(this.router.allowedMethods());
+    return this;
+  }
+
+  setupRoutes<
+    Service extends {
+      routes: {
+        [x: string]: any;
+      };
+    }
+  >(routes: Record<keyof Service["routes"], Router.IMiddleware>) {
+    for (const path in routes) {
+      this.router.post(path, routes[path]);
+    }
+    return this;
+  }
+
+  start(service: ServiceConfig) {
+    this.app.listen(service.port);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Service listening on port", service.port);
+    } else {
+      console.log("Service started");
+      console.log("env:", env);
+      console.log("service: ", service);
+    }
   }
 }
