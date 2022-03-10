@@ -1,24 +1,18 @@
+import config from "@/config";
 import {
   bilibiliBangumiCCService,
-  MikanFetchService,
   MikanRSSItem,
   tFetchMikanRSSRequest,
   tFetchMikanRSSResponse,
 } from "@lani/api";
-import {
-  buildApp,
-  buildRoute as r,
-  NormalError,
-  startApp,
-} from "@lani/framework";
+import { App, buildRoute as r, NormalError } from "@lani/framework";
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { isLeft } from "fp-ts/lib/Either";
+import createHttpsProxyAgent from "https-proxy-agent";
 import * as t from "io-ts";
 import xml2js from "xml2js";
-import createHttpsProxyAgent from "https-proxy-agent";
-import config from "@/config";
 
 dayjs.extend(utc);
 
@@ -114,18 +108,21 @@ async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
   );
 }
 
-const app = buildApp<MikanFetchService>({
-  "/fetchMikanRSS": r(
-    tFetchMikanRSSRequest,
-    tFetchMikanRSSResponse,
-    async (req) => {
-      const url = `https://mikanani.me/RSS/${req.partialURL}`;
-      const items = await fetchMikanRSSItems(url);
-      return {
-        items,
-      };
-    }
-  ),
-});
-
-startApp(app, bilibiliBangumiCCService);
+const app = new App();
+app
+  .setupMiddlewares()
+  .setupRoutes({
+    "/fetchMikanRSS": r(
+      tFetchMikanRSSRequest,
+      tFetchMikanRSSResponse,
+      async (req) => {
+        const url = `https://mikanani.me/RSS/${req.partialURL}`;
+        const items = await fetchMikanRSSItems(url);
+        return {
+          items,
+        };
+      }
+    ),
+  })
+  .setupRouter()
+  .start(bilibiliBangumiCCService);
