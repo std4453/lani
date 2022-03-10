@@ -69,7 +69,7 @@ async function fetchMikanRSSItems(url: string): Promise<MikanRSSItem[]> {
       responseType: "text",
       httpsAgent: agent,
     }),
-    1000
+    30000
   );
   const parseResult = await parser.parseStringPromise(xmlStr);
   const decoded = tRSSItems.decode(parseResult);
