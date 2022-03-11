@@ -22,6 +22,7 @@ import "isomorphic-unfetch";
 
 const client = createClient({
   url: config.endpoint,
+  requestPolicy: "network-only",
 });
 
 async function getDefaultRSS(limit: number): Promise<RSSItem[]> {
