@@ -1,4 +1,4 @@
-export interface RequestFn<Request extends {}, Response extends {}> {
+export interface RequestFn<Request, Response> {
   (req: Request): Promise<Response>;
 }
 
