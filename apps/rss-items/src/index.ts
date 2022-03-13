@@ -4,7 +4,6 @@ import {
   GetDataForForcedItemsDocument,
   GetDataForForcedItemsQuery,
 } from "@/generated/types";
-import { ExtractNode, extractNodeNonNullable } from "@/graphql";
 import {
   mikanFetchService,
   MikanFetchService,
@@ -17,6 +16,7 @@ import {
   tGetForcedRSSResponse,
 } from "@lani/api";
 import { App, buildRoute as r, buildService } from "@lani/framework";
+import { ExtractNode, extractNodeNonNullable } from "@lani/gql-utils";
 import { createClient } from "@urql/core";
 import "isomorphic-unfetch";
 

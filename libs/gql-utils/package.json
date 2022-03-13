@@ -1,0 +1,19 @@
+{
+  "name": "@lani/gql-utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "lani-cli build"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "@lani/cli": "~1.0.0",
+    "typescript-transform-paths": "~3.3.1"
+  },
+  "dependencies": {},
+  "files": [
+    "/dist"
+  ]
+}

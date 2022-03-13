@@ -1,5 +1,3 @@
-// TODO: 抽成单独的包
-
 export type ExcludeTypename<T> = T extends object
   ? Omit<ExcludeTypenameObject<T>, "__typename">
   : T extends Array<infer U>

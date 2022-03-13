@@ -1,5 +1,5 @@
 {
-  "name": "@lani/rss-items",
+  "name": "@lani/sonarr-sync",
   "version": "1.0.0",
   "private": "true",
   "main": "dist/index.js",

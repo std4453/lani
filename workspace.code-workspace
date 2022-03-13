@@ -51,7 +51,15 @@
     {
 			"name": "🚀 @lani/rss",
 			"path": "apps/rss"
-		}
+		},
+    {
+			"name": "🚀 @lani/sonarr-sync",
+			"path": "apps/sonarr-sync"
+		},
+    {
+			"name": "📦 @lani/gql-utils",
+			"path": "libs/gql-utils"
+		},
 	],
 	"settings": {
 		"files.associations": {

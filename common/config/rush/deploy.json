@@ -23,7 +23,8 @@
     "@lani/mikan-fetch",
     "@lani/data-server",
     "@lani/rss-items",
-    "@lani/rss"
+    "@lani/rss",
+    "@lani/sonarr-sync"
   ],
 
   /**

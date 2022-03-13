@@ -1,0 +1,25 @@
+mutation CreateSonarrSeries($sonarrSery: SonarrSeryInput!) {
+  createSonarrSery(input: { sonarrSery: $sonarrSery }) {
+    __typename
+  }
+}
+
+query GetSonarrSeriesByIdList($in: [Int!]) {
+  allSonarrSeries(filter: { sonarrId: { in: $in } }) {
+    edges {
+      node {
+        sonarrId
+        sonarrName
+        sonarrSlug
+        tvdbid
+        id
+      }
+    }
+  }
+}
+
+mutation UpdateSonarrSeries($id: Int!, $sonarrSeryPatch: SonarrSeryPatch!) {
+  updateSonarrSeryById(input: { sonarrSeryPatch: $sonarrSeryPatch, id: $id }) {
+    __typename
+  }
+}

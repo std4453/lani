@@ -12,7 +12,7 @@ export interface BuildRequestOptions {
   schema?: string;
 }
 
-export function buildRequest<Request extends {}, Response extends {}>({
+export function buildRequest<Request, Response>({
   service,
   path,
   config = {},
