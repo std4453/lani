@@ -11,6 +11,7 @@ resources:
   - data-server.yaml
   - rss-items.yaml
   - rss.yaml
+  - sonarr-sync.yaml
   # jobs
   - mikan-sync.yaml
   # istio

@@ -44,3 +44,14 @@ spec:
         host: data-server
         port:
           number: 8080
+  
+  - match:
+    - uri: 
+        prefix: /api/sonarr-sync/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: sonarr-sync
+        port:
+          number: 8080
