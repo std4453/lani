@@ -8,7 +8,7 @@ export default mergeConfig({})<{
 }>({
   dev: {
     postgresUrl:
-      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@10.43.222.73:5432/lani",
+      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@10.43.222.73:5432/lani-offline",
     postgraphile: {
       subscriptions: true,
       dynamicJson: true,
@@ -22,12 +22,12 @@ export default mergeConfig({})<{
       enableQueryBatching: true,
       legacyRelations: "omit",
       watchPg: true,
-      exportGqlSchemaPath: "./src/generated/schema.graphql",
+      exportGqlSchemaPath: "./generated/schema.graphql",
     },
   },
   offline: {
     postgresUrl:
-      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani",
+      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani-offline",
     postgraphile: {
       subscriptions: true,
       dynamicJson: true,
