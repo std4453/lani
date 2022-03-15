@@ -6,13 +6,13 @@ resources:
   - regcred.yaml
   - lani-cd.yaml
   # services
-  - bilibili-bangumi-cc.yaml
-  - mikan-fetch.yaml
+  # - bilibili-bangumi-cc.yaml
+  # - mikan-fetch.yaml
   - data-server.yaml
-  - rss-items.yaml
-  - rss.yaml
-  - sonarr-sync.yaml
+  # - rss-items.yaml
+  # - rss.yaml
+  # - sonarr-sync.yaml
   # jobs
-  - mikan-sync.yaml
+  # - mikan-sync.yaml
   # istio
   - istio-vs.yaml
