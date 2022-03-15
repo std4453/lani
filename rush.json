@@ -503,6 +503,10 @@
     {
       "packageName": "@lani/gql-utils",
       "projectFolder": "libs/gql-utils"
+    },
+    {
+      "packageName": "@lani/api-server",
+      "projectFolder": "apps/api-server"
     }
   ]
 }

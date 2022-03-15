@@ -60,6 +60,10 @@
 			"name": "📦 @lani/gql-utils",
 			"path": "libs/gql-utils"
 		},
+    {
+			"name": "🚀 @lani/api-server",
+			"path": "apps/api-server"
+		},
 	],
 	"settings": {
 		"files.associations": {
