@@ -1,8 +1,7 @@
+import { ConfigType } from '@/config';
 import { Injectable, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { string } from 'fp-ts';
 import createHttpsProxyAgent from 'https-proxy-agent';
-import { ConfigType } from 'src/config';
 
 @Injectable()
 export class CommonService {

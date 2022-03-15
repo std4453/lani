@@ -8,6 +8,6 @@ const config = mergeConfig({
   },
 });
 
-export default config;
+export default () => config;
 
 export type ConfigType = typeof config;
