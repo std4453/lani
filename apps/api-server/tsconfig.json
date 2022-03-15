@@ -1,15 +1,22 @@
 {
-  "extends": "@lani/cli/tsconfig/node_ts.json",
   "compilerOptions": {
-    "declaration": false,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
-    "outDir": "./dist"
-  },
-  "include": [
-    "src/**/*"
-  ]
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true
+  }
 }
