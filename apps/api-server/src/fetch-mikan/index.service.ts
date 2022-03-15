@@ -1,11 +1,11 @@
+import { CommonService } from '@/common/index.module';
+import { MikanRSSItem } from '@/fetch-mikan/index.model';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
-import { CommonService } from 'src/common/index.module';
-import { MikanRSSItem } from 'src/fetch-mikan/index.model';
 import xml2js from 'xml2js';
 
 const tRSSItems = t.type({

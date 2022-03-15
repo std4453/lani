@@ -1,6 +1,6 @@
+import { MikanRSSItem } from '@/fetch-mikan/index.model';
+import { FetchMikanService } from '@/fetch-mikan/index.service';
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { MikanRSSItem } from 'src/fetch-mikan/index.model';
-import { FetchMikanService } from 'src/fetch-mikan/index.service';
 
 @Resolver()
 export class FetchMikanResolver {
