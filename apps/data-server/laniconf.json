@@ -3,10 +3,7 @@
   "type": "node:ts",
   "abilities": [],
   "ci": {
-    "image": "data-server",
-    "deployment": {
-      "name": "data-server"
-    }
+    "image": "data-server"
   },
   "node": {
     "entry": "src/index.ts"
