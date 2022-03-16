@@ -1,5 +1,5 @@
 overwrite: true
-schema: http://data-server.lani-offline:8080/graphql
+schema: https://lani.i.std4453.com/api/data-server/graphql
 generates:
  # Creates the TypeScript types from the schema and any .graphql file
  src/generated/types.ts:
@@ -7,7 +7,7 @@ generates:
    plugins:
      - typescript
      - typescript-operations
-     - typed-document-node
+     - typescript-graphql-request
 config:
  scalars:
    Datetime: "string"

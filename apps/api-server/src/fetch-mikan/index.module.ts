@@ -6,5 +6,6 @@ import { Module } from '@nestjs/common';
 @Module({
   imports: [CommonModule],
   providers: [FetchMikanService, FetchMikanResolver],
+  exports: [FetchMikanService],
 })
 export class FetchMikanModule {}
