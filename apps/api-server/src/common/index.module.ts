@@ -1,4 +1,5 @@
 import { ConfigType } from '@/config';
+import { BigIntScalar } from '@/scalars/bigint.scalar';
 import { Injectable, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import createHttpsProxyAgent from 'https-proxy-agent';
@@ -12,7 +13,7 @@ export class CommonService {
 
 @Module({
   imports: [ConfigModule],
-  providers: [CommonService],
-  exports: [CommonService],
+  providers: [CommonService, BigIntScalar],
+  exports: [CommonService, BigIntScalar],
 })
 export class CommonModule {}

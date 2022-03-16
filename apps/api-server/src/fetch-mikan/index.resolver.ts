@@ -6,7 +6,7 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 export class FetchMikanResolver {
   constructor(private fetchMikanService: FetchMikanService) {}
 
-  @Query((returns) => [MikanRSSItem])
+  @Query(() => [MikanRSSItem])
   async fetchMikan(@Args('partialURL') partialURL: string) {
     return this.fetchMikanService.fetchMikanRSSItems(partialURL);
   }

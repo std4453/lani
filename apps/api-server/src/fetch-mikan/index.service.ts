@@ -98,7 +98,7 @@ export class FetchMikanService {
           link,
           title,
           publishDate: dayjs(pubDateStr).utcOffset(8, true).toDate(),
-          size,
+          size: BigInt(size),
           torrentLink,
         };
       },
