@@ -10,6 +10,7 @@ resources:
   # - bilibili-bangumi-cc.yaml
   # - mikan-fetch.yaml
   - data-server.yaml
+  - api-server.yaml
   # - rss-items.yaml
   # - rss.yaml
   # - sonarr-sync.yaml
