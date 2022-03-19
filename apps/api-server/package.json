@@ -21,7 +21,8 @@
     "codegen:dev": "graphql-codegen --config codegen.yml --watch",
     "prisma:pull": "prisma db pull",
     "prisma:gen": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "devops": "lani-cli devops"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
@@ -85,7 +86,8 @@
     "@graphql-codegen/typescript-graphql-request": "~4.4.2",
     "prisma-schema-transformer": "~0.8.1",
     "@paljs/cli": "~4.0.18",
-    "@types/bull": "~3.15.8"
+    "@types/bull": "~3.15.8",
+    "@lani/cli": "~1.0.0"
   },
   "jest": {
     "moduleFileExtensions": [
