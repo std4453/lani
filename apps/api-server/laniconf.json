@@ -3,6 +3,6 @@
   "type": "node:ts",
   "abilities": [],
   "ci": {
-    "image": "rss-items"
+    "image": "api-server"
   }
 }
