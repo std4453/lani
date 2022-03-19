@@ -24,7 +24,9 @@
     "@lani/data-server",
     "@lani/rss-items",
     "@lani/rss",
-    "@lani/sonarr-sync"
+    "@lani/sonarr-sync",
+    "@lani/api-server",
+    "@lani/gateway"
   ],
 
   /**
