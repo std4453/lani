@@ -1,4 +1,5 @@
 import OmitArchivedPlugin from "@graphile-contrib/pg-omit-archived";
+import FederationPlugin from "@graphile/federation";
 import { dataServerService } from "@lani/api";
 import { App } from "@lani/framework";
 import { postgraphile } from "postgraphile";
@@ -10,7 +11,11 @@ app.setupMiddlewares();
 app.app.use(
   postgraphile(config.postgresUrl, "public", {
     ...config.postgraphile,
-    appendPlugins: [OmitArchivedPlugin, ConnectionFilterPlugin],
+    appendPlugins: [
+      OmitArchivedPlugin,
+      ConnectionFilterPlugin,
+      FederationPlugin,
+    ],
   })
 );
 app.start(dataServerService);
