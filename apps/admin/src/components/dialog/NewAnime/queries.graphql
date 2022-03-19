@@ -1,9 +1,0 @@
-mutation NewAnime($uniformName: String!) {
-  createAnimeMetadatum(
-    input: { animeMetadatum: { uniformName: $uniformName } }
-  ) {
-    animeMetadatum {
-      id
-    }
-  }
-}

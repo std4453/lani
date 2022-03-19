@@ -1,6 +1,8 @@
+import { PrismaService } from '@/common/prisma.service';
 import { FetchMikanService } from '@/fetch-mikan/index.service';
-import { PrismaService } from '@/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { concatMap } from 'rxjs';
 
 @Injectable()
 export class MikanSyncService {
@@ -9,22 +11,25 @@ export class MikanSyncService {
     private fetchMikanService: FetchMikanService,
   ) {}
 
-  async syncMikan() {
-    try {
-      const items = await this.fetchMikanService.fetchMikanRSSItems('Classic');
-      console.log(items.length, 'items found');
-      await this.prisma.torrents.createMany({
-        data: items.map(({ hash, publishDate, size, title, torrentLink }) => ({
-          title,
-          torrentLink,
-          size,
-          publishDate,
-          hash,
-        })),
-        skipDuplicates: true,
-      });
-    } catch (e) {
-      console.error(e);
-    }
+  @Cron('*/5 * * * *')
+  syncMikan() {
+    return this.fetchMikanService.fetchMikanRSSItems('Classic').pipe(
+      concatMap(async (items) => {
+        const { count } = await this.prisma.torrents.createMany({
+          data: items.map(
+            ({ hash, publishDate, size, title, torrentLink }) => ({
+              title,
+              torrentLink,
+              size,
+              publishDate,
+              hash,
+            }),
+          ),
+          skipDuplicates: true,
+        });
+        console.log(items.length, 'items found', count, 'items new');
+        return count;
+      }),
+    );
   }
 }

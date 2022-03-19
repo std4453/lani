@@ -1,3 +1,4 @@
+import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { BigIntScalar } from '@/scalars/bigint.scalar';
 import { Injectable, Module } from '@nestjs/common';
@@ -13,7 +14,7 @@ export class CommonService {
 
 @Module({
   imports: [ConfigModule],
-  providers: [CommonService, BigIntScalar],
-  exports: [CommonService, BigIntScalar],
+  providers: [CommonService, BigIntScalar, PrismaService],
+  exports: [CommonService, BigIntScalar, PrismaService],
 })
 export class CommonModule {}

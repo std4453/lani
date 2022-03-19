@@ -1,13 +1,14 @@
 import { MikanSyncService } from '@/mikan-sync/index.service';
-import { ID, Mutation, Resolver } from '@nestjs/graphql';
+import { Int, Mutation, Resolver } from '@nestjs/graphql';
 
 @Resolver()
 export class MikanSyncResolver {
   constructor(private mikansyncService: MikanSyncService) {}
 
-  @Mutation(() => ID)
-  async syncMikan() {
-    await this.mikansyncService.syncMikan();
-    return '';
+  @Mutation(() => Int, {
+    description: 'Returns newly added torrent count',
+  })
+  syncMikan() {
+    return this.mikansyncService.syncMikan();
   }
 }
