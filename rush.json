@@ -507,6 +507,10 @@
     {
       "packageName": "@lani/api-server",
       "projectFolder": "apps/api-server"
+    },
+    {
+      "packageName": "@lani/gateway",
+      "projectFolder": "apps/gateway"
     }
   ]
 }

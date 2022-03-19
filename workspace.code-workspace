@@ -64,6 +64,10 @@
 			"name": "🚀 @lani/api-server",
 			"path": "apps/api-server"
 		},
+    {
+			"name": "🚀 @lani/gateway",
+			"path": "apps/gateway"
+		},
 	],
 	"settings": {
 		"files.associations": {
