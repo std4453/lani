@@ -20,6 +20,8 @@ specifiers:
   '@graphql-typed-document-node/core': ~3.1.1
   '@koa/cors': ~3.1.0
   '@nestjs/apollo': ~10.0.7
+  '@nestjs/axios': ~0.0.7
+  '@nestjs/bull': ~0.5.3
   '@nestjs/cli': ^8.0.0
   '@nestjs/common': ^8.0.0
   '@nestjs/config': ~1.2.0
@@ -42,6 +44,7 @@ specifiers:
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
+  '@rush-temp/gateway': file:./projects/gateway.tgz
   '@rush-temp/gql-utils': file:./projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:./projects/k8s-gen.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
@@ -52,6 +55,7 @@ specifiers:
   '@rush-temp/sonarr-sync': file:./projects/sonarr-sync.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/react': ~6.17.8
+  '@types/bull': ~3.15.8
   '@types/cron': ~1.7.3
   '@types/express': ^4.17.13
   '@types/history': 2.0.45
@@ -77,6 +81,7 @@ specifiers:
   antd: ~4.18.4
   apollo-server-express: ~3.6.4
   axios: ~0.24.0
+  bull: ~4.7.0
   cls-rtracer: ~2.6.0
   clsx: ~1.1.1
   cos-nodejs-sdk-v5: ~2.11.6
@@ -160,6 +165,8 @@ dependencies:
   '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
   '@koa/cors': 3.1.0
   '@nestjs/apollo': 10.0.7_cd40b36624429e651a34ae722cf3b5de
+  '@nestjs/axios': 0.0.7_7834c4d3afb72e7515a1fdbb3d2a4476
+  '@nestjs/bull': 0.5.3_a99c1d7f1c3d252afbb8c739522b0edf
   '@nestjs/cli': 8.2.3
   '@nestjs/common': 8.4.1_88a789cb3f20cca25c3f70fe96f41643
   '@nestjs/config': 1.2.0_7834c4d3afb72e7515a1fdbb3d2a4476
@@ -182,6 +189,7 @@ dependencies:
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.4
   '@rush-temp/framework': file:projects/framework.tgz
+  '@rush-temp/gateway': file:projects/gateway.tgz
   '@rush-temp/gql-utils': file:projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:projects/k8s-gen.tgz
   '@rush-temp/kust': file:projects/kust.tgz
@@ -192,6 +200,7 @@ dependencies:
   '@rush-temp/sonarr-sync': file:projects/sonarr-sync.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@sentry/react': 6.17.8_react@17.0.2
+  '@types/bull': 3.15.8
   '@types/cron': 1.7.3
   '@types/express': 4.17.13
   '@types/history': 2.0.45
@@ -217,6 +226,7 @@ dependencies:
   antd: 4.18.4_react-dom@17.0.2+react@17.0.2
   apollo-server-express: 3.6.4_graphql@15.8.0
   axios: 0.24.0
+  bull: 4.7.0
   cls-rtracer: 2.6.0
   clsx: 1.1.1
   cos-nodejs-sdk-v5: 2.11.6
@@ -2997,6 +3007,31 @@ packages:
       - debug
     dev: false
 
+  /@nestjs/bull-shared/0.0.3_214a294e539403889bf33d78c1f08a26:
+    resolution: {integrity: sha512-uriCkarw6Q9HCEN8By98BFyixWH28Dnkyyab0q7d3I+EvTuvCOhUu5Zvzs4Egxkj1lRp5d0VMw5sz71/HQxssQ==}
+    peerDependencies:
+      '@nestjs/common': ^6.10.11 || ^7.0.0 || ^8.0.0
+      '@nestjs/core': ^6.10.11 || ^7.0.0 || ^8.0.0
+    dependencies:
+      '@nestjs/common': 8.4.1_88a789cb3f20cca25c3f70fe96f41643
+      '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
+      tslib: 2.3.1
+    dev: false
+
+  /@nestjs/bull/0.5.3_a99c1d7f1c3d252afbb8c739522b0edf:
+    resolution: {integrity: sha512-nqvDgpmn+T0YUNJUUisnREmxVd2HwkeCIpL/RvyN0kdrTPsmCeI1OF4qXLXFHMOfhvuZ84EFj6FpQgpghDOTBw==}
+    peerDependencies:
+      '@nestjs/common': ^6.10.11 || ^7.0.0 || ^8.0.0
+      '@nestjs/core': ^6.10.11 || ^7.0.0 || ^8.0.0
+      bull: ^3.3 || ^4.0.0
+    dependencies:
+      '@nestjs/bull-shared': 0.0.3_214a294e539403889bf33d78c1f08a26
+      '@nestjs/common': 8.4.1_88a789cb3f20cca25c3f70fe96f41643
+      '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
+      bull: 4.7.0
+      tslib: 2.3.1
+    dev: false
+
   /@nestjs/cli/8.2.3:
     resolution: {integrity: sha512-p//DACefn40VClXroxzS+2pkSdaXYvKKcr4bFOUBMTdJqT9he+U9ifcJUkg/h1bFU/Y8SS2cUsTyl0ZBHHHRcw==}
     engines: {node: '>= 10.13.0', npm: '>= 6.11.0'}
@@ -4490,6 +4525,13 @@ packages:
     resolution: {integrity: sha512-wJsiX1tosQ+J5+bY5LrSahHxr2wT+uME5UDwdN1kg4frt40euqA+wzECkmq4t5QbveHiJepfdThgQrPw6KiSlg==}
     dev: false
 
+  /@types/bull/3.15.8:
+    resolution: {integrity: sha512-8DbSPMSsZH5PWPnGEkAZLYgJEH4ghHJNKF7LB6Wr5R0/v6g+Vs+JoaA7kcvLtHE936xg2WpFPkaoaJgExOmKDw==}
+    dependencies:
+      '@types/ioredis': 4.28.10
+      '@types/redis': 2.8.32
+    dev: false
+
   /@types/cacheable-request/6.0.2:
     resolution: {integrity: sha512-B3xVo+dlKM6nnKTcmm5ZtY/OL8bOAOd2Olee9M1zft65ox50OzjEHW91sDiU9j6cvW8Ejg1/Qkf4xd2kugApUA==}
     dependencies:
@@ -4629,6 +4671,12 @@ packages:
 
   /@types/invariant/2.2.35:
     resolution: {integrity: sha512-DxX1V9P8zdJPYQat1gHyY0xj3efl8gnMVjiM9iCY6y27lj+PoQWkgjt8jDqmovPqULkKVpKRg8J36iQiA+EtEg==}
+    dev: false
+
+  /@types/ioredis/4.28.10:
+    resolution: {integrity: sha512-69LyhUgrXdgcNDv7ogs1qXZomnfOEnSmrmMFqKgt1XMJxmoOSG/u3wYy13yACIfKuMJ8IhKgHafDO3sx19zVQQ==}
+    dependencies:
+      '@types/node': 17.0.4
     dev: false
 
   /@types/isomorphic-fetch/0.0.35:
@@ -4902,6 +4950,12 @@ packages:
       '@types/prop-types': 15.7.4
       '@types/scheduler': 0.16.2
       csstype: 3.0.10
+    dev: false
+
+  /@types/redis/2.8.32:
+    resolution: {integrity: sha512-7jkMKxcGq9p242exlbsVzuJb57KqHRhNl4dHoQu2Y5v9bCAbtIXXH0R3HleSQW4CTOqpHIYUW3t6tpUj4BVQ+w==}
+    dependencies:
+      '@types/node': 17.0.4
     dev: false
 
   /@types/responselike/1.0.0:
@@ -7467,6 +7521,23 @@ packages:
     resolution: {integrity: sha1-hZgoeOIbmOHGZCXgPQF0eI9Wnug=}
     dev: false
 
+  /bull/4.7.0:
+    resolution: {integrity: sha512-rnJIsuXrDjDlz3HMHz6xobiRZAWe3o4MJBkzx7FdUjO+K2nSYrhR2KpcL+ZCNUMPKtONxL4DqmRjat5SBHFlAw==}
+    engines: {node: '>=10.1'}
+    dependencies:
+      cron-parser: 4.2.1
+      debuglog: 1.0.1
+      get-port: 5.1.1
+      ioredis: 4.28.5
+      lodash: 4.17.21
+      msgpackr: 1.5.5
+      p-timeout: 3.2.0
+      semver: 7.3.5
+      uuid: 8.3.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   /busboy/0.2.14:
     resolution: {integrity: sha1-bCpiLvz0fFe7vh4qnDetNseSVFM=}
     engines: {node: '>=0.8.0'}
@@ -8105,6 +8176,11 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /cluster-key-slot/1.1.0:
+    resolution: {integrity: sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   /co-body/6.1.0:
     resolution: {integrity: sha512-m7pOT6CdLN7FuXUcpuz/8lfQ/L77x8SchHCF4G0RBTJO20Wzmhn5Sp4/5WsKy8OSpifBSUrmg83qEqaDHdyFuQ==}
     dependencies:
@@ -8587,6 +8663,13 @@ packages:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: false
 
+  /cron-parser/4.2.1:
+    resolution: {integrity: sha512-5sJBwDYyCp+0vU5b7POl8zLWfgV5fOHxlc45FWoWdHecGC7MQHCjx0CHivCMRnGFovghKhhyYM+Zm9DcY5qcHg==}
+    engines: {node: '>=0.8'}
+    dependencies:
+      luxon: 1.28.0
+    dev: false
+
   /cron/1.7.2:
     resolution: {integrity: sha512-+SaJ2OfeRvfQqwXQ2kgr0Y5pzBR/lijf5OpnnaruwWnmI799JfWr2jN2ItOV9s3A/+TFOt6mxvKzQq5F0Jp6VQ==}
     dependencies:
@@ -8873,6 +8956,10 @@ packages:
       supports-color: 8.1.1
     dev: false
 
+  /debuglog/1.0.1:
+    resolution: {integrity: sha1-qiT/uaw9+aI1GDfPstJ5NgzXhJI=}
+    dev: false
+
   /decamelize/1.2.0:
     resolution: {integrity: sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=}
     engines: {node: '>=0.10.0'}
@@ -8993,6 +9080,11 @@ packages:
 
   /delegates/1.0.0:
     resolution: {integrity: sha1-hMbhWbgZBP3KWaDvRM2HDTElD5o=}
+    dev: false
+
+  /denque/1.5.1:
+    resolution: {integrity: sha512-XwE+iZ4D6ZUB7mfYRMb5wByE8L74HCn30FBN7sWnXksWc1LO1bPDl67pBR9o/kC4z/xSNAwkMYcGgqDV3BE3Hw==}
+    engines: {node: '>=0.10'}
     dev: false
 
   /depd/1.1.2:
@@ -10689,6 +10781,11 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: false
 
+  /get-port/5.1.1:
+    resolution: {integrity: sha512-g/Q1aTSDOxFpchXC4i8ZWvxA1lnPqx/JHqcpIw0/LX9T8x/GBbi6YnlN5nhaKIFkT8oFsscUKgDJYxfwfS6QsQ==}
+    engines: {node: '>=8'}
+    dev: false
+
   /get-stdin/4.0.1:
     resolution: {integrity: sha1-uWjGsKBDhDJJAui/Gl3zJXmkUP4=}
     engines: {node: '>=0.10.0'}
@@ -11814,6 +11911,25 @@ packages:
       fp-ts: ^2.5.0
     dependencies:
       fp-ts: 2.11.5
+    dev: false
+
+  /ioredis/4.28.5:
+    resolution: {integrity: sha512-3GYo0GJtLqgNXj4YhrisLaNNvWSNwSS2wS4OELGfGxH8I69+XfNdnmV1AyN+ZqMh0i7eX+SWjrwFKDBDgfBC1A==}
+    engines: {node: '>=6'}
+    dependencies:
+      cluster-key-slot: 1.1.0
+      debug: 4.3.3
+      denque: 1.5.1
+      lodash.defaults: 4.2.0
+      lodash.flatten: 4.4.0
+      lodash.isarguments: 3.1.0
+      p-map: 2.1.0
+      redis-commands: 1.7.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /ipaddr.js/1.9.1:
@@ -14056,6 +14172,10 @@ packages:
     resolution: {integrity: sha1-YLuYqHy5I8aMoeUTJUgzFISfVT8=}
     dev: false
 
+  /lodash.isarguments/3.1.0:
+    resolution: {integrity: sha1-L1c9hcaiQon/AGY7SRwdM4/zRYo=}
+    dev: false
+
   /lodash.isboolean/3.0.3:
     resolution: {integrity: sha1-bC4XHbKiV82WgC/UOwGyDV9YcPY=}
     dev: false
@@ -14221,6 +14341,10 @@ packages:
     resolution: {integrity: sha1-Jzi9nw089PhEkMVzbEhpmsYyzaM=}
     dependencies:
       es5-ext: 0.10.53
+    dev: false
+
+  /luxon/1.28.0:
+    resolution: {integrity: sha512-TfTiyvZhwBYM/7QdAVDh+7dBTBA29v4ik0Ce9zda3Mnf8on1S5KJI8P2jKFZ8+5C0jhmr0KwJEO/Wdpm0VeWJQ==}
     dev: false
 
   /macos-release/2.5.0:
@@ -14644,6 +14768,21 @@ packages:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
     dev: false
 
+  /msgpackr-extract/1.0.16:
+    resolution: {integrity: sha512-fxdRfQUxPrL/TizyfYfMn09dK58e+d65bRD/fcaVH4052vj30QOzzqxcQIS7B0NsqlypEQ/6Du3QmP2DhWFfCA==}
+    requiresBuild: true
+    dependencies:
+      nan: 2.15.0
+      node-gyp-build: 4.3.0
+    dev: false
+    optional: true
+
+  /msgpackr/1.5.5:
+    resolution: {integrity: sha512-JG0V47xRIQ9pyUnx6Hb4+3TrQoia2nA3UIdmyTldhxaxtKFkekkKpUW/N6fwHwod9o4BGuJGtouxOk+yCP5PEA==}
+    optionalDependencies:
+      msgpackr-extract: 1.0.16
+    dev: false
+
   /multer/1.4.4:
     resolution: {integrity: sha512-2wY2+xD4udX612aMqMcB8Ws2Voq6NIUPEtD1be6m411T4uDH/VtL9i//xvcyFlTVfRdaBsk7hV5tgrGQqhuBiw==}
     engines: {node: '>= 0.10.0'}
@@ -14821,6 +14960,12 @@ packages:
     dependencies:
       whatwg-url: 5.0.0
     dev: false
+
+  /node-gyp-build/4.3.0:
+    resolution: {integrity: sha512-iWjXZvmboq0ja1pUGULQBexmxq8CV4xBhX7VDOTbL7ZR4FOowwY/VOtRxBN/yKxmdGoIp4j5ysNT4u3S2pDQ3Q==}
+    hasBin: true
+    dev: false
+    optional: true
 
   /node-int64/0.4.0:
     resolution: {integrity: sha1-h6kGXNs1XTGC2PlM4RGIuCXGijs=}
@@ -15423,6 +15568,13 @@ packages:
   /p-timeout/1.2.1:
     resolution: {integrity: sha1-XrOzU7f86Z8QGhA4iAuwVOu+o4Y=}
     engines: {node: '>=4'}
+    dependencies:
+      p-finally: 1.0.0
+    dev: false
+
+  /p-timeout/3.2.0:
+    resolution: {integrity: sha512-rhIwUycgwwKcP9yTOOFK/AKsAopjjCakVqLHePO3CC6Mir1Z99xT+R63jZxAT5lFZLa2inS5h+ZS2GvR99/FBg==}
+    engines: {node: '>=8'}
     dependencies:
       p-finally: 1.0.0
     dev: false
@@ -17635,6 +17787,22 @@ packages:
       esprima: 4.0.1
     dev: false
 
+  /redis-commands/1.7.0:
+    resolution: {integrity: sha512-nJWqw3bTFy21hX/CPKHth6sfhZbdiHP6bTawSgQBlKOVRG7EZkfHbbHwQJnrE4vsQf0CMNE+3gJ4Fmm16vdVlQ==}
+    dev: false
+
+  /redis-errors/1.2.0:
+    resolution: {integrity: sha1-62LSrbFeTq9GEMBK/hUpOEJQq60=}
+    engines: {node: '>=4'}
+    dev: false
+
+  /redis-parser/3.0.0:
+    resolution: {integrity: sha1-tm2CjNyv5rS4pCin3vTGvKwxyLQ=}
+    engines: {node: '>=4'}
+    dependencies:
+      redis-errors: 1.2.0
+    dev: false
+
   /redux-saga/0.16.2:
     resolution: {integrity: sha512-iIjKnRThI5sKPEASpUvySemjzwqwI13e3qP7oLub+FycCRDysLSAOwt958niZW6LhxfmS6Qm1BzbU70w/Koc4w==}
     dev: false
@@ -18732,6 +18900,10 @@ packages:
 
   /stackframe/1.2.0:
     resolution: {integrity: sha512-GrdeshiRmS1YLMYgzF16olf2jJ/IzxXY9lhKOskuVziubpTYcYqyOwYeJKzQkwy7uN0fYSsbsC4RQaXf9LCrYA==}
+    dev: false
+
+  /standard-as-callback/2.1.0:
+    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
     dev: false
 
   /static-extend/0.1.2:
@@ -20997,7 +21169,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz:
-    resolution: {integrity: sha512-zOL5BcoNrL5BxGv8Nng1cHaKZUV4iwZQ9MH9vGz1myBPpXrfzfz1TtBrE9jqJ6COUdQLFoGsKLBMwJpHfHyLCQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-GPGyD8YVXq4GIdJRnZ/z6SQt3HofGxLXaSsdDsKoPYpBiL+bwcrh6L4Y6dpk9LRNLReg2byfNuYNohRr32xRug==, tarball: file:projects/api-server.tgz}
     name: '@rush-temp/api-server'
     version: 0.0.0
     dependencies:
@@ -21008,6 +21180,7 @@ packages:
       '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
       '@nestjs/apollo': 10.0.7_cd40b36624429e651a34ae722cf3b5de
       '@nestjs/axios': 0.0.7_7834c4d3afb72e7515a1fdbb3d2a4476
+      '@nestjs/bull': 0.5.3_a99c1d7f1c3d252afbb8c739522b0edf
       '@nestjs/cli': 8.2.3
       '@nestjs/common': 8.4.1_88a789cb3f20cca25c3f70fe96f41643
       '@nestjs/config': 1.2.0_7834c4d3afb72e7515a1fdbb3d2a4476
@@ -21020,6 +21193,7 @@ packages:
       '@nestjs/typeorm': 8.0.3_dc101aaa0b62d9a086b611792260191b
       '@paljs/cli': 4.0.18
       '@prisma/client': 3.11.0_prisma@3.11.0
+      '@types/bull': 3.15.8
       '@types/cron': 1.7.3
       '@types/express': 4.17.13
       '@types/jest': 27.4.1
@@ -21030,6 +21204,7 @@ packages:
       '@typescript-eslint/parser': 5.10.2_eslint@7.32.0+typescript@4.5.4
       apollo-server-express: 3.6.4_graphql@15.8.0
       axios: 0.24.0
+      bull: 4.7.0
       dayjs: 1.10.7
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0_eslint@7.32.0
@@ -21226,6 +21401,19 @@ packages:
     transitivePeerDependencies:
       - debug
       - supports-color
+    dev: false
+
+  file:projects/gateway.tgz:
+    resolution: {integrity: sha512-coSzlFI+yuvfJaL2MHIX4Plw06R10vPqtFQ950J9n8AOkJk+UikISeeedABaBDN6LZtBHShlDFwdVKBTVJ+ccg==, tarball: file:projects/gateway.tgz}
+    name: '@rush-temp/gateway'
+    version: 0.0.0
+    dependencies:
+      axios: 0.24.0
+      graphql: 15.8.0
+      typescript: 4.5.4
+      typescript-transform-paths: 3.3.1_typescript@4.5.4
+    transitivePeerDependencies:
+      - debug
     dev: false
 
   file:projects/gql-utils.tgz:
