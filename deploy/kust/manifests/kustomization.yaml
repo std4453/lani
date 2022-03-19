@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - regcred.yaml
   - lani-cd.yaml
+  - redis.yaml
   # services
   # - bilibili-bangumi-cc.yaml
   # - mikan-fetch.yaml
