@@ -19,12 +19,8 @@
    */
   "deploymentProjectNames": [
     "@lani/bilibili-bangumi-cc",
-    "@lani/mikan-sync",
-    "@lani/mikan-fetch",
     "@lani/data-server",
-    "@lani/rss-items",
     "@lani/rss",
-    "@lani/sonarr-sync",
     "@lani/api-server",
     "@lani/gateway"
   ],

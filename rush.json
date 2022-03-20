@@ -477,28 +477,12 @@
       "projectFolder": "apps/data-server"
     },
     {
-      "packageName": "@lani/mikan-sync",
-      "projectFolder": "apps/mikan-sync"
-    },
-    {
-      "packageName": "@lani/mikan-fetch",
-      "projectFolder": "apps/mikan-fetch"
-    },
-    {
       "packageName": "@lani/k8s-gen",
       "projectFolder": "deploy/k8s-gen"
     },
     {
-      "packageName": "@lani/rss-items",
-      "projectFolder": "apps/rss-items"
-    },
-    {
       "packageName": "@lani/rss",
       "projectFolder": "apps/rss"
-    },
-    {
-      "packageName": "@lani/sonarr-sync",
-      "projectFolder": "apps/sonarr-sync"
     },
     {
       "packageName": "@lani/gql-utils",

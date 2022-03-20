@@ -20,7 +20,7 @@
     "axios": "~0.24.0",
     "graphql": "15.8.0",
     "apollo-server": "~3.6.4",
-    "@apollo/gateway": "~0.49.0"
+    "@apollo/gateway": "^0.46.0"
   },
   "files": [
     "/dist"
