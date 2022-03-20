@@ -37,7 +37,7 @@ export default mergeConfig<{
       },
       {
         name: "api",
-        url: "http://api-server.lani-offline:3000/graphql",
+        url: "http://api-server.lani-offline:8080/graphql",
       },
     ],
   },
