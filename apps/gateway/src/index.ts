@@ -3,7 +3,10 @@ import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 import { ApolloServer } from "apollo-server";
 
 const gateway = new ApolloGateway({
-  supergraphSdl: new IntrospectAndCompose({ subgraphs: config.subgraphs }),
+  supergraphSdl: new IntrospectAndCompose({
+    subgraphs: config.subgraphs,
+    pollIntervalInMs: 3000,
+  }),
 });
 
 const server = new ApolloServer({
