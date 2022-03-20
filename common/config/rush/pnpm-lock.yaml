@@ -8,7 +8,8 @@ specifiers:
   '@ant-design/pro-list': ~1.21.21
   '@ant-design/pro-table': ~2.62.8
   '@apollo/client': ~3.5.7
-  '@apollo/gateway': ~0.49.0
+  '@apollo/federation': ~0.35.4
+  '@apollo/gateway': ^0.46.0
   '@apollo/subgraph': ~0.3.3
   '@golevelup/nestjs-graphql-request': ~0.1.10
   '@graphile-contrib/pg-omit-archived': ~2.1.0
@@ -51,11 +52,7 @@ specifiers:
   '@rush-temp/gql-utils': file:./projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:./projects/k8s-gen.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
-  '@rush-temp/mikan-fetch': file:./projects/mikan-fetch.tgz
-  '@rush-temp/mikan-sync': file:./projects/mikan-sync.tgz
   '@rush-temp/rss': file:./projects/rss.tgz
-  '@rush-temp/rss-items': file:./projects/rss-items.tgz
-  '@rush-temp/sonarr-sync': file:./projects/sonarr-sync.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/react': ~6.17.8
   '@types/bull': ~3.15.8
@@ -70,7 +67,6 @@ specifiers:
   '@types/koa__cors': ~3.1.1
   '@types/lodash': ~4.14.178
   '@types/node': ~17.0.4
-  '@types/node-fetch': ~2.6.1
   '@types/react': ~17.0.38
   '@types/react-dom': ^17.0.0
   '@types/supertest': ^2.0.11
@@ -79,7 +75,6 @@ specifiers:
   '@typescript-eslint/parser': ^5.0.0
   '@umijs/preset-react': 1.x
   '@umijs/route-utils': ~2.0.4
-  '@urql/core': ~2.4.1
   ahooks: ~3.1.9
   antd: ~4.18.4
   apollo-server: ~3.6.4
@@ -107,7 +102,6 @@ specifiers:
   https-proxy-agent: ~5.0.0
   inclusion: ~1.0.1
   io-ts: ~2.2.16
-  isomorphic-unfetch: ~3.1.0
   jest: ^27.2.5
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
@@ -157,7 +151,8 @@ dependencies:
   '@ant-design/pro-list': 1.21.21_663f9540e4d1ae06d5716329d39f8857
   '@ant-design/pro-table': 2.62.8_663f9540e4d1ae06d5716329d39f8857
   '@apollo/client': 3.5.7_graphql@15.8.0+react@17.0.2
-  '@apollo/gateway': 0.49.0_graphql@15.8.0
+  '@apollo/federation': 0.35.4_graphql@15.8.0
+  '@apollo/gateway': 0.46.0_graphql@15.8.0
   '@apollo/subgraph': 0.3.3_graphql@15.8.0
   '@golevelup/nestjs-graphql-request': 0.1.10_@nestjs+common@8.4.1+rxjs@7.5.2
   '@graphile-contrib/pg-omit-archived': 2.1.0_69b991bab972e73015d7b02856703263
@@ -171,7 +166,7 @@ dependencies:
   '@graphql-codegen/typescript-react-apollo': 3.2.4_da67d404f3066ae1f4f52fef03e657e4
   '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
   '@koa/cors': 3.1.0
-  '@nestjs/apollo': 10.0.7_f6832bacb9814eebcc58ba9c44f72225
+  '@nestjs/apollo': 10.0.7_2a770997a72ce8eae8342d4efd3a109e
   '@nestjs/axios': 0.0.7_7834c4d3afb72e7515a1fdbb3d2a4476
   '@nestjs/bull': 0.5.3_a99c1d7f1c3d252afbb8c739522b0edf
   '@nestjs/cli': 8.2.3
@@ -191,7 +186,7 @@ dependencies:
   '@prisma/client': 3.11.0_prisma@3.11.0
   '@rush-temp/admin': file:projects/admin.tgz_ec4c31708447bd0b76e74aae9259d7cd
   '@rush-temp/api': file:projects/api.tgz
-  '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.49.0
+  '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.46.0
   '@rush-temp/bilibili-bangumi-cc': file:projects/bilibili-bangumi-cc.tgz
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.4
@@ -200,11 +195,7 @@ dependencies:
   '@rush-temp/gql-utils': file:projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:projects/k8s-gen.tgz
   '@rush-temp/kust': file:projects/kust.tgz
-  '@rush-temp/mikan-fetch': file:projects/mikan-fetch.tgz
-  '@rush-temp/mikan-sync': file:projects/mikan-sync.tgz_@types+node@17.0.4
   '@rush-temp/rss': file:projects/rss.tgz
-  '@rush-temp/rss-items': file:projects/rss-items.tgz_@types+node@17.0.4
-  '@rush-temp/sonarr-sync': file:projects/sonarr-sync.tgz_@types+node@17.0.4
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@sentry/react': 6.17.8_react@17.0.2
   '@types/bull': 3.15.8
@@ -219,7 +210,6 @@ dependencies:
   '@types/koa__cors': 3.1.1
   '@types/lodash': 4.14.178
   '@types/node': 17.0.4
-  '@types/node-fetch': 2.6.1
   '@types/react': 17.0.38
   '@types/react-dom': 17.0.11
   '@types/supertest': 2.0.11
@@ -228,7 +218,6 @@ dependencies:
   '@typescript-eslint/parser': 5.10.2_eslint@7.32.0+typescript@4.5.4
   '@umijs/preset-react': 1.8.30_e05518f1abe34a9d898c10c804348eb1
   '@umijs/route-utils': 2.0.4
-  '@urql/core': 2.4.1_graphql@15.8.0
   ahooks: 3.1.9_react@17.0.2
   antd: 4.18.4_react-dom@17.0.2+react@17.0.2
   apollo-server: 3.6.4_graphql@15.8.0
@@ -256,7 +245,6 @@ dependencies:
   https-proxy-agent: 5.0.0
   inclusion: 1.0.1
   io-ts: 2.2.16_fp-ts@2.11.5
-  isomorphic-unfetch: 3.1.0
   jest: 27.5.1_ts-node@10.4.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
@@ -695,6 +683,21 @@ packages:
       lodash.xorby: 4.7.0
     dev: false
 
+  /@apollo/federation/0.33.9_graphql@15.8.0:
+    resolution: {integrity: sha512-Sbau1gvWN6/pJdw13xZCoQ75IQu6F6D9XkZ9FapMVX04bE1j1XXbYtSK+ZVZuOOCfMLnYV/iLEEPxedVb7+0yA==}
+    engines: {node: '>=12.13.0 <17.0'}
+    peerDependencies:
+      graphql: ^15.5.3
+    dependencies:
+      '@apollo/subgraph': 0.1.5_graphql@15.8.0
+      apollo-graphql: 0.9.5_graphql@15.8.0
+      apollo-server-types: 3.5.1_graphql@15.8.0
+      graphql: 15.8.0
+      lodash.xorby: 4.7.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /@apollo/federation/0.35.4_graphql@15.8.0:
     resolution: {integrity: sha512-mZv9eyte8PmUu4PyRDEob/ub1nah3JZ131PQoOi1B90gj3ni6HOSWCme/W4+0gSdGNIKljqhB7R3j9JJeHa+/A==}
     engines: {node: '>=12.13.0 <17.0'}
@@ -709,26 +712,25 @@ packages:
       - encoding
     dev: false
 
-  /@apollo/gateway/0.49.0_graphql@15.8.0:
-    resolution: {integrity: sha512-6OlSLCVvAphJP5Vr9nzLAAjmgxZLa6fxA83f7TIKen8/aMf051MDKIpt25D7u1TjHBeU7k8TQIFMS+0EqBKOLw==}
+  /@apollo/gateway/0.46.0_graphql@15.8.0:
+    resolution: {integrity: sha512-cFL/WOiWW9CKzn4O/l8G+pt36mwZU7EHPz1GXZAbV2yx2t3ymhQ39sNISzvoj1DtGWoCmJsyTakpuHlyYkwpCg==}
     engines: {node: '>=12.13.0 <17.0'}
     peerDependencies:
-      graphql: ^15.8.0 || ^16.0.0
+      graphql: ^15.7.2
     dependencies:
       '@apollo/core-schema': 0.2.2_graphql@15.8.0
-      '@apollo/federation': 0.35.4_graphql@15.8.0
-      '@apollo/query-planner': 0.9.0_graphql@15.8.0
+      '@apollo/federation': 0.33.9_graphql@15.8.0
+      '@apollo/query-planner': 0.6.4_graphql@15.8.0
       '@josephg/resolvable': 1.0.1
       '@opentelemetry/api': 1.1.0
-      '@types/node-fetch': 2.6.1
+      '@types/node-fetch': 2.5.12
+      apollo-graphql: 0.9.5_graphql@15.8.0
       apollo-reporting-protobuf: 3.3.0
       apollo-server-caching: 3.3.0
       apollo-server-core: 3.6.4_graphql@15.8.0
       apollo-server-env: 4.2.1
       apollo-server-errors: 3.3.1_graphql@15.8.0
       apollo-server-types: 3.5.1_graphql@15.8.0
-      apollo-utilities: 1.3.4_graphql@15.8.0
-      async-retry: 1.3.3
       graphql: 15.8.0
       loglevel: 1.8.0
       make-fetch-happen: 8.0.14
@@ -759,16 +761,27 @@ packages:
       long: 4.0.0
     dev: false
 
-  /@apollo/query-planner/0.9.0_graphql@15.8.0:
-    resolution: {integrity: sha512-ZSWr0qk8TESiXRyo2W3nwKOF0WjETLdAa9a3v+/yPEG2W4yDAj0wjApx+oQNw1vk1IPIF5NvK+l8MSs/v3h//A==}
+  /@apollo/query-planner/0.6.4_graphql@15.8.0:
+    resolution: {integrity: sha512-ENKWbWnNP5zycWIrXkG4lBV1whXpQZk8bVcPiRRfcTJMyhMhiWLkRsmWJX7JOMUG+zCtFS0MHjWOC3PAwSY/ig==}
     engines: {node: '>=12.13.0 <17.0'}
     peerDependencies:
-      graphql: ^15.8.0 || ^16.0.0
+      graphql: ^15.5.3
     dependencies:
+      apollo-graphql: 0.9.5_graphql@15.8.0
       chalk: 4.1.2
       deep-equal: 2.0.5
       graphql: 15.8.0
       pretty-format: 27.5.1
+    dev: false
+
+  /@apollo/subgraph/0.1.5_graphql@15.8.0:
+    resolution: {integrity: sha512-i1uU9llldGMV7GcBOUQRqnbGfgOpc6nrOVw93oKlugZq5R00q8y/RX8KgvMfdXZyr4MJ2/gO6Kw7LzbjCKU+Kw==}
+    engines: {node: '>=12.13.0 <17.0'}
+    peerDependencies:
+      graphql: ^15.5.3
+    dependencies:
+      apollo-graphql: 0.9.5_graphql@15.8.0
+      graphql: 15.8.0
     dev: false
 
   /@apollo/subgraph/0.3.3_graphql@15.8.0:
@@ -3076,7 +3089,7 @@ packages:
       graphql: 15.8.0
     dev: false
 
-  /@nestjs/apollo/10.0.7_f6832bacb9814eebcc58ba9c44f72225:
+  /@nestjs/apollo/10.0.7_2a770997a72ce8eae8342d4efd3a109e:
     resolution: {integrity: sha512-bc1aDGUyELiI4QUpLBUseQ5l0rmAP88jW+r/U3xynImkM2fH1XFwZq1l0kcE54TCRKWFLFUI0/cYTpBuYQPVyA==}
     peerDependencies:
       '@apollo/gateway': ^0.44.1 || ^0.46.0 || ^0.48.0
@@ -3096,7 +3109,7 @@ packages:
       apollo-server-fastify:
         optional: true
     dependencies:
-      '@apollo/gateway': 0.49.0_graphql@15.8.0
+      '@apollo/gateway': 0.46.0_graphql@15.8.0
       '@nestjs/common': 8.4.1_88a789cb3f20cca25c3f70fe96f41643
       '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
       '@nestjs/graphql': 10.0.7_cf4d6bb189cf36faaf1e53af4f00a91f
@@ -4953,8 +4966,8 @@ packages:
     resolution: {integrity: sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==}
     dev: false
 
-  /@types/node-fetch/2.6.1:
-    resolution: {integrity: sha512-oMqjURCaxoSIsHSr1E47QHzbmzNR5rK8McHuNb11BOM9cHcIK3Avy0s/b2JlXHoQGTYS3NsvWzV1M0iK7l0wbA==}
+  /@types/node-fetch/2.5.12:
+    resolution: {integrity: sha512-MKgC4dlq4kKNa/mYrwpKfzQMB5X3ee5U6fSprkKpToBqBmX4nFZL9cW5jl6sWn+xpRJ7ypWh2yyqqr8UUCstSw==}
     dependencies:
       '@types/node': 17.0.4
       form-data: 3.0.1
@@ -6091,16 +6104,6 @@ packages:
       '@umijs/deps': 3.5.20
     dev: false
 
-  /@urql/core/2.4.1_graphql@15.8.0:
-    resolution: {integrity: sha512-HnS54oNwO4pAACKl/2/tNLbRrxAxKawVJuG9UPiixqeEVekiecUQQnCjb9SpOW4Qr54HYzCMDbr3c5px3hfEEg==}
-    peerDependencies:
-      graphql: ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
-    dependencies:
-      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
-      graphql: 15.8.0
-      wonka: 4.0.15
-    dev: false
-
   /@webassemblyjs/ast/1.11.1:
     resolution: {integrity: sha512-ukBh14qFLjxTQNTXocdyksN5QdM28S1CxHt2rdskFyL+xFV7VremuBLVbmCePj+URalXBENx/9Lm7lnhihtCSw==}
     dependencies:
@@ -6212,12 +6215,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       tslib: 2.3.1
-    dev: false
-
-  /@wry/equality/0.1.11:
-    resolution: {integrity: sha512-mwEVBDUVODlsQQ5dfuLUS5/Tf7jqUKyhKYHmVi4fPB6bDMOfWvUPJmKgS1Z7Za/sOI3vzWt4+O7yCiL/70MogA==}
-    dependencies:
-      tslib: 1.14.1
     dev: false
 
   /@wry/equality/0.5.2:
@@ -6840,18 +6837,6 @@ packages:
       graphql: 15.8.0
     transitivePeerDependencies:
       - encoding
-    dev: false
-
-  /apollo-utilities/1.3.4_graphql@15.8.0:
-    resolution: {integrity: sha512-pk2hiWrCXMAy2fRPwEyhvka+mqwzeP60Jr1tRYi5xru+3ko94HI9o6lK0CT33/w4RDlxWchmdhDCrvdr+pHCig==}
-    peerDependencies:
-      graphql: ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
-    dependencies:
-      '@wry/equality': 0.1.11
-      fast-json-stable-stringify: 2.1.0
-      graphql: 15.8.0
-      ts-invariant: 0.4.4
-      tslib: 1.14.1
     dev: false
 
   /app-root-path/3.0.0:
@@ -12746,15 +12731,6 @@ packages:
       - encoding
     dev: false
 
-  /isomorphic-unfetch/3.1.0:
-    resolution: {integrity: sha512-geDJjpoZ8N0kWexiwkX8F9NkTsXhetLPVbZFQ+JTW239QNOwvB0gniuR1Wc6f0AMTn7/mFGyXvHTifrCp/GH8Q==}
-    dependencies:
-      node-fetch: 2.6.7
-      unfetch: 4.2.0
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   /isomorphic-ws/4.0.1_ws@8.4.2:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
     peerDependencies:
@@ -15973,11 +15949,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       p-finally: 1.0.0
-    dev: false
-
-  /p-timeout/5.0.2:
-    resolution: {integrity: sha512-sEmji9Yaq+Tw+STwsGAE56hf7gMy9p0tQfJojIAamB7WHJYJKf1qlsg9jqBWG8q9VCxKPhZaP/AcXwEoBcYQhQ==}
-    engines: {node: '>=12'}
     dev: false
 
   /p-try/2.2.0:
@@ -20161,12 +20132,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: false
 
-  /ts-invariant/0.4.4:
-    resolution: {integrity: sha512-uEtWkFM/sdZvRNNDL3Ehu4WVpwaulhwQszV8mrtcdeE8nN00BV9mAmQ88RkrBhFgl9gMgvjJLAQcZbnPXI9mlA==}
-    dependencies:
-      tslib: 1.14.1
-    dev: false
-
   /ts-invariant/0.9.4:
     resolution: {integrity: sha512-63jtX/ZSwnUNi/WhXjnK8kz4cHHpYS60AnmA6ixz17l7E12a5puCWFlNpkne5Rl0J8TBPVHpGjsj4fxs8ObVLQ==}
     engines: {node: '>=8'}
@@ -20564,10 +20529,6 @@ packages:
   /undici/4.12.2:
     resolution: {integrity: sha512-RZj6SbkQFs5O/pJCboGEo6l5DTCe3Zg4r/8Z/0/2qnIv08+s6zL4akohOPMYWKc3mzwv15WTvsfMWaafZcvYoQ==}
     engines: {node: '>=12.18'}
-    dev: false
-
-  /unfetch/4.2.0:
-    resolution: {integrity: sha512-F9p7yYCn6cIW9El1zi0HI6vqpeIvBsr3dSuRO6Xuppb1u5rXpCPmMvLSyECLhybr9isec8Ohl0hPekMVrEinDA==}
     dev: false
 
   /union-value/1.0.1:
@@ -21159,10 +21120,6 @@ packages:
       pify: 4.0.1
     dev: false
 
-  /wonka/4.0.15:
-    resolution: {integrity: sha512-U0IUQHKXXn6PFo9nqsHphVCE5m3IntqZNB9Jjn7EB1lrR7YTDY3YWgFvEvwniTzXSvOH/XMzAZaIfJF/LvHYXg==}
-    dev: false
-
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}
     engines: {node: '>=0.10.0'}
@@ -21640,7 +21597,7 @@ packages:
       - zen-observable
     dev: false
 
-  file:projects/api-server.tgz_@apollo+gateway@0.49.0:
+  file:projects/api-server.tgz_@apollo+gateway@0.46.0:
     resolution: {integrity: sha512-4WtLlEw6dUMqwTTxne4Tfop0jN0VVJcL4Ys17azV81wUVSkmMQUsZ+lC+mx0h5xgHyOQQo68yXzsUAnHOIxbBw==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
@@ -21653,7 +21610,7 @@ packages:
       '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
       '@graphql-codegen/typescript-graphql-request': 4.4.2_71b1dfa942b0971d20e569ddd001b05b
       '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
-      '@nestjs/apollo': 10.0.7_f6832bacb9814eebcc58ba9c44f72225
+      '@nestjs/apollo': 10.0.7_2a770997a72ce8eae8342d4efd3a109e
       '@nestjs/axios': 0.0.7_7834c4d3afb72e7515a1fdbb3d2a4476
       '@nestjs/bull': 0.5.3_a99c1d7f1c3d252afbb8c739522b0edf
       '@nestjs/cli': 8.2.3
@@ -21878,11 +21835,12 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-oNz8EFE0n3y7ey2+Qbbi5Vp0jXkAJF6TXTr4C/UBuA/s1aOtygHmn7tHVG+flYVmGmYMyWu8ctRQzAXUGz5tRw==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-DOa7NZYq3t7pIjnrAIFXs8zvCV/CjpGlSZQ4YjnhBaSclI14GfpJ5piXNLUf8eHQ7kgnSrfZniT1rmTbmj12VQ==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
-      '@apollo/gateway': 0.49.0_graphql@15.8.0
+      '@apollo/federation': 0.33.9_graphql@15.8.0
+      '@apollo/gateway': 0.46.0_graphql@15.8.0
       apollo-server: 3.6.4_graphql@15.8.0
       axios: 0.24.0
       graphql: 15.8.0
@@ -21915,87 +21873,6 @@ packages:
     version: 0.0.0
     dev: false
 
-  file:projects/mikan-fetch.tgz:
-    resolution: {integrity: sha512-LOXRzG2dIKEjSs/DYq9BrtB0tsdJqRHCbPPEeJsBEemjb1htd6t0qXM/ktU8oa0v2mswlzEn6Fpz+ASjiUr8bQ==, tarball: file:projects/mikan-fetch.tgz}
-    name: '@rush-temp/mikan-fetch'
-    version: 0.0.0
-    dependencies:
-      '@types/xml2js': 0.4.9
-      axios: 0.24.0
-      dayjs: 1.10.7
-      fp-ts: 2.11.5
-      https-proxy-agent: 5.0.0
-      io-ts: 2.2.16_fp-ts@2.11.5
-      p-timeout: 5.0.2
-      typescript: 4.5.4
-      typescript-transform-paths: 3.3.1_typescript@4.5.4
-      xml2js: 0.4.23
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-    dev: false
-
-  file:projects/mikan-sync.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-miqj0OLzDn0acBBXVRWagKoHYqcKwnVZUtsjmMkcVd5nQ7RkMkg88v984JI6HgttHzYnUrN5mRRn28mYlEcWSw==, tarball: file:projects/mikan-sync.tgz}
-    id: file:projects/mikan-sync.tgz
-    name: '@rush-temp/mikan-sync'
-    version: 0.0.0
-    dependencies:
-      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
-      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
-      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
-      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
-      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
-      '@urql/core': 2.4.1_graphql@15.8.0
-      axios: 0.24.0
-      dayjs: 1.10.7
-      fp-ts: 2.11.5
-      graphql: 15.8.0
-      io-ts: 2.2.16_fp-ts@2.11.5
-      isomorphic-unfetch: 3.1.0
-      moment: 2.29.1
-      moment-timezone: 0.5.34
-      typescript: 4.5.4
-      typescript-transform-paths: 3.3.1_typescript@4.5.4
-      xml2js: 0.4.23
-    transitivePeerDependencies:
-      - '@types/node'
-      - bufferutil
-      - debug
-      - encoding
-      - supports-color
-      - utf-8-validate
-      - zen-observable
-    dev: false
-
-  file:projects/rss-items.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-+hJ62wEn8KtrGGhRr5uHEUh5DBTPMTwuvUyJtBi0PjrmZLxGk0MLNgHSbeNHam/RuxJXyjciW08skSKR5/4Ilg==, tarball: file:projects/rss-items.tgz}
-    id: file:projects/rss-items.tgz
-    name: '@rush-temp/rss-items'
-    version: 0.0.0
-    dependencies:
-      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
-      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
-      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
-      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
-      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
-      '@types/node-fetch': 2.6.1
-      '@urql/core': 2.4.1_graphql@15.8.0
-      axios: 0.24.0
-      graphql: 15.8.0
-      isomorphic-unfetch: 3.1.0
-      typescript: 4.5.4
-      typescript-transform-paths: 3.3.1_typescript@4.5.4
-    transitivePeerDependencies:
-      - '@types/node'
-      - bufferutil
-      - debug
-      - encoding
-      - supports-color
-      - utf-8-validate
-      - zen-observable
-    dev: false
-
   file:projects/rss.tgz:
     resolution: {integrity: sha512-OOkHzmviRQjo7Z8B1x6Y78bipysz48N1KzvTiecWNZEjA7cAty1ayLfXDp4qTlcMitykpekK8LcoTKkdAptlbw==, tarball: file:projects/rss.tgz}
     name: '@rush-temp/rss'
@@ -22011,32 +21888,4 @@ packages:
     transitivePeerDependencies:
       - debug
       - supports-color
-    dev: false
-
-  file:projects/sonarr-sync.tgz_@types+node@17.0.4:
-    resolution: {integrity: sha512-UMKOXsa1gEm32N64xr9j6Sl2YeJFS59/gx9jSZYYvGaWKwXJJqHhPpX0ZkA13Zsjw0QfYUh3brLjqg1XjX2RSw==, tarball: file:projects/sonarr-sync.tgz}
-    id: file:projects/sonarr-sync.tgz
-    name: '@rush-temp/sonarr-sync'
-    version: 0.0.0
-    dependencies:
-      '@graphql-codegen/cli': 2.4.0_23a8d0a48bb3158c2e6287500082407a
-      '@graphql-codegen/typed-document-node': 2.2.2_graphql@15.8.0
-      '@graphql-codegen/typescript': 2.4.2_graphql@15.8.0
-      '@graphql-codegen/typescript-operations': 2.2.2_graphql@15.8.0
-      '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
-      '@types/node-fetch': 2.6.1
-      '@urql/core': 2.4.1_graphql@15.8.0
-      axios: 0.24.0
-      graphql: 15.8.0
-      isomorphic-unfetch: 3.1.0
-      typescript: 4.5.4
-      typescript-transform-paths: 3.3.1_typescript@4.5.4
-    transitivePeerDependencies:
-      - '@types/node'
-      - bufferutil
-      - debug
-      - encoding
-      - supports-color
-      - utf-8-validate
-      - zen-observable
     dev: false
