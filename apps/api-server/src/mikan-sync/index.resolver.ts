@@ -8,7 +8,7 @@ export class MikanSyncResolver {
   @Mutation(() => Int, {
     description: 'Returns newly added torrent count',
   })
-  syncMikan() {
+  async syncMikan() {
     return this.mikansyncService.syncMikan();
   }
 }
