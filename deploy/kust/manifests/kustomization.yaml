@@ -8,13 +8,9 @@ resources:
   - redis.yaml
   # services
   # - bilibili-bangumi-cc.yaml
-  # - mikan-fetch.yaml
   - data-server.yaml
   - api-server.yaml
-  # - rss-items.yaml
+  - gateway.yaml
   # - rss.yaml
-  # - sonarr-sync.yaml
-  # jobs
-  # - mikan-sync.yaml
   # istio
   - istio-vs.yaml

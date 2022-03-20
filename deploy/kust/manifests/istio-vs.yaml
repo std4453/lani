@@ -14,44 +14,11 @@ spec:
 
   - match:
     - uri: 
-        prefix: /api/bilibili-bangumi-cc/
+        prefix: /api/gateway
     rewrite:
       uri: /
     route:
     - destination:
-        host: bilibili-bangumi-cc
-        port:
-          number: 8080
-
-  - match:
-    - uri: 
-        prefix: /api/mikan-fetch/
-    rewrite:
-      uri: /
-    route:
-    - destination:
-        host: mikan-fetch
-        port:
-          number: 8080
-
-  - match:
-    - uri: 
-        prefix: /api/data-server/
-    rewrite:
-      uri: /
-    route:
-    - destination:
-        host: data-server
-        port:
-          number: 8080
-  
-  - match:
-    - uri: 
-        prefix: /api/sonarr-sync/
-    rewrite:
-      uri: /
-    route:
-    - destination:
-        host: sonarr-sync
+        host: gateway
         port:
           number: 8080
