@@ -7,7 +7,7 @@ export class FetchMikanResolver {
   constructor(private fetchMikanService: FetchMikanService) {}
 
   @Query(() => [MikanRSSItem])
-  fetchMikan(@Args('partialURL') partialURL: string) {
+  async fetchMikan(@Args('partialURL') partialURL: string) {
     return this.fetchMikanService.fetchMikanRSSItems(partialURL);
   }
 }

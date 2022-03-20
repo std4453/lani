@@ -32,7 +32,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     BullModule.forRoot({
       redis: {
-        host: 'redis-master.lani-offline',
+        host: config.redisHost,
         port: 6379,
       },
     }),
