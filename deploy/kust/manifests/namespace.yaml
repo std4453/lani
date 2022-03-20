@@ -10,5 +10,5 @@ kind: Namespace
 metadata:
   name: lani-offline
   labels:
-    istio-injection: enabled
+    istio-injection: disabled
   
