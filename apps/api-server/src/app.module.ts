@@ -2,9 +2,8 @@ import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
 import { MikanSyncModule } from '@/mikan-sync/index.module';
+import { SyncModule } from '@/sync/index.module';
 import {
-  ApolloDriver,
-  ApolloDriverConfig,
   ApolloFederationDriver,
   ApolloFederationDriverConfig,
 } from '@nestjs/apollo';
@@ -19,6 +18,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CommonModule,
     FetchMikanModule,
     MikanSyncModule,
+    SyncModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       autoSchemaFile: true,
