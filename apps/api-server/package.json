@@ -56,7 +56,8 @@
     "bull": "~4.7.0",
     "prisma": "~3.11.0",
     "@apollo/subgraph": "~0.3.3",
-    "@apollo/federation": "~0.35.4"
+    "class-validator": "~0.13.2",
+    "class-transformer": "~0.5.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

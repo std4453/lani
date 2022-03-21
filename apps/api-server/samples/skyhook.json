@@ -1,0 +1,239 @@
+{
+  "tvdbId": 389377,
+  "title": "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+  "overview": "After dying of overwork in the real world, I’m reincarnated as an immortal witch, and I spend 300 years enjoying a relaxing life. At some point, though, I end up at level 99! All those years spent killing slimes to make the money to pay the bills gave me a ton of experience points. Rumors of the level 99 witch spread, and soon I’m up to my ears in curious adventurers, duelist dragons, and even a monster girl calling me her mom! I’ve never been on an adventure, but I’m the strongest in the world… What’s going to happen to my relaxing life?!",
+  "slug": "ive-been-killing-slimes-for-300-years-and-maxed-out-my-level",
+  "firstAired": "2021-04-10",
+  "tvMazeId": 54310,
+  "added": "2020-09-30T07:38:19Z",
+  "lastUpdated": "2022-03-06T23:07:35Z",
+  "status": "Continuing",
+  "runtime": 24,
+  "timeOfDay": { "hours": 21, "minutes": 0 },
+  "network": "AT-X",
+  "imdbId": "tt13248062",
+  "genres": [
+    "Action",
+    "Adventure",
+    "Animation",
+    "Anime",
+    "Comedy",
+    "Fantasy",
+    "Science Fiction"
+  ],
+  "contentRating": "TV-14",
+  "actors": [
+    { "name": "Aoi Yuuki", "character": "Azusa" },
+    { "name": "Manami Numakura", "character": "Beelzebub" },
+    { "name": "Sayaka Senbongi", "character": "Falfa" },
+    { "name": "Sayaka Harada", "character": "Halkara" },
+    { "name": "Kaede Hondo", "character": "Laika" },
+    { "name": "Minami Tanaka", "character": "Shalsha" },
+    { "name": "Azumi Waki", "character": "Flatorte" },
+    { "name": "Riho Sugiyama", "character": "Rosalie" },
+    { "name": "Yukari Tamura", "character": "Pekora" }
+  ],
+  "images": [
+    {
+      "coverType": "Banner",
+      "url": "https://artworks.thetvdb.com/banners/v4/series/389377/banners/60756d931086a.jpg"
+    },
+    {
+      "coverType": "Poster",
+      "url": "https://artworks.thetvdb.com/banners/v4/series/389377/posters/622260d115d98.jpg"
+    },
+    {
+      "coverType": "Fanart",
+      "url": "https://artworks.thetvdb.com/banners/v4/series/389377/backgrounds/622263e9c71b6.jpg"
+    }
+  ],
+  "seasons": [
+    { "seasonNumber": 0 },
+    { "seasonNumber": 1 },
+    { "seasonNumber": 2 }
+  ],
+  "episodes": [
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8832779,
+      "seasonNumber": 0,
+      "episodeNumber": 1,
+      "airDate": "2021-05-05",
+      "airDateUtc": "2021-05-05T12:00:00Z"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 7985612,
+      "seasonNumber": 1,
+      "episodeNumber": 1,
+      "absoluteEpisodeNumber": 1,
+      "title": "I Maxed Out My Level",
+      "airDate": "2021-04-10",
+      "airDateUtc": "2021-04-10T12:00:00Z",
+      "overview": "Aizawa Azusa, a corporate drone who died of exhaustion from overwork in her previous life, is reincarnated in another world, where she decides to live out a slow and uneventful life forever. But then, 300 years later, she discovers that the experience she earned by defeating slimes every day just to keep up her easy lifestyle has brought her to level 99 and made her the strongest in the world. The rumors begin to spread, and soon trouble comes knocking...",
+      "writers": ["Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/7985612/screencap/6071cd07193e9.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203053,
+      "seasonNumber": 1,
+      "episodeNumber": 2,
+      "absoluteEpisodeNumber": 2,
+      "title": "Along Came the Daughters",
+      "airDate": "2021-04-17",
+      "airDateUtc": "2021-04-17T12:00:00Z",
+      "overview": "After becoming the strongest in the world before she even knew it, Azusa entered into a new lifestyle with her first pupil, Laika the dragon, and discovered fun and enjoyment in it that she hadn't known before. But then, one day, a young girl calling Azusa her \"mama\" shows up and proclaims that her younger sister wants to kill Azusa. But Azusa has no memory of giving birth to these two girls, or of becoming a mother at all...",
+      "writers": ["Tatsuya Takahashi", "Yutaka Yasunaga"],
+      "directors": ["Nanase Tomii", "Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203053/screencap/607ae34c0cfb1.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203054,
+      "seasonNumber": 1,
+      "episodeNumber": 3,
+      "absoluteEpisodeNumber": 3,
+      "title": "Along Came an Elf",
+      "airDate": "2021-04-24",
+      "airDateUtc": "2021-04-24T12:00:00Z",
+      "overview": "Just as peace is beginning to reign in Azusa's home, a young elf named Halkara shows up pleading for her help. Halkara says that an energy drink she made angered a terrifying high demon, Beelzebub, who is now out to kill her. Azusa would prefer to avoid anything that might ruin her slow life, but she can't just leave the poor girl to die, so she reluctantly agrees to shelter her...",
+      "writers": ["Naohiro Fukushima", "Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura", "Ryūta Imaizumi", "Yoshiyuki Kumeda"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203054/screencap/60842b33ee126.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203055,
+      "seasonNumber": 1,
+      "episodeNumber": 4,
+      "absoluteEpisodeNumber": 4,
+      "title": "We Went to a Dragon's Wedding",
+      "airDate": "2021-05-01",
+      "airDateUtc": "2021-05-01T12:00:00Z",
+      "overview": "Laika's older sister Leila is getting married, so Azusa and her friends set off to visit Mount Rokko, the home of the Red Dragons. The mountain is bustling with the many Red Dragons who have gathered for the ceremony. Azusa congratulates Leila and the ceremony carries on in peace... until the Blue Dragons, a tribe with a long-standing grudge against the Red Dragons, attack in full force!",
+      "writers": ["Tatsuya Takahashi", "Yutaka Yasunaga"],
+      "directors": ["Nobukage Kimura", "Takahiro Okawa"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203055/screencap/608e788687f8b.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203056,
+      "seasonNumber": 1,
+      "episodeNumber": 5,
+      "absoluteEpisodeNumber": 5,
+      "title": "A Ghost Appeared",
+      "airDate": "2021-05-08",
+      "airDateUtc": "2021-05-08T12:00:00Z",
+      "overview": "Halkara has built a new Nutri-Spirit factory in a nearby town and is now regularly going there from the cottage in the highlands, but she comes home exhausted every evening. It seems rumors have spread saying there's a ghost showing up at the factory, so she's had to do all the work alone since all the locals are scared to go there. Azusa doesn't deal well with ghosts at all, but she can't bear to let Halkara work herself to exhaustion, so she summons Beelzebub to help and heads to the factory late at night.",
+      "writers": ["Naohiro Fukushima", "Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura", "Yasunori Gotou"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203056/screencap/6096939ad33de.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203057,
+      "seasonNumber": 1,
+      "episodeNumber": 6,
+      "absoluteEpisodeNumber": 6,
+      "title": "Along Came a Leviathan",
+      "airDate": "2021-05-15",
+      "airDateUtc": "2021-05-15T12:00:00Z",
+      "overview": "Azusa receives an invitation from Beelzebub to attend a ceremony in the land of the demons. It seems she earned a favorable reputation with the demons after stopping the conflict between the two Dragon clans in Laika's homeland. Azusa invites the whole family along for this high honor, but there's one problem: Rosalie, the ghost, can't wear a dress. But Rosalie is part of the family, and Azusa wants to help her dress up like the rest of them, so she uses the power of her maxed level to create a magic spell...",
+      "writers": ["Tatsuya Takahashi"],
+      "directors": ["Kyosuke Takada", "Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203057/screencap/60a069260f4e2.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203058,
+      "seasonNumber": 1,
+      "episodeNumber": 7,
+      "absoluteEpisodeNumber": 7,
+      "title": "We Beat Up a Demon King",
+      "airDate": "2021-05-22",
+      "airDateUtc": "2021-05-22T12:00:00Z",
+      "overview": "Halkara's knack for inadvertently causing trouble led her to knock out the Demon King Pecora, and now she's locked in a dungeon. As Halkara's execution draws nearer with each passing moment, Azusa rushes to make a potion with her family's help and, with Beelzebub's guidance, takes it to the first-aid room where Pecora is. After tricking the demons guarding the room, Azusa finally reaches Pecora, but then...",
+      "writers": ["Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura", "Shinichi Omata"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203058/screencap/60a997034afc5.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203059,
+      "seasonNumber": 1,
+      "episodeNumber": 8,
+      "absoluteEpisodeNumber": 8,
+      "title": "A Fake Witch of the Highlands Appeared",
+      "airDate": "2021-05-29",
+      "airDateUtc": "2021-05-29T12:00:00Z",
+      "overview": "Laika and Flatorte, the newest member of the family, are constantly bickering. Their tribes do have a history of conflict, but it seems the fact that they haven't been eating as much meat lately is contributing to their irritability. Just then, Natalie from the guild arrives and tells them about a quest to get rid of a massive number of longhammer boars, the perfect quest to fill their hungry bellies...",
+      "writers": ["Naohiro Fukushima", "Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura", "Ryuta Yamamoto"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203059/screencap/60b24400a9676.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203060,
+      "seasonNumber": 1,
+      "episodeNumber": 9,
+      "absoluteEpisodeNumber": 9,
+      "title": "My Daughter Turned Into a Slime and Couldn't Change Back",
+      "airDate": "2021-06-05",
+      "airDateUtc": "2021-06-05T12:00:00Z",
+      "overview": "Falfa woke up in the form of a slime! Of course, that's not too shocking since she's a slime spirit, but her sister Shalsha laments that this has never happened before and she doesn't know how to change her back. So Azusa sets off with Shalsha and Beelzebub in search of an \"unusual slime\" who might know a way to change Falfa back...",
+      "writers": ["Tatsuya Takahashi", "Yutaka Yasunaga"],
+      "directors": ["Nobukage Kimura", "Ryūta Imaizumi", "Yoshiyuki Kumeda"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203060/screencap/60bc29ff0e961.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203061,
+      "seasonNumber": 1,
+      "episodeNumber": 10,
+      "absoluteEpisodeNumber": 10,
+      "title": "A Minstrel Came to Town",
+      "airDate": "2021-06-12",
+      "airDateUtc": "2021-06-12T12:00:00Z",
+      "overview": "One day, a girl with rabbit ears comes to the village of Flatta. This nameless, unpopular minstrel, who strums her lute fiercely with her bare fingers and sings with a death growl, is known as Schifanoia. When she passes out in the middle of her concert, Azusa is reminded of the sad stories she's heard of young men who moved to Tokyo hoping to make their major debut, but instead turn into job-hopping middle-aged men playing in bands that never make any profit. So she invites Schifanoia to live at the house in the highlands for a while, but when she just keeps making excuses and refuses to see reality, Flatorte loses her patience...",
+      "writers": ["Tatsuya Takahashi", "Yutaka Yasunaga"],
+      "directors": ["Nanase Tomii", "Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203061/screencap/60c4e47094299.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203062,
+      "seasonNumber": 1,
+      "episodeNumber": 11,
+      "absoluteEpisodeNumber": 11,
+      "title": "I Ate a Mushroom and Turned Into a Child",
+      "airDate": "2021-06-19",
+      "airDateUtc": "2021-06-19T12:00:00Z",
+      "overview": "Halkara throws a mushroom-grilling party, or \"shroompa\" for short, and accidently includes some poisonous mushrooms that cause anyone who eats them to shrink... and Azusa eats one. This leads to everyone ridiculing her—or rather, fawning over how cute she looks. Even her daughters are in on it! Azusa is determined to change back to normal, so after a tip from Pecora, she heads to the World Tree along with Fatla and Vania to find a pharmacist who deals in every kind of medicine. She expects a dungeon with 108 floors to fight through, but...",
+      "writers": ["Tatsuya Takahashi"],
+      "directors": ["Atsushi Kashiwa", "Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203062/screencap/60ce26c10d75f.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 8203063,
+      "seasonNumber": 1,
+      "episodeNumber": 12,
+      "absoluteEpisodeNumber": 12,
+      "title": "We Opened a Coffee Shop",
+      "airDate": "2021-06-26",
+      "airDateUtc": "2021-06-26T12:00:00Z",
+      "overview": "Festival season has come to the village of Flatta. The festival has been held there for the past 250 years, but as the only person who knows its entire history since it was started, Azusa has distanced herself from it to let the villagers keep their independence. But her family has shown interest in it and seems excited to see it, so she makes up her mind to change the way she interacts with the village tradition... and thus the one-day-only coffee shop, The Witch's House, was born. Will the villagers enjoy this little shop Azusa's family has created?",
+      "writers": ["Naohiro Fukushima", "Tatsuya Takahashi"],
+      "directors": ["Nobukage Kimura"],
+      "image": "https://artworks.thetvdb.com/banners/v4/episode/8203063/screencap/60d76130ac37d.jpg"
+    },
+    {
+      "tvdbShowId": 389377,
+      "tvdbId": 9040222,
+      "seasonNumber": 2,
+      "episodeNumber": 1
+    }
+  ]
+}
