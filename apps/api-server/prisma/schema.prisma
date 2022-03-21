@@ -8,67 +8,46 @@ datasource db {
 }
 
 model DownloadSources {
-  id                   Int       @id @default(autoincrement())
-  seasonId             Int       @map("season_id")
-  mikanAnimeIdOverride String    @default("") @map("mikan_anime_id_override")
-  groupId              String    @default("") @map("group_id")
-  pattern              String    @default("")
-  isArchived           Boolean   @default(false) @map("is_archived")
-  archivedAt           DateTime? @map("archived_at") @db.Timestamptz(6)
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  isDisabled           Boolean   @default(false) @map("is_disabled")
-  seasons              Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  seasonId   Int       @map("season_id")
+  groupId    String    @default("") @map("group_id")
+  pattern    String    @default("")
+  isArchived Boolean   @default(false) @map("is_archived")
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  isDisabled Boolean   @default(false) @map("is_disabled")
+  seasons    Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   @@map("download_sources")
 }
 
 model Episodes {
-  id              Int       @id @default(autoincrement())
-  seasonId        Int       @map("season_id")
-  title           String    @default("")
-  description     String    @default("")
-  index           Int
-  airTime         DateTime  @map("air_time") @db.Timestamptz(6)
-  airTimeOverride DateTime? @map("airTime_override") @db.Timestamptz(6)
-  isArchived      Boolean   @default(false) @map("is_archived")
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  archivedAt      DateTime? @map("archived_at") @db.Timestamptz(6)
-  seasons         Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  seasonId    Int       @map("season_id")
+  title       String    @default("")
+  description String    @default("")
+  index       Int
+  airTime     DateTime? @map("air_time") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  torrentId   Int?      @map("torrent_id")
+  seasons     Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  torrents    Torrents? @relation(fields: [torrentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 	@@map("episodes")
 }
 
 model Images {
-  id            Int            @id @default(autoincrement())
-  cosPath       String         @map("cos_path")
-  sourceUrl     String?        @map("source_url")
-  season_images SeasonImages[]
-  show_images   ShowImages[]
+  id        Int     @id @default(autoincrement())
+  cosPath   String  @map("cos_path")
+  sourceUrl String? @map("source_url")
 	@@map("images")
-}
-
-model SeasonImages {
-  seasonId Int        @map("season_id")
-  type     ImageType
-  imageId  Int        @map("image_id")
-  images   Images     @relation(fields: [imageId], references: [id], onDelete: Cascade)
-  seasons  Seasons    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-
-  @@id([seasonId, type, imageId])
-  @@map("season_images")
 }
 
 model Seasons {
   id                 Int               @id @default(autoincrement())
-  showId             Int               @map("show_id")
-  index              Int
-  titleSource        MetadataSource   @default(INHERIT) @map("title_source")
   title              String            @default("")
-  defaultSource      MetadataSource   @default(MANUAL) @map("default_source")
   description        String            @default("")
-  descriptionSource  MetadataSource   @default(INHERIT) @map("description_source")
-  tagsSource         MetadataSource   @default(INHERIT) @map("tags_source")
+  infoSource         MetadataSource   @default(MANUAL) @map("info_source")
   tags               String[]          @db.VarChar
-  status             SeasonStatus     @default(UNKNOWN)
   isArchived         Boolean           @default(false) @map("is_archived")
   createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   archivedAt         DateTime?         @map("archived_at") @db.Timestamptz(6)
@@ -78,64 +57,25 @@ model Seasons {
   mikanAnimeId       String            @default("") @map("mikan_anime_id")
   isMonitoring       Boolean           @default(true) @map("is_monitoring")
   yearAndSemester    String            @default("") @map("year_and_semester") @db.VarChar(16)
-  shows              Shows             @relation(fields: [showId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  weekday            Int?
+  airTime            String            @default("") @map("air_time") @db.VarChar
+  tvdbId             String            @default("") @map("tvdb_id")
+  tvdbSeason         Int?              @map("tvdb_season")
+  episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
   download_sources   DownloadSources[]
   episodes           Episodes[]
-  season_images      SeasonImages[]
-
-  @@unique([showId, index], map: "seasons_showId_season_key")
 	@@map("seasons")
 }
 
-model ShowImages {
-  showId  Int        @map("show_id")
-  type    ImageType
-  imageId Int        @map("image_id")
-  images  Images     @relation(fields: [imageId], references: [id], onDelete: Cascade)
-  shows   Shows      @relation(fields: [showId], references: [id], onDelete: Cascade)
-
-  @@id([showId, type, imageId])
-  @@map("show_images")
-}
-
-model Shows {
-  id                Int             @id @default(autoincrement())
-  name              String
-  path              String?
-  sonarrId          Int?            @unique @map("sonarr_id")
-  sonarrName        String          @default("") @map("sonarr_name")
-  tvdbId            Int?            @map("tvdb_id")
-  jellyfinId        String?         @unique @map("jellyfin_id") @db.VarChar(32)
-  isArchived        Boolean         @default(false) @map("is_archived")
-  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  archivedAt        DateTime?       @map("archived_at") @db.Timestamptz(6)
-  defaultSource     MetadataSource @default(MANUAL) @map("default_source")
-  description       String          @default("")
-  descriptionSource MetadataSource @default(INHERIT) @map("description_source")
-  seasons           Seasons[]
-  show_images       ShowImages[]
-
-	@@map("shows")
-}
-
-model SmartPatterns {
-  id         Int       @id @default(autoincrement())
-  pattern    String
-  isArchived Boolean   @default(false) @map("is_archived")
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
-
-  @@map("smart_patterns")
-}
-
 model Torrents {
-  id          Int      @id(map: "mikan_items_pkey") @default(autoincrement())
+  id          Int        @id(map: "mikan_items_pkey") @default(autoincrement())
   title       String
-  torrentLink String   @map("torrent_link")
+  torrentLink String     @map("torrent_link")
   size        BigInt
-  publishDate DateTime @map("publish_date") @db.Timestamptz(6)
-  hash        String   @unique
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  publishDate DateTime   @map("publish_date") @db.Timestamptz(6)
+  hash        String     @unique
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  episodes    Episodes[]
 	@@map("torrents")
 }
 
