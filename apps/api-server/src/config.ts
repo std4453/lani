@@ -1,18 +1,15 @@
 import { mergeConfig } from '@lani/framework';
 
-export interface ConfigType {
-  proxy: string;
-  sonarrEndpoint: string;
-  redisHost: string;
-  postgresURL: string;
-}
-
-const config = mergeConfig<ConfigType>({
+const config = mergeConfig({
   proxy: 'http://hk1.v2ray:8889',
   sonarrEndpoint: 'http://sonarr.media:80/api/v3',
   redisHost: 'redis-master.lani',
   postgresURL:
     'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani?schema=public',
+  cosSecretId: 'AKIDXtzoNfgPs88qIVQ4RYOxFH3YmiOnwpSo',
+  cosSecretKey: '6vTkkTv72g5E6hBPN3SaS3NQChvsXx6y',
+  cosBucket: 'temp-1308701035',
+  cosRegion: 'ap-shanghai',
 })({
   dev: {
     proxy: 'http://10.43.154.118:8889',
@@ -31,3 +28,5 @@ const config = mergeConfig<ConfigType>({
 });
 
 export default config;
+
+export type ConfigType = typeof config;

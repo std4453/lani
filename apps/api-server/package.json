@@ -57,7 +57,8 @@
     "prisma": "~3.11.0",
     "@apollo/subgraph": "~0.3.3",
     "class-validator": "~0.13.2",
-    "class-transformer": "~0.5.1"
+    "class-transformer": "~0.5.1",
+    "cos-nodejs-sdk-v5": "~2.11.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
