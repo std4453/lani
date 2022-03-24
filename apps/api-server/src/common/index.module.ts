@@ -1,20 +1,31 @@
+import {
+  ChinaAxiosService,
+  GlobalAxiosService,
+  HKAxiosService,
+  LocalAxiosService,
+} from '@/common/axios.service';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
 import { BigIntScalar } from '@/scalars/bigint.scalar';
-import { Injectable, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import createHttpsProxyAgent from 'https-proxy-agent';
-
-@Injectable()
-export class CommonService {
-  constructor(private configService: ConfigService<ConfigType>) {}
-
-  hk1Agent = createHttpsProxyAgent(this.configService.get<string>('proxy'));
-}
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [ConfigModule],
-  providers: [CommonService, BigIntScalar, PrismaService],
-  exports: [CommonService, BigIntScalar, PrismaService],
+  providers: [
+    GlobalAxiosService,
+    HKAxiosService,
+    ChinaAxiosService,
+    LocalAxiosService,
+    BigIntScalar,
+    PrismaService,
+  ],
+  exports: [
+    GlobalAxiosService,
+    HKAxiosService,
+    ChinaAxiosService,
+    LocalAxiosService,
+    BigIntScalar,
+    PrismaService,
+  ],
 })
 export class CommonModule {}

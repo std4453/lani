@@ -5,27 +5,32 @@ import {
   BilibiliSeason,
   BilibiliSuccessResponse,
 } from '@/bilibili-bangumi-cc/types';
-import { CommonService } from '@/common/index.module';
+import {
+  ChinaAxiosService,
+  GlobalAxiosService,
+  HKAxiosService,
+} from '@/common/axios.service';
 import { ConfigType } from '@/config';
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Axios } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import COS from 'cos-nodejs-sdk-v5';
-import { concatMap, firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class BilibiliBangumiCCService {
   constructor(
-    private commonService: CommonService,
-    private axios: HttpService,
+    private global: GlobalAxiosService,
+    private hk: HKAxiosService,
+    private china: ChinaAxiosService,
     private config: ConfigService<ConfigType>,
   ) {}
 
-  private regionToAgent: Partial<Record<BilibiliRegion, any>> = {
-    // TODO: 全球番剧 API 代理
-    thm: this.commonService.hk1Agent,
+  private regionToAxios: Partial<Record<BilibiliRegion, Axios>> = {
+    global: this.global,
+    thm: this.hk,
+    mainland: this.china,
   };
 
   private cos = new COS({
@@ -34,22 +39,14 @@ export class BilibiliBangumiCCService {
   });
 
   async fetchSeason(ssid: string, region = BilibiliRegion.THM) {
-    return firstValueFrom(
-      this.axios
-        .get(`https://api.bilibili.com/pgc/view/web/season?season_id=${ssid}`, {
-          httpsAgent: this.regionToAgent[region],
-        })
-        .pipe(
-          timeout(10000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(BilibiliSuccessResponse, resp.data);
-            await validateOrReject(obj);
-            const data = plainToClass(BilibiliSeason, obj.result);
-            await validateOrReject(data);
-            return data;
-          }),
-        ),
+    const resp = await this.regionToAxios[region].get(
+      `https://api.bilibili.com/pgc/view/web/season?season_id=${ssid}`,
     );
+    const obj = plainToClass(BilibiliSuccessResponse, resp.data);
+    await validateOrReject(obj);
+    const data = plainToClass(BilibiliSeason, obj.result);
+    await validateOrReject(data);
+    return data;
   }
 
   private findCID(data: BilibiliSeason, index: number) {
@@ -61,19 +58,13 @@ export class BilibiliBangumiCCService {
   }
 
   async fetchDanmaku(cid: number) {
-    return await firstValueFrom(
-      this.axios
-        .get(`https://api.bilibili.com/x/v2/dm/view?oid=${cid}&type=1`)
-        .pipe(
-          timeout(10000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(BilibiliSuccessResponse, resp.data);
-            await validateOrReject(obj);
-            const data = plainToClass(BilibiliDanmaku, obj.result);
-            return data;
-          }),
-        ),
+    const resp = await this.china.get(
+      `https://api.bilibili.com/x/v2/dm/view?oid=${cid}&type=1`,
     );
+    const obj = plainToClass(BilibiliSuccessResponse, resp.data);
+    await validateOrReject(obj);
+    const data = plainToClass(BilibiliDanmaku, obj.result);
+    return data;
   }
 
   private getSubtitleURL(danmaku: BilibiliDanmaku, language: string) {
@@ -91,17 +82,11 @@ export class BilibiliBangumiCCService {
 
   private async fetchCCJson(url: string) {
     // TODO: SSRF!
-    return await firstValueFrom(
-      this.axios.get(url).pipe(
-        timeout(15000),
-        concatMap(async (resp) => {
-          const obj = plainToClass(BilibiliSuccessResponse, resp.data);
-          await validateOrReject(obj);
-          const data = plainToClass(BilibiliCCJSON, obj.result);
-          return data;
-        }),
-      ),
-    );
+    const resp = await this.china.get(url);
+    const obj = plainToClass(BilibiliSuccessResponse, resp.data);
+    await validateOrReject(obj);
+    const data = plainToClass(BilibiliCCJSON, obj.result);
+    return data;
   }
 
   private pad(n: number, width) {
@@ -133,7 +118,7 @@ export class BilibiliBangumiCCService {
       .join('');
   }
 
-  private async uploadCOS(
+  private uploadCOS(
     ssid: string,
     episode: number,
     language: string,

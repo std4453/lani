@@ -22,7 +22,7 @@
   "dependencies": {
     "@lani/api": "~1.0.0",
     "@lani/framework": "~1.0.0",
-    "axios": "~0.24.0",
+    "axios": "~0.26.0",
     "@urql/core": "~2.4.1",
     "graphql": "15.8.0",
     "@graphql-typed-document-node/core": "~3.1.1",

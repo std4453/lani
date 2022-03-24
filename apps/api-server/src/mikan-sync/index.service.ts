@@ -13,7 +13,7 @@ export class MikanSyncService {
   @Cron('*/5 * * * *')
   async syncMikan() {
     const items = await this.fetchMikanService.fetchMikanRSSItems('Classic');
-    const { count } = await this.prisma.torrents.createMany({
+    const { count } = await this.prisma.torrent.createMany({
       data: items.map(({ hash, publishDate, size, title, torrentLink }) => ({
         title,
         torrentLink,

@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@lani/api": "~1.0.0",
-    "axios": "~0.24.0",
+    "axios": "~0.26.0",
     "koa": "~2.13.4",
     "koa-router": "~10.1.1",
     "io-ts": "~2.2.16",
