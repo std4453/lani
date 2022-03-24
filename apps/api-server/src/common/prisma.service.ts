@@ -8,6 +8,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor(private configService: ConfigService<ConfigType>) {
     super({
       datasources: { db: { url: configService.get('postgresURL') } },
+      rejectOnNotFound: {
+        findUnique: true,
+      },
     });
   }
 

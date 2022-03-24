@@ -1,3 +1,4 @@
+import { GlobalAxiosService } from '@/common/axios.service';
 import { DateFormat } from '@/constants/date-format';
 import {
   FetchPartialSeasonRequest,
@@ -5,16 +6,14 @@ import {
   SeasonImages,
 } from '@/sync/index.model';
 import { SkyhookShow } from '@/sync/skyhook/types';
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
-import { concatMap, firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class SkyhookSeasonService {
-  constructor(private axios: HttpService) {}
+  constructor(private axios: GlobalAxiosService) {}
 
   async query(
     {
@@ -30,19 +29,12 @@ export class SkyhookSeasonService {
       throw new Error('insufficient data for fetching');
     }
 
-    const show = await firstValueFrom(
-      this.axios
-        .get(`https://skyhook.sonarr.tv/v1/tvdb/shows/en/${tvdbId}`)
-        .pipe(
-          timeout(30000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(SkyhookShow, resp.data);
-            await validateOrReject(obj);
-            return obj;
-          }),
-        ),
+    const resp = await this.axios.get(
+      `https://skyhook.sonarr.tv/v1/tvdb/shows/en/${tvdbId}`,
     );
-    if (!show.seasons.find((_season) => _season.seasonNumber === seasonId)) {
+    const show = plainToClass(SkyhookShow, resp.data);
+    await validateOrReject(show);
+    if (!show.seasons.find((season) => season.seasonNumber === seasonId)) {
       throw new Error(`required season ${seasonId} does not exist`);
     }
 

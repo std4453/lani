@@ -37,7 +37,7 @@
     "apollo-server-express": "~3.6.4",
     "graphql-scalars": "~1.15.0",
     "xml2js": "~0.4.23",
-    "axios": "~0.24.0",
+    "axios": "~0.26.0",
     "dayjs": "~1.10.7",
     "https-proxy-agent": "~5.0.0",
     "io-ts": "~2.2.16",
@@ -58,7 +58,11 @@
     "@apollo/subgraph": "~0.3.3",
     "class-validator": "~0.13.2",
     "class-transformer": "~0.5.1",
-    "cos-nodejs-sdk-v5": "~2.11.6"
+    "cos-nodejs-sdk-v5": "~2.11.6",
+    "cookie": "~0.4.2",
+    "parse-torrent": "~9.1.4",
+    "form-data": "~4.0.0",
+    "@nestjs/event-emitter": "~1.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -91,7 +95,9 @@
     "prisma-schema-transformer": "~0.8.1",
     "@paljs/cli": "~4.0.18",
     "@types/bull": "~3.15.8",
-    "@lani/cli": "~1.0.0"
+    "@lani/cli": "~1.0.0",
+    "@types/cookie": "~0.4.1",
+    "@types/parse-torrent": "~5.8.4"
   },
   "jest": {
     "moduleFileExtensions": [

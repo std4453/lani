@@ -17,7 +17,7 @@
   "dependencies": {
     "@lani/api": "~1.0.0",
     "@lani/framework": "~1.0.0",
-    "axios": "~0.24.0",
+    "axios": "~0.26.0",
     "graphql": "15.8.0",
     "apollo-server": "~3.6.4",
     "@apollo/gateway": "^0.46.0"

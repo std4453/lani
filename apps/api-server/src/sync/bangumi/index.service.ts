@@ -1,3 +1,4 @@
+import { ChinaAxiosService } from '@/common/axios.service';
 import { DateFormat } from '@/constants/date-format';
 import {
   BangumiCharacters,
@@ -9,36 +10,28 @@ import {
   PartialSeason,
   SeasonCharacter,
 } from '@/sync/index.model';
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
-import { concatMap, firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class BangumiSeasonService {
-  constructor(private axios: HttpService) {}
+  constructor(private axios: ChinaAxiosService) {}
 
   private static userAgent = 'bangumi-skyhook/v1.0.0';
 
   private async fetchInfoAndImages(result: PartialSeason, bangumiId: string) {
-    const season = await firstValueFrom(
-      this.axios
-        .get(`https://api.bgm.tv/v0/subjects/${bangumiId}`, {
-          headers: {
-            'user-agent': BangumiSeasonService.userAgent,
-          },
-        })
-        .pipe(
-          timeout(8000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(BangumiSeason, resp.data);
-            await validateOrReject(obj);
-            return obj;
-          }),
-        ),
+    const resp = await this.axios.get(
+      `https://api.bgm.tv/v0/subjects/${bangumiId}`,
+      {
+        headers: {
+          'user-agent': BangumiSeasonService.userAgent,
+        },
+      },
     );
+    const season = plainToClass(BangumiSeason, resp.data);
+    await validateOrReject(season);
     result.info = {
       description: season.summary,
       genres: [],
@@ -50,26 +43,17 @@ export class BangumiSeasonService {
   }
 
   private async fetchEpisodes(result: PartialSeason, bangumiId: string) {
-    const { data: episodes } = await firstValueFrom(
-      this.axios
-        .get(
-          `https://api.bgm.tv/v0/episodes?subject_id=${bangumiId}&limit=100&offset=0`,
-          {
-            headers: {
-              'user-agent': BangumiSeasonService.userAgent,
-            },
-          },
-        )
-        .pipe(
-          timeout(8000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(BangumiEpisodes, resp.data);
-            await validateOrReject(obj);
-            return obj;
-          }),
-        ),
+    const resp = await this.axios.get(
+      `https://api.bgm.tv/v0/episodes?subject_id=${bangumiId}&limit=100&offset=0`,
+      {
+        headers: {
+          'user-agent': BangumiSeasonService.userAgent,
+        },
+      },
     );
-    result.episodes = episodes.map((episode) => ({
+    const episodes = plainToClass(BangumiEpisodes, resp.data);
+    await validateOrReject(episodes);
+    result.episodes = episodes.data.map((episode) => ({
       index: episode.ep,
       // 兜底文案
       title: episode.name_cn || episode.name || 'TBA',
@@ -81,24 +65,19 @@ export class BangumiSeasonService {
   }
 
   private async fetchCharacters(result: PartialSeason, bangumiId: string) {
-    const { characters } = await firstValueFrom(
-      this.axios
-        .get(`https://api.bgm.tv/v0/subjects/${bangumiId}/characters`, {
-          headers: {
-            'user-agent': BangumiSeasonService.userAgent,
-          },
-        })
-        .pipe(
-          timeout(8000),
-          concatMap(async (resp) => {
-            const obj = plainToClass(BangumiCharacters, {
-              characters: resp.data,
-            });
-            await validateOrReject(obj);
-            return obj;
-          }),
-        ),
+    const resp = await this.axios.get(
+      `https://api.bgm.tv/v0/subjects/${bangumiId}/characters`,
+      {
+        headers: {
+          'user-agent': BangumiSeasonService.userAgent,
+        },
+      },
     );
+    const obj = plainToClass(BangumiCharacters, {
+      characters: resp.data,
+    });
+    await validateOrReject(obj);
+    const { characters } = obj;
     const mapped: SeasonCharacter[] = [];
     for (const character of Array.from(characters)) {
       for (const actor of Array.from(character.actors)) {

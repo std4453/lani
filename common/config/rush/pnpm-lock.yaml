@@ -55,6 +55,7 @@ specifiers:
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/react': ~6.17.8
   '@types/bull': ~3.15.8
+  '@types/cookie': ~0.4.1
   '@types/cron': ~1.7.3
   '@types/express': ^4.17.13
   '@types/history': 2.0.45
@@ -66,6 +67,7 @@ specifiers:
   '@types/koa__cors': ~3.1.1
   '@types/lodash': ~4.14.178
   '@types/node': ~17.0.4
+  '@types/parse-torrent': ~5.8.4
   '@types/react': ~17.0.38
   '@types/react-dom': ^17.0.0
   '@types/supertest': ^2.0.11
@@ -78,12 +80,13 @@ specifiers:
   antd: ~4.18.4
   apollo-server: ~3.6.4
   apollo-server-express: ~3.6.4
-  axios: ~0.24.0
+  axios: ~0.26.0
   bull: ~4.7.0
   class-transformer: ~0.5.1
   class-validator: ~0.13.2
   cls-rtracer: ~2.6.0
   clsx: ~1.1.1
+  cookie: ~0.4.2
   cos-nodejs-sdk-v5: ~2.11.6
   dayjs: ~1.10.7
   eslint: ^7.32.0
@@ -93,6 +96,7 @@ specifiers:
   eslint-plugin-prettier: ^4.0.0
   eslint-plugin-react-hooks: ~4.3.0
   execa: ~6
+  form-data: ~4.0.0
   fp-ts: ~2.11.5
   globby: ^11
   graphile-build: ~4.12.2
@@ -116,6 +120,7 @@ specifiers:
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
   octokit: ~1.7.1
+  parse-torrent: ~9.1.4
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: ~2.2.2
   prettier: ~2.5.1
@@ -199,6 +204,7 @@ dependencies:
   '@rushstack/eslint-config': 2.5.1_eslint@7.32.0+typescript@4.5.4
   '@sentry/react': 6.17.8_react@17.0.2
   '@types/bull': 3.15.8
+  '@types/cookie': 0.4.1
   '@types/cron': 1.7.3
   '@types/express': 4.17.13
   '@types/history': 2.0.45
@@ -210,6 +216,7 @@ dependencies:
   '@types/koa__cors': 3.1.1
   '@types/lodash': 4.14.178
   '@types/node': 17.0.4
+  '@types/parse-torrent': 5.8.4
   '@types/react': 17.0.38
   '@types/react-dom': 17.0.11
   '@types/supertest': 2.0.11
@@ -222,12 +229,13 @@ dependencies:
   antd: 4.18.4_react-dom@17.0.2+react@17.0.2
   apollo-server: 3.6.4_graphql@15.8.0
   apollo-server-express: 3.6.4_graphql@15.8.0
-  axios: 0.24.0
+  axios: 0.26.1
   bull: 4.7.0
   class-transformer: 0.5.1
   class-validator: 0.13.2
   cls-rtracer: 2.6.0
   clsx: 1.1.1
+  cookie: 0.4.2
   cos-nodejs-sdk-v5: 2.11.6
   dayjs: 1.10.7
   eslint: 7.32.0
@@ -237,6 +245,7 @@ dependencies:
   eslint-plugin-prettier: 4.0.0_6e6a25a49a944db0fa38418c3ba4bc86
   eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
   execa: 6.0.0
+  form-data: 4.0.0
   fp-ts: 2.11.5
   globby: 11.0.4
   graphile-build: 4.12.2_graphql@15.8.0
@@ -260,6 +269,7 @@ dependencies:
   npm-run-all: 4.1.5
   oclif: 2.1.0
   octokit: 1.7.1
+  parse-torrent: 9.1.4
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: 2.2.2
   prettier: 2.5.1
@@ -3273,6 +3283,19 @@ packages:
       - encoding
     dev: false
 
+  /@nestjs/event-emitter/1.1.0_891fcd1c5b0f2c9b3aea247fec3c8ce1:
+    resolution: {integrity: sha512-wxQhrPtXSUSD2y7poyBdp0V2b7xD9jCkcenGVhllx3ILkctEYXyY+rAwwWGnDqDxnrN4/MKexkAQBHa2phsNRw==}
+    peerDependencies:
+      '@nestjs/common': ^7.0.0 || ^8.0.0
+      '@nestjs/core': ^7.0.0 || ^8.0.0
+      reflect-metadata: ^0.1.12
+    dependencies:
+      '@nestjs/common': 8.4.1_e2dd7264172553abc41c1a07952dd8ca
+      '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
+      eventemitter2: 6.4.5
+      reflect-metadata: 0.1.13
+    dev: false
+
   /@nestjs/graphql/10.0.7_821442d11b9085f827d17e06e7a277d8:
     resolution: {integrity: sha512-LplmcXCyF1FOYNLq+pSJKJ6+ZaHTPNmUuHbLv1sjiHaMaMzlnbTre73IRz1K3Kon/6WWLUcAS2rKPF/H21+joQ==}
     peerDependencies:
@@ -4696,6 +4719,10 @@ packages:
     resolution: {integrity: sha512-0mPF08jn9zYI0n0Q/Pnz7C4kThdSt+6LD4amsrYDDpgBfrVWa3TcCOxKX1zkGgYniGagRv8heN2cbh+CAn+uuQ==}
     dev: false
 
+  /@types/cookie/0.4.1:
+    resolution: {integrity: sha512-XW/Aa8APYr6jSVVA1y/DEIZX0/GMKLEVekNG727R8cs56ahETkRAy/3DR7+fJyh7oUgGwNQaRfXCun0+KbWY7Q==}
+    dev: false
+
   /@types/cookiejar/2.1.2:
     resolution: {integrity: sha512-t73xJJrvdTjXrn4jLS9VSGRbz0nUY3cl2DMGDU48lKl+HR9dbbjW2A9r3g40VA++mQpy6uuHg33gy7du2BKpog==}
     dev: false
@@ -4960,6 +4987,12 @@ packages:
     resolution: {integrity: sha512-ssE3Vlrys7sdIzs5LOxCzTVMsU7i9oa/IaW92wF32JFb3CVczqOkru2xspuKczHEbG3nvmPY7IFqVmGGHdNbYw==}
     dev: false
 
+  /@types/magnet-uri/5.1.3:
+    resolution: {integrity: sha512-FvJN1yYdLhvU6zWJ2YnWQ2GnpFLsA8bt+85WY0tLh6ehzGNrvBorjlcc53/zY43r/IKn+ctFs1nt7andwGnQCQ==}
+    dependencies:
+      '@types/node': 17.0.4
+    dev: false
+
   /@types/mime/1.3.2:
     resolution: {integrity: sha512-YATxVxgRqNH6nHEIsvg6k2Boc1JHI9ZbH5iWFFv/MTkchz3b1ieGDa5T0a9RznNdI0KhVbdbWSN+KWWrQZRxTw==}
     dev: false
@@ -4997,6 +5030,20 @@ packages:
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
+    dev: false
+
+  /@types/parse-torrent-file/4.0.3:
+    resolution: {integrity: sha512-dFkPnJPKiFWiGX+HXmyTVt2js3k0d9dThmUxX8nfGC22hbyZ5BTmetsEl45sQhHLcFo43njVrIKMXM3F1ahXRw==}
+    dependencies:
+      '@types/node': 17.0.4
+    dev: false
+
+  /@types/parse-torrent/5.8.4:
+    resolution: {integrity: sha512-FdKs5yN5iYO5Cu9gVz1Zl30CbZe6HTsqloWmCf+LfbImgSzlsUkov2+npQWCQSQ3zi/a2G5C824K0UpZ2sRufA==}
+    dependencies:
+      '@types/magnet-uri': 5.1.3
+      '@types/node': 17.0.4
+      '@types/parse-torrent-file': 4.0.3
     dev: false
 
   /@types/pg/8.6.4:
@@ -7140,14 +7187,6 @@ packages:
       - debug
     dev: false
 
-  /axios/0.24.0:
-    resolution: {integrity: sha512-Q6cWsys88HoPgAaFAVUb0WpPk0O8iTeisR9IMqy9G8AbO4NlpVknrnQS03zzF9PGAWgO3cgletO3VjV/P7VztA==}
-    dependencies:
-      follow-redirects: 1.14.6
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
   /axios/0.26.0:
     resolution: {integrity: sha512-lKoGLMYtHvFrPVt3r+RBMp9nh34N0M8zEfCWqdWZx6phynIEhQqAdydpyBAAG211zlhX9Rgu08cOamy6XjE5Og==}
     dependencies:
@@ -7446,6 +7485,14 @@ packages:
     resolution: {integrity: sha512-3pZEU3NT5BFUo/AD5ERPWOgQOCZITni6iavr5AUw5AUwQjMlI0kzu5btnyD39AF0gUEsDPwJT+oY1ORBJijPjQ==}
     dev: false
 
+  /bencode/2.0.2:
+    resolution: {integrity: sha512-0ilVjnE2diLdbec/3KN14SP0KE85wh8v/FceNRMbAB2ioc3yTj9tgqdoK9tFEH++TZ10JreTS29qTwg7+SpTiQ==}
+    dev: false
+
+  /bep53-range/1.1.1:
+    resolution: {integrity: sha512-ct6s33iiwRCUPp9KXnJ4QMWDgHIgaw36caK/5XEQ9L8dCzSQlJt1Vk6VmHh1VD4AlGCAI4C2zmtfItifBBPrhQ==}
+    dev: false
+
   /big.js/5.2.2:
     resolution: {integrity: sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==}
     dev: false
@@ -7473,6 +7520,10 @@ packages:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.0
+    dev: false
+
+  /blob-to-buffer/1.2.9:
+    resolution: {integrity: sha512-BF033y5fN6OCofD3vgHmNtwZWRcq9NLyyxyILx9hfMy1sXYy4ojFl765hJ2lP0YaN2fuxPaLO2Vzzoxy0FLFFA==}
     dev: false
 
   /bn.js/4.12.0:
@@ -10278,6 +10329,10 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /eventemitter2/6.4.5:
+    resolution: {integrity: sha512-bXE7Dyc1i6oQElDG0jMRZJrRAn9QR2xyyFGmBdZleNmyQX0FqGYmhZIrIrpPfm/w//LTo4tVQGOGQcGCb5q9uw==}
+    dev: false
+
   /eventemitter3/3.1.2:
     resolution: {integrity: sha512-tvtQIeLVHjDkJYnzf2dgVMxfuSGJeM/7UCG17TT4EumTfNtF+0nebF/4zWOIkCreAbtNqhGEboB6BWrwqNaw4Q==}
     dev: false
@@ -10788,16 +10843,6 @@ packages:
   /flatten/1.0.3:
     resolution: {integrity: sha512-dVsPA/UwQ8+2uoFe5GHtiBMu48dWLTdsuEd7CKGlZlD78r1TTWBvDuFaFGKCo/ZfEr95Uk56vZoX86OsHkUeIg==}
     deprecated: flatten is deprecated in favor of utility frameworks such as lodash.
-    dev: false
-
-  /follow-redirects/1.14.6:
-    resolution: {integrity: sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
     dev: false
 
   /follow-redirects/1.14.6_debug@3.2.7:
@@ -14688,6 +14733,13 @@ packages:
       sourcemap-codec: 1.4.8
     dev: false
 
+  /magnet-uri/6.2.0:
+    resolution: {integrity: sha512-O9AgdDwT771fnUj0giPYu/rACpz8173y8UXCSOdLITjOVfBenZ9H9q3FqQmveK+ORUMuD+BkKNSZP8C3+IMAKQ==}
+    dependencies:
+      bep53-range: 1.1.1
+      thirty-two: 1.0.2
+    dev: false
+
   /make-dir/1.3.0:
     resolution: {integrity: sha512-2w31R7SJtieJJnQtGc7RVL2StM2vGYVfqUOvUDxH6bC6aJTxPxTF0GnIgCyu7tjockiUWAYQRbxa7vKn34s5sQ==}
     engines: {node: '>=4'}
@@ -16071,6 +16123,19 @@ packages:
       error-ex: 1.3.2
       json-parse-even-better-errors: 2.3.1
       lines-and-columns: 1.2.4
+    dev: false
+
+  /parse-torrent/9.1.4:
+    resolution: {integrity: sha512-NSlG8ewolqfcEWevUUsrpvxzVWYGaKWwPHMcXTAV2qYYo6pPugVOacQXt8uDlEYh23Ituz+A9pAZK5YaXTV8Pg==}
+    hasBin: true
+    dependencies:
+      bencode: 2.0.2
+      blob-to-buffer: 1.2.9
+      get-stdin: 8.0.0
+      magnet-uri: 6.2.0
+      queue-microtask: 1.2.3
+      simple-get: 4.0.1
+      simple-sha1: 3.1.0
     dev: false
 
   /parse5-htmlparser2-tree-adapter/6.0.1:
@@ -18707,6 +18772,10 @@ packages:
       queue-microtask: 1.2.3
     dev: false
 
+  /rusha/0.8.14:
+    resolution: {integrity: sha512-cLgakCUf6PedEu15t8kbsjnwIFFR2D4RfL+W3iWFJ4iac7z4B0ZI8fxy4R3J956kAI68HclCFGL8MPoUVC3qVA==}
+    dev: false
+
   /rx/2.3.24:
     resolution: {integrity: sha1-FPlQpCF9fjXapxu8vljv9o6ksrc=}
     dev: false
@@ -19061,6 +19130,18 @@ packages:
     resolution: {integrity: sha1-HdrOSYF5j5O9gzlzgD2A1S6TrWo=}
     dev: false
 
+  /simple-concat/1.0.1:
+    resolution: {integrity: sha512-cSFtAPtRhljv69IK0hTVZQ+OfE9nePi/rtJmw5UjHeVyVroEqJXP1sFztKUy1qU+xvz3u/sfYJLa947b7nAN2Q==}
+    dev: false
+
+  /simple-get/4.0.1:
+    resolution: {integrity: sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==}
+    dependencies:
+      decompress-response: 6.0.0
+      once: 1.4.0
+      simple-concat: 1.0.1
+    dev: false
+
   /simple-git/2.48.0:
     resolution: {integrity: sha512-z4qtrRuaAFJS4PUd0g+xy7aN4y+RvEt/QTJpR184lhJguBA1S/LsVlvE/CM95RsYMOFJG3NGGDjqFCzKU19S/A==}
     dependencies:
@@ -19069,6 +19150,13 @@ packages:
       debug: 4.3.3
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /simple-sha1/3.1.0:
+    resolution: {integrity: sha512-ArTptMRC1v08H8ihPD6l0wesKvMfF9e8XL5rIHPanI7kGOsSsbY514MwVu6X1PITHCTB2F08zB7cyEbfc4wQjg==}
+    dependencies:
+      queue-microtask: 1.2.3
+      rusha: 0.8.14
     dev: false
 
   /sisteransi/1.0.5:
@@ -19957,6 +20045,11 @@ packages:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
     dependencies:
       any-promise: 1.3.0
+    dev: false
+
+  /thirty-two/1.0.2:
+    resolution: {integrity: sha1-TKL//AKlEpDSdEueP1V2k8prYno=}
+    engines: {node: '>=0.2.6'}
     dev: false
 
   /throat/5.0.0:
@@ -21562,7 +21655,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_ec4c31708447bd0b76e74aae9259d7cd:
-    resolution: {integrity: sha512-yzSkPG/KQqb/bknSArLXqLbNMZhRyLmqIUuJ9AtHjgpuZT6gb83BaybdFjNxB6N0D9dknAIj5x/aIZvTvQNlOw==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-OJ2SV+QzFLABk5xecGXSsoRUnXKoKm2FRskuX4NmkiunTOeYuqPMT3YawEas7bJZA7siSHANzVsNZwOIUp8IWw==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -21590,7 +21683,7 @@ packages:
       '@umijs/route-utils': 2.0.4
       ahooks: 3.1.9_react@17.0.2
       antd: 4.18.4_react-dom@17.0.2+react@17.0.2
-      axios: 0.24.0
+      axios: 0.26.1
       clsx: 1.1.1
       eslint: 7.32.0
       eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
@@ -21624,7 +21717,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-C8Gt10Qqgye63OdQ/1RR61vyR/631ktBPuZXLEwGXeXrsPOjPWemfvLQwmdcpHprLKZOlCRReaURO10QXtthNA==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-njclYPhliqcCvQREsE7WmqKM55t0cGqL03fCtfhs9ol8RIEsZ2qcE9JeUtOXYHHsSbz5T6MzqxtKSUtrt8poCg==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -21643,6 +21736,7 @@ packages:
       '@nestjs/common': 8.4.1_e2dd7264172553abc41c1a07952dd8ca
       '@nestjs/config': 1.2.0_7834c4d3afb72e7515a1fdbb3d2a4476
       '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
+      '@nestjs/event-emitter': 1.1.0_891fcd1c5b0f2c9b3aea247fec3c8ce1
       '@nestjs/graphql': 10.0.7_821442d11b9085f827d17e06e7a277d8
       '@nestjs/platform-express': 8.4.1_214a294e539403889bf33d78c1f08a26
       '@nestjs/schedule': 1.0.2_891fcd1c5b0f2c9b3aea247fec3c8ce1
@@ -21652,24 +21746,28 @@ packages:
       '@paljs/cli': 4.0.18
       '@prisma/client': 3.11.0_prisma@3.11.0
       '@types/bull': 3.15.8
+      '@types/cookie': 0.4.1
       '@types/cron': 1.7.3
       '@types/express': 4.17.13
       '@types/jest': 27.4.1
       '@types/node': 17.0.4
+      '@types/parse-torrent': 5.8.4
       '@types/supertest': 2.0.11
       '@types/xml2js': 0.4.9
       '@typescript-eslint/eslint-plugin': 5.10.2_ba10c759aee2676289ed1f4af8ad70b8
       '@typescript-eslint/parser': 5.10.2_eslint@7.32.0+typescript@4.5.4
       apollo-server-express: 3.6.4_graphql@15.8.0
-      axios: 0.24.0
+      axios: 0.26.1
       bull: 4.7.0
       class-transformer: 0.5.1
       class-validator: 0.13.2
+      cookie: 0.4.2
       cos-nodejs-sdk-v5: 2.11.6
       dayjs: 1.10.7
       eslint: 7.32.0
       eslint-config-prettier: 8.3.0_eslint@7.32.0
       eslint-plugin-prettier: 4.0.0_6e6a25a49a944db0fa38418c3ba4bc86
+      form-data: 4.0.0
       fp-ts: 2.11.5
       graphql: 15.8.0
       graphql-request: 4.1.0_graphql@15.8.0
@@ -21678,6 +21776,7 @@ packages:
       https-proxy-agent: 5.0.0
       io-ts: 2.2.16_fp-ts@2.11.5
       jest: 27.5.1_ts-node@10.4.0
+      parse-torrent: 9.1.4
       prettier: 2.5.1
       prisma: 3.11.0
       prisma-schema-transformer: 0.8.1
@@ -21750,11 +21849,11 @@ packages:
     dev: false
 
   file:projects/bilibili-bangumi-cc.tgz:
-    resolution: {integrity: sha512-oOpmJyE3PADXJJOSEDIBwhlFvUn64tq41sqcdsIntr/BlX9bQaJB+s/1Ey8L7POEvobmSKzjh+5VkJcensaldw==, tarball: file:projects/bilibili-bangumi-cc.tgz}
+    resolution: {integrity: sha512-Pp7xVxhdjVucGDXgx5uf34Q5+zOed+rk3duWKswQCB0Oi4DUKNXZPd/gDkHeyW1G4Xe7YwqFlyc3dykMseUeRA==, tarball: file:projects/bilibili-bangumi-cc.tgz}
     name: '@rush-temp/bilibili-bangumi-cc'
     version: 0.0.0
     dependencies:
-      axios: 0.24.0
+      axios: 0.26.1
       cos-nodejs-sdk-v5: 2.11.6
       fp-ts: 2.11.5
       https-proxy-agent: 5.0.0
@@ -21835,7 +21934,7 @@ packages:
     dev: false
 
   file:projects/framework.tgz:
-    resolution: {integrity: sha512-TqdbOCjGybXh2yTedpLs+cIeEuXkYJcjpy1LDIOOPUgBwTrPhH6BPUTyufSKJe+Jl7nw51hbkl+vkXTdFUQlWg==, tarball: file:projects/framework.tgz}
+    resolution: {integrity: sha512-31cqCJdvy+8jQECrvfUV7tDY4TuFjJ0DVPLnJgu6n0DL5e7Qu9xlP4f2isLAZ4YratzI5DEoKWd0j1VM+GNNMw==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
     version: 0.0.0
     dependencies:
@@ -21846,7 +21945,7 @@ packages:
       '@types/koa-logger': 3.1.2
       '@types/koa-router': 7.4.4
       '@types/node': 17.0.4
-      axios: 0.24.0
+      axios: 0.26.1
       cls-rtracer: 2.6.0
       fp-ts: 2.11.5
       io-ts: 2.2.16_fp-ts@2.11.5
@@ -21862,14 +21961,14 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-DOa7NZYq3t7pIjnrAIFXs8zvCV/CjpGlSZQ4YjnhBaSclI14GfpJ5piXNLUf8eHQ7kgnSrfZniT1rmTbmj12VQ==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-FvoGPHoSBjFp6wiOUDMAkgfyjNgUG3O3Bs5Cij5AG5CjVgLmagME6Kfr1OGwTZoF3CC1e3wH08FUH3fy4OTn3g==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
       '@apollo/federation': 0.33.9_graphql@15.8.0
       '@apollo/gateway': 0.46.0_graphql@15.8.0
       apollo-server: 3.6.4_graphql@15.8.0
-      axios: 0.24.0
+      axios: 0.26.1
       graphql: 15.8.0
       typescript: 4.5.4
       typescript-transform-paths: 3.3.1_typescript@4.5.4
@@ -21901,13 +22000,13 @@ packages:
     dev: false
 
   file:projects/rss.tgz:
-    resolution: {integrity: sha512-OOkHzmviRQjo7Z8B1x6Y78bipysz48N1KzvTiecWNZEjA7cAty1ayLfXDp4qTlcMitykpekK8LcoTKkdAptlbw==, tarball: file:projects/rss.tgz}
+    resolution: {integrity: sha512-8VM8RqIHAGhDR/NReAl0UgugUAk6uOK8JPP1U44ASz04g4VbR2JILpwEBYwuftxj0OB2CKkKx4NCdGzAw9m3Tw==, tarball: file:projects/rss.tgz}
     name: '@rush-temp/rss'
     version: 0.0.0
     dependencies:
       '@types/koa-router': 7.4.4
       '@types/xml2js': 0.4.9
-      axios: 0.24.0
+      axios: 0.26.1
       koa-router: 10.1.1
       typescript: 4.5.4
       typescript-transform-paths: 3.3.1_typescript@4.5.4
