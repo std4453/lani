@@ -1,6 +1,7 @@
 import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
+import { JobModule } from '@/job/index.module';
 import { MikanSyncModule } from '@/mikan-sync/index.module';
 import { SyncModule } from '@/sync/index.module';
 import {
@@ -19,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     FetchMikanModule,
     MikanSyncModule,
     SyncModule,
+    JobModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       autoSchemaFile: true,
@@ -34,6 +36,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       redis: {
         host: config.redisHost,
         port: 6379,
+        password: config.redisPassword,
       },
     }),
   ],

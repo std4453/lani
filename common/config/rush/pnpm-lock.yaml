@@ -29,6 +29,7 @@ specifiers:
   '@nestjs/common': ^8.0.0
   '@nestjs/config': ~1.2.0
   '@nestjs/core': ^8.0.0
+  '@nestjs/event-emitter': ~1.1.0
   '@nestjs/graphql': ~10.0.7
   '@nestjs/platform-express': ^8.0.0
   '@nestjs/schedule': ~1.0.2
@@ -116,6 +117,7 @@ specifiers:
   koa-logger: ~3.2.1
   koa-router: ~10.1.1
   lodash: ~4.17.21
+  mkdirp: ~1.0.4
   nodemon: ~2.0.15
   npm-run-all: ~4.1.5
   oclif: ^2.0.0-main.10
@@ -126,6 +128,7 @@ specifiers:
   prettier: ~2.5.1
   prisma: ~3.11.0
   prisma-schema-transformer: ~0.8.1
+  qs: ~6.10.3
   react: ~17.0.2
   react-dom: ~17.0.2
   reflect-metadata: ^0.1.13
@@ -178,6 +181,7 @@ dependencies:
   '@nestjs/common': 8.4.1_e2dd7264172553abc41c1a07952dd8ca
   '@nestjs/config': 1.2.0_7834c4d3afb72e7515a1fdbb3d2a4476
   '@nestjs/core': 8.4.1_97f6dbc4fc8093253d1684f72faf5c80
+  '@nestjs/event-emitter': 1.1.0_891fcd1c5b0f2c9b3aea247fec3c8ce1
   '@nestjs/graphql': 10.0.7_821442d11b9085f827d17e06e7a277d8
   '@nestjs/platform-express': 8.4.1_214a294e539403889bf33d78c1f08a26
   '@nestjs/schedule': 1.0.2_891fcd1c5b0f2c9b3aea247fec3c8ce1
@@ -265,6 +269,7 @@ dependencies:
   koa-logger: 3.2.1
   koa-router: 10.1.1
   lodash: 4.17.21
+  mkdirp: 1.0.4
   nodemon: 2.0.15
   npm-run-all: 4.1.5
   oclif: 2.1.0
@@ -275,6 +280,7 @@ dependencies:
   prettier: 2.5.1
   prisma: 3.11.0
   prisma-schema-transformer: 0.8.1
+  qs: 6.10.3
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
   reflect-metadata: 0.1.13
@@ -4999,6 +5005,12 @@ packages:
 
   /@types/minimatch/3.0.5:
     resolution: {integrity: sha512-Klz949h02Gz2uZCMGwDUSDS1YBlTdDDgbWHi+81l29tQALUtvz4rAYi5uoVhE5Lagoq6DeqAUlbrHvW/mXDgdQ==}
+    dev: false
+
+  /@types/mkdirp/1.0.2:
+    resolution: {integrity: sha512-o0K1tSO0Dx5X6xlU5F1D6625FawhC3dU3iqr25lluNv/+/QIVH8RLNEiVokgIZo+mz+87w/3Mkg/VvQS+J51fQ==}
+    dependencies:
+      '@types/node': 17.0.4
     dev: false
 
   /@types/ms/0.7.31:
@@ -17134,6 +17146,13 @@ packages:
       side-channel: 1.0.4
     dev: false
 
+  /qs/6.10.3:
+    resolution: {integrity: sha512-wr7M2E0OFRfIfJZjKGieI8lBKb7fRCH4Fv5KNPEs7gJ8jadvotdsS08PzOKR7opXhZ/Xkjtt3WF9g38drmyRqQ==}
+    engines: {node: '>=0.6'}
+    dependencies:
+      side-channel: 1.0.4
+    dev: false
+
   /qs/6.5.3:
     resolution: {integrity: sha512-qxXIEh4pCGfHICj1mAJQ2/2XVZkjCDTcEgfoSQxc/fYivUZxTkk7L3bDBJSoNrEzXI17oUO5Dp07ktqE5KzczA==}
     engines: {node: '>=0.6'}
@@ -21717,7 +21736,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-njclYPhliqcCvQREsE7WmqKM55t0cGqL03fCtfhs9ol8RIEsZ2qcE9JeUtOXYHHsSbz5T6MzqxtKSUtrt8poCg==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-inJYZULeYgKnyzBqxaS1XLyDu4rU74+Cs0JrpgLz3LeQBFoSni8u+DTIeo0ZADwXuxhzOcaGV6rJ3E07K1LiVg==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -21750,6 +21769,7 @@ packages:
       '@types/cron': 1.7.3
       '@types/express': 4.17.13
       '@types/jest': 27.4.1
+      '@types/mkdirp': 1.0.2
       '@types/node': 17.0.4
       '@types/parse-torrent': 5.8.4
       '@types/supertest': 2.0.11
@@ -21776,10 +21796,12 @@ packages:
       https-proxy-agent: 5.0.0
       io-ts: 2.2.16_fp-ts@2.11.5
       jest: 27.5.1_ts-node@10.4.0
+      mkdirp: 1.0.4
       parse-torrent: 9.1.4
       prettier: 2.5.1
       prisma: 3.11.0
       prisma-schema-transformer: 0.8.1
+      qs: 6.10.3
       reflect-metadata: 0.1.13
       rimraf: 3.0.2
       rxjs: 7.5.2

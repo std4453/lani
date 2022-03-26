@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model DownloadSources {
+model DownloadSource {
   id         Int       @id @default(autoincrement())
   seasonId   Int       @map("season_id")
   groupId    String    @default("") @map("group_id")
@@ -16,67 +16,93 @@ model DownloadSources {
   archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   isDisabled Boolean   @default(false) @map("is_disabled")
-  seasons    Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  season     Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   @@map("download_sources")
 }
 
-model Episodes {
-  id          Int       @id @default(autoincrement())
-  seasonId    Int       @map("season_id")
-  title       String    @default("")
-  description String    @default("")
-  index       Int
-  airTime     DateTime? @map("air_time") @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  torrentId   Int?      @map("torrent_id")
-  seasons     Seasons   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  torrents    Torrents? @relation(fields: [torrentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-	@@map("episodes")
+model Episode {
+  id           Int           @id @default(autoincrement())
+  seasonId     Int           @map("season_id")
+  title        String        @default("")
+  description  String        @default("")
+  index        Int
+  airTime      DateTime?     @map("air_time") @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  season       Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  downloadJobs DownloadJob[] @relation("download_jobsToepisodes")
+
+  @@map("episodes")
 }
 
-model Images {
+model Image {
   id        Int     @id @default(autoincrement())
   cosPath   String  @map("cos_path")
   sourceUrl String? @map("source_url")
-	@@map("images")
+
+  @@map("images")
 }
 
-model Seasons {
-  id                 Int               @id @default(autoincrement())
-  title              String            @default("")
-  description        String            @default("")
+model Season {
+  id                 Int              @id @default(autoincrement())
+  title              String           @default("")
+  description        String           @default("")
   infoSource         MetadataSource   @default(MANUAL) @map("info_source")
-  tags               String[]          @db.VarChar
-  isArchived         Boolean           @default(false) @map("is_archived")
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  archivedAt         DateTime?         @map("archived_at") @db.Timestamptz(6)
-  bilibiliThmId      String            @default("") @map("bilibili_thm_id")
-  bilibiliMainlandId String            @default("") @map("bilibili_mainland_id")
-  bangumiId          String            @default("") @map("bangumi_id")
-  mikanAnimeId       String            @default("") @map("mikan_anime_id")
-  isMonitoring       Boolean           @default(true) @map("is_monitoring")
-  yearAndSemester    String            @default("") @map("year_and_semester") @db.VarChar(16)
+  tags               String[]         @db.VarChar
+  isArchived         Boolean          @default(false) @map("is_archived")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  archivedAt         DateTime?        @map("archived_at") @db.Timestamptz(6)
+  bilibiliThmId      String           @default("") @map("bilibili_thm_id")
+  bilibiliMainlandId String           @default("") @map("bilibili_mainland_id")
+  bangumiId          String           @default("") @map("bangumi_id")
+  mikanAnimeId       String           @default("") @map("mikan_anime_id")
+  isMonitoring       Boolean          @default(true) @map("is_monitoring")
+  yearAndSemester    String           @default("") @map("year_and_semester") @db.VarChar(16)
   weekday            Int?
-  airTime            String            @default("") @map("air_time") @db.VarChar
-  tvdbId             String            @default("") @map("tvdb_id")
-  tvdbSeason         Int?              @map("tvdb_season")
+  airTime            String           @default("") @map("air_time") @db.VarChar
+  tvdbId             String           @default("") @map("tvdb_id")
+  tvdbSeason         Int?             @map("tvdb_season")
   episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
-  download_sources   DownloadSources[]
-  episodes           Episodes[]
-	@@map("seasons")
+  seasonRoot         String           @default("") @map("season_root")
+  downloadSources    DownloadSource[]
+  episodes           Episode[]
+
+  @@map("seasons")
 }
 
-model Torrents {
-  id          Int        @id(map: "mikan_items_pkey") @default(autoincrement())
-  title       String
-  torrentLink String     @map("torrent_link")
-  size        BigInt
-  publishDate DateTime   @map("publish_date") @db.Timestamptz(6)
-  hash        String     @unique
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  episodes    Episodes[]
-	@@map("torrents")
+model Torrent {
+  id           Int           @id(map: "mikan_items_pkey") @default(autoincrement())
+  title        String
+  torrentLink  String        @map("torrent_link")
+  size         BigInt
+  publishDate  DateTime      @map("publish_date") @db.Timestamptz(6)
+  hash         String        @unique
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  downloadJobs DownloadJob[] @relation("download_jobsTotorrents")
+
+  @@map("torrents")
+}
+
+model DownloadJob {
+  id             Int            @id @default(autoincrement())
+  episodeId      Int            @map("episode_id")
+  torrentId      Int            @map("torrent_id")
+  qbtTorrentHash String?        @map("qbt_torrent_hash")
+  status         DownloadStatus
+  downloadPath   String?        @map("download_path")
+  filePath       String?        @map("file_path")
+  isCancelled    Boolean        @default(false) @map("is_cancelled")
+  cancelledAt    DateTime?      @map("cancelled_at") @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  isFailed       Boolean        @default(false) @map("is_failed")
+  failedAt       DateTime?      @map("failed_at") @db.Timestamptz(6)
+  failedReason   String         @default("") @map("failed_reason")
+  qbtLastSync    DateTime?      @map("qbt_last_sync") @db.Timestamptz(6)
+  importPath     String?        @map("import_path")
+  episode        Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
+  torrent        Torrent        @relation("download_jobsTotorrents", fields: [torrentId], references: [id], onDelete: NoAction)
+
+  @@map("download_jobs")
 }
 
 enum DownloadStatus {
@@ -86,14 +112,19 @@ enum DownloadStatus {
   WRITING_METADATA
   PLAYER_WAITING
   AVAILABLE
-	@@map("download_status")
+  DOWNLOAD_SUBMITTING
+  IMPORTING
+  DOWNLOAD_COMPLETED
+
+  @@map("download_status")
 }
 
 enum ImageType {
   POSTER
   BANNER
   FANART
-	@@map("image_type")
+
+  @@map("image_type")
 }
 
 enum MetadataSource {
@@ -101,7 +132,8 @@ enum MetadataSource {
   BGM_CN
   SKYHOOK
   INHERIT
-	@@map("metadata_source")
+
+  @@map("metadata_source")
 }
 
 enum SeasonStatus {
@@ -109,5 +141,6 @@ enum SeasonStatus {
   AIRING
   ENDED
   UNKNOWN
-	@@map("season_status")
+
+  @@map("season_status")
 }
