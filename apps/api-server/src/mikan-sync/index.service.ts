@@ -12,18 +12,24 @@ export class MikanSyncService {
 
   @Cron('*/5 * * * *')
   async syncMikan() {
-    const items = await this.fetchMikanService.fetchMikanRSSItems('Classic');
-    const { count } = await this.prisma.torrent.createMany({
-      data: items.map(({ hash, publishDate, size, title, torrentLink }) => ({
-        title,
-        torrentLink,
-        size,
-        publishDate,
-        hash,
-      })),
-      skipDuplicates: true,
-    });
-    console.log(items.length, 'items found', count, 'items new');
-    return count;
+    console.debug('Syncing mikan...');
+    try {
+      const items = await this.fetchMikanService.fetchMikanRSSItems('Classic');
+      const { count } = await this.prisma.torrent.createMany({
+        data: items.map(({ hash, publishDate, size, title, torrentLink }) => ({
+          title,
+          torrentLink,
+          size,
+          publishDate,
+          hash,
+        })),
+        skipDuplicates: true,
+      });
+      console.log(items.length, 'items found', count, 'items new');
+      return count;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { mergeConfig } from '@lani/framework';
+import { PathMapping } from '@/utils/path';
 
 const config = mergeConfig({
   proxy: 'http://hk1.v2ray:8889',
@@ -17,6 +18,8 @@ const config = mergeConfig({
   timeoutLocal: 5000,
   timeoutChina: 10000,
   timeoutGlobal: 30000,
+  mediaRoot: '/media',
+  qbtPathMapping: [] as PathMapping,
 })({
   dev: {
     proxy: 'http://10.43.154.118:8889',
@@ -26,6 +29,13 @@ const config = mergeConfig({
       'postgresql://postgres:a*qLweVSC!4yRvBNP%405VGfyR@10.43.222.73:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
     redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
+    mediaRoot: '/data/std4453/services/media/media',
+    qbtPathMapping: [
+      {
+        from: '/downloads',
+        to: '/data/std4453/services/media/downloads',
+      },
+    ] as PathMapping,
   },
   offline: {
     proxy: 'http://hk1.v2ray:8889',
@@ -35,6 +45,7 @@ const config = mergeConfig({
       'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
     redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
+    // TODO: qbtPathMapping
   },
 });
 
