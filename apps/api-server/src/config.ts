@@ -2,7 +2,8 @@ import { mergeConfig } from '@lani/framework';
 import { PathMapping } from '@/utils/path';
 
 const config = mergeConfig({
-  proxy: 'http://hk1.v2ray:8889',
+  hk1Proxy: 'http://hk1.v2ray:8889',
+  globalProxy: 'http://v2ray.v2ray:8889',
   sonarrEndpoint: 'http://sonarr.media:80/api/v3',
   redisHost: 'redis-master.lani',
   redisPassword: '',
@@ -20,9 +21,10 @@ const config = mergeConfig({
   timeoutGlobal: 30000,
   mediaRoot: '/media',
   qbtPathMapping: [] as PathMapping,
+  jellyfinEndpoint: 'http://jellyfin.media:80',
+  jellyfinToken: '231e55e0d1c240cd9e58cc47f61f521b',
 })({
   dev: {
-    proxy: 'http://10.43.154.118:8889',
     sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',
     redisHost: 'redis-master.lani-offline',
     postgresURL:
@@ -36,9 +38,9 @@ const config = mergeConfig({
         to: '/data/std4453/services/media/downloads',
       },
     ] as PathMapping,
+    jellyfinEndpoint: 'https://jellyfin.std4435.com:444',
   },
   offline: {
-    proxy: 'http://hk1.v2ray:8889',
     sonarrEndpoint: 'http://sonarr.media:80/api/v3',
     redisHost: 'redis-master.lani-offline',
     postgresURL:

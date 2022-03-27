@@ -19,6 +19,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "codegen": "graphql-codegen --config codegen.yml",
     "codegen:dev": "graphql-codegen --config codegen.yml --watch",
+    "codegen:jellyfin": "openapi -i https://api.jellyfin.org/openapi/jellyfin-openapi-stable.json -o src/generated -c axios",
     "prisma:pull": "prisma db pull",
     "prisma:gen": "prisma generate",
     "postinstall": "prisma generate",
@@ -100,7 +101,8 @@
     "@lani/cli": "~1.0.0",
     "@types/cookie": "~0.4.1",
     "@types/parse-torrent": "~5.8.4",
-    "@types/mkdirp": "~1.0.2"
+    "@types/mkdirp": "~1.0.2",
+    "openapi-typescript-codegen": "~0.20.1"
   },
   "jest": {
     "moduleFileExtensions": [
