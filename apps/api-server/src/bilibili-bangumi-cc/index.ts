@@ -24,10 +24,10 @@ export class BilibiliBangumiCCService {
     private global: GlobalAxiosService,
     private hk: HKAxiosService,
     private china: ChinaAxiosService,
-    private config: ConfigService<ConfigType>,
+    private config: ConfigService<ConfigType, true>,
   ) {}
 
-  private regionToAxios: Partial<Record<BilibiliRegion, Axios>> = {
+  private regionToAxios: Record<BilibiliRegion, Axios> = {
     global: this.global,
     thm: this.hk,
     mainland: this.china,

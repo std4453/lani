@@ -17,6 +17,6 @@ export class BigIntScalar implements CustomScalar<string, bigint> {
     if (ast.kind === Kind.STRING) {
       return BigInt(ast.value);
     }
-    return null;
+    return 0n;
   }
 }

@@ -3,7 +3,7 @@ import { string } from 'fp-ts';
 
 @ObjectType()
 export class SeasonInfo {
-  description: string;
+  description?: string;
   tags: string[];
   genres: string[];
   // TODO: 卡司
