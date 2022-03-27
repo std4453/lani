@@ -63,14 +63,16 @@ export class SkyhookSeasonService {
       if (episodes.length === 0) {
         result.episodes = [];
       } else {
-        result.episodes = episodes.map((episode) => ({
-          index: episode.episodeNumber,
-          title: episode.title,
-          description: episode.overview ?? '',
-          airDate: dayjs(episode.airDate, DateFormat.BarDay).format(
-            DateFormat.NothingDay,
-          ),
-        }));
+        result.episodes = episodes
+          .filter((episode) => Boolean(episode.title))
+          .map((episode) => ({
+            index: episode.episodeNumber,
+            title: episode.title ?? '',
+            description: episode.overview ?? '',
+            airDate: dayjs(episode.airDate, DateFormat.BarDay).format(
+              DateFormat.NothingDay,
+            ),
+          }));
       }
     }
 
