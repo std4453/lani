@@ -23,6 +23,7 @@ const config = mergeConfig({
   qbtPathMapping: [] as PathMapping,
   jellyfinEndpoint: 'http://jellyfin.media:80',
   jellyfinToken: '231e55e0d1c240cd9e58cc47f61f521b',
+  jellyfinUserId: '786d13a822ed4f6ba27b28f5cf374133',
 })({
   dev: {
     sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',
@@ -38,7 +39,7 @@ const config = mergeConfig({
         to: '/data/std4453/services/media/downloads',
       },
     ] as PathMapping,
-    jellyfinEndpoint: 'https://jellyfin.std4435.com:444',
+    jellyfinEndpoint: 'https://jellyfin.std4453.com:444',
   },
   offline: {
     sonarrEndpoint: 'http://sonarr.media:80/api/v3',
