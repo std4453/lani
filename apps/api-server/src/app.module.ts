@@ -13,6 +13,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SentryModule } from '@ntegral/nestjs-sentry';
 
 @Module({
   imports: [
@@ -38,6 +39,19 @@ import { ScheduleModule } from '@nestjs/schedule';
         port: 6379,
         password: config.redisPassword,
       },
+    }),
+    SentryModule.forRoot({
+      //dsn: 'https://5f167e91f71f406a9e11a7aebbfcb6d4@o639057.ingest.sentry.io/6292676',
+      dsn: 'https://1f3b8d2e87f9423194c36bce2c790d2e@sentry.std4453.com:444/2',
+      debug: true,
+      environment: 'dev',
+      release: 'v0.0.1',
+      logLevels: ['log', 'error', 'warn', 'debug'],
+      close: {
+        enabled: true,
+        timeout: 1000,
+      },
+      sampleRate: 100,
     }),
   ],
 })

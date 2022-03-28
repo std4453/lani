@@ -66,7 +66,10 @@
     "form-data": "~4.0.0",
     "@nestjs/event-emitter": "~1.1.0",
     "qs": "~6.10.3",
-    "mkdirp": "~1.0.4"
+    "mkdirp": "~1.0.4",
+    "@ntegral/nestjs-sentry": "~3.0.7",
+    "@sentry/node": "~6.19.2",
+    "@sentry/types": "~6.19.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
