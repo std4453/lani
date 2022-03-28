@@ -1,37 +1,21 @@
-import { ChinaAxiosService } from '@/common/axios.service';
+import { BangumiAPIService, EpType } from '@/bangumi';
 import { DateFormat } from '@/constants/date-format';
-import {
-  BangumiCharacters,
-  BangumiEpisodes,
-  BangumiSeason,
-} from '@/sync/bangumi/types';
 import {
   FetchPartialSeasonRequest,
   PartialSeason,
   SeasonCharacter,
 } from '@/sync/index.model';
 import { Injectable } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
-import { validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
 
 @Injectable()
 export class BangumiSeasonService {
-  constructor(private axios: ChinaAxiosService) {}
-
   private static userAgent = 'bangumi-skyhook/v1.0.0';
 
-  private async fetchInfoAndImages(result: PartialSeason, bangumiId: string) {
-    const resp = await this.axios.get(
-      `https://api.bgm.tv/v0/subjects/${bangumiId}`,
-      {
-        headers: {
-          'user-agent': BangumiSeasonService.userAgent,
-        },
-      },
+  private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
+    const season = await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(
+      bangumiId,
     );
-    const season = plainToClass(BangumiSeason, resp.data);
-    await validateOrReject(season);
     result.info = {
       description: season.summary,
       genres: [],
@@ -42,21 +26,19 @@ export class BangumiSeasonService {
     };
   }
 
-  private async fetchEpisodes(result: PartialSeason, bangumiId: string) {
-    const resp = await this.axios.get(
-      `https://api.bgm.tv/v0/episodes?subject_id=${bangumiId}&limit=100&offset=0`,
-      {
-        headers: {
-          'user-agent': BangumiSeasonService.userAgent,
-        },
-      },
-    );
-    const episodes = plainToClass(BangumiEpisodes, resp.data);
-    await validateOrReject(episodes);
-    result.episodes = episodes.data.map((episode) => ({
-      index: episode.ep,
+  private async fetchEpisodes(result: PartialSeason, bangumiId: number) {
+    const { data: episodes = [] } =
+      await BangumiAPIService.getEpisodesV0EpisodesGet(
+        bangumiId,
+        EpType._0, // 本篇
+        100,
+        0,
+      );
+    result.episodes = episodes.map((episode) => ({
+      // 因为过滤了本篇，应当总有此字段
+      index: episode.ep ?? 0,
       // 兜底文案
-      title: episode.name_cn || episode.name || 'TBA',
+      title: episode.name_cn || episode.name || '未定',
       description: episode.desc,
       airDate: dayjs(episode.airdate, DateFormat.BarDay).format(
         DateFormat.NothingDay,
@@ -64,23 +46,14 @@ export class BangumiSeasonService {
     }));
   }
 
-  private async fetchCharacters(result: PartialSeason, bangumiId: string) {
-    const resp = await this.axios.get(
-      `https://api.bgm.tv/v0/subjects/${bangumiId}/characters`,
-      {
-        headers: {
-          'user-agent': BangumiSeasonService.userAgent,
-        },
-      },
-    );
-    const obj = plainToClass(BangumiCharacters, {
-      characters: resp.data,
-    });
-    await validateOrReject(obj);
-    const { characters } = obj;
+  private async fetchCharacters(result: PartialSeason, bangumiId: number) {
+    const characters =
+      await BangumiAPIService.getSubjectCharactersV0SubjectsSubjectIdCharactersGet(
+        bangumiId,
+      );
     const mapped: SeasonCharacter[] = [];
-    for (const character of Array.from(characters)) {
-      for (const actor of Array.from(character.actors)) {
+    for (const character of characters) {
+      for (const actor of character.actors ?? []) {
         mapped.push({
           character: character.name,
           characterImageURL: character.images?.large,
@@ -104,18 +77,19 @@ export class BangumiSeasonService {
     if (!bangumiId) {
       throw new Error('insufficient data to fetch');
     }
+    const numBangumiId = parseInt(bangumiId);
 
     const result: PartialSeason = {};
     const promises: Promise<void>[] = [];
 
     if (needInfo || needImages) {
-      promises.push(this.fetchInfoAndImages(result, bangumiId));
+      promises.push(this.fetchInfoAndImages(result, numBangumiId));
     }
     if (needEpisodes) {
-      promises.push(this.fetchEpisodes(result, bangumiId));
+      promises.push(this.fetchEpisodes(result, numBangumiId));
     }
     if (needCharacters) {
-      promises.push(this.fetchCharacters(result, bangumiId));
+      promises.push(this.fetchCharacters(result, numBangumiId));
     }
 
     await Promise.all(promises);
