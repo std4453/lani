@@ -1,6 +1,6 @@
 import { Atom } from '@/job/atoms';
 import { QBittorrentService } from '@/job/qbt.service';
-import { QBTTorrentState } from '@/job/types';
+import { QBTTorrent, QBTTorrentState } from '@/job/types';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { DownloadJob } from '@prisma/client';
 import dayjs from 'dayjs';
@@ -48,19 +48,34 @@ export class DownloadAtom extends Atom {
     return job.id in this.jobPromiseMap;
   }
 
-  async refreshDownloadStatus({
-    id,
-    qbtTorrentHash,
-    qbtLastSync,
-  }: DownloadJob) {
-    const record = this.jobPromiseMap[id];
-    if (!record) {
-      throw new ConflictException(`Job ${id} not tracked by DownloadAtom`);
+  async batchRefreshDownloadStatus(jobs: DownloadJob[]) {
+    if (jobs.some((job) => !this.jobPromiseMap[job.id])) {
+      throw new ConflictException(
+        `One or more jobs not tracked by DownloadAtom`,
+      );
     }
-    if (!qbtTorrentHash) {
+    if (jobs.some((job) => !job.qbtTorrentHash)) {
       throw new Error('qbtTorrentHash not set');
     }
-    const torrent = await this.qbt.getTorrent(qbtTorrentHash);
+    const torrents = await this.qbt.listTorrents({
+      hashes: jobs.map((job) => job.qbtTorrentHash ?? ''),
+    });
+    let count = 0;
+    for (const { id, qbtTorrentHash, qbtLastSync } of jobs) {
+      const record = this.jobPromiseMap[id];
+      const torrent = torrents.find(({ hash }) => hash === qbtTorrentHash);
+      if (this.processTorrentAndJob(torrent, record, qbtLastSync)) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  private processTorrentAndJob(
+    torrent: QBTTorrent | undefined,
+    record: PromiseRecord,
+    qbtLastSync: Date | null,
+  ) {
     if (!torrent) {
       record.reject(new Error('Torrent missing'));
       return true;
@@ -83,5 +98,21 @@ export class DownloadAtom extends Atom {
       return true;
     }
     return false;
+  }
+
+  async refreshDownloadStatus({
+    id,
+    qbtTorrentHash,
+    qbtLastSync,
+  }: DownloadJob) {
+    const record = this.jobPromiseMap[id];
+    if (!record) {
+      throw new ConflictException(`Job ${id} not tracked by DownloadAtom`);
+    }
+    if (!qbtTorrentHash) {
+      throw new Error('qbtTorrentHash not set');
+    }
+    const torrent = await this.qbt.getTorrent(qbtTorrentHash);
+    return this.processTorrentAndJob(torrent, record, qbtLastSync);
   }
 }

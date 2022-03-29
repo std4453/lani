@@ -12,6 +12,6 @@ export class SkyhookResolver {
     @Args('tvdbId') tvdbId: number,
     @Args('seasonId') seasonId: number,
   ) {
-    return this.skyhookSeasonService.query(request, `${tvdbId}`, seasonId);
+    return this.skyhookSeasonService.fetch(request, `${tvdbId}`, seasonId);
   }
 }

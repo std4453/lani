@@ -15,7 +15,7 @@ import dayjs from 'dayjs';
 export class SkyhookSeasonService {
   constructor(private axios: GlobalAxiosService) {}
 
-  async query(
+  async fetch(
     {
       episodes: needEpisodes,
       info: needInfo,

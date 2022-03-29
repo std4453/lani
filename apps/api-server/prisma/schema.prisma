@@ -64,7 +64,7 @@ model Season {
   tvdbId             String           @default("") @map("tvdb_id")
   tvdbSeason         Int?             @map("tvdb_season")
   episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
-  seasonRoot         String           @default("") @map("season_root")
+  seasonRoot         String?          @map("season_root")
   jellyfinId         String           @default("") @map("jellyfin_id")
   downloadSources    DownloadSource[]
   episodes           Episode[]
