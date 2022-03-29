@@ -21,6 +21,9 @@ export class QBTTorrent {
   availability: number;
   category: string;
   completed: number;
+  /**
+   * unix timestamp (seconds)
+   */
   completion_on: number;
   content_path: string;
   dl_limit: number;

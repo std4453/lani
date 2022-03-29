@@ -38,7 +38,7 @@ export class QBittorrentService extends AxiosService {
   private SID = '';
   private authPromise: Promise<void> | null = null;
 
-  constructor(private config: ConfigService<ConfigType>) {
+  constructor(private config: ConfigService<ConfigType, true>) {
     super({
       baseURL: config.get('qbtEndpoint'),
       timeout: config.get<number>('timeoutLocal'),
@@ -131,18 +131,27 @@ export class QBittorrentService extends AxiosService {
         await this.refreshCredentials();
         return super.request<T, R, D>(config);
       }
+
+      throw error;
     }
   }
 
   async listTorrents({ hashes, ...params }: ListTorrentsParams = {}) {
-    const resp = await this.get('/torrents/info?', {
+    const resp = await this.get('/torrents/info', {
       params: {
         ...params,
         ...(hashes ? { hashes: hashes.join('|') } : undefined),
       },
+      responseType: 'json',
     });
+    console.log(resp);
     const obj = plainToClass(QBTTorrents, { torrents: resp.data });
-    await validateOrReject(obj);
+    try {
+      await validateOrReject(obj);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
     return Array.from(obj.torrents);
   }
 
