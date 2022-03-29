@@ -10,8 +10,6 @@ import dayjs from 'dayjs';
 
 @Injectable()
 export class BangumiSeasonService {
-  private static userAgent = 'bangumi-skyhook/v1.0.0';
-
   private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
     const season = await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(
       bangumiId,

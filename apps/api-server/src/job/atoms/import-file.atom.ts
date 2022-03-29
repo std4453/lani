@@ -40,6 +40,8 @@ export class ImportFileAtom extends Atom {
     const filePath = path.join(
       seasonRoot,
       seasonTitle,
+      // 不加这个 jellyfin识别就会很成问题，还是加上
+      'Season 1',
       `Episode - S01E${index.toString().padStart(2, '0')}${path.extname(
         importPath,
       )}`,

@@ -1,5 +1,4 @@
 import { InputType, ObjectType } from '@nestjs/graphql';
-import { string } from 'fp-ts';
 
 @ObjectType()
 export class SeasonInfo {

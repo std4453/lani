@@ -5,30 +5,29 @@ function mergeXMLNodeList(source: Array<any>, target: Array<any>) {
   if (!(target instanceof Array)) {
     throw new Error('target node list is not array');
   }
-  const maxLength = Math.max(source.length, target.length);
-  for (let i = 0; i < maxLength; i++) {
-    if (i < source.length) {
-      if (i < target.length) {
-        if (typeof source[i] === 'object' && typeof target[i] === 'object') {
-          mergeXMLNode(source[i], target[i]);
-        } else if (
-          typeof source[i] !== 'object' &&
-          typeof target[i] === 'object'
-        ) {
-          mergeXMLNode({ _: source[i] }, target[i]);
-        } else if (
-          typeof source[i] === 'object' &&
-          typeof target[i] !== 'object'
-        ) {
-          mergeXMLNode(source[i], { _: target[i] });
-        } else {
-          target[i] = source[i];
-        }
+  // 原先没有、现在有的节点直接覆盖；原先有，现在没有的节点删除；原先和现在都有的merge
+  for (let i = 0; i < source.length; i++) {
+    if (i < target.length) {
+      if (typeof source[i] === 'object' && typeof target[i] === 'object') {
+        mergeXMLNode(source[i], target[i]);
+      } else if (
+        typeof source[i] !== 'object' &&
+        typeof target[i] === 'object'
+      ) {
+        mergeXMLNode({ _: source[i] }, target[i]);
+      } else if (
+        typeof source[i] === 'object' &&
+        typeof target[i] !== 'object'
+      ) {
+        mergeXMLNode(source[i], { _: target[i] });
       } else {
         target[i] = source[i];
       }
+    } else {
+      target[i] = source[i];
     }
   }
+  target.length = source.length;
 }
 
 /**

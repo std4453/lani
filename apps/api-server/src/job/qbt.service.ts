@@ -30,7 +30,7 @@ export interface ListTorrentsParams {
   reverse?: boolean;
   limit?: number;
   offset?: number;
-  hashes?: [string];
+  hashes?: string[];
 }
 
 @Injectable()
@@ -144,7 +144,6 @@ export class QBittorrentService extends AxiosService {
       },
       responseType: 'json',
     });
-    console.log(resp);
     const obj = plainToClass(QBTTorrents, { torrents: resp.data });
     try {
       await validateOrReject(obj);

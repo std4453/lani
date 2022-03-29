@@ -93,21 +93,18 @@ export class JobService {
     episodeId: number,
     torrentLink: string,
   ) {
-    const { id } = await this.prisma.downloadJob.create({
+    const newJob = await this.prisma.downloadJob.create({
       data: {
         episodeId,
         torrentLink,
         status: DownloadStatus.DOWNLOAD_SUBMITTING,
       },
     });
-    void this.triggerJobStep(id);
-    return id;
+    this.triggerJobStep(newJob);
+    return newJob.id;
   }
 
-  private async triggerJobStep(jobId: number) {
-    const job = await this.prisma.downloadJob.findUnique({
-      where: { id: jobId },
-    });
+  private triggerJobStep(job: DownloadJob) {
     const step = this.jobConfig.find((step) => step.id === job.status);
     // 如果当前步骤已经是最后一步，则不再执行
     if (step) {
@@ -115,7 +112,8 @@ export class JobService {
       void this.runStep(job, step);
     } else {
       console.debug('Job', job.id, 'finished');
-      await this.prisma.episode.update({
+      // TODO: 错误处理
+      void this.prisma.episode.update({
         where: { id: job.episodeId },
         data: {
           jellyfinEpisodeId: job.jellyfinEpisodeId,
@@ -127,7 +125,7 @@ export class JobService {
   private async runStep(job: DownloadJob, step: JobStep) {
     try {
       const result = await step.atom.run(job);
-      await this.prisma.downloadJob.update({
+      const newJob = await this.prisma.downloadJob.update({
         where: { id: job.id },
         data: {
           ...result,
@@ -137,7 +135,7 @@ export class JobService {
           failedReason: '',
         },
       });
-      void this.triggerJobStep(job.id);
+      this.triggerJobStep(newJob);
     } catch (error) {
       this.onError(job.id, error);
     }
@@ -145,7 +143,10 @@ export class JobService {
 
   @Mutation(() => ID)
   async retryJobStep(@Args('jobId') jobId: number) {
-    await this.triggerJobStep(jobId);
+    const job = await this.prisma.downloadJob.findUnique({
+      where: { id: jobId },
+    });
+    this.triggerJobStep(job);
     return 'ok';
   }
 
@@ -168,11 +169,25 @@ export class JobService {
     // 由于 worker（也就是本进程）不能保证稳定，服务重启时内存中的下载队列会丢失，
     // 所以这里需要重新将下载任务加入队列
     if (!this.download.isTracked(job)) {
-      await this.triggerJobStep(job.id);
+      this.triggerJobStep(job);
     }
     return {
       changed: await this.download.refreshDownloadStatus(job),
     };
+  }
+
+  @Cron('*/30 * * * * *') // 每 30 秒
+  @Mutation(() => Int)
+  async refreshAllDownloadStatus() {
+    const jobs = await this.prisma.downloadJob.findMany({
+      where: { status: DownloadStatus.DOWNLOADING, isFailed: false },
+    });
+    for (const job of jobs) {
+      if (!this.download.isTracked(job)) {
+        this.triggerJobStep(job);
+      }
+    }
+    return this.download.batchRefreshDownloadStatus(jobs);
   }
 
   private async onError(jobId, error: Error) {
@@ -216,6 +231,7 @@ export class JobService {
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
         AND seasons.is_archived = false
+        AND seasons.season_root IS NOT NULL
         AND episodes.index = cast(substring(torrents.title FROM download_sources.pattern) AS integer)
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
