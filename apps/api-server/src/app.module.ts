@@ -11,6 +11,7 @@ import {
 import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SentryModule } from '@ntegral/nestjs-sentry';
@@ -53,6 +54,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
       },
       sampleRate: 100,
     }),
+    EventEmitterModule.forRoot(),
   ],
 })
 export class AppModule {}

@@ -22,15 +22,16 @@ model DownloadSource {
 }
 
 model Episode {
-  id           Int           @id @default(autoincrement())
-  seasonId     Int           @map("season_id")
-  title        String        @default("")
-  description  String        @default("")
-  index        Int
-  airTime      DateTime?     @map("air_time") @db.Timestamptz(6)
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  season       Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  downloadJobs DownloadJob[] @relation("download_jobsToepisodes")
+  id                Int           @id @default(autoincrement())
+  seasonId          Int           @map("season_id")
+  title             String        @default("")
+  description       String        @default("")
+  index             Int
+  airTime           DateTime?     @map("air_time") @db.Timestamptz(6)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  jellyfinEpisodeId String?       @map("jellyfin_episode_id")
+  season            Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  downloadJobs      DownloadJob[] @relation("download_jobsToepisodes")
 
   @@map("episodes")
 }
@@ -64,6 +65,7 @@ model Season {
   tvdbSeason         Int?             @map("tvdb_season")
   episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
   seasonRoot         String           @default("") @map("season_root")
+  jellyfinId         String           @default("") @map("jellyfin_id")
   downloadSources    DownloadSource[]
   episodes           Episode[]
 
@@ -71,36 +73,36 @@ model Season {
 }
 
 model Torrent {
-  id           Int           @id(map: "mikan_items_pkey") @default(autoincrement())
-  title        String
-  torrentLink  String        @map("torrent_link")
-  size         BigInt
-  publishDate  DateTime      @map("publish_date") @db.Timestamptz(6)
-  hash         String        @unique
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  downloadJobs DownloadJob[] @relation("download_jobsTotorrents")
+  id          Int      @id(map: "mikan_items_pkey") @default(autoincrement())
+  title       String
+  torrentLink String   @map("torrent_link")
+  size        BigInt
+  publishDate DateTime @map("publish_date") @db.Timestamptz(6)
+  hash        String   @unique
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@map("torrents")
 }
 
 model DownloadJob {
-  id             Int            @id @default(autoincrement())
-  episodeId      Int            @map("episode_id")
-  torrentId      Int            @map("torrent_id")
-  qbtTorrentHash String?        @map("qbt_torrent_hash")
-  status         DownloadStatus
-  downloadPath   String?        @map("download_path")
-  filePath       String?        @map("file_path")
-  isCancelled    Boolean        @default(false) @map("is_cancelled")
-  cancelledAt    DateTime?      @map("cancelled_at") @db.Timestamptz(6)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  isFailed       Boolean        @default(false) @map("is_failed")
-  failedAt       DateTime?      @map("failed_at") @db.Timestamptz(6)
-  failedReason   String         @default("") @map("failed_reason")
-  qbtLastSync    DateTime?      @map("qbt_last_sync") @db.Timestamptz(6)
-  importPath     String?        @map("import_path")
-  episode        Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
-  torrent        Torrent        @relation("download_jobsTotorrents", fields: [torrentId], references: [id], onDelete: NoAction)
+  id                Int            @id @default(autoincrement())
+  episodeId         Int            @map("episode_id")
+  qbtTorrentHash    String?        @map("qbt_torrent_hash")
+  status            DownloadStatus
+  downloadPath      String?        @map("download_path")
+  filePath          String?        @map("file_path")
+  isCancelled       Boolean        @default(false) @map("is_cancelled")
+  cancelledAt       DateTime?      @map("cancelled_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  isFailed          Boolean        @default(false) @map("is_failed")
+  failedAt          DateTime?      @map("failed_at") @db.Timestamptz(6)
+  failedReason      String         @default("") @map("failed_reason")
+  qbtLastSync       DateTime?      @map("qbt_last_sync") @db.Timestamptz(6)
+  importPath        String?        @map("import_path")
+  torrentLink       String?        @map("torrent_link")
+  nfoPath           String?        @map("nfo_path")
+  jellyfinEpisodeId String?        @map("jellyfin_episode_id")
+  episode           Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
 
   @@map("download_jobs")
 }
