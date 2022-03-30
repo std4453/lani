@@ -96,7 +96,6 @@ export class JobService
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
     // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
-    // TODO: 这个查询的性能比较迷幻，性能出问题了再优化吧
     const result = await this.prisma.$queryRaw<
       {
         torrent_link: string;
@@ -108,8 +107,8 @@ export class JobService
       FROM torrents,
         download_sources,
         seasons,
-        episodes
-      LEFT JOIN download_jobs ON episodes.id = download_jobs.episode_id
+        episodes,
+        download_jobs
       WHERE download_sources.is_disabled = false
         AND download_sources.is_archived = false
         AND torrents.title ~ download_sources.pattern
@@ -121,6 +120,7 @@ export class JobService
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
         AND download_jobs.episode_id IS NULL
+		    AND episodes.id = download_jobs.episode_id
     `;
     if (result.length > 0) {
       console.debug('queued', result.length, 'jobs');
