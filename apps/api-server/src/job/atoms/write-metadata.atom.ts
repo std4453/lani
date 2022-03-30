@@ -1,36 +1,47 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { DateFormat } from '@/constants/date-format';
-import { Atom } from '@/job/atoms';
+import { AsyncAtom, StepInput } from '@/job/atoms';
+import { DownloadWorkflowDefinition } from '@/job/atoms/types';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DownloadJob } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
 
 @Injectable()
-export class WriteMetadataAtom extends Atom {
+export class WriteMetadataAtom extends AsyncAtom<
+  DownloadWorkflowDefinition,
+  'writeMetadata'
+> {
   constructor(
+    emitter: EventEmitter2,
     private prisma: PrismaService,
     private config: ConfigService<ConfigType, true>,
   ) {
-    super();
+    super(emitter, 'writeMetadata');
   }
 
   private readonly builder = new xml2js.Builder();
   private readonly parser = new xml2js.Parser();
 
-  async run({ filePath, episodeId }: DownloadJob) {
-    if (!filePath) {
-      throw new Error('filePath not set');
+  async run(
+    _id: number,
+    { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
+  ) {
+    if (!steps.importFile) {
+      throw new Error('input step not finished');
     }
     const { index, title, airTime, description } =
       await this.prisma.episode.findUnique({
         where: { id: episodeId },
       });
+    const {
+      importFile: { filePath },
+    } = steps;
     const nfoPath = filePath.replace(path.extname(filePath), '').concat('.nfo');
     const actualNfoPath = path.join(this.config.get('mediaRoot'), nfoPath);
     // xml2js 对象结构没有类型，只能用 any
