@@ -1,0 +1,30 @@
+.episodesCell {
+  text-align: center;
+
+  &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  &.bad {
+    &::after {
+      background-color: rgba(252, 26, 26, 0.1);
+    }
+  }
+  &.good {
+    &::after {
+      background-color: rgba(31, 252, 26, 0.1);
+    }
+  }
+}
+
+.slash {
+  color: #d9d9d9;
+  margin: 0 6px;
+}

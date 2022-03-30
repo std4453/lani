@@ -1,4 +1,3 @@
-import { createElement } from 'react';
 import { defineConfig } from 'umi';
 
 export default defineConfig({
@@ -22,14 +21,20 @@ export default defineConfig({
           component: '@/pages/metadata',
           name: '元数据',
         },
-        {
-          path: '/details/:id',
-          exact: true,
-          component: '@/pages/details',
-        },
+        // {
+        //   path: '/season/:id',
+        //   exact: true,
+        //   component: '@/pages/season',
+        // },
       ],
     },
   ],
   fastRefresh: {},
   mfsu: {},
+  proxy: {
+    '/api': {
+      target: 'https://lani.i.std4453.com',
+      changeOrigin: true,
+    },
+  },
 });

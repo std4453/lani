@@ -1,5 +1,5 @@
 overwrite: true
-schema: "../../apps/data-server/src/generated/schema.graphql"
+schema: https://lani.i.std4453.com/api/gateway/graphql
 generates:
  # Creates the TypeScript types from the schema and any .graphql file
  src/generated/types.ts:

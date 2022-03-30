@@ -1,14 +1,14 @@
-query GetAnimeList(
-  $count: Int
+query ListSeasons(
   $offset: Int
-  $orderBy: [AnimeMetadataOrderBy!] = []
-  $filter: AnimeMetadatumFilter
+  $first: Int
+  $orderBy: [SeasonsOrderBy!] = []
+  $filter: SeasonFilter
+  $now: Datetime!
 ) {
-  allAnimeMetadata(
-    first: $count
+  allSeasons(
     offset: $offset
+    first: $first
     orderBy: $orderBy
-    condition: {}
     filter: $filter
   ) {
     pageInfo {
@@ -16,25 +16,36 @@ query GetAnimeList(
     }
     totalCount
     edges {
-      cursor
       node {
         bangumiId
-        bilibiliMainlandSsid
-        bilibiliThmSsid
-        jellyfinSeasonId
+        airTime
+        weekday
         mikanAnimeId
+        isMonitoring
+        seasonRoot
+        title
         id
-        sonarrSeason
-
-        sonarrSeryBySonarrSeries {
-          sonarrId
-          sonarrSlug
-          tvdbid
+        yearAndSemester
+        tvdbId
+        tvdbSeason
+        bilibiliThmId
+        bilibiliMainlandId
+        jellyfinId
+        allEpisodes: episodesBySeasonId {
+          totalCount
         }
-        uniformName
-        season
-        year
+        airedEpisodes: episodesBySeasonId(
+          filter: { airTime: { lessThanOrEqualTo: $now } }
+        ) {
+          totalCount
+        }
+        availableEpisodes: episodesBySeasonId(
+          filter: { jellyfinEpisodeId: { isNull: false } }
+        ) {
+          totalCount
+        }
       }
+      cursor
     }
   }
 }
