@@ -11,208 +11,43 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** BigInt */
+  BigInt: any;
   /** A location in a connection that can be used for resuming pagination. */
   Cursor: any;
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSON: { [key: string]: any };
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
+  DateTime: string;
+  /**
+   * A point in time as described by the [ISO
+   * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
+   */
+  Datetime: any;
 };
 
-/** A connection to a list of `AnimeMetadatum` values. */
-export type AnimeMetadataConnection = {
-  __typename?: 'AnimeMetadataConnection';
-  /** A list of edges which contains the `AnimeMetadatum` and cursor to aid in pagination. */
-  edges: Array<AnimeMetadataEdge>;
-  /** A list of `AnimeMetadatum` objects. */
-  nodes: Array<Maybe<AnimeMetadatum>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** The count of *all* `AnimeMetadatum` you could get from the connection. */
-  totalCount: Scalars['Int'];
-};
-
-/** A `AnimeMetadatum` edge in the connection. */
-export type AnimeMetadataEdge = {
-  __typename?: 'AnimeMetadataEdge';
-  /** A cursor for use in pagination. */
-  cursor?: Maybe<Scalars['Cursor']>;
-  /** The `AnimeMetadatum` at the end of the edge. */
-  node?: Maybe<AnimeMetadatum>;
-};
-
-/** Methods to use when ordering `AnimeMetadatum`. */
-export enum AnimeMetadataOrderBy {
-  BangumiIdAsc = 'BANGUMI_ID_ASC',
-  BangumiIdDesc = 'BANGUMI_ID_DESC',
-  BilibiliMainlandSsidAsc = 'BILIBILI_MAINLAND_SSID_ASC',
-  BilibiliMainlandSsidDesc = 'BILIBILI_MAINLAND_SSID_DESC',
-  BilibiliThmSsidAsc = 'BILIBILI_THM_SSID_ASC',
-  BilibiliThmSsidDesc = 'BILIBILI_THM_SSID_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  IsArchivedAsc = 'IS_ARCHIVED_ASC',
-  IsArchivedDesc = 'IS_ARCHIVED_DESC',
-  JellyfinSeasonIdAsc = 'JELLYFIN_SEASON_ID_ASC',
-  JellyfinSeasonIdDesc = 'JELLYFIN_SEASON_ID_DESC',
-  MikanAnimeIdAsc = 'MIKAN_ANIME_ID_ASC',
-  MikanAnimeIdDesc = 'MIKAN_ANIME_ID_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  ScheduleAsc = 'SCHEDULE_ASC',
-  ScheduleDesc = 'SCHEDULE_DESC',
-  SeasonAsc = 'SEASON_ASC',
-  SeasonDesc = 'SEASON_DESC',
-  SonarrSeasonAsc = 'SONARR_SEASON_ASC',
-  SonarrSeasonDesc = 'SONARR_SEASON_DESC',
-  SonarrSeriesAsc = 'SONARR_SERIES_ASC',
-  SonarrSeriesDesc = 'SONARR_SERIES_DESC',
-  UniformNameAsc = 'UNIFORM_NAME_ASC',
-  UniformNameDesc = 'UNIFORM_NAME_DESC',
-  YearAsc = 'YEAR_ASC',
-  YearDesc = 'YEAR_DESC'
-}
-
-export type AnimeMetadatum = Node & {
-  __typename?: 'AnimeMetadatum';
-  bangumiId: Scalars['String'];
-  bilibiliMainlandSsid: Scalars['String'];
-  bilibiliThmSsid: Scalars['String'];
-  /** Reads and enables pagination through a set of `DownloadConfig`. */
-  downloadConfigsByAnime: DownloadConfigsConnection;
-  id: Scalars['Int'];
-  isArchived: Scalars['Boolean'];
-  jellyfinSeasonId: Scalars['String'];
-  mikanAnimeId: Scalars['String'];
-  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
-  nodeId: Scalars['ID'];
-  schedule?: Maybe<Scalars['JSON']>;
-  season?: Maybe<SeasonEnum>;
-  /** sonarr seasonNumber, usually 1-based, 0 is used for OAD */
-  sonarrSeason?: Maybe<Scalars['Int']>;
-  sonarrSeries?: Maybe<Scalars['Int']>;
-  /** Reads a single `SonarrSery` that is related to this `AnimeMetadatum`. */
-  sonarrSeryBySonarrSeries?: Maybe<SonarrSery>;
-  /** https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld */
-  uniformName: Scalars['String'];
-  year?: Maybe<Scalars['Int']>;
-};
-
-
-export type AnimeMetadatumDownloadConfigsByAnimeArgs = {
-  after?: InputMaybe<Scalars['Cursor']>;
-  before?: InputMaybe<Scalars['Cursor']>;
-  condition?: InputMaybe<DownloadConfigCondition>;
-  filter?: InputMaybe<DownloadConfigFilter>;
-  first?: InputMaybe<Scalars['Int']>;
-  includeArchived?: InputMaybe<IncludeArchivedOption>;
-  last?: InputMaybe<Scalars['Int']>;
-  offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<DownloadConfigsOrderBy>>;
-};
-
-/**
- * A condition to be used against `AnimeMetadatum` object types. All fields are
- * tested for equality and combined with a logical ‘and.’
- */
-export type AnimeMetadatumCondition = {
-  /** Checks for equality with the object’s `bangumiId` field. */
-  bangumiId?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `bilibiliMainlandSsid` field. */
-  bilibiliMainlandSsid?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `bilibiliThmSsid` field. */
-  bilibiliThmSsid?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `id` field. */
-  id?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `isArchived` field. */
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  /** Checks for equality with the object’s `jellyfinSeasonId` field. */
-  jellyfinSeasonId?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `mikanAnimeId` field. */
-  mikanAnimeId?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `schedule` field. */
-  schedule?: InputMaybe<Scalars['JSON']>;
-  /** Checks for equality with the object’s `season` field. */
-  season?: InputMaybe<SeasonEnum>;
-  /** Checks for equality with the object’s `sonarrSeason` field. */
-  sonarrSeason?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `sonarrSeries` field. */
-  sonarrSeries?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `uniformName` field. */
-  uniformName?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `year` field. */
-  year?: InputMaybe<Scalars['Int']>;
-};
-
-/** A filter to be used against `AnimeMetadatum` object types. All fields are combined with a logical ‘and.’ */
-export type AnimeMetadatumFilter = {
-  /** Checks for all expressions in this list. */
-  and?: InputMaybe<Array<AnimeMetadatumFilter>>;
-  /** Filter by the object’s `bangumiId` field. */
-  bangumiId?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `bilibiliMainlandSsid` field. */
-  bilibiliMainlandSsid?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `bilibiliThmSsid` field. */
-  bilibiliThmSsid?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `id` field. */
-  id?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `isArchived` field. */
-  isArchived?: InputMaybe<BooleanFilter>;
-  /** Filter by the object’s `jellyfinSeasonId` field. */
-  jellyfinSeasonId?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `mikanAnimeId` field. */
-  mikanAnimeId?: InputMaybe<StringFilter>;
-  /** Negates the expression. */
-  not?: InputMaybe<AnimeMetadatumFilter>;
-  /** Checks for any expressions in this list. */
-  or?: InputMaybe<Array<AnimeMetadatumFilter>>;
-  /** Filter by the object’s `season` field. */
-  season?: InputMaybe<SeasonEnumFilter>;
-  /** Filter by the object’s `sonarrSeason` field. */
-  sonarrSeason?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `sonarrSeries` field. */
-  sonarrSeries?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `uniformName` field. */
-  uniformName?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `year` field. */
-  year?: InputMaybe<IntFilter>;
-};
-
-/** An input for mutations affecting `AnimeMetadatum` */
-export type AnimeMetadatumInput = {
-  bangumiId?: InputMaybe<Scalars['String']>;
-  bilibiliMainlandSsid?: InputMaybe<Scalars['String']>;
-  bilibiliThmSsid?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  jellyfinSeasonId?: InputMaybe<Scalars['String']>;
-  mikanAnimeId?: InputMaybe<Scalars['String']>;
-  schedule?: InputMaybe<Scalars['JSON']>;
-  season?: InputMaybe<SeasonEnum>;
-  /** sonarr seasonNumber, usually 1-based, 0 is used for OAD */
-  sonarrSeason?: InputMaybe<Scalars['Int']>;
-  sonarrSeries?: InputMaybe<Scalars['Int']>;
-  /** https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld */
-  uniformName: Scalars['String'];
-  year?: InputMaybe<Scalars['Int']>;
-};
-
-/** Represents an update to a `AnimeMetadatum`. Fields that are set will be updated. */
-export type AnimeMetadatumPatch = {
-  bangumiId?: InputMaybe<Scalars['String']>;
-  bilibiliMainlandSsid?: InputMaybe<Scalars['String']>;
-  bilibiliThmSsid?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  jellyfinSeasonId?: InputMaybe<Scalars['String']>;
-  mikanAnimeId?: InputMaybe<Scalars['String']>;
-  schedule?: InputMaybe<Scalars['JSON']>;
-  season?: InputMaybe<SeasonEnum>;
-  /** sonarr seasonNumber, usually 1-based, 0 is used for OAD */
-  sonarrSeason?: InputMaybe<Scalars['Int']>;
-  sonarrSeries?: InputMaybe<Scalars['Int']>;
-  /** https://std-4453.feishu.cn/wiki/wikcnPbNZAT9OhTAJwp2WALnJld */
-  uniformName?: InputMaybe<Scalars['String']>;
-  year?: InputMaybe<Scalars['Int']>;
+/** A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’ */
+export type BigIntFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Scalars['BigInt']>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Scalars['BigInt']>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Scalars['BigInt']>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Scalars['BigInt']>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<Scalars['BigInt']>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Scalars['BigInt']>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Scalars['BigInt']>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Scalars['BigInt']>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Scalars['BigInt']>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<Scalars['BigInt']>>;
 };
 
 /** A filter to be used against Boolean fields. All fields are combined with a logical ‘and.’ */
@@ -241,24 +76,158 @@ export type BooleanFilter = {
   notIn?: InputMaybe<Array<Scalars['Boolean']>>;
 };
 
-/** All input for the create `AnimeMetadatum` mutation. */
-export type CreateAnimeMetadatumInput = {
-  /** The `AnimeMetadatum` to be created by this mutation. */
-  animeMetadatum: AnimeMetadatumInput;
+/** All input for the create `DownloadJob` mutation. */
+export type CreateDownloadJobInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The `DownloadJob` to be created by this mutation. */
+  downloadJob: DownloadJobInput;
 };
 
-/** The output of our create `AnimeMetadatum` mutation. */
-export type CreateAnimeMetadatumPayload = {
-  __typename?: 'CreateAnimeMetadatumPayload';
-  /** The `AnimeMetadatum` that was created by this mutation. */
-  animeMetadatum?: Maybe<AnimeMetadatum>;
-  /** An edge for our `AnimeMetadatum`. May be used by Relay 1. */
-  animeMetadatumEdge?: Maybe<AnimeMetadataEdge>;
+/** The output of our create `DownloadJob` mutation. */
+export type CreateDownloadJobPayload = {
+  __typename?: 'CreateDownloadJobPayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `DownloadJob` that was created by this mutation. */
+  downloadJob?: Maybe<DownloadJob>;
+  /** An edge for our `DownloadJob`. May be used by Relay 1. */
+  downloadJobEdge?: Maybe<DownloadJobsEdge>;
+  /** Reads a single `Episode` that is related to this `DownloadJob`. */
+  episodeByEpisodeId?: Maybe<Episode>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+};
+
+
+/** The output of our create `DownloadJob` mutation. */
+export type CreateDownloadJobPayloadDownloadJobEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
+};
+
+/** All input for the create `DownloadSource` mutation. */
+export type CreateDownloadSourceInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The `DownloadSource` to be created by this mutation. */
+  downloadSource: DownloadSourceInput;
+};
+
+/** The output of our create `DownloadSource` mutation. */
+export type CreateDownloadSourcePayload = {
+  __typename?: 'CreateDownloadSourcePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `DownloadSource` that was created by this mutation. */
+  downloadSource?: Maybe<DownloadSource>;
+  /** An edge for our `DownloadSource`. May be used by Relay 1. */
+  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `DownloadSource`. */
+  seasonBySeasonId?: Maybe<Season>;
+};
+
+
+/** The output of our create `DownloadSource` mutation. */
+export type CreateDownloadSourcePayloadDownloadSourceEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
+};
+
+/** All input for the create `Episode` mutation. */
+export type CreateEpisodeInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The `Episode` to be created by this mutation. */
+  episode: EpisodeInput;
+};
+
+/** The output of our create `Episode` mutation. */
+export type CreateEpisodePayload = {
+  __typename?: 'CreateEpisodePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `Episode` that was created by this mutation. */
+  episode?: Maybe<Episode>;
+  /** An edge for our `Episode`. May be used by Relay 1. */
+  episodeEdge?: Maybe<EpisodesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `Episode`. */
+  seasonBySeasonId?: Maybe<Season>;
+};
+
+
+/** The output of our create `Episode` mutation. */
+export type CreateEpisodePayloadEpisodeEdgeArgs = {
+  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
+};
+
+/** All input for the create `Image` mutation. */
+export type CreateImageInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The `Image` to be created by this mutation. */
+  image: ImageInput;
+};
+
+/** The output of our create `Image` mutation. */
+export type CreateImagePayload = {
+  __typename?: 'CreateImagePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `Image` that was created by this mutation. */
+  image?: Maybe<Image>;
+  /** An edge for our `Image`. May be used by Relay 1. */
+  imageEdge?: Maybe<ImagesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+};
+
+
+/** The output of our create `Image` mutation. */
+export type CreateImagePayloadImageEdgeArgs = {
+  orderBy?: InputMaybe<Array<ImagesOrderBy>>;
+};
+
+/** All input for the create `Season` mutation. */
+export type CreateSeasonInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The `Season` to be created by this mutation. */
+  season: SeasonInput;
+};
+
+/** The output of our create `Season` mutation. */
+export type CreateSeasonPayload = {
+  __typename?: 'CreateSeasonPayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
@@ -266,65 +235,32 @@ export type CreateAnimeMetadatumPayload = {
   clientMutationId?: Maybe<Scalars['String']>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** Reads a single `SonarrSery` that is related to this `AnimeMetadatum`. */
-  sonarrSeryBySonarrSeries?: Maybe<SonarrSery>;
+  /** The `Season` that was created by this mutation. */
+  season?: Maybe<Season>;
+  /** An edge for our `Season`. May be used by Relay 1. */
+  seasonEdge?: Maybe<SeasonsEdge>;
 };
 
 
-/** The output of our create `AnimeMetadatum` mutation. */
-export type CreateAnimeMetadatumPayloadAnimeMetadatumEdgeArgs = {
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy>>;
+/** The output of our create `Season` mutation. */
+export type CreateSeasonPayloadSeasonEdgeArgs = {
+  orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
 };
 
-/** All input for the create `DownloadConfig` mutation. */
-export type CreateDownloadConfigInput = {
+/** All input for the create `Torrent` mutation. */
+export type CreateTorrentInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `DownloadConfig` to be created by this mutation. */
-  downloadConfig: DownloadConfigInput;
+  /** The `Torrent` to be created by this mutation. */
+  torrent: TorrentInput;
 };
 
-/** The output of our create `DownloadConfig` mutation. */
-export type CreateDownloadConfigPayload = {
-  __typename?: 'CreateDownloadConfigPayload';
-  /** Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`. */
-  animeMetadatumByAnime?: Maybe<AnimeMetadatum>;
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadConfig` that was created by this mutation. */
-  downloadConfig?: Maybe<DownloadConfig>;
-  /** An edge for our `DownloadConfig`. May be used by Relay 1. */
-  downloadConfigEdge?: Maybe<DownloadConfigsEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our create `DownloadConfig` mutation. */
-export type CreateDownloadConfigPayloadDownloadConfigEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadConfigsOrderBy>>;
-};
-
-/** All input for the create `SonarrSery` mutation. */
-export type CreateSonarrSeryInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `SonarrSery` to be created by this mutation. */
-  sonarrSery: SonarrSeryInput;
-};
-
-/** The output of our create `SonarrSery` mutation. */
-export type CreateSonarrSeryPayload = {
-  __typename?: 'CreateSonarrSeryPayload';
+/** The output of our create `Torrent` mutation. */
+export type CreateTorrentPayload = {
+  __typename?: 'CreateTorrentPayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
@@ -332,20 +268,46 @@ export type CreateSonarrSeryPayload = {
   clientMutationId?: Maybe<Scalars['String']>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** The `SonarrSery` that was created by this mutation. */
-  sonarrSery?: Maybe<SonarrSery>;
-  /** An edge for our `SonarrSery`. May be used by Relay 1. */
-  sonarrSeryEdge?: Maybe<SonarrSeriesEdge>;
+  /** The `Torrent` that was created by this mutation. */
+  torrent?: Maybe<Torrent>;
+  /** An edge for our `Torrent`. May be used by Relay 1. */
+  torrentEdge?: Maybe<TorrentsEdge>;
 };
 
 
-/** The output of our create `SonarrSery` mutation. */
-export type CreateSonarrSeryPayloadSonarrSeryEdgeArgs = {
-  orderBy?: InputMaybe<Array<SonarrSeriesOrderBy>>;
+/** The output of our create `Torrent` mutation. */
+export type CreateTorrentPayloadTorrentEdgeArgs = {
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
 };
 
-/** All input for the `deleteAnimeMetadatumById` mutation. */
-export type DeleteAnimeMetadatumByIdInput = {
+/** A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’ */
+export type DatetimeFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Scalars['Datetime']>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Scalars['Datetime']>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Scalars['Datetime']>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Scalars['Datetime']>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<Scalars['Datetime']>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Scalars['Datetime']>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Scalars['Datetime']>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Scalars['Datetime']>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Scalars['Datetime']>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<Scalars['Datetime']>>;
+};
+
+/** All input for the `deleteDownloadJobById` mutation. */
+export type DeleteDownloadJobByIdInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
@@ -354,44 +316,44 @@ export type DeleteAnimeMetadatumByIdInput = {
   id: Scalars['Int'];
 };
 
-/** All input for the `deleteAnimeMetadatum` mutation. */
-export type DeleteAnimeMetadatumInput = {
+/** All input for the `deleteDownloadJob` mutation. */
+export type DeleteDownloadJobInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `AnimeMetadatum` to be deleted. */
+  /** The globally unique `ID` which will identify a single `DownloadJob` to be deleted. */
   nodeId: Scalars['ID'];
 };
 
-/** The output of our delete `AnimeMetadatum` mutation. */
-export type DeleteAnimeMetadatumPayload = {
-  __typename?: 'DeleteAnimeMetadatumPayload';
-  /** The `AnimeMetadatum` that was deleted by this mutation. */
-  animeMetadatum?: Maybe<AnimeMetadatum>;
-  /** An edge for our `AnimeMetadatum`. May be used by Relay 1. */
-  animeMetadatumEdge?: Maybe<AnimeMetadataEdge>;
+/** The output of our delete `DownloadJob` mutation. */
+export type DeleteDownloadJobPayload = {
+  __typename?: 'DeleteDownloadJobPayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
    */
   clientMutationId?: Maybe<Scalars['String']>;
-  deletedAnimeMetadatumId?: Maybe<Scalars['ID']>;
+  deletedDownloadJobId?: Maybe<Scalars['ID']>;
+  /** The `DownloadJob` that was deleted by this mutation. */
+  downloadJob?: Maybe<DownloadJob>;
+  /** An edge for our `DownloadJob`. May be used by Relay 1. */
+  downloadJobEdge?: Maybe<DownloadJobsEdge>;
+  /** Reads a single `Episode` that is related to this `DownloadJob`. */
+  episodeByEpisodeId?: Maybe<Episode>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** Reads a single `SonarrSery` that is related to this `AnimeMetadatum`. */
-  sonarrSeryBySonarrSeries?: Maybe<SonarrSery>;
 };
 
 
-/** The output of our delete `AnimeMetadatum` mutation. */
-export type DeleteAnimeMetadatumPayloadAnimeMetadatumEdgeArgs = {
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy>>;
+/** The output of our delete `DownloadJob` mutation. */
+export type DeleteDownloadJobPayloadDownloadJobEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
 };
 
-/** All input for the `deleteDownloadConfigById` mutation. */
-export type DeleteDownloadConfigByIdInput = {
+/** All input for the `deleteDownloadSourceById` mutation. */
+export type DeleteDownloadSourceByIdInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
@@ -400,44 +362,54 @@ export type DeleteDownloadConfigByIdInput = {
   id: Scalars['Int'];
 };
 
-/** All input for the `deleteDownloadConfig` mutation. */
-export type DeleteDownloadConfigInput = {
+/** All input for the `deleteDownloadSourceByPattern` mutation. */
+export type DeleteDownloadSourceByPatternInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `DownloadConfig` to be deleted. */
+  pattern: Scalars['String'];
+};
+
+/** All input for the `deleteDownloadSource` mutation. */
+export type DeleteDownloadSourceInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `DownloadSource` to be deleted. */
   nodeId: Scalars['ID'];
 };
 
-/** The output of our delete `DownloadConfig` mutation. */
-export type DeleteDownloadConfigPayload = {
-  __typename?: 'DeleteDownloadConfigPayload';
-  /** Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`. */
-  animeMetadatumByAnime?: Maybe<AnimeMetadatum>;
+/** The output of our delete `DownloadSource` mutation. */
+export type DeleteDownloadSourcePayload = {
+  __typename?: 'DeleteDownloadSourcePayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
    */
   clientMutationId?: Maybe<Scalars['String']>;
-  deletedDownloadConfigId?: Maybe<Scalars['ID']>;
-  /** The `DownloadConfig` that was deleted by this mutation. */
-  downloadConfig?: Maybe<DownloadConfig>;
-  /** An edge for our `DownloadConfig`. May be used by Relay 1. */
-  downloadConfigEdge?: Maybe<DownloadConfigsEdge>;
+  deletedDownloadSourceId?: Maybe<Scalars['ID']>;
+  /** The `DownloadSource` that was deleted by this mutation. */
+  downloadSource?: Maybe<DownloadSource>;
+  /** An edge for our `DownloadSource`. May be used by Relay 1. */
+  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `DownloadSource`. */
+  seasonBySeasonId?: Maybe<Season>;
 };
 
 
-/** The output of our delete `DownloadConfig` mutation. */
-export type DeleteDownloadConfigPayloadDownloadConfigEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadConfigsOrderBy>>;
+/** The output of our delete `DownloadSource` mutation. */
+export type DeleteDownloadSourcePayloadDownloadSourceEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
 };
 
-/** All input for the `deleteSonarrSeryById` mutation. */
-export type DeleteSonarrSeryByIdInput = {
+/** All input for the `deleteEpisodeById` mutation. */
+export type DeleteEpisodeByIdInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
@@ -446,207 +418,858 @@ export type DeleteSonarrSeryByIdInput = {
   id: Scalars['Int'];
 };
 
-/** All input for the `deleteSonarrSeryBySonarrId` mutation. */
-export type DeleteSonarrSeryBySonarrIdInput = {
+/** All input for the `deleteEpisodeBySeasonIdAndIndex` mutation. */
+export type DeleteEpisodeBySeasonIdAndIndexInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  sonarrId: Scalars['Int'];
+  index: Scalars['Int'];
+  seasonId: Scalars['Int'];
 };
 
-/** All input for the `deleteSonarrSeryBySonarrSlug` mutation. */
-export type DeleteSonarrSeryBySonarrSlugInput = {
+/** All input for the `deleteEpisode` mutation. */
+export type DeleteEpisodeInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  sonarrSlug: Scalars['String'];
-};
-
-/** All input for the `deleteSonarrSery` mutation. */
-export type DeleteSonarrSeryInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `SonarrSery` to be deleted. */
+  /** The globally unique `ID` which will identify a single `Episode` to be deleted. */
   nodeId: Scalars['ID'];
 };
 
-/** The output of our delete `SonarrSery` mutation. */
-export type DeleteSonarrSeryPayload = {
-  __typename?: 'DeleteSonarrSeryPayload';
+/** The output of our delete `Episode` mutation. */
+export type DeleteEpisodePayload = {
+  __typename?: 'DeleteEpisodePayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
    */
   clientMutationId?: Maybe<Scalars['String']>;
-  deletedSonarrSeryId?: Maybe<Scalars['ID']>;
+  deletedEpisodeId?: Maybe<Scalars['ID']>;
+  /** The `Episode` that was deleted by this mutation. */
+  episode?: Maybe<Episode>;
+  /** An edge for our `Episode`. May be used by Relay 1. */
+  episodeEdge?: Maybe<EpisodesEdge>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** The `SonarrSery` that was deleted by this mutation. */
-  sonarrSery?: Maybe<SonarrSery>;
-  /** An edge for our `SonarrSery`. May be used by Relay 1. */
-  sonarrSeryEdge?: Maybe<SonarrSeriesEdge>;
+  /** Reads a single `Season` that is related to this `Episode`. */
+  seasonBySeasonId?: Maybe<Season>;
 };
 
 
-/** The output of our delete `SonarrSery` mutation. */
-export type DeleteSonarrSeryPayloadSonarrSeryEdgeArgs = {
-  orderBy?: InputMaybe<Array<SonarrSeriesOrderBy>>;
+/** The output of our delete `Episode` mutation. */
+export type DeleteEpisodePayloadEpisodeEdgeArgs = {
+  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
 };
 
-export type DownloadConfig = Node & {
-  __typename?: 'DownloadConfig';
-  anime: Scalars['Int'];
-  /** Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`. */
-  animeMetadatumByAnime?: Maybe<AnimeMetadatum>;
-  /** mikan anime bangumi ID */
-  bangumiId: Scalars['String'];
+/** All input for the `deleteImageById` mutation. */
+export type DeleteImageByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
   id: Scalars['Int'];
-  isArchived: Scalars['Boolean'];
-  language: Scalars['String'];
+};
+
+/** All input for the `deleteImage` mutation. */
+export type DeleteImageInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `Image` to be deleted. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our delete `Image` mutation. */
+export type DeleteImagePayload = {
+  __typename?: 'DeleteImagePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  deletedImageId?: Maybe<Scalars['ID']>;
+  /** The `Image` that was deleted by this mutation. */
+  image?: Maybe<Image>;
+  /** An edge for our `Image`. May be used by Relay 1. */
+  imageEdge?: Maybe<ImagesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+};
+
+
+/** The output of our delete `Image` mutation. */
+export type DeleteImagePayloadImageEdgeArgs = {
+  orderBy?: InputMaybe<Array<ImagesOrderBy>>;
+};
+
+/** All input for the `deleteSeasonById` mutation. */
+export type DeleteSeasonByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  id: Scalars['Int'];
+};
+
+/** All input for the `deleteSeason` mutation. */
+export type DeleteSeasonInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `Season` to be deleted. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our delete `Season` mutation. */
+export type DeleteSeasonPayload = {
+  __typename?: 'DeleteSeasonPayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  deletedSeasonId?: Maybe<Scalars['ID']>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** The `Season` that was deleted by this mutation. */
+  season?: Maybe<Season>;
+  /** An edge for our `Season`. May be used by Relay 1. */
+  seasonEdge?: Maybe<SeasonsEdge>;
+};
+
+
+/** The output of our delete `Season` mutation. */
+export type DeleteSeasonPayloadSeasonEdgeArgs = {
+  orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
+};
+
+/** All input for the `deleteTorrentByHash` mutation. */
+export type DeleteTorrentByHashInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  hash: Scalars['String'];
+};
+
+/** All input for the `deleteTorrentById` mutation. */
+export type DeleteTorrentByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  id: Scalars['Int'];
+};
+
+/** All input for the `deleteTorrent` mutation. */
+export type DeleteTorrentInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `Torrent` to be deleted. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our delete `Torrent` mutation. */
+export type DeleteTorrentPayload = {
+  __typename?: 'DeleteTorrentPayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  deletedTorrentId?: Maybe<Scalars['ID']>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** The `Torrent` that was deleted by this mutation. */
+  torrent?: Maybe<Torrent>;
+  /** An edge for our `Torrent`. May be used by Relay 1. */
+  torrentEdge?: Maybe<TorrentsEdge>;
+};
+
+
+/** The output of our delete `Torrent` mutation. */
+export type DeleteTorrentPayloadTorrentEdgeArgs = {
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
+};
+
+export type DownloadJob = Node & {
+  __typename?: 'DownloadJob';
+  cancelledAt?: Maybe<Scalars['Datetime']>;
+  createdAt: Scalars['Datetime'];
+  /**
+   * Only available after torrent finished downloading.
+   * This is the save_path from qbt, which might be a directory.
+   * If job is started after this step, this field will also be null.
+   */
+  downloadPath?: Maybe<Scalars['String']>;
+  /** Reads a single `Episode` that is related to this `DownloadJob`. */
+  episodeByEpisodeId?: Maybe<Episode>;
+  episodeId: Scalars['Int'];
+  failedAt?: Maybe<Scalars['Datetime']>;
+  failedReason: Scalars['String'];
+  /**
+   * Available after file is imported (hard-linked) (and torrent is deleted from qbt).
+   * The value is path to the video file, with the extension.
+   */
+  filePath?: Maybe<Scalars['String']>;
+  id: Scalars['Int'];
+  importPath?: Maybe<Scalars['String']>;
+  isCancelled: Scalars['Boolean'];
+  isFailed: Scalars['Boolean'];
+  jellyfinEpisodeId?: Maybe<Scalars['String']>;
+  nfoPath?: Maybe<Scalars['String']>;
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
-  pattern: Scalars['String'];
-  /** mikan anime publish group id */
-  publishGroupId: Scalars['String'];
-  quality: Scalars['Int'];
-  type: Scalars['String'];
+  qbtLastSync?: Maybe<Scalars['Datetime']>;
+  /**
+   * Available as soon as torrent has been submitted to qbt.
+   * This hash is used to query qbt, and might differ from torrents.hash
+   * If job is started after this step, this field will be null.
+   */
+  qbtTorrentHash?: Maybe<Scalars['String']>;
+  status: DownloadStatus;
+  torrentLink?: Maybe<Scalars['String']>;
 };
 
 /**
- * A condition to be used against `DownloadConfig` object types. All fields are
+ * A condition to be used against `DownloadJob` object types. All fields are tested
+ * for equality and combined with a logical ‘and.’
+ */
+export type DownloadJobCondition = {
+  /** Checks for equality with the object’s `cancelledAt` field. */
+  cancelledAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `downloadPath` field. */
+  downloadPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `episodeId` field. */
+  episodeId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `failedAt` field. */
+  failedAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `failedReason` field. */
+  failedReason?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `filePath` field. */
+  filePath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `importPath` field. */
+  importPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `isCancelled` field. */
+  isCancelled?: InputMaybe<Scalars['Boolean']>;
+  /** Checks for equality with the object’s `isFailed` field. */
+  isFailed?: InputMaybe<Scalars['Boolean']>;
+  /** Checks for equality with the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `nfoPath` field. */
+  nfoPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `qbtLastSync` field. */
+  qbtLastSync?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `qbtTorrentHash` field. */
+  qbtTorrentHash?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `status` field. */
+  status?: InputMaybe<DownloadStatus>;
+  /** Checks for equality with the object’s `torrentLink` field. */
+  torrentLink?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against `DownloadJob` object types. All fields are combined with a logical ‘and.’ */
+export type DownloadJobFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<DownloadJobFilter>>;
+  /** Filter by the object’s `cancelledAt` field. */
+  cancelledAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `downloadPath` field. */
+  downloadPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `episodeId` field. */
+  episodeId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `failedAt` field. */
+  failedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `failedReason` field. */
+  failedReason?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `filePath` field. */
+  filePath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `importPath` field. */
+  importPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `isCancelled` field. */
+  isCancelled?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `isFailed` field. */
+  isFailed?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `nfoPath` field. */
+  nfoPath?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<DownloadJobFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<DownloadJobFilter>>;
+  /** Filter by the object’s `qbtLastSync` field. */
+  qbtLastSync?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `qbtTorrentHash` field. */
+  qbtTorrentHash?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `status` field. */
+  status?: InputMaybe<DownloadStatusFilter>;
+  /** Filter by the object’s `torrentLink` field. */
+  torrentLink?: InputMaybe<StringFilter>;
+};
+
+/** An input for mutations affecting `DownloadJob` */
+export type DownloadJobInput = {
+  cancelledAt?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /**
+   * Only available after torrent finished downloading.
+   * This is the save_path from qbt, which might be a directory.
+   * If job is started after this step, this field will also be null.
+   */
+  downloadPath?: InputMaybe<Scalars['String']>;
+  episodeId: Scalars['Int'];
+  failedAt?: InputMaybe<Scalars['Datetime']>;
+  failedReason?: InputMaybe<Scalars['String']>;
+  /**
+   * Available after file is imported (hard-linked) (and torrent is deleted from qbt).
+   * The value is path to the video file, with the extension.
+   */
+  filePath?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  importPath?: InputMaybe<Scalars['String']>;
+  isCancelled?: InputMaybe<Scalars['Boolean']>;
+  isFailed?: InputMaybe<Scalars['Boolean']>;
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  nfoPath?: InputMaybe<Scalars['String']>;
+  qbtLastSync?: InputMaybe<Scalars['Datetime']>;
+  /**
+   * Available as soon as torrent has been submitted to qbt.
+   * This hash is used to query qbt, and might differ from torrents.hash
+   * If job is started after this step, this field will be null.
+   */
+  qbtTorrentHash?: InputMaybe<Scalars['String']>;
+  status: DownloadStatus;
+  torrentLink?: InputMaybe<Scalars['String']>;
+};
+
+/** Represents an update to a `DownloadJob`. Fields that are set will be updated. */
+export type DownloadJobPatch = {
+  cancelledAt?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /**
+   * Only available after torrent finished downloading.
+   * This is the save_path from qbt, which might be a directory.
+   * If job is started after this step, this field will also be null.
+   */
+  downloadPath?: InputMaybe<Scalars['String']>;
+  episodeId?: InputMaybe<Scalars['Int']>;
+  failedAt?: InputMaybe<Scalars['Datetime']>;
+  failedReason?: InputMaybe<Scalars['String']>;
+  /**
+   * Available after file is imported (hard-linked) (and torrent is deleted from qbt).
+   * The value is path to the video file, with the extension.
+   */
+  filePath?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  importPath?: InputMaybe<Scalars['String']>;
+  isCancelled?: InputMaybe<Scalars['Boolean']>;
+  isFailed?: InputMaybe<Scalars['Boolean']>;
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  nfoPath?: InputMaybe<Scalars['String']>;
+  qbtLastSync?: InputMaybe<Scalars['Datetime']>;
+  /**
+   * Available as soon as torrent has been submitted to qbt.
+   * This hash is used to query qbt, and might differ from torrents.hash
+   * If job is started after this step, this field will be null.
+   */
+  qbtTorrentHash?: InputMaybe<Scalars['String']>;
+  status?: InputMaybe<DownloadStatus>;
+  torrentLink?: InputMaybe<Scalars['String']>;
+};
+
+/** A connection to a list of `DownloadJob` values. */
+export type DownloadJobsConnection = {
+  __typename?: 'DownloadJobsConnection';
+  /** A list of edges which contains the `DownloadJob` and cursor to aid in pagination. */
+  edges: Array<DownloadJobsEdge>;
+  /** A list of `DownloadJob` objects. */
+  nodes: Array<Maybe<DownloadJob>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `DownloadJob` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `DownloadJob` edge in the connection. */
+export type DownloadJobsEdge = {
+  __typename?: 'DownloadJobsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `DownloadJob` at the end of the edge. */
+  node?: Maybe<DownloadJob>;
+};
+
+/** Methods to use when ordering `DownloadJob`. */
+export enum DownloadJobsOrderBy {
+  CancelledAtAsc = 'CANCELLED_AT_ASC',
+  CancelledAtDesc = 'CANCELLED_AT_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  DownloadPathAsc = 'DOWNLOAD_PATH_ASC',
+  DownloadPathDesc = 'DOWNLOAD_PATH_DESC',
+  EpisodeIdAsc = 'EPISODE_ID_ASC',
+  EpisodeIdDesc = 'EPISODE_ID_DESC',
+  FailedAtAsc = 'FAILED_AT_ASC',
+  FailedAtDesc = 'FAILED_AT_DESC',
+  FailedReasonAsc = 'FAILED_REASON_ASC',
+  FailedReasonDesc = 'FAILED_REASON_DESC',
+  FilePathAsc = 'FILE_PATH_ASC',
+  FilePathDesc = 'FILE_PATH_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  ImportPathAsc = 'IMPORT_PATH_ASC',
+  ImportPathDesc = 'IMPORT_PATH_DESC',
+  IsCancelledAsc = 'IS_CANCELLED_ASC',
+  IsCancelledDesc = 'IS_CANCELLED_DESC',
+  IsFailedAsc = 'IS_FAILED_ASC',
+  IsFailedDesc = 'IS_FAILED_DESC',
+  JellyfinEpisodeIdAsc = 'JELLYFIN_EPISODE_ID_ASC',
+  JellyfinEpisodeIdDesc = 'JELLYFIN_EPISODE_ID_DESC',
+  Natural = 'NATURAL',
+  NfoPathAsc = 'NFO_PATH_ASC',
+  NfoPathDesc = 'NFO_PATH_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  QbtLastSyncAsc = 'QBT_LAST_SYNC_ASC',
+  QbtLastSyncDesc = 'QBT_LAST_SYNC_DESC',
+  QbtTorrentHashAsc = 'QBT_TORRENT_HASH_ASC',
+  QbtTorrentHashDesc = 'QBT_TORRENT_HASH_DESC',
+  StatusAsc = 'STATUS_ASC',
+  StatusDesc = 'STATUS_DESC',
+  TorrentLinkAsc = 'TORRENT_LINK_ASC',
+  TorrentLinkDesc = 'TORRENT_LINK_DESC'
+}
+
+export type DownloadSource = Node & {
+  __typename?: 'DownloadSource';
+  archivedAt?: Maybe<Scalars['Datetime']>;
+  createdAt: Scalars['Datetime'];
+  groupId: Scalars['String'];
+  id: Scalars['Int'];
+  isArchived: Scalars['Boolean'];
+  isDisabled: Scalars['Boolean'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  pattern: Scalars['String'];
+  /** Reads a single `Season` that is related to this `DownloadSource`. */
+  seasonBySeasonId?: Maybe<Season>;
+  seasonId: Scalars['Int'];
+};
+
+/**
+ * A condition to be used against `DownloadSource` object types. All fields are
  * tested for equality and combined with a logical ‘and.’
  */
-export type DownloadConfigCondition = {
-  /** Checks for equality with the object’s `anime` field. */
-  anime?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `bangumiId` field. */
-  bangumiId?: InputMaybe<Scalars['String']>;
+export type DownloadSourceCondition = {
+  /** Checks for equality with the object’s `archivedAt` field. */
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `groupId` field. */
+  groupId?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `id` field. */
   id?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `isArchived` field. */
   isArchived?: InputMaybe<Scalars['Boolean']>;
-  /** Checks for equality with the object’s `language` field. */
-  language?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `isDisabled` field. */
+  isDisabled?: InputMaybe<Scalars['Boolean']>;
   /** Checks for equality with the object’s `pattern` field. */
   pattern?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `publishGroupId` field. */
-  publishGroupId?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `quality` field. */
-  quality?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `type` field. */
-  type?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `seasonId` field. */
+  seasonId?: InputMaybe<Scalars['Int']>;
 };
 
-/** A filter to be used against `DownloadConfig` object types. All fields are combined with a logical ‘and.’ */
-export type DownloadConfigFilter = {
+/** A filter to be used against `DownloadSource` object types. All fields are combined with a logical ‘and.’ */
+export type DownloadSourceFilter = {
   /** Checks for all expressions in this list. */
-  and?: InputMaybe<Array<DownloadConfigFilter>>;
-  /** Filter by the object’s `anime` field. */
-  anime?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `bangumiId` field. */
-  bangumiId?: InputMaybe<StringFilter>;
+  and?: InputMaybe<Array<DownloadSourceFilter>>;
+  /** Filter by the object’s `archivedAt` field. */
+  archivedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `groupId` field. */
+  groupId?: InputMaybe<StringFilter>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<IntFilter>;
   /** Filter by the object’s `isArchived` field. */
   isArchived?: InputMaybe<BooleanFilter>;
-  /** Filter by the object’s `language` field. */
-  language?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `isDisabled` field. */
+  isDisabled?: InputMaybe<BooleanFilter>;
   /** Negates the expression. */
-  not?: InputMaybe<DownloadConfigFilter>;
+  not?: InputMaybe<DownloadSourceFilter>;
   /** Checks for any expressions in this list. */
-  or?: InputMaybe<Array<DownloadConfigFilter>>;
+  or?: InputMaybe<Array<DownloadSourceFilter>>;
   /** Filter by the object’s `pattern` field. */
   pattern?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `publishGroupId` field. */
-  publishGroupId?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `quality` field. */
-  quality?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `type` field. */
-  type?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `seasonId` field. */
+  seasonId?: InputMaybe<IntFilter>;
 };
 
-/** An input for mutations affecting `DownloadConfig` */
-export type DownloadConfigInput = {
-  anime: Scalars['Int'];
-  /** mikan anime bangumi ID */
-  bangumiId?: InputMaybe<Scalars['String']>;
+/** An input for mutations affecting `DownloadSource` */
+export type DownloadSourceInput = {
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  groupId?: InputMaybe<Scalars['String']>;
   id?: InputMaybe<Scalars['Int']>;
   isArchived?: InputMaybe<Scalars['Boolean']>;
-  language: Scalars['String'];
+  isDisabled?: InputMaybe<Scalars['Boolean']>;
   pattern?: InputMaybe<Scalars['String']>;
-  /** mikan anime publish group id */
-  publishGroupId?: InputMaybe<Scalars['String']>;
-  quality: Scalars['Int'];
-  type?: InputMaybe<Scalars['String']>;
+  seasonId: Scalars['Int'];
 };
 
-/** Represents an update to a `DownloadConfig`. Fields that are set will be updated. */
-export type DownloadConfigPatch = {
-  anime?: InputMaybe<Scalars['Int']>;
-  /** mikan anime bangumi ID */
-  bangumiId?: InputMaybe<Scalars['String']>;
+/** Represents an update to a `DownloadSource`. Fields that are set will be updated. */
+export type DownloadSourcePatch = {
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  groupId?: InputMaybe<Scalars['String']>;
   id?: InputMaybe<Scalars['Int']>;
   isArchived?: InputMaybe<Scalars['Boolean']>;
-  language?: InputMaybe<Scalars['String']>;
+  isDisabled?: InputMaybe<Scalars['Boolean']>;
   pattern?: InputMaybe<Scalars['String']>;
-  /** mikan anime publish group id */
-  publishGroupId?: InputMaybe<Scalars['String']>;
-  quality?: InputMaybe<Scalars['Int']>;
-  type?: InputMaybe<Scalars['String']>;
+  seasonId?: InputMaybe<Scalars['Int']>;
 };
 
-/** A connection to a list of `DownloadConfig` values. */
-export type DownloadConfigsConnection = {
-  __typename?: 'DownloadConfigsConnection';
-  /** A list of edges which contains the `DownloadConfig` and cursor to aid in pagination. */
-  edges: Array<DownloadConfigsEdge>;
-  /** A list of `DownloadConfig` objects. */
-  nodes: Array<Maybe<DownloadConfig>>;
+/** A connection to a list of `DownloadSource` values. */
+export type DownloadSourcesConnection = {
+  __typename?: 'DownloadSourcesConnection';
+  /** A list of edges which contains the `DownloadSource` and cursor to aid in pagination. */
+  edges: Array<DownloadSourcesEdge>;
+  /** A list of `DownloadSource` objects. */
+  nodes: Array<Maybe<DownloadSource>>;
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
-  /** The count of *all* `DownloadConfig` you could get from the connection. */
+  /** The count of *all* `DownloadSource` you could get from the connection. */
   totalCount: Scalars['Int'];
 };
 
-/** A `DownloadConfig` edge in the connection. */
-export type DownloadConfigsEdge = {
-  __typename?: 'DownloadConfigsEdge';
+/** A `DownloadSource` edge in the connection. */
+export type DownloadSourcesEdge = {
+  __typename?: 'DownloadSourcesEdge';
   /** A cursor for use in pagination. */
   cursor?: Maybe<Scalars['Cursor']>;
-  /** The `DownloadConfig` at the end of the edge. */
-  node?: Maybe<DownloadConfig>;
+  /** The `DownloadSource` at the end of the edge. */
+  node?: Maybe<DownloadSource>;
 };
 
-/** Methods to use when ordering `DownloadConfig`. */
-export enum DownloadConfigsOrderBy {
-  AnimeAsc = 'ANIME_ASC',
-  AnimeDesc = 'ANIME_DESC',
-  BangumiIdAsc = 'BANGUMI_ID_ASC',
-  BangumiIdDesc = 'BANGUMI_ID_DESC',
+/** Methods to use when ordering `DownloadSource`. */
+export enum DownloadSourcesOrderBy {
+  ArchivedAtAsc = 'ARCHIVED_AT_ASC',
+  ArchivedAtDesc = 'ARCHIVED_AT_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  GroupIdAsc = 'GROUP_ID_ASC',
+  GroupIdDesc = 'GROUP_ID_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
   IsArchivedAsc = 'IS_ARCHIVED_ASC',
   IsArchivedDesc = 'IS_ARCHIVED_DESC',
-  LanguageAsc = 'LANGUAGE_ASC',
-  LanguageDesc = 'LANGUAGE_DESC',
+  IsDisabledAsc = 'IS_DISABLED_ASC',
+  IsDisabledDesc = 'IS_DISABLED_DESC',
   Natural = 'NATURAL',
   PatternAsc = 'PATTERN_ASC',
   PatternDesc = 'PATTERN_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  PublishGroupIdAsc = 'PUBLISH_GROUP_ID_ASC',
-  PublishGroupIdDesc = 'PUBLISH_GROUP_ID_DESC',
-  QualityAsc = 'QUALITY_ASC',
-  QualityDesc = 'QUALITY_DESC',
-  TypeAsc = 'TYPE_ASC',
-  TypeDesc = 'TYPE_DESC'
+  SeasonIdAsc = 'SEASON_ID_ASC',
+  SeasonIdDesc = 'SEASON_ID_DESC'
+}
+
+export enum DownloadStatus {
+  Available = 'AVAILABLE',
+  Downloading = 'DOWNLOADING',
+  DownloadCompleted = 'DOWNLOAD_COMPLETED',
+  DownloadSubmitting = 'DOWNLOAD_SUBMITTING',
+  Importing = 'IMPORTING',
+  PlayerWaiting = 'PLAYER_WAITING',
+  Renaming = 'RENAMING',
+  Unavailable = 'UNAVAILABLE',
+  WritingMetadata = 'WRITING_METADATA'
+}
+
+/** A filter to be used against DownloadStatus fields. All fields are combined with a logical ‘and.’ */
+export type DownloadStatusFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<DownloadStatus>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<DownloadStatus>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<DownloadStatus>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<DownloadStatus>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<DownloadStatus>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<DownloadStatus>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<DownloadStatus>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<DownloadStatus>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<DownloadStatus>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<DownloadStatus>>;
+};
+
+export type Episode = Node & {
+  __typename?: 'Episode';
+  airTime?: Maybe<Scalars['Datetime']>;
+  createdAt: Scalars['Datetime'];
+  description: Scalars['String'];
+  /** Reads and enables pagination through a set of `DownloadJob`. */
+  downloadJobsByEpisodeId: DownloadJobsConnection;
+  id: Scalars['Int'];
+  index: Scalars['Int'];
+  jellyfinEpisodeId?: Maybe<Scalars['String']>;
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  /** Reads a single `Season` that is related to this `Episode`. */
+  seasonBySeasonId?: Maybe<Season>;
+  seasonId: Scalars['Int'];
+  title: Scalars['String'];
+};
+
+
+export type EpisodeDownloadJobsByEpisodeIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<DownloadJobCondition>;
+  filter?: InputMaybe<DownloadJobFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
+};
+
+/** A condition to be used against `Episode` object types. All fields are tested for equality and combined with a logical ‘and.’ */
+export type EpisodeCondition = {
+  /** Checks for equality with the object’s `airTime` field. */
+  airTime?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `description` field. */
+  description?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `index` field. */
+  index?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `seasonId` field. */
+  seasonId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `title` field. */
+  title?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against `Episode` object types. All fields are combined with a logical ‘and.’ */
+export type EpisodeFilter = {
+  /** Filter by the object’s `airTime` field. */
+  airTime?: InputMaybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<EpisodeFilter>>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `description` field. */
+  description?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `index` field. */
+  index?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<EpisodeFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<EpisodeFilter>>;
+  /** Filter by the object’s `seasonId` field. */
+  seasonId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `title` field. */
+  title?: InputMaybe<StringFilter>;
+};
+
+/** An input for mutations affecting `Episode` */
+export type EpisodeInput = {
+  airTime?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  description?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  index: Scalars['Int'];
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  seasonId: Scalars['Int'];
+  title?: InputMaybe<Scalars['String']>;
+};
+
+/** Represents an update to a `Episode`. Fields that are set will be updated. */
+export type EpisodePatch = {
+  airTime?: InputMaybe<Scalars['Datetime']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  description?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  index?: InputMaybe<Scalars['Int']>;
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  seasonId?: InputMaybe<Scalars['Int']>;
+  title?: InputMaybe<Scalars['String']>;
+};
+
+/** A connection to a list of `Episode` values. */
+export type EpisodesConnection = {
+  __typename?: 'EpisodesConnection';
+  /** A list of edges which contains the `Episode` and cursor to aid in pagination. */
+  edges: Array<EpisodesEdge>;
+  /** A list of `Episode` objects. */
+  nodes: Array<Maybe<Episode>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Episode` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `Episode` edge in the connection. */
+export type EpisodesEdge = {
+  __typename?: 'EpisodesEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Episode` at the end of the edge. */
+  node?: Maybe<Episode>;
+};
+
+/** Methods to use when ordering `Episode`. */
+export enum EpisodesOrderBy {
+  AirTimeAsc = 'AIR_TIME_ASC',
+  AirTimeDesc = 'AIR_TIME_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  DescriptionAsc = 'DESCRIPTION_ASC',
+  DescriptionDesc = 'DESCRIPTION_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  IndexAsc = 'INDEX_ASC',
+  IndexDesc = 'INDEX_DESC',
+  JellyfinEpisodeIdAsc = 'JELLYFIN_EPISODE_ID_ASC',
+  JellyfinEpisodeIdDesc = 'JELLYFIN_EPISODE_ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  SeasonIdAsc = 'SEASON_ID_ASC',
+  SeasonIdDesc = 'SEASON_ID_DESC',
+  TitleAsc = 'TITLE_ASC',
+  TitleDesc = 'TITLE_DESC'
+}
+
+export type FetchPartialSeasonRequest = {
+  characters?: InputMaybe<Scalars['Boolean']>;
+  episodes?: InputMaybe<Scalars['Boolean']>;
+  images?: InputMaybe<Scalars['Boolean']>;
+  info?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type Image = Node & {
+  __typename?: 'Image';
+  cosPath: Scalars['String'];
+  id: Scalars['Int'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  sourceUrl?: Maybe<Scalars['String']>;
+};
+
+/** A condition to be used against `Image` object types. All fields are tested for equality and combined with a logical ‘and.’ */
+export type ImageCondition = {
+  /** Checks for equality with the object’s `cosPath` field. */
+  cosPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `sourceUrl` field. */
+  sourceUrl?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against `Image` object types. All fields are combined with a logical ‘and.’ */
+export type ImageFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<ImageFilter>>;
+  /** Filter by the object’s `cosPath` field. */
+  cosPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<ImageFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<ImageFilter>>;
+  /** Filter by the object’s `sourceUrl` field. */
+  sourceUrl?: InputMaybe<StringFilter>;
+};
+
+/** An input for mutations affecting `Image` */
+export type ImageInput = {
+  cosPath: Scalars['String'];
+  id?: InputMaybe<Scalars['Int']>;
+  sourceUrl?: InputMaybe<Scalars['String']>;
+};
+
+/** Represents an update to a `Image`. Fields that are set will be updated. */
+export type ImagePatch = {
+  cosPath?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  sourceUrl?: InputMaybe<Scalars['String']>;
+};
+
+/** A connection to a list of `Image` values. */
+export type ImagesConnection = {
+  __typename?: 'ImagesConnection';
+  /** A list of edges which contains the `Image` and cursor to aid in pagination. */
+  edges: Array<ImagesEdge>;
+  /** A list of `Image` objects. */
+  nodes: Array<Maybe<Image>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Image` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `Image` edge in the connection. */
+export type ImagesEdge = {
+  __typename?: 'ImagesEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Image` at the end of the edge. */
+  node?: Maybe<Image>;
+};
+
+/** Methods to use when ordering `Image`. */
+export enum ImagesOrderBy {
+  CosPathAsc = 'COS_PATH_ASC',
+  CosPathDesc = 'COS_PATH_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  SourceUrlAsc = 'SOURCE_URL_ASC',
+  SourceUrlDesc = 'SOURCE_URL_DESC'
 }
 
 /** Indicates whether archived items should be included in the results or not. */
@@ -659,6 +1282,11 @@ export enum IncludeArchivedOption {
   No = 'NO',
   /** Include archived items. */
   Yes = 'YES'
+}
+
+export enum InfoSource {
+  Bangumi = 'BANGUMI',
+  Skyhook = 'SKYHOOK'
 }
 
 /** A filter to be used against Int fields. All fields are combined with a logical ‘and.’ */
@@ -687,161 +1315,339 @@ export type IntFilter = {
   notIn?: InputMaybe<Array<Scalars['Int']>>;
 };
 
-/** The root mutation type which contains root level fields which mutate data. */
+export enum MetadataSource {
+  BgmCn = 'BGM_CN',
+  Inherit = 'INHERIT',
+  Manual = 'MANUAL',
+  Skyhook = 'SKYHOOK'
+}
+
+/** A filter to be used against MetadataSource fields. All fields are combined with a logical ‘and.’ */
+export type MetadataSourceFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<MetadataSource>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<MetadataSource>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<MetadataSource>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<MetadataSource>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<MetadataSource>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<MetadataSource>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<MetadataSource>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<MetadataSource>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<MetadataSource>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<MetadataSource>>;
+};
+
+export type MikanRssItem = {
+  __typename?: 'MikanRSSItem';
+  hash: Scalars['String'];
+  link: Scalars['String'];
+  publishDate: Scalars['DateTime'];
+  size: Scalars['BigInt'];
+  title: Scalars['String'];
+  torrentLink: Scalars['String'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
-  /** Creates a single `AnimeMetadatum`. */
-  createAnimeMetadatum?: Maybe<CreateAnimeMetadatumPayload>;
-  /** Creates a single `DownloadConfig`. */
-  createDownloadConfig?: Maybe<CreateDownloadConfigPayload>;
-  /** Creates a single `SonarrSery`. */
-  createSonarrSery?: Maybe<CreateSonarrSeryPayload>;
-  /** Deletes a single `AnimeMetadatum` using its globally unique id. */
-  deleteAnimeMetadatum?: Maybe<DeleteAnimeMetadatumPayload>;
-  /** Deletes a single `AnimeMetadatum` using a unique key. */
-  deleteAnimeMetadatumById?: Maybe<DeleteAnimeMetadatumPayload>;
-  /** Deletes a single `DownloadConfig` using its globally unique id. */
-  deleteDownloadConfig?: Maybe<DeleteDownloadConfigPayload>;
-  /** Deletes a single `DownloadConfig` using a unique key. */
-  deleteDownloadConfigById?: Maybe<DeleteDownloadConfigPayload>;
-  /** Deletes a single `SonarrSery` using its globally unique id. */
-  deleteSonarrSery?: Maybe<DeleteSonarrSeryPayload>;
-  /** Deletes a single `SonarrSery` using a unique key. */
-  deleteSonarrSeryById?: Maybe<DeleteSonarrSeryPayload>;
-  /** Deletes a single `SonarrSery` using a unique key. */
-  deleteSonarrSeryBySonarrId?: Maybe<DeleteSonarrSeryPayload>;
-  /** Deletes a single `SonarrSery` using a unique key. */
-  deleteSonarrSeryBySonarrSlug?: Maybe<DeleteSonarrSeryPayload>;
-  /** Updates a single `AnimeMetadatum` using its globally unique id and a patch. */
-  updateAnimeMetadatum?: Maybe<UpdateAnimeMetadatumPayload>;
-  /** Updates a single `AnimeMetadatum` using a unique key and a patch. */
-  updateAnimeMetadatumById?: Maybe<UpdateAnimeMetadatumPayload>;
-  /** Updates a single `DownloadConfig` using its globally unique id and a patch. */
-  updateDownloadConfig?: Maybe<UpdateDownloadConfigPayload>;
-  /** Updates a single `DownloadConfig` using a unique key and a patch. */
-  updateDownloadConfigById?: Maybe<UpdateDownloadConfigPayload>;
-  /** Updates a single `SonarrSery` using its globally unique id and a patch. */
-  updateSonarrSery?: Maybe<UpdateSonarrSeryPayload>;
-  /** Updates a single `SonarrSery` using a unique key and a patch. */
-  updateSonarrSeryById?: Maybe<UpdateSonarrSeryPayload>;
-  /** Updates a single `SonarrSery` using a unique key and a patch. */
-  updateSonarrSeryBySonarrId?: Maybe<UpdateSonarrSeryPayload>;
-  /** Updates a single `SonarrSery` using a unique key and a patch. */
-  updateSonarrSeryBySonarrSlug?: Maybe<UpdateSonarrSeryPayload>;
+  /** Creates a single `DownloadJob`. */
+  createDownloadJob?: Maybe<CreateDownloadJobPayload>;
+  /** Creates a single `DownloadSource`. */
+  createDownloadSource?: Maybe<CreateDownloadSourcePayload>;
+  /** Creates a single `Episode`. */
+  createEpisode?: Maybe<CreateEpisodePayload>;
+  /** Creates a single `Image`. */
+  createImage?: Maybe<CreateImagePayload>;
+  /** Creates a single `Season`. */
+  createSeason?: Maybe<CreateSeasonPayload>;
+  /** Creates a single `Torrent`. */
+  createTorrent?: Maybe<CreateTorrentPayload>;
+  /** Deletes a single `DownloadJob` using its globally unique id. */
+  deleteDownloadJob?: Maybe<DeleteDownloadJobPayload>;
+  /** Deletes a single `DownloadJob` using a unique key. */
+  deleteDownloadJobById?: Maybe<DeleteDownloadJobPayload>;
+  /** Deletes a single `DownloadSource` using its globally unique id. */
+  deleteDownloadSource?: Maybe<DeleteDownloadSourcePayload>;
+  /** Deletes a single `DownloadSource` using a unique key. */
+  deleteDownloadSourceById?: Maybe<DeleteDownloadSourcePayload>;
+  /** Deletes a single `DownloadSource` using a unique key. */
+  deleteDownloadSourceByPattern?: Maybe<DeleteDownloadSourcePayload>;
+  /** Deletes a single `Episode` using its globally unique id. */
+  deleteEpisode?: Maybe<DeleteEpisodePayload>;
+  /** Deletes a single `Episode` using a unique key. */
+  deleteEpisodeById?: Maybe<DeleteEpisodePayload>;
+  /** Deletes a single `Episode` using a unique key. */
+  deleteEpisodeBySeasonIdAndIndex?: Maybe<DeleteEpisodePayload>;
+  /** Deletes a single `Image` using its globally unique id. */
+  deleteImage?: Maybe<DeleteImagePayload>;
+  /** Deletes a single `Image` using a unique key. */
+  deleteImageById?: Maybe<DeleteImagePayload>;
+  /** Deletes a single `Season` using its globally unique id. */
+  deleteSeason?: Maybe<DeleteSeasonPayload>;
+  /** Deletes a single `Season` using a unique key. */
+  deleteSeasonById?: Maybe<DeleteSeasonPayload>;
+  /** Deletes a single `Torrent` using its globally unique id. */
+  deleteTorrent?: Maybe<DeleteTorrentPayload>;
+  /** Deletes a single `Torrent` using a unique key. */
+  deleteTorrentByHash?: Maybe<DeleteTorrentPayload>;
+  /** Deletes a single `Torrent` using a unique key. */
+  deleteTorrentById?: Maybe<DeleteTorrentPayload>;
+  downloadTorrentForEpisode: Scalars['Int'];
+  refreshAllDownloadStatus: Scalars['Int'];
+  retryJobStep: Scalars['ID'];
+  syncEpisodeData: Scalars['ID'];
+  syncMetadata: Scalars['ID'];
+  /** Returns newly added torrent count */
+  syncMikan: Scalars['Int'];
+  /** Updates a single `DownloadJob` using its globally unique id and a patch. */
+  updateDownloadJob?: Maybe<UpdateDownloadJobPayload>;
+  /** Updates a single `DownloadJob` using a unique key and a patch. */
+  updateDownloadJobById?: Maybe<UpdateDownloadJobPayload>;
+  /** Updates a single `DownloadSource` using its globally unique id and a patch. */
+  updateDownloadSource?: Maybe<UpdateDownloadSourcePayload>;
+  /** Updates a single `DownloadSource` using a unique key and a patch. */
+  updateDownloadSourceById?: Maybe<UpdateDownloadSourcePayload>;
+  /** Updates a single `DownloadSource` using a unique key and a patch. */
+  updateDownloadSourceByPattern?: Maybe<UpdateDownloadSourcePayload>;
+  /** Updates a single `Episode` using its globally unique id and a patch. */
+  updateEpisode?: Maybe<UpdateEpisodePayload>;
+  /** Updates a single `Episode` using a unique key and a patch. */
+  updateEpisodeById?: Maybe<UpdateEpisodePayload>;
+  /** Updates a single `Episode` using a unique key and a patch. */
+  updateEpisodeBySeasonIdAndIndex?: Maybe<UpdateEpisodePayload>;
+  /** Updates a single `Image` using its globally unique id and a patch. */
+  updateImage?: Maybe<UpdateImagePayload>;
+  /** Updates a single `Image` using a unique key and a patch. */
+  updateImageById?: Maybe<UpdateImagePayload>;
+  /** Updates a single `Season` using its globally unique id and a patch. */
+  updateSeason?: Maybe<UpdateSeasonPayload>;
+  /** Updates a single `Season` using a unique key and a patch. */
+  updateSeasonById?: Maybe<UpdateSeasonPayload>;
+  /** Updates a single `Torrent` using its globally unique id and a patch. */
+  updateTorrent?: Maybe<UpdateTorrentPayload>;
+  /** Updates a single `Torrent` using a unique key and a patch. */
+  updateTorrentByHash?: Maybe<UpdateTorrentPayload>;
+  /** Updates a single `Torrent` using a unique key and a patch. */
+  updateTorrentById?: Maybe<UpdateTorrentPayload>;
+  writeMetadata: Scalars['ID'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationCreateAnimeMetadatumArgs = {
-  input: CreateAnimeMetadatumInput;
+export type MutationCreateDownloadJobArgs = {
+  input: CreateDownloadJobInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationCreateDownloadConfigArgs = {
-  input: CreateDownloadConfigInput;
+export type MutationCreateDownloadSourceArgs = {
+  input: CreateDownloadSourceInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationCreateSonarrSeryArgs = {
-  input: CreateSonarrSeryInput;
+export type MutationCreateEpisodeArgs = {
+  input: CreateEpisodeInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteAnimeMetadatumArgs = {
-  input: DeleteAnimeMetadatumInput;
+export type MutationCreateImageArgs = {
+  input: CreateImageInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteAnimeMetadatumByIdArgs = {
-  input: DeleteAnimeMetadatumByIdInput;
+export type MutationCreateSeasonArgs = {
+  input: CreateSeasonInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteDownloadConfigArgs = {
-  input: DeleteDownloadConfigInput;
+export type MutationCreateTorrentArgs = {
+  input: CreateTorrentInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteDownloadConfigByIdArgs = {
-  input: DeleteDownloadConfigByIdInput;
+export type MutationDeleteDownloadJobArgs = {
+  input: DeleteDownloadJobInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteSonarrSeryArgs = {
-  input: DeleteSonarrSeryInput;
+export type MutationDeleteDownloadJobByIdArgs = {
+  input: DeleteDownloadJobByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteSonarrSeryByIdArgs = {
-  input: DeleteSonarrSeryByIdInput;
+export type MutationDeleteDownloadSourceArgs = {
+  input: DeleteDownloadSourceInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteSonarrSeryBySonarrIdArgs = {
-  input: DeleteSonarrSeryBySonarrIdInput;
+export type MutationDeleteDownloadSourceByIdArgs = {
+  input: DeleteDownloadSourceByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationDeleteSonarrSeryBySonarrSlugArgs = {
-  input: DeleteSonarrSeryBySonarrSlugInput;
+export type MutationDeleteDownloadSourceByPatternArgs = {
+  input: DeleteDownloadSourceByPatternInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateAnimeMetadatumArgs = {
-  input: UpdateAnimeMetadatumInput;
+export type MutationDeleteEpisodeArgs = {
+  input: DeleteEpisodeInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateAnimeMetadatumByIdArgs = {
-  input: UpdateAnimeMetadatumByIdInput;
+export type MutationDeleteEpisodeByIdArgs = {
+  input: DeleteEpisodeByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateDownloadConfigArgs = {
-  input: UpdateDownloadConfigInput;
+export type MutationDeleteEpisodeBySeasonIdAndIndexArgs = {
+  input: DeleteEpisodeBySeasonIdAndIndexInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateDownloadConfigByIdArgs = {
-  input: UpdateDownloadConfigByIdInput;
+export type MutationDeleteImageArgs = {
+  input: DeleteImageInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateSonarrSeryArgs = {
-  input: UpdateSonarrSeryInput;
+export type MutationDeleteImageByIdArgs = {
+  input: DeleteImageByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateSonarrSeryByIdArgs = {
-  input: UpdateSonarrSeryByIdInput;
+export type MutationDeleteSeasonArgs = {
+  input: DeleteSeasonInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateSonarrSeryBySonarrIdArgs = {
-  input: UpdateSonarrSeryBySonarrIdInput;
+export type MutationDeleteSeasonByIdArgs = {
+  input: DeleteSeasonByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
-export type MutationUpdateSonarrSeryBySonarrSlugArgs = {
-  input: UpdateSonarrSeryBySonarrSlugInput;
+export type MutationDeleteTorrentArgs = {
+  input: DeleteTorrentInput;
+};
+
+
+export type MutationDeleteTorrentByHashArgs = {
+  input: DeleteTorrentByHashInput;
+};
+
+
+export type MutationDeleteTorrentByIdArgs = {
+  input: DeleteTorrentByIdInput;
+};
+
+
+export type MutationDownloadTorrentForEpisodeArgs = {
+  episodeId: Scalars['Int'];
+  torrentLink: Scalars['String'];
+};
+
+
+export type MutationRetryJobStepArgs = {
+  jobId: Scalars['Int'];
+};
+
+
+export type MutationSyncEpisodeDataArgs = {
+  forced?: InputMaybe<Scalars['Boolean']>;
+  seasonId: Scalars['Int'];
+};
+
+
+export type MutationSyncMetadataArgs = {
+  infoSource: InfoSource;
+  seasonId: Scalars['Int'];
+};
+
+
+export type MutationUpdateDownloadJobArgs = {
+  input: UpdateDownloadJobInput;
+};
+
+
+export type MutationUpdateDownloadJobByIdArgs = {
+  input: UpdateDownloadJobByIdInput;
+};
+
+
+export type MutationUpdateDownloadSourceArgs = {
+  input: UpdateDownloadSourceInput;
+};
+
+
+export type MutationUpdateDownloadSourceByIdArgs = {
+  input: UpdateDownloadSourceByIdInput;
+};
+
+
+export type MutationUpdateDownloadSourceByPatternArgs = {
+  input: UpdateDownloadSourceByPatternInput;
+};
+
+
+export type MutationUpdateEpisodeArgs = {
+  input: UpdateEpisodeInput;
+};
+
+
+export type MutationUpdateEpisodeByIdArgs = {
+  input: UpdateEpisodeByIdInput;
+};
+
+
+export type MutationUpdateEpisodeBySeasonIdAndIndexArgs = {
+  input: UpdateEpisodeBySeasonIdAndIndexInput;
+};
+
+
+export type MutationUpdateImageArgs = {
+  input: UpdateImageInput;
+};
+
+
+export type MutationUpdateImageByIdArgs = {
+  input: UpdateImageByIdInput;
+};
+
+
+export type MutationUpdateSeasonArgs = {
+  input: UpdateSeasonInput;
+};
+
+
+export type MutationUpdateSeasonByIdArgs = {
+  input: UpdateSeasonByIdInput;
+};
+
+
+export type MutationUpdateTorrentArgs = {
+  input: UpdateTorrentInput;
+};
+
+
+export type MutationUpdateTorrentByHashArgs = {
+  input: UpdateTorrentByHashInput;
+};
+
+
+export type MutationUpdateTorrentByIdArgs = {
+  input: UpdateTorrentByIdInput;
+};
+
+
+export type MutationWriteMetadataArgs = {
+  seasonId: Scalars['Int'];
 };
 
 /** An object with a globally unique `ID`. */
@@ -863,285 +1669,570 @@ export type PageInfo = {
   startCursor?: Maybe<Scalars['Cursor']>;
 };
 
-/** The root query type which gives access points into the data universe. */
-export type Query = Node & {
+export type PartialSeason = {
+  __typename?: 'PartialSeason';
+  characters?: Maybe<Array<SeasonCharacter>>;
+  episodes?: Maybe<Array<SeasonEpisode>>;
+  images?: Maybe<SeasonImages>;
+  info?: Maybe<SeasonInfo>;
+};
+
+export type Query = {
   __typename?: 'Query';
-  /** Reads and enables pagination through a set of `AnimeMetadatum`. */
-  allAnimeMetadata?: Maybe<AnimeMetadataConnection>;
-  /** Reads and enables pagination through a set of `DownloadConfig`. */
-  allDownloadConfigs?: Maybe<DownloadConfigsConnection>;
-  /** Reads and enables pagination through a set of `SonarrSery`. */
-  allSonarrSeries?: Maybe<SonarrSeriesConnection>;
-  /** Reads a single `AnimeMetadatum` using its globally unique `ID`. */
-  animeMetadatum?: Maybe<AnimeMetadatum>;
-  animeMetadatumById?: Maybe<AnimeMetadatum>;
-  /** Reads a single `DownloadConfig` using its globally unique `ID`. */
-  downloadConfig?: Maybe<DownloadConfig>;
-  downloadConfigById?: Maybe<DownloadConfig>;
-  /** Fetches an object given its globally unique `ID`. */
-  node?: Maybe<Node>;
-  /** The root query type must be a `Node` to work well with Relay 1 mutations. This just resolves to `query`. */
+  /** Reads and enables pagination through a set of `DownloadJob`. */
+  allDownloadJobs?: Maybe<DownloadJobsConnection>;
+  /** Reads and enables pagination through a set of `DownloadSource`. */
+  allDownloadSources?: Maybe<DownloadSourcesConnection>;
+  /** Reads and enables pagination through a set of `Episode`. */
+  allEpisodes?: Maybe<EpisodesConnection>;
+  /** Reads and enables pagination through a set of `Image`. */
+  allImages?: Maybe<ImagesConnection>;
+  /** Reads and enables pagination through a set of `Season`. */
+  allSeasons?: Maybe<SeasonsConnection>;
+  /** Reads and enables pagination through a set of `Torrent`. */
+  allTorrents?: Maybe<TorrentsConnection>;
+  /** Reads a single `DownloadJob` using its globally unique `ID`. */
+  downloadJob?: Maybe<DownloadJob>;
+  downloadJobById?: Maybe<DownloadJob>;
+  /** Reads a single `DownloadSource` using its globally unique `ID`. */
+  downloadSource?: Maybe<DownloadSource>;
+  downloadSourceById?: Maybe<DownloadSource>;
+  downloadSourceByPattern?: Maybe<DownloadSource>;
+  /** Reads a single `Episode` using its globally unique `ID`. */
+  episode?: Maybe<Episode>;
+  episodeById?: Maybe<Episode>;
+  episodeBySeasonIdAndIndex?: Maybe<Episode>;
+  fetchBangumiSeason: PartialSeason;
+  fetchMikan: Array<MikanRssItem>;
+  fetchSkyhookSeason: PartialSeason;
+  /** Reads a single `Image` using its globally unique `ID`. */
+  image?: Maybe<Image>;
+  imageById?: Maybe<Image>;
+  /** Reads a single `Season` using its globally unique `ID`. */
+  season?: Maybe<Season>;
+  seasonById?: Maybe<Season>;
+  /** Reads a single `Torrent` using its globally unique `ID`. */
+  torrent?: Maybe<Torrent>;
+  torrentByHash?: Maybe<Torrent>;
+  torrentById?: Maybe<Torrent>;
+};
+
+
+export type QueryAllDownloadJobsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<DownloadJobCondition>;
+  filter?: InputMaybe<DownloadJobFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
+};
+
+
+export type QueryAllDownloadSourcesArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<DownloadSourceCondition>;
+  filter?: InputMaybe<DownloadSourceFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  includeArchived?: InputMaybe<IncludeArchivedOption>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
+};
+
+
+export type QueryAllEpisodesArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<EpisodeCondition>;
+  filter?: InputMaybe<EpisodeFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
+};
+
+
+export type QueryAllImagesArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<ImageCondition>;
+  filter?: InputMaybe<ImageFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<ImagesOrderBy>>;
+};
+
+
+export type QueryAllSeasonsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<SeasonCondition>;
+  filter?: InputMaybe<SeasonFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  includeArchived?: InputMaybe<IncludeArchivedOption>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
+};
+
+
+export type QueryAllTorrentsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<TorrentCondition>;
+  filter?: InputMaybe<TorrentFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
+};
+
+
+export type QueryDownloadJobArgs = {
   nodeId: Scalars['ID'];
+};
+
+
+export type QueryDownloadJobByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QueryDownloadSourceArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QueryDownloadSourceByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QueryDownloadSourceByPatternArgs = {
+  pattern: Scalars['String'];
+};
+
+
+export type QueryEpisodeArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QueryEpisodeByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QueryEpisodeBySeasonIdAndIndexArgs = {
+  index: Scalars['Int'];
+  seasonId: Scalars['Int'];
+};
+
+
+export type QueryFetchBangumiSeasonArgs = {
+  bangumiId: Scalars['Int'];
+  request: FetchPartialSeasonRequest;
+};
+
+
+export type QueryFetchMikanArgs = {
+  partialURL: Scalars['String'];
+};
+
+
+export type QueryFetchSkyhookSeasonArgs = {
+  request: FetchPartialSeasonRequest;
+  seasonId: Scalars['Int'];
+  tvdbId: Scalars['Int'];
+};
+
+
+export type QueryImageArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QueryImageByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QuerySeasonArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QuerySeasonByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QueryTorrentArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QueryTorrentByHashArgs = {
+  hash: Scalars['String'];
+};
+
+
+export type QueryTorrentByIdArgs = {
+  id: Scalars['Int'];
+};
+
+export type Season = Node & {
+  __typename?: 'Season';
+  /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
+  airTime: Scalars['String'];
+  archivedAt?: Maybe<Scalars['Datetime']>;
+  bangumiId: Scalars['String'];
+  bilibiliMainlandId: Scalars['String'];
+  bilibiliThmId: Scalars['String'];
+  createdAt: Scalars['Datetime'];
+  description: Scalars['String'];
+  /** Reads and enables pagination through a set of `DownloadSource`. */
+  downloadSourcesBySeasonId: DownloadSourcesConnection;
+  /** Reads and enables pagination through a set of `Episode`. */
+  episodesBySeasonId: EpisodesConnection;
+  /** here 'MANUAL' stands for 'NO CHANGES', in which case all sync will be disabled for this */
+  episodesSource: MetadataSource;
+  id: Scalars['Int'];
   /**
-   * Exposes the root query type nested one level down. This is helpful for Relay 1
-   * which can only query top level fields if they are in a particular form.
+   * source for:
+   * - description
+   * - tag
+   * - genre
+   * - rating
+   * - starring
+   * - cast
    */
-  query: Query;
-  /** Reads a single `SonarrSery` using its globally unique `ID`. */
-  sonarrSery?: Maybe<SonarrSery>;
-  sonarrSeryById?: Maybe<SonarrSery>;
-  sonarrSeryBySonarrId?: Maybe<SonarrSery>;
-  sonarrSeryBySonarrSlug?: Maybe<SonarrSery>;
+  infoSource: MetadataSource;
+  isArchived: Scalars['Boolean'];
+  isMonitoring: Scalars['Boolean'];
+  jellyfinId: Scalars['String'];
+  mikanAnimeId: Scalars['String'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  seasonRoot?: Maybe<Scalars['String']>;
+  tags: Array<Maybe<Scalars['String']>>;
+  title: Scalars['String'];
+  tvdbId: Scalars['String'];
+  /** null if unknown */
+  tvdbSeason?: Maybe<Scalars['Int']>;
+  /** 0 for monday, 6 for sunday, null if unknown, past 24:00 time counts as last day (like Monday 25:00) */
+  weekday?: Maybe<Scalars['Int']>;
+  /** like '202201' ~ '202204', or null if unknown */
+  yearAndSemester: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
-export type QueryAllAnimeMetadataArgs = {
+export type SeasonDownloadSourcesBySeasonIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
-  condition?: InputMaybe<AnimeMetadatumCondition>;
-  filter?: InputMaybe<AnimeMetadatumFilter>;
+  condition?: InputMaybe<DownloadSourceCondition>;
+  filter?: InputMaybe<DownloadSourceFilter>;
   first?: InputMaybe<Scalars['Int']>;
   includeArchived?: InputMaybe<IncludeArchivedOption>;
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy>>;
+  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
 };
 
 
-/** The root query type which gives access points into the data universe. */
-export type QueryAllDownloadConfigsArgs = {
+export type SeasonEpisodesBySeasonIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
-  condition?: InputMaybe<DownloadConfigCondition>;
-  filter?: InputMaybe<DownloadConfigFilter>;
+  condition?: InputMaybe<EpisodeCondition>;
+  filter?: InputMaybe<EpisodeFilter>;
   first?: InputMaybe<Scalars['Int']>;
-  includeArchived?: InputMaybe<IncludeArchivedOption>;
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<DownloadConfigsOrderBy>>;
+  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryAllSonarrSeriesArgs = {
-  after?: InputMaybe<Scalars['Cursor']>;
-  before?: InputMaybe<Scalars['Cursor']>;
-  condition?: InputMaybe<SonarrSeryCondition>;
-  filter?: InputMaybe<SonarrSeryFilter>;
-  first?: InputMaybe<Scalars['Int']>;
-  includeArchived?: InputMaybe<IncludeArchivedOption>;
-  last?: InputMaybe<Scalars['Int']>;
-  offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<SonarrSeriesOrderBy>>;
+export type SeasonCharacter = {
+  __typename?: 'SeasonCharacter';
+  actor: Scalars['String'];
+  actorImageURL?: Maybe<Scalars['String']>;
+  character: Scalars['String'];
+  characterImageURL?: Maybe<Scalars['String']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryAnimeMetadatumArgs = {
-  nodeId: Scalars['ID'];
+/** A condition to be used against `Season` object types. All fields are tested for equality and combined with a logical ‘and.’ */
+export type SeasonCondition = {
+  /** Checks for equality with the object’s `airTime` field. */
+  airTime?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `archivedAt` field. */
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `bangumiId` field. */
+  bangumiId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `bilibiliMainlandId` field. */
+  bilibiliMainlandId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `bilibiliThmId` field. */
+  bilibiliThmId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `description` field. */
+  description?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `episodesSource` field. */
+  episodesSource?: InputMaybe<MetadataSource>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `infoSource` field. */
+  infoSource?: InputMaybe<MetadataSource>;
+  /** Checks for equality with the object’s `isArchived` field. */
+  isArchived?: InputMaybe<Scalars['Boolean']>;
+  /** Checks for equality with the object’s `isMonitoring` field. */
+  isMonitoring?: InputMaybe<Scalars['Boolean']>;
+  /** Checks for equality with the object’s `jellyfinId` field. */
+  jellyfinId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `mikanAnimeId` field. */
+  mikanAnimeId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `seasonRoot` field. */
+  seasonRoot?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `tags` field. */
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Checks for equality with the object’s `title` field. */
+  title?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `tvdbId` field. */
+  tvdbId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `tvdbSeason` field. */
+  tvdbSeason?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `weekday` field. */
+  weekday?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `yearAndSemester` field. */
+  yearAndSemester?: InputMaybe<Scalars['String']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryAnimeMetadatumByIdArgs = {
-  id: Scalars['Int'];
+export type SeasonEpisode = {
+  __typename?: 'SeasonEpisode';
+  airDate?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
+  index: Scalars['Int'];
+  title: Scalars['String'];
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryDownloadConfigArgs = {
-  nodeId: Scalars['ID'];
+/** A filter to be used against `Season` object types. All fields are combined with a logical ‘and.’ */
+export type SeasonFilter = {
+  /** Filter by the object’s `airTime` field. */
+  airTime?: InputMaybe<StringFilter>;
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<SeasonFilter>>;
+  /** Filter by the object’s `archivedAt` field. */
+  archivedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `bangumiId` field. */
+  bangumiId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `bilibiliMainlandId` field. */
+  bilibiliMainlandId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `bilibiliThmId` field. */
+  bilibiliThmId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `description` field. */
+  description?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `episodesSource` field. */
+  episodesSource?: InputMaybe<MetadataSourceFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `infoSource` field. */
+  infoSource?: InputMaybe<MetadataSourceFilter>;
+  /** Filter by the object’s `isArchived` field. */
+  isArchived?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `isMonitoring` field. */
+  isMonitoring?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `jellyfinId` field. */
+  jellyfinId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `mikanAnimeId` field. */
+  mikanAnimeId?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<SeasonFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<SeasonFilter>>;
+  /** Filter by the object’s `seasonRoot` field. */
+  seasonRoot?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `tags` field. */
+  tags?: InputMaybe<StringListFilter>;
+  /** Filter by the object’s `title` field. */
+  title?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `tvdbId` field. */
+  tvdbId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `tvdbSeason` field. */
+  tvdbSeason?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `weekday` field. */
+  weekday?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `yearAndSemester` field. */
+  yearAndSemester?: InputMaybe<StringFilter>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryDownloadConfigByIdArgs = {
-  id: Scalars['Int'];
+export type SeasonImages = {
+  __typename?: 'SeasonImages';
+  bannerURL?: Maybe<Scalars['String']>;
+  fanartURL?: Maybe<Scalars['String']>;
+  posterURL?: Maybe<Scalars['String']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QueryNodeArgs = {
-  nodeId: Scalars['ID'];
+export type SeasonInfo = {
+  __typename?: 'SeasonInfo';
+  description?: Maybe<Scalars['String']>;
+  genres: Array<Scalars['String']>;
+  tags: Array<Scalars['String']>;
+  time?: Maybe<Scalars['String']>;
+  weekday?: Maybe<Scalars['Int']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QuerySonarrSeryArgs = {
-  nodeId: Scalars['ID'];
+/** An input for mutations affecting `Season` */
+export type SeasonInput = {
+  /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
+  airTime?: InputMaybe<Scalars['String']>;
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  bangumiId?: InputMaybe<Scalars['String']>;
+  bilibiliMainlandId?: InputMaybe<Scalars['String']>;
+  bilibiliThmId?: InputMaybe<Scalars['String']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  description?: InputMaybe<Scalars['String']>;
+  /** here 'MANUAL' stands for 'NO CHANGES', in which case all sync will be disabled for this */
+  episodesSource?: InputMaybe<MetadataSource>;
+  id?: InputMaybe<Scalars['Int']>;
+  /**
+   * source for:
+   * - description
+   * - tag
+   * - genre
+   * - rating
+   * - starring
+   * - cast
+   */
+  infoSource?: InputMaybe<MetadataSource>;
+  isArchived?: InputMaybe<Scalars['Boolean']>;
+  isMonitoring?: InputMaybe<Scalars['Boolean']>;
+  jellyfinId?: InputMaybe<Scalars['String']>;
+  mikanAnimeId?: InputMaybe<Scalars['String']>;
+  seasonRoot?: InputMaybe<Scalars['String']>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  title?: InputMaybe<Scalars['String']>;
+  tvdbId?: InputMaybe<Scalars['String']>;
+  /** null if unknown */
+  tvdbSeason?: InputMaybe<Scalars['Int']>;
+  /** 0 for monday, 6 for sunday, null if unknown, past 24:00 time counts as last day (like Monday 25:00) */
+  weekday?: InputMaybe<Scalars['Int']>;
+  /** like '202201' ~ '202204', or null if unknown */
+  yearAndSemester?: InputMaybe<Scalars['String']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QuerySonarrSeryByIdArgs = {
-  id: Scalars['Int'];
+/** Represents an update to a `Season`. Fields that are set will be updated. */
+export type SeasonPatch = {
+  /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
+  airTime?: InputMaybe<Scalars['String']>;
+  archivedAt?: InputMaybe<Scalars['Datetime']>;
+  bangumiId?: InputMaybe<Scalars['String']>;
+  bilibiliMainlandId?: InputMaybe<Scalars['String']>;
+  bilibiliThmId?: InputMaybe<Scalars['String']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  description?: InputMaybe<Scalars['String']>;
+  /** here 'MANUAL' stands for 'NO CHANGES', in which case all sync will be disabled for this */
+  episodesSource?: InputMaybe<MetadataSource>;
+  id?: InputMaybe<Scalars['Int']>;
+  /**
+   * source for:
+   * - description
+   * - tag
+   * - genre
+   * - rating
+   * - starring
+   * - cast
+   */
+  infoSource?: InputMaybe<MetadataSource>;
+  isArchived?: InputMaybe<Scalars['Boolean']>;
+  isMonitoring?: InputMaybe<Scalars['Boolean']>;
+  jellyfinId?: InputMaybe<Scalars['String']>;
+  mikanAnimeId?: InputMaybe<Scalars['String']>;
+  seasonRoot?: InputMaybe<Scalars['String']>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  title?: InputMaybe<Scalars['String']>;
+  tvdbId?: InputMaybe<Scalars['String']>;
+  /** null if unknown */
+  tvdbSeason?: InputMaybe<Scalars['Int']>;
+  /** 0 for monday, 6 for sunday, null if unknown, past 24:00 time counts as last day (like Monday 25:00) */
+  weekday?: InputMaybe<Scalars['Int']>;
+  /** like '202201' ~ '202204', or null if unknown */
+  yearAndSemester?: InputMaybe<Scalars['String']>;
 };
 
-
-/** The root query type which gives access points into the data universe. */
-export type QuerySonarrSeryBySonarrIdArgs = {
-  sonarrId: Scalars['Int'];
-};
-
-
-/** The root query type which gives access points into the data universe. */
-export type QuerySonarrSeryBySonarrSlugArgs = {
-  sonarrSlug: Scalars['String'];
-};
-
-export enum SeasonEnum {
-  Autumn = 'AUTUMN',
-  Spring = 'SPRING',
-  Summer = 'SUMMER',
-  Winter = 'WINTER'
-}
-
-/** A filter to be used against SeasonEnum fields. All fields are combined with a logical ‘and.’ */
-export type SeasonEnumFilter = {
-  /** Not equal to the specified value, treating null like an ordinary value. */
-  distinctFrom?: InputMaybe<SeasonEnum>;
-  /** Equal to the specified value. */
-  equalTo?: InputMaybe<SeasonEnum>;
-  /** Greater than the specified value. */
-  greaterThan?: InputMaybe<SeasonEnum>;
-  /** Greater than or equal to the specified value. */
-  greaterThanOrEqualTo?: InputMaybe<SeasonEnum>;
-  /** Included in the specified list. */
-  in?: InputMaybe<Array<SeasonEnum>>;
-  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
-  isNull?: InputMaybe<Scalars['Boolean']>;
-  /** Less than the specified value. */
-  lessThan?: InputMaybe<SeasonEnum>;
-  /** Less than or equal to the specified value. */
-  lessThanOrEqualTo?: InputMaybe<SeasonEnum>;
-  /** Equal to the specified value, treating null like an ordinary value. */
-  notDistinctFrom?: InputMaybe<SeasonEnum>;
-  /** Not equal to the specified value. */
-  notEqualTo?: InputMaybe<SeasonEnum>;
-  /** Not included in the specified list. */
-  notIn?: InputMaybe<Array<SeasonEnum>>;
-};
-
-/** A connection to a list of `SonarrSery` values. */
-export type SonarrSeriesConnection = {
-  __typename?: 'SonarrSeriesConnection';
-  /** A list of edges which contains the `SonarrSery` and cursor to aid in pagination. */
-  edges: Array<SonarrSeriesEdge>;
-  /** A list of `SonarrSery` objects. */
-  nodes: Array<Maybe<SonarrSery>>;
+/** A connection to a list of `Season` values. */
+export type SeasonsConnection = {
+  __typename?: 'SeasonsConnection';
+  /** A list of edges which contains the `Season` and cursor to aid in pagination. */
+  edges: Array<SeasonsEdge>;
+  /** A list of `Season` objects. */
+  nodes: Array<Maybe<Season>>;
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
-  /** The count of *all* `SonarrSery` you could get from the connection. */
+  /** The count of *all* `Season` you could get from the connection. */
   totalCount: Scalars['Int'];
 };
 
-/** A `SonarrSery` edge in the connection. */
-export type SonarrSeriesEdge = {
-  __typename?: 'SonarrSeriesEdge';
+/** A `Season` edge in the connection. */
+export type SeasonsEdge = {
+  __typename?: 'SeasonsEdge';
   /** A cursor for use in pagination. */
   cursor?: Maybe<Scalars['Cursor']>;
-  /** The `SonarrSery` at the end of the edge. */
-  node?: Maybe<SonarrSery>;
+  /** The `Season` at the end of the edge. */
+  node?: Maybe<Season>;
 };
 
-/** Methods to use when ordering `SonarrSery`. */
-export enum SonarrSeriesOrderBy {
+/** Methods to use when ordering `Season`. */
+export enum SeasonsOrderBy {
+  AirTimeAsc = 'AIR_TIME_ASC',
+  AirTimeDesc = 'AIR_TIME_DESC',
+  ArchivedAtAsc = 'ARCHIVED_AT_ASC',
+  ArchivedAtDesc = 'ARCHIVED_AT_DESC',
+  BangumiIdAsc = 'BANGUMI_ID_ASC',
+  BangumiIdDesc = 'BANGUMI_ID_DESC',
+  BilibiliMainlandIdAsc = 'BILIBILI_MAINLAND_ID_ASC',
+  BilibiliMainlandIdDesc = 'BILIBILI_MAINLAND_ID_DESC',
+  BilibiliThmIdAsc = 'BILIBILI_THM_ID_ASC',
+  BilibiliThmIdDesc = 'BILIBILI_THM_ID_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  DescriptionAsc = 'DESCRIPTION_ASC',
+  DescriptionDesc = 'DESCRIPTION_DESC',
+  EpisodesSourceAsc = 'EPISODES_SOURCE_ASC',
+  EpisodesSourceDesc = 'EPISODES_SOURCE_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
+  InfoSourceAsc = 'INFO_SOURCE_ASC',
+  InfoSourceDesc = 'INFO_SOURCE_DESC',
   IsArchivedAsc = 'IS_ARCHIVED_ASC',
   IsArchivedDesc = 'IS_ARCHIVED_DESC',
+  IsMonitoringAsc = 'IS_MONITORING_ASC',
+  IsMonitoringDesc = 'IS_MONITORING_DESC',
+  JellyfinIdAsc = 'JELLYFIN_ID_ASC',
+  JellyfinIdDesc = 'JELLYFIN_ID_DESC',
+  MikanAnimeIdAsc = 'MIKAN_ANIME_ID_ASC',
+  MikanAnimeIdDesc = 'MIKAN_ANIME_ID_DESC',
   Natural = 'NATURAL',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  SonarrIdAsc = 'SONARR_ID_ASC',
-  SonarrIdDesc = 'SONARR_ID_DESC',
-  SonarrSlugAsc = 'SONARR_SLUG_ASC',
-  SonarrSlugDesc = 'SONARR_SLUG_DESC',
-  TvdbidAsc = 'TVDBID_ASC',
-  TvdbidDesc = 'TVDBID_DESC'
+  SeasonRootAsc = 'SEASON_ROOT_ASC',
+  SeasonRootDesc = 'SEASON_ROOT_DESC',
+  TagsAsc = 'TAGS_ASC',
+  TagsDesc = 'TAGS_DESC',
+  TitleAsc = 'TITLE_ASC',
+  TitleDesc = 'TITLE_DESC',
+  TvdbIdAsc = 'TVDB_ID_ASC',
+  TvdbIdDesc = 'TVDB_ID_DESC',
+  TvdbSeasonAsc = 'TVDB_SEASON_ASC',
+  TvdbSeasonDesc = 'TVDB_SEASON_DESC',
+  WeekdayAsc = 'WEEKDAY_ASC',
+  WeekdayDesc = 'WEEKDAY_DESC',
+  YearAndSemesterAsc = 'YEAR_AND_SEMESTER_ASC',
+  YearAndSemesterDesc = 'YEAR_AND_SEMESTER_DESC'
 }
-
-export type SonarrSery = Node & {
-  __typename?: 'SonarrSery';
-  /** Reads and enables pagination through a set of `AnimeMetadatum`. */
-  animeMetadataBySonarrSeries: AnimeMetadataConnection;
-  id: Scalars['Int'];
-  isArchived: Scalars['Boolean'];
-  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
-  nodeId: Scalars['ID'];
-  sonarrId: Scalars['Int'];
-  sonarrSlug: Scalars['String'];
-  tvdbid: Scalars['Int'];
-};
-
-
-export type SonarrSeryAnimeMetadataBySonarrSeriesArgs = {
-  after?: InputMaybe<Scalars['Cursor']>;
-  before?: InputMaybe<Scalars['Cursor']>;
-  condition?: InputMaybe<AnimeMetadatumCondition>;
-  filter?: InputMaybe<AnimeMetadatumFilter>;
-  first?: InputMaybe<Scalars['Int']>;
-  includeArchived?: InputMaybe<IncludeArchivedOption>;
-  last?: InputMaybe<Scalars['Int']>;
-  offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy>>;
-};
-
-/**
- * A condition to be used against `SonarrSery` object types. All fields are tested
- * for equality and combined with a logical ‘and.’
- */
-export type SonarrSeryCondition = {
-  /** Checks for equality with the object’s `id` field. */
-  id?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `isArchived` field. */
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  /** Checks for equality with the object’s `sonarrId` field. */
-  sonarrId?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `sonarrSlug` field. */
-  sonarrSlug?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `tvdbid` field. */
-  tvdbid?: InputMaybe<Scalars['Int']>;
-};
-
-/** A filter to be used against `SonarrSery` object types. All fields are combined with a logical ‘and.’ */
-export type SonarrSeryFilter = {
-  /** Checks for all expressions in this list. */
-  and?: InputMaybe<Array<SonarrSeryFilter>>;
-  /** Filter by the object’s `id` field. */
-  id?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `isArchived` field. */
-  isArchived?: InputMaybe<BooleanFilter>;
-  /** Negates the expression. */
-  not?: InputMaybe<SonarrSeryFilter>;
-  /** Checks for any expressions in this list. */
-  or?: InputMaybe<Array<SonarrSeryFilter>>;
-  /** Filter by the object’s `sonarrId` field. */
-  sonarrId?: InputMaybe<IntFilter>;
-  /** Filter by the object’s `sonarrSlug` field. */
-  sonarrSlug?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `tvdbid` field. */
-  tvdbid?: InputMaybe<IntFilter>;
-};
-
-/** An input for mutations affecting `SonarrSery` */
-export type SonarrSeryInput = {
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  sonarrId: Scalars['Int'];
-  sonarrSlug: Scalars['String'];
-  tvdbid: Scalars['Int'];
-};
-
-/** Represents an update to a `SonarrSery`. Fields that are set will be updated. */
-export type SonarrSeryPatch = {
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  sonarrId?: InputMaybe<Scalars['Int']>;
-  sonarrSlug?: InputMaybe<Scalars['String']>;
-  tvdbid?: InputMaybe<Scalars['Int']>;
-};
 
 /** A filter to be used against String fields. All fields are combined with a logical ‘and.’ */
 export type StringFilter = {
@@ -1221,38 +2312,416 @@ export type StringFilter = {
   startsWithInsensitive?: InputMaybe<Scalars['String']>;
 };
 
-/** All input for the `updateAnimeMetadatumById` mutation. */
-export type UpdateAnimeMetadatumByIdInput = {
-  /** An object where the defined keys will be set on the `AnimeMetadatum` being updated. */
-  animeMetadatumPatch: AnimeMetadatumPatch;
+/** A filter to be used against String List fields. All fields are combined with a logical ‘and.’ */
+export type StringListFilter = {
+  /** Any array item is equal to the specified value. */
+  anyEqualTo?: InputMaybe<Scalars['String']>;
+  /** Any array item is greater than the specified value. */
+  anyGreaterThan?: InputMaybe<Scalars['String']>;
+  /** Any array item is greater than or equal to the specified value. */
+  anyGreaterThanOrEqualTo?: InputMaybe<Scalars['String']>;
+  /** Any array item is less than the specified value. */
+  anyLessThan?: InputMaybe<Scalars['String']>;
+  /** Any array item is less than or equal to the specified value. */
+  anyLessThanOrEqualTo?: InputMaybe<Scalars['String']>;
+  /** Any array item is not equal to the specified value. */
+  anyNotEqualTo?: InputMaybe<Scalars['String']>;
+  /** Contained by the specified list of values. */
+  containedBy?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Contains the specified list of values. */
+  contains?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  /** Overlaps the specified list of values. */
+  overlaps?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type Torrent = Node & {
+  __typename?: 'Torrent';
+  createdAt: Scalars['Datetime'];
+  hash: Scalars['String'];
+  id: Scalars['Int'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  publishDate: Scalars['Datetime'];
+  size: Scalars['BigInt'];
+  title: Scalars['String'];
+  /** Link used to download */
+  torrentLink: Scalars['String'];
+};
+
+/** A condition to be used against `Torrent` object types. All fields are tested for equality and combined with a logical ‘and.’ */
+export type TorrentCondition = {
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `hash` field. */
+  hash?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `publishDate` field. */
+  publishDate?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `size` field. */
+  size?: InputMaybe<Scalars['BigInt']>;
+  /** Checks for equality with the object’s `title` field. */
+  title?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `torrentLink` field. */
+  torrentLink?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against `Torrent` object types. All fields are combined with a logical ‘and.’ */
+export type TorrentFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<TorrentFilter>>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `hash` field. */
+  hash?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<TorrentFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<TorrentFilter>>;
+  /** Filter by the object’s `publishDate` field. */
+  publishDate?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `size` field. */
+  size?: InputMaybe<BigIntFilter>;
+  /** Filter by the object’s `title` field. */
+  title?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `torrentLink` field. */
+  torrentLink?: InputMaybe<StringFilter>;
+};
+
+/** An input for mutations affecting `Torrent` */
+export type TorrentInput = {
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  hash: Scalars['String'];
+  id?: InputMaybe<Scalars['Int']>;
+  publishDate: Scalars['Datetime'];
+  size: Scalars['BigInt'];
+  title: Scalars['String'];
+  /** Link used to download */
+  torrentLink: Scalars['String'];
+};
+
+/** Represents an update to a `Torrent`. Fields that are set will be updated. */
+export type TorrentPatch = {
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  hash?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+  publishDate?: InputMaybe<Scalars['Datetime']>;
+  size?: InputMaybe<Scalars['BigInt']>;
+  title?: InputMaybe<Scalars['String']>;
+  /** Link used to download */
+  torrentLink?: InputMaybe<Scalars['String']>;
+};
+
+/** A connection to a list of `Torrent` values. */
+export type TorrentsConnection = {
+  __typename?: 'TorrentsConnection';
+  /** A list of edges which contains the `Torrent` and cursor to aid in pagination. */
+  edges: Array<TorrentsEdge>;
+  /** A list of `Torrent` objects. */
+  nodes: Array<Maybe<Torrent>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Torrent` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `Torrent` edge in the connection. */
+export type TorrentsEdge = {
+  __typename?: 'TorrentsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Torrent` at the end of the edge. */
+  node?: Maybe<Torrent>;
+};
+
+/** Methods to use when ordering `Torrent`. */
+export enum TorrentsOrderBy {
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  HashAsc = 'HASH_ASC',
+  HashDesc = 'HASH_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  PublishDateAsc = 'PUBLISH_DATE_ASC',
+  PublishDateDesc = 'PUBLISH_DATE_DESC',
+  SizeAsc = 'SIZE_ASC',
+  SizeDesc = 'SIZE_DESC',
+  TitleAsc = 'TITLE_ASC',
+  TitleDesc = 'TITLE_DESC',
+  TorrentLinkAsc = 'TORRENT_LINK_ASC',
+  TorrentLinkDesc = 'TORRENT_LINK_DESC'
+}
+
+/** All input for the `updateDownloadJobById` mutation. */
+export type UpdateDownloadJobByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `DownloadJob` being updated. */
+  downloadJobPatch: DownloadJobPatch;
+  id: Scalars['Int'];
+};
+
+/** All input for the `updateDownloadJob` mutation. */
+export type UpdateDownloadJobInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `DownloadJob` being updated. */
+  downloadJobPatch: DownloadJobPatch;
+  /** The globally unique `ID` which will identify a single `DownloadJob` to be updated. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our update `DownloadJob` mutation. */
+export type UpdateDownloadJobPayload = {
+  __typename?: 'UpdateDownloadJobPayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `DownloadJob` that was updated by this mutation. */
+  downloadJob?: Maybe<DownloadJob>;
+  /** An edge for our `DownloadJob`. May be used by Relay 1. */
+  downloadJobEdge?: Maybe<DownloadJobsEdge>;
+  /** Reads a single `Episode` that is related to this `DownloadJob`. */
+  episodeByEpisodeId?: Maybe<Episode>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+};
+
+
+/** The output of our update `DownloadJob` mutation. */
+export type UpdateDownloadJobPayloadDownloadJobEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
+};
+
+/** All input for the `updateDownloadSourceById` mutation. */
+export type UpdateDownloadSourceByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
+  downloadSourcePatch: DownloadSourcePatch;
+  id: Scalars['Int'];
+};
+
+/** All input for the `updateDownloadSourceByPattern` mutation. */
+export type UpdateDownloadSourceByPatternInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
+  downloadSourcePatch: DownloadSourcePatch;
+  pattern: Scalars['String'];
+};
+
+/** All input for the `updateDownloadSource` mutation. */
+export type UpdateDownloadSourceInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
+  downloadSourcePatch: DownloadSourcePatch;
+  /** The globally unique `ID` which will identify a single `DownloadSource` to be updated. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our update `DownloadSource` mutation. */
+export type UpdateDownloadSourcePayload = {
+  __typename?: 'UpdateDownloadSourcePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `DownloadSource` that was updated by this mutation. */
+  downloadSource?: Maybe<DownloadSource>;
+  /** An edge for our `DownloadSource`. May be used by Relay 1. */
+  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `DownloadSource`. */
+  seasonBySeasonId?: Maybe<Season>;
+};
+
+
+/** The output of our update `DownloadSource` mutation. */
+export type UpdateDownloadSourcePayloadDownloadSourceEdgeArgs = {
+  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
+};
+
+/** All input for the `updateEpisodeById` mutation. */
+export type UpdateEpisodeByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `Episode` being updated. */
+  episodePatch: EpisodePatch;
+  id: Scalars['Int'];
+};
+
+/** All input for the `updateEpisodeBySeasonIdAndIndex` mutation. */
+export type UpdateEpisodeBySeasonIdAndIndexInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `Episode` being updated. */
+  episodePatch: EpisodePatch;
+  index: Scalars['Int'];
+  seasonId: Scalars['Int'];
+};
+
+/** All input for the `updateEpisode` mutation. */
+export type UpdateEpisodeInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `Episode` being updated. */
+  episodePatch: EpisodePatch;
+  /** The globally unique `ID` which will identify a single `Episode` to be updated. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our update `Episode` mutation. */
+export type UpdateEpisodePayload = {
+  __typename?: 'UpdateEpisodePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `Episode` that was updated by this mutation. */
+  episode?: Maybe<Episode>;
+  /** An edge for our `Episode`. May be used by Relay 1. */
+  episodeEdge?: Maybe<EpisodesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `Episode`. */
+  seasonBySeasonId?: Maybe<Season>;
+};
+
+
+/** The output of our update `Episode` mutation. */
+export type UpdateEpisodePayloadEpisodeEdgeArgs = {
+  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
+};
+
+/** All input for the `updateImageById` mutation. */
+export type UpdateImageByIdInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
   id: Scalars['Int'];
+  /** An object where the defined keys will be set on the `Image` being updated. */
+  imagePatch: ImagePatch;
 };
 
-/** All input for the `updateAnimeMetadatum` mutation. */
-export type UpdateAnimeMetadatumInput = {
-  /** An object where the defined keys will be set on the `AnimeMetadatum` being updated. */
-  animeMetadatumPatch: AnimeMetadatumPatch;
+/** All input for the `updateImage` mutation. */
+export type UpdateImageInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `AnimeMetadatum` to be updated. */
+  /** An object where the defined keys will be set on the `Image` being updated. */
+  imagePatch: ImagePatch;
+  /** The globally unique `ID` which will identify a single `Image` to be updated. */
   nodeId: Scalars['ID'];
 };
 
-/** The output of our update `AnimeMetadatum` mutation. */
-export type UpdateAnimeMetadatumPayload = {
-  __typename?: 'UpdateAnimeMetadatumPayload';
-  /** The `AnimeMetadatum` that was updated by this mutation. */
-  animeMetadatum?: Maybe<AnimeMetadatum>;
-  /** An edge for our `AnimeMetadatum`. May be used by Relay 1. */
-  animeMetadatumEdge?: Maybe<AnimeMetadataEdge>;
+/** The output of our update `Image` mutation. */
+export type UpdateImagePayload = {
+  __typename?: 'UpdateImagePayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The `Image` that was updated by this mutation. */
+  image?: Maybe<Image>;
+  /** An edge for our `Image`. May be used by Relay 1. */
+  imageEdge?: Maybe<ImagesEdge>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+};
+
+
+/** The output of our update `Image` mutation. */
+export type UpdateImagePayloadImageEdgeArgs = {
+  orderBy?: InputMaybe<Array<ImagesOrderBy>>;
+};
+
+/** All input for the `updateSeasonById` mutation. */
+export type UpdateSeasonByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  id: Scalars['Int'];
+  /** An object where the defined keys will be set on the `Season` being updated. */
+  seasonPatch: SeasonPatch;
+};
+
+/** All input for the `updateSeason` mutation. */
+export type UpdateSeasonInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `Season` to be updated. */
+  nodeId: Scalars['ID'];
+  /** An object where the defined keys will be set on the `Season` being updated. */
+  seasonPatch: SeasonPatch;
+};
+
+/** The output of our update `Season` mutation. */
+export type UpdateSeasonPayload = {
+  __typename?: 'UpdateSeasonPayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
@@ -1260,117 +2729,58 @@ export type UpdateAnimeMetadatumPayload = {
   clientMutationId?: Maybe<Scalars['String']>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** Reads a single `SonarrSery` that is related to this `AnimeMetadatum`. */
-  sonarrSeryBySonarrSeries?: Maybe<SonarrSery>;
+  /** The `Season` that was updated by this mutation. */
+  season?: Maybe<Season>;
+  /** An edge for our `Season`. May be used by Relay 1. */
+  seasonEdge?: Maybe<SeasonsEdge>;
 };
 
 
-/** The output of our update `AnimeMetadatum` mutation. */
-export type UpdateAnimeMetadatumPayloadAnimeMetadatumEdgeArgs = {
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy>>;
+/** The output of our update `Season` mutation. */
+export type UpdateSeasonPayloadSeasonEdgeArgs = {
+  orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
 };
 
-/** All input for the `updateDownloadConfigById` mutation. */
-export type UpdateDownloadConfigByIdInput = {
+/** All input for the `updateTorrentByHash` mutation. */
+export type UpdateTorrentByHashInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadConfig` being updated. */
-  downloadConfigPatch: DownloadConfigPatch;
-  id: Scalars['Int'];
+  hash: Scalars['String'];
+  /** An object where the defined keys will be set on the `Torrent` being updated. */
+  torrentPatch: TorrentPatch;
 };
 
-/** All input for the `updateDownloadConfig` mutation. */
-export type UpdateDownloadConfigInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadConfig` being updated. */
-  downloadConfigPatch: DownloadConfigPatch;
-  /** The globally unique `ID` which will identify a single `DownloadConfig` to be updated. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our update `DownloadConfig` mutation. */
-export type UpdateDownloadConfigPayload = {
-  __typename?: 'UpdateDownloadConfigPayload';
-  /** Reads a single `AnimeMetadatum` that is related to this `DownloadConfig`. */
-  animeMetadatumByAnime?: Maybe<AnimeMetadatum>;
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadConfig` that was updated by this mutation. */
-  downloadConfig?: Maybe<DownloadConfig>;
-  /** An edge for our `DownloadConfig`. May be used by Relay 1. */
-  downloadConfigEdge?: Maybe<DownloadConfigsEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our update `DownloadConfig` mutation. */
-export type UpdateDownloadConfigPayloadDownloadConfigEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadConfigsOrderBy>>;
-};
-
-/** All input for the `updateSonarrSeryById` mutation. */
-export type UpdateSonarrSeryByIdInput = {
+/** All input for the `updateTorrentById` mutation. */
+export type UpdateTorrentByIdInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
   id: Scalars['Int'];
-  /** An object where the defined keys will be set on the `SonarrSery` being updated. */
-  sonarrSeryPatch: SonarrSeryPatch;
+  /** An object where the defined keys will be set on the `Torrent` being updated. */
+  torrentPatch: TorrentPatch;
 };
 
-/** All input for the `updateSonarrSeryBySonarrId` mutation. */
-export type UpdateSonarrSeryBySonarrIdInput = {
+/** All input for the `updateTorrent` mutation. */
+export type UpdateTorrentInput = {
   /**
    * An arbitrary string value with no semantic meaning. Will be included in the
    * payload verbatim. May be used to track mutations by the client.
    */
   clientMutationId?: InputMaybe<Scalars['String']>;
-  sonarrId: Scalars['Int'];
-  /** An object where the defined keys will be set on the `SonarrSery` being updated. */
-  sonarrSeryPatch: SonarrSeryPatch;
-};
-
-/** All input for the `updateSonarrSeryBySonarrSlug` mutation. */
-export type UpdateSonarrSeryBySonarrSlugInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `SonarrSery` being updated. */
-  sonarrSeryPatch: SonarrSeryPatch;
-  sonarrSlug: Scalars['String'];
-};
-
-/** All input for the `updateSonarrSery` mutation. */
-export type UpdateSonarrSeryInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `SonarrSery` to be updated. */
+  /** The globally unique `ID` which will identify a single `Torrent` to be updated. */
   nodeId: Scalars['ID'];
-  /** An object where the defined keys will be set on the `SonarrSery` being updated. */
-  sonarrSeryPatch: SonarrSeryPatch;
+  /** An object where the defined keys will be set on the `Torrent` being updated. */
+  torrentPatch: TorrentPatch;
 };
 
-/** The output of our update `SonarrSery` mutation. */
-export type UpdateSonarrSeryPayload = {
-  __typename?: 'UpdateSonarrSeryPayload';
+/** The output of our update `Torrent` mutation. */
+export type UpdateTorrentPayload = {
+  __typename?: 'UpdateTorrentPayload';
   /**
    * The exact same `clientMutationId` that was provided in the mutation input,
    * unchanged and unused. May be used by a client to track mutations.
@@ -1378,123 +2788,102 @@ export type UpdateSonarrSeryPayload = {
   clientMutationId?: Maybe<Scalars['String']>;
   /** Our root query field type. Allows us to run any query from our mutation payload. */
   query?: Maybe<Query>;
-  /** The `SonarrSery` that was updated by this mutation. */
-  sonarrSery?: Maybe<SonarrSery>;
-  /** An edge for our `SonarrSery`. May be used by Relay 1. */
-  sonarrSeryEdge?: Maybe<SonarrSeriesEdge>;
+  /** The `Torrent` that was updated by this mutation. */
+  torrent?: Maybe<Torrent>;
+  /** An edge for our `Torrent`. May be used by Relay 1. */
+  torrentEdge?: Maybe<TorrentsEdge>;
 };
 
 
-/** The output of our update `SonarrSery` mutation. */
-export type UpdateSonarrSeryPayloadSonarrSeryEdgeArgs = {
-  orderBy?: InputMaybe<Array<SonarrSeriesOrderBy>>;
+/** The output of our update `Torrent` mutation. */
+export type UpdateTorrentPayloadTorrentEdgeArgs = {
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
 };
 
-export type GetAnimeBangumiIdQueryVariables = Exact<{
-  id: Scalars['Int'];
+export type CreateSeasonMutationVariables = Exact<{
+  input: CreateSeasonInput;
 }>;
 
 
-export type GetAnimeBangumiIdQuery = { __typename?: 'Query', animeMetadatumById?: { __typename?: 'AnimeMetadatum', mikanAnimeId: string } | null | undefined };
+export type CreateSeasonMutation = { __typename?: 'Mutation', createSeason?: { __typename: 'CreateSeasonPayload' } | null | undefined };
 
-export type NewAnimeMutationVariables = Exact<{
-  uniformName: Scalars['String'];
-}>;
-
-
-export type NewAnimeMutation = { __typename?: 'Mutation', createAnimeMetadatum?: { __typename?: 'CreateAnimeMetadatumPayload', animeMetadatum?: { __typename?: 'AnimeMetadatum', id: number } | null | undefined } | null | undefined };
-
-export type GetAnimeListQueryVariables = Exact<{
-  count?: InputMaybe<Scalars['Int']>;
+export type ListSeasonsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<Array<AnimeMetadataOrderBy> | AnimeMetadataOrderBy>;
-  filter?: InputMaybe<AnimeMetadatumFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<SeasonsOrderBy> | SeasonsOrderBy>;
+  filter?: InputMaybe<SeasonFilter>;
+  now: Scalars['Datetime'];
 }>;
 
 
-export type GetAnimeListQuery = { __typename?: 'Query', allAnimeMetadata?: { __typename?: 'AnimeMetadataConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'AnimeMetadataEdge', cursor?: any | null | undefined, node?: { __typename?: 'AnimeMetadatum', bangumiId: string, bilibiliMainlandSsid: string, bilibiliThmSsid: string, jellyfinSeasonId: string, mikanAnimeId: string, id: number, sonarrSeason?: number | null | undefined, uniformName: string, season?: SeasonEnum | null | undefined, year?: number | null | undefined, sonarrSeryBySonarrSeries?: { __typename?: 'SonarrSery', sonarrId: number, sonarrSlug: string, tvdbid: number } | null | undefined } | null | undefined }> } | null | undefined };
+export type ListSeasonsQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'SeasonsEdge', cursor?: any | null | undefined, node?: { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null | undefined, mikanAnimeId: string, isMonitoring: boolean, seasonRoot?: string | null | undefined, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null | undefined, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number } } | null | undefined }> } | null | undefined };
 
-export type UpdateDownloadConfigMutationVariables = Exact<{
+export type UpdateDownloadSourceByIdMutationVariables = Exact<{
   id: Scalars['Int'];
-  downloadConfigPatch: DownloadConfigPatch;
+  downloadSourcePatch: DownloadSourcePatch;
 }>;
 
 
-export type UpdateDownloadConfigMutation = { __typename?: 'Mutation', updateDownloadConfigById?: { __typename: 'UpdateDownloadConfigPayload' } | null | undefined };
+export type UpdateDownloadSourceByIdMutation = { __typename?: 'Mutation', updateDownloadSourceById?: { __typename: 'UpdateDownloadSourcePayload' } | null | undefined };
 
-export type NewDownloadConfigMutationVariables = Exact<{
-  downloadConfig: DownloadConfigInput;
+export type CreateDownloadSourceMutationVariables = Exact<{
+  downloadSource: DownloadSourceInput;
 }>;
 
 
-export type NewDownloadConfigMutation = { __typename?: 'Mutation', createDownloadConfig?: { __typename: 'CreateDownloadConfigPayload' } | null | undefined };
+export type CreateDownloadSourceMutation = { __typename?: 'Mutation', createDownloadSource?: { __typename: 'CreateDownloadSourcePayload' } | null | undefined };
 
-export type GetSemesterAndSonarrDataQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetSemesterAndSonarrDataQuery = { __typename?: 'Query', allSonarrSeries?: { __typename?: 'SonarrSeriesConnection', edges: Array<{ __typename?: 'SonarrSeriesEdge', node?: { __typename?: 'SonarrSery', id: number, sonarrId: number, sonarrSlug: string, tvdbid: number } | null | undefined }> } | null | undefined };
-
-export type GetAnimeDataByIdQueryVariables = Exact<{
+export type GetSeasonByIdQueryVariables = Exact<{
   id: Scalars['Int'];
 }>;
 
 
-export type GetAnimeDataByIdQuery = { __typename?: 'Query', animeMetadatumById?: { __typename?: 'AnimeMetadatum', bangumiId: string, bilibiliMainlandSsid: string, bilibiliThmSsid: string, id: number, mikanAnimeId: string, nodeId: string, schedule?: { [key: string]: any } | null | undefined, jellyfinSeasonId: string, sonarrSeason?: number | null | undefined, sonarrSeries?: number | null | undefined, uniformName: string, season?: SeasonEnum | null | undefined, year?: number | null | undefined } | null | undefined };
+export type GetSeasonByIdQuery = { __typename?: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, jellyfinId: string, mikanAnimeId: string, seasonRoot?: string | null | undefined, tags: Array<string | null | undefined>, title: string, tvdbId: string, tvdbSeason?: number | null | undefined, weekday?: number | null | undefined, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, isArchived: boolean, episodesSource: MetadataSource, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null | undefined, id: number, jellyfinEpisodeId?: string | null | undefined, title: string, downloadJobsByEpisodeId: { __typename?: 'DownloadJobsConnection', totalCount: number, edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', status: DownloadStatus, isFailed: boolean } | null | undefined }> } } | null | undefined }> } } | null | undefined };
 
-export type GetDownloadConfigByAnimeidQueryVariables = Exact<{
-  id: Scalars['Int'];
+export type ListDownloadSourcesQueryVariables = Exact<{
+  condition?: InputMaybe<DownloadSourceCondition>;
 }>;
 
 
-export type GetDownloadConfigByAnimeidQuery = { __typename?: 'Query', allDownloadConfigs?: { __typename?: 'DownloadConfigsConnection', edges: Array<{ __typename?: 'DownloadConfigsEdge', node?: { __typename?: 'DownloadConfig', anime: number, bangumiId: string, language: string, id: number, pattern: string, publishGroupId: string, quality: number, type: string } | null | undefined }> } | null | undefined };
+export type ListDownloadSourcesQuery = { __typename?: 'Query', allDownloadSources?: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', isDisabled: boolean, groupId: string, pattern: string, id: number } | null | undefined }> } | null | undefined };
 
-export type UpdateAnimeDataMutationVariables = Exact<{
-  animeMetadatumPatch: AnimeMetadatumPatch;
+export type UpdateSeasonByIdMutationVariables = Exact<{
   id: Scalars['Int'];
+  seasonPatch: SeasonPatch;
 }>;
 
 
-export type UpdateAnimeDataMutation = { __typename?: 'Mutation', updateAnimeMetadatumById?: { __typename: 'UpdateAnimeMetadatumPayload' } | null | undefined };
+export type UpdateSeasonByIdMutation = { __typename?: 'Mutation', updateSeasonById?: { __typename: 'UpdateSeasonPayload' } | null | undefined };
 
 export type DeleteDownloadConfigByIdMutationVariables = Exact<{
   id: Scalars['Int'];
 }>;
 
 
-export type DeleteDownloadConfigByIdMutation = { __typename?: 'Mutation', updateDownloadConfigById?: { __typename: 'UpdateDownloadConfigPayload' } | null | undefined };
+export type DeleteDownloadConfigByIdMutation = { __typename?: 'Mutation', updateDownloadSourceById?: { __typename: 'UpdateDownloadSourcePayload' } | null | undefined };
 
 export type DeleteAnimeByIdMutationVariables = Exact<{
   id: Scalars['Int'];
 }>;
 
 
-export type DeleteAnimeByIdMutation = { __typename?: 'Mutation', updateAnimeMetadatumById?: { __typename: 'UpdateAnimeMetadatumPayload' } | null | undefined };
+export type DeleteAnimeByIdMutation = { __typename?: 'Mutation', updateSeasonById?: { __typename: 'UpdateSeasonPayload' } | null | undefined };
 
-export type GetDownloadConfigByIdQueryVariables = Exact<{
-  id: Scalars['Int'];
+export type GetDownloadSourceByIdQueryVariables = Exact<{
+  downloadSourceByIdId: Scalars['Int'];
 }>;
 
 
-export type GetDownloadConfigByIdQuery = { __typename?: 'Query', downloadConfigById?: { __typename?: 'DownloadConfig', bangumiId: string, id: number, pattern: string, publishGroupId: string, quality: number, type: string, language: string, isArchived: boolean, animeMetadatumByAnime?: { __typename?: 'AnimeMetadatum', mikanAnimeId: string } | null | undefined } | null | undefined };
-
-export type CreateDownloadConfigMutationVariables = Exact<{
-  downloadConfig: DownloadConfigInput;
-}>;
+export type GetDownloadSourceByIdQuery = { __typename?: 'Query', downloadSourceById?: { __typename?: 'DownloadSource', isArchived: boolean, id: number, groupId: string, isDisabled: boolean, pattern: string } | null | undefined };
 
 
-export type CreateDownloadConfigMutation = { __typename?: 'Mutation', createDownloadConfig?: { __typename: 'CreateDownloadConfigPayload' } | null | undefined };
-
-
-export const GetAnimeBangumiIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAnimeBangumiId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"animeMetadatumById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}}]}}]}}]} as unknown as DocumentNode<GetAnimeBangumiIdQuery, GetAnimeBangumiIdQueryVariables>;
-export const NewAnimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"NewAnime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"uniformName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createAnimeMetadatum"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"animeMetadatum"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"uniformName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"uniformName"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"animeMetadatum"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<NewAnimeMutation, NewAnimeMutationVariables>;
-export const GetAnimeListDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAnimeList"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"count"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AnimeMetadataOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AnimeMetadatumFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allAnimeMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"count"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"ObjectValue","fields":[]}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cursor"}},{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandSsid"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmSsid"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinSeasonId"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeason"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeryBySonarrSeries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sonarrId"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSlug"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbid"}}]}},{"kind":"Field","name":{"kind":"Name","value":"uniformName"}},{"kind":"Field","name":{"kind":"Name","value":"season"}},{"kind":"Field","name":{"kind":"Name","value":"year"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetAnimeListQuery, GetAnimeListQueryVariables>;
-export const UpdateDownloadConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDownloadConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfigPatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadConfigPatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadConfigById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadConfigPatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfigPatch"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateDownloadConfigMutation, UpdateDownloadConfigMutationVariables>;
-export const NewDownloadConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"NewDownloadConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfig"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadConfigInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDownloadConfig"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfig"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<NewDownloadConfigMutation, NewDownloadConfigMutationVariables>;
-export const GetSemesterAndSonarrDataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSemesterAndSonarrData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSonarrSeries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrId"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSlug"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbid"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetSemesterAndSonarrDataQuery, GetSemesterAndSonarrDataQueryVariables>;
-export const GetAnimeDataByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAnimeDataById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"animeMetadatumById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandSsid"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmSsid"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}},{"kind":"Field","name":{"kind":"Name","value":"nodeId"}},{"kind":"Field","name":{"kind":"Name","value":"schedule"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinSeasonId"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeason"}},{"kind":"Field","name":{"kind":"Name","value":"sonarrSeries"}},{"kind":"Field","name":{"kind":"Name","value":"uniformName"}},{"kind":"Field","name":{"kind":"Name","value":"season"}},{"kind":"Field","name":{"kind":"Name","value":"year"}}]}}]}}]} as unknown as DocumentNode<GetAnimeDataByIdQuery, GetAnimeDataByIdQueryVariables>;
-export const GetDownloadConfigByAnimeidDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDownloadConfigByAnimeid"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allDownloadConfigs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"anime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"anime"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"publishGroupId"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDownloadConfigByAnimeidQuery, GetDownloadConfigByAnimeidQueryVariables>;
-export const UpdateAnimeDataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAnimeData"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"animeMetadatumPatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AnimeMetadatumPatch"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAnimeMetadatumById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"animeMetadatumPatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"animeMetadatumPatch"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateAnimeDataMutation, UpdateAnimeDataMutationVariables>;
-export const DeleteDownloadConfigByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteDownloadConfigById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadConfigById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadConfigPatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteDownloadConfigByIdMutation, DeleteDownloadConfigByIdMutationVariables>;
-export const DeleteAnimeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteAnimeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAnimeMetadatumById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"animeMetadatumPatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteAnimeByIdMutation, DeleteAnimeByIdMutationVariables>;
-export const GetDownloadConfigByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDownloadConfigById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadConfigById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"animeMetadatumByAnime"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"publishGroupId"}},{"kind":"Field","name":{"kind":"Name","value":"quality"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}}]}}]}}]} as unknown as DocumentNode<GetDownloadConfigByIdQuery, GetDownloadConfigByIdQueryVariables>;
-export const CreateDownloadConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDownloadConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfig"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadConfigInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDownloadConfig"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadConfig"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<CreateDownloadConfigMutation, CreateDownloadConfigMutationVariables>;
+export const CreateSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateSeasonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSeason"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<CreateSeasonMutation, CreateSeasonMutationVariables>;
+export const ListSeasonsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListSeasons"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonFilter"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"seasonRoot"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","alias":{"kind":"Name","value":"allEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"airedEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"availableEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"jellyfinEpisodeId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isNull"},"value":{"kind":"BooleanValue","value":false}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}}]} as unknown as DocumentNode<ListSeasonsQuery, ListSeasonsQueryVariables>;
+export const UpdateDownloadSourceByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDownloadSourceById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourcePatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourcePatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSourcePatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourcePatch"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateDownloadSourceByIdMutation, UpdateDownloadSourceByIdMutationVariables>;
+export const CreateDownloadSourceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDownloadSource"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSource"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDownloadSource"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSource"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSource"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<CreateDownloadSourceMutation, CreateDownloadSourceMutationVariables>;
+export const GetSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"seasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"infoSource"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","name":{"kind":"Name","value":"mikanAnimeId"}},{"kind":"Field","name":{"kind":"Name","value":"seasonRoot"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"CREATED_AT_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}}]}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"episodesSource"}}]}}]}}]} as unknown as DocumentNode<GetSeasonByIdQuery, GetSeasonByIdQueryVariables>;
+export const ListDownloadSourcesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListDownloadSources"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"condition"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourceCondition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allDownloadSources"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"Variable","name":{"kind":"Name","value":"condition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isDisabled"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<ListDownloadSourcesQuery, ListDownloadSourcesQueryVariables>;
+export const UpdateSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonPatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonPatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSeasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"seasonPatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonPatch"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateSeasonByIdMutation, UpdateSeasonByIdMutationVariables>;
+export const DeleteDownloadConfigByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteDownloadConfigById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSourcePatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteDownloadConfigByIdMutation, DeleteDownloadConfigByIdMutationVariables>;
+export const DeleteAnimeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteAnimeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSeasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"seasonPatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteAnimeByIdMutation, DeleteAnimeByIdMutationVariables>;
+export const GetDownloadSourceByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDownloadSourceById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourceByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourceByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"isDisabled"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}}]}}]}}]} as unknown as DocumentNode<GetDownloadSourceByIdQuery, GetDownloadSourceByIdQueryVariables>;

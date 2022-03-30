@@ -1,113 +1,109 @@
-mutation UpdateDownloadConfig(
+mutation UpdateDownloadSourceById(
   $id: Int!
-  $downloadConfigPatch: DownloadConfigPatch!
+  $downloadSourcePatch: DownloadSourcePatch!
 ) {
-  updateDownloadConfigById(
-    input: { downloadConfigPatch: $downloadConfigPatch, id: $id }
+  updateDownloadSourceById(
+    input: { id: $id, downloadSourcePatch: $downloadSourcePatch }
   ) {
     __typename
   }
 }
 
-mutation NewDownloadConfig($downloadConfig: DownloadConfigInput!) {
-  createDownloadConfig(input: { downloadConfig: $downloadConfig }) {
+mutation CreateDownloadSource($downloadSource: DownloadSourceInput!) {
+  createDownloadSource(input: { downloadSource: $downloadSource }) {
     __typename
   }
 }
 
-query GetSemesterAndSonarrData {
-  allSonarrSeries {
-    edges {
-      node {
-        id
-        sonarrId
-        sonarrSlug
-        tvdbid
-      }
-    }
-  }
-}
-
-query GetAnimeDataById($id: Int!) {
-  animeMetadatumById(id: $id) {
-    bangumiId
-    bilibiliMainlandSsid
-    bilibiliThmSsid
+query GetSeasonById($id: Int!) {
+  seasonById(id: $id) {
     id
+    infoSource
+    isMonitoring
+    jellyfinId
     mikanAnimeId
-    nodeId
-    schedule
-    jellyfinSeasonId
-    sonarrSeason
-    sonarrSeries
-    uniformName
-    season
-    year
+    seasonRoot
+    tags
+    title
+    tvdbId
+    tvdbSeason
+    weekday
+    yearAndSemester
+    airTime
+    bangumiId
+    bilibiliMainlandId
+    bilibiliThmId
+    createdAt
+    description
+    isArchived
+    episodesBySeasonId {
+      edges {
+        node {
+          airTime
+          id
+          jellyfinEpisodeId
+          title
+          downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
+            totalCount
+            edges {
+              node {
+                status
+                isFailed
+              }
+            }
+          }
+        }
+      }
+    }
+    episodesSource
   }
 }
 
-query GetDownloadConfigByAnimeid($id: Int!) {
-  allDownloadConfigs(condition: { anime: $id }) {
+query ListDownloadSources($condition: DownloadSourceCondition) {
+  allDownloadSources(condition: $condition) {
     edges {
       node {
-        anime
-        bangumiId
-        language
-        id
+        isDisabled
+        groupId
         pattern
-        publishGroupId
-        quality
-        type
+        id
       }
     }
   }
 }
 
-mutation UpdateAnimeData(
-  $animeMetadatumPatch: AnimeMetadatumPatch!
-  $id: Int!
-) {
-  updateAnimeMetadatumById(
-    input: { id: $id, animeMetadatumPatch: $animeMetadatumPatch }
-  ) {
+mutation UpdateSeasonById($id: Int!, $seasonPatch: SeasonPatch!) {
+  updateSeasonById(input: { id: $id, seasonPatch: $seasonPatch }) {
     __typename
   }
 }
 
 mutation DeleteDownloadConfigById($id: Int!) {
-  updateDownloadConfigById(
-    input: { downloadConfigPatch: { isArchived: true }, id: $id }
+  updateDownloadSourceById(
+    input: { id: $id, downloadSourcePatch: { isArchived: true } }
   ) {
     __typename
   }
 }
 
 mutation DeleteAnimeById($id: Int!) {
-  updateAnimeMetadatumById(
-    input: { animeMetadatumPatch: { isArchived: true }, id: $id }
-  ) {
+  updateSeasonById(input: { id: $id, seasonPatch: { isArchived: true } }) {
     __typename
   }
 }
 
-query GetDownloadConfigById($id: Int!) {
-  downloadConfigById(id: $id) {
-    animeMetadatumByAnime {
-      mikanAnimeId
-    }
-    bangumiId
-    id
-    pattern
-    publishGroupId
-    quality
-    type
-    language
+query GetDownloadSourceById($downloadSourceByIdId: Int!) {
+  downloadSourceById(id: $downloadSourceByIdId) {
     isArchived
+    id
+    groupId
+    isDisabled
+    pattern
   }
 }
 
-mutation CreateDownloadConfig($downloadConfig: DownloadConfigInput!) {
-  createDownloadConfig(input: { downloadConfig: $downloadConfig }) {
+mutation CreateDownloadSource($downloadSource: DownloadSourceInput!) {
+  createDownloadSource(input: { downloadSource: $downloadSource }) {
     __typename
   }
 }

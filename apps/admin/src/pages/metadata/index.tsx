@@ -1,19 +1,54 @@
-import { useOpenDialog } from '@/components/dialog';
-import { seasonToText } from '@/constants';
+import { seasonToText, weekdayToText } from '@/constants';
+import { IconPath } from '@/constants/icon-path';
 import {
-  AnimeMetadataOrderBy,
-  GetAnimeListDocument,
-  GetAnimeListQuery,
+  ListSeasonsDocument,
+  ListSeasonsQuery,
+  SeasonsOrderBy,
+  SeasonFilter,
 } from '@/generated/types';
 import { extractNode, ExtractNode } from '@/utils/graphql';
-import { LinkOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Button } from 'antd';
+import { Button, Space } from 'antd';
+import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
 import { useHistory } from 'umi';
+import styles from './index.module.less';
 
-type RowType = ExtractNode<GetAnimeListQuery['allAnimeMetadata']>;
+type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
+
+function LinkIcon({
+  icon,
+  href,
+  valid,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  valid: any;
+  href: string;
+  icon: string;
+}) {
+  return (
+    <a
+      href={valid ? href : undefined}
+      style={{
+        cursor: valid ? 'pointer' : 'initial',
+      }}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img
+        src={icon}
+        style={{
+          width: 24,
+          height: 24,
+          filter: valid ? undefined : 'grayscale(1)',
+          opacity: valid ? 1 : 0.6,
+        }}
+      />
+    </a>
+  );
+}
 
 function useColumns() {
   const history = useHistory();
@@ -22,26 +57,15 @@ function useColumns() {
       {
         title: '#',
         dataIndex: 'id',
-        width: 48,
-        fixed: 'left',
         align: 'center',
+        search: false,
+        width: 48,
       },
       {
-        title: '标题',
-        dataIndex: 'uniformName',
+        title: '季度标题',
+        dataIndex: 'title',
         copyable: true,
         ellipsis: false,
-        tooltip: '统一中文标题，用于前端展示和反查',
-        formItemProps: {
-          rules: [
-            {
-              required: true,
-              message: '此项为必填项',
-            },
-          ],
-        },
-        fixed: 'left',
-        width: 300,
       },
       {
         title: '季度',
@@ -49,168 +73,106 @@ function useColumns() {
         width: 120,
         search: false,
         render: (_, r) =>
-          r.year && r.season ? `${r.year} / ${seasonToText[r.season]}` : '-',
-      },
-      {
-        title: 'bgm.tv',
-        dataIndex: 'bangumiId',
-        render: (_, r) =>
-          r.bangumiId ? (
+          r.yearAndSemester ? (
             <>
-              {_}
-              <a
-                href={`https://bangumi.tv/subject/${r.bangumiId}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
+              {r.yearAndSemester.substring(0, 4)}
+              <span className={styles.slash}>/</span>
+              {seasonToText[parseInt(r.yearAndSemester.substring(5, 6))]}
             </>
           ) : (
             '-'
           ),
-        copyable: true,
-        search: false,
-        width: 120,
       },
       {
-        title: 'mikanani.me',
-        dataIndex: 'mikanAnimeId',
-        render: (_, r) =>
-          r.mikanAnimeId ? (
-            <>
-              {_}
-              <a
-                href={`https://mikanani.me/Home/Bangumi/${r.mikanAnimeId}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
-            </>
-          ) : (
-            '-'
-          ),
-        copyable: true,
-        search: false,
+        title: '放送时间',
+        key: 'airTime',
         width: 120,
-      },
-      {
-        title: 'B站港澳台',
-        tooltip: 'B站港澳台番剧SSID，国内无法打开，必须使用港澳台IP',
-        dataIndex: 'bilibiliThmSsid',
-        valueType: 'text',
-        copyable: true,
-        search: false,
-        width: 120,
-      },
-      {
-        title: 'B站国内',
-        tooltip: 'B站国内番剧SSID',
-        dataIndex: 'bilibiliMainlandSsid',
         search: false,
         render: (_, r) =>
-          r.bilibiliMainlandSsid ? (
-            <>
-              {_}
-              <a
-                href={`https://www.bilibili.com/bangumi/play/ss${r.bilibiliMainlandSsid}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
-            </>
-          ) : (
-            '-'
-          ),
-        width: 120,
-        copyable: true,
+          typeof r.weekday === 'number' && r.airTime
+            ? `${weekdayToText[r.weekday]} ${r.airTime}`
+            : '-',
       },
       {
-        title: 'Jellyfin',
-        tooltip: 'Jellyfin季度ID（前8位）',
-        dataIndex: 'jellyfinSeasonId',
-        render: (_, r) =>
-          r.jellyfinSeasonId ? (
-            <>
-              {r.jellyfinSeasonId.substring(0, 8)}
-              <a
-                href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.jellyfinSeasonId}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
-            </>
-          ) : (
-            '-'
-          ),
-        search: false,
+        title: '追番状态',
+        dataIndex: 'isMonitoring',
+        valueEnum: {
+          true: {
+            text: '追番中',
+            status: 'Success',
+          },
+          false: {
+            text: '未追番',
+            status: 'Default',
+          },
+        },
         width: 120,
+        filters: true,
       },
       {
-        title: 'Sonarr',
-        key: 'sonarr',
-        render: (_, r) =>
-          r.sonarrSeason && r.sonarrSeryBySonarrSeries ? (
-            <>
-              {r.sonarrSeryBySonarrSeries.sonarrSlug} / S
-              {`${r.sonarrSeason}`.padStart(2, '0')}
-              <a
-                href={`https://sonarr.std4453.com:444/series/${r.sonarrSeryBySonarrSeries.sonarrSlug}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
-            </>
-          ) : (
-            '-'
-          ),
+        title: '剧集',
+        tooltip: '可用集数 / 已放送集数 / 总集数',
+        key: 'episodes',
+        width: 120,
         search: false,
-        ellipsis: true,
-        width: 300,
+        render: (_, r) => (
+          <div
+            className={clsx(
+              styles.episodesCell,
+              r.isMonitoring
+                ? r.availableEpisodes.totalCount < r.airedEpisodes.totalCount
+                  ? styles.bad
+                  : styles.good
+                : false,
+            )}
+          >
+            {r.availableEpisodes.totalCount}
+            <span className={styles.slash}>/</span>
+            {r.airedEpisodes.totalCount}
+            <span className={styles.slash}>/</span>
+            {r.allEpisodes.totalCount}
+          </div>
+        ),
       },
       {
-        title: 'tvdb',
-        key: 'tvdbid',
-        tooltip: 'TheTVDB用ID反向解析slug',
-        render: (_, r) =>
-          r.sonarrSeryBySonarrSeries?.tvdbid ? (
-            <>
-              {r.sonarrSeryBySonarrSeries?.tvdbid}
-              <a
-                href={`https://www.thetvdb.com/dereferrer/series/${r.sonarrSeryBySonarrSeries.tvdbid}`}
-                target="_blank"
-                style={{
-                  marginLeft: 4,
-                }}
-                rel="noreferrer"
-              >
-                <LinkOutlined />
-              </a>
-            </>
-          ) : (
-            '-'
-          ),
+        title: '链接',
+        key: 'links',
         search: false,
-        width: 120,
+        render: (_, r) => (
+          <Space>
+            <LinkIcon
+              icon={IconPath.bangumiIcon}
+              href={`https://bangumi.tv/subject/${r.bangumiId}`}
+              valid={r.bangumiId}
+            />
+            <LinkIcon
+              icon={IconPath.thetvdbIcon}
+              href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.tvdbId}`}
+              valid={r.tvdbId && typeof r.tvdbSeason === 'number'}
+            />
+            <LinkIcon
+              icon={IconPath.bilibiliIcon}
+              href={`https://www.bilibili.com/bangumi/play/ss${r.bilibiliThmId}`}
+              valid={r.bilibiliThmId}
+            />
+            <LinkIcon
+              icon={IconPath.bilibiliMainlandIcon}
+              href={`https://www.bilibili.com/bangumi/play/ss${r.bilibiliMainlandId}`}
+              valid={r.bilibiliMainlandId}
+            />
+            <LinkIcon
+              icon={IconPath.mikanAnimeIcon}
+              href={`https://mikanani.me/Home/Bangumi/${r.mikanAnimeId}`}
+              valid={r.mikanAnimeId}
+            />
+            <LinkIcon
+              icon={IconPath.jellyfinIcon}
+              href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.jellyfinId}`}
+              valid={r.jellyfinId}
+            />
+          </Space>
+        ),
+        width: 220,
       },
       {
         title: '操作',
@@ -219,7 +181,7 @@ function useColumns() {
           <a
             key={0}
             onClick={() => {
-              history.push(`/details/${r.id}`);
+              history.push(`/season/${r.id}`);
             }}
           >
             编辑
@@ -227,7 +189,6 @@ function useColumns() {
         ],
         search: false,
         width: 120,
-        fixed: 'right',
       },
     ],
     [history],
@@ -239,30 +200,43 @@ async function queryGetAnimeList(
   {
     pageSize = 10,
     current = 0,
-    uniformName,
+    keyword,
   }: {
     pageSize?: number;
     current?: number;
-    uniformName?: string;
+    keyword?: string;
+  },
+  {
+    isMonitoring,
+  }: {
+    isMonitoring?: ('true' | 'false')[];
   },
 ) {
+  const filter: SeasonFilter = {
+    ...(keyword
+      ? {
+          title: {
+            includesInsensitive: keyword,
+          },
+        }
+      : undefined),
+    ...(isMonitoring
+      ? {
+          isMonitoring: {
+            in: isMonitoring.map((value) => value === 'true'),
+          },
+        }
+      : undefined),
+  };
   const { data, error } = await client.query({
-    query: GetAnimeListDocument,
+    query: ListSeasonsDocument,
     variables: {
-      count: pageSize,
+      first: pageSize,
       offset: pageSize * (current - 1),
-      orderBy: AnimeMetadataOrderBy.IdDesc,
-      ...(uniformName
-        ? {
-            filter: {
-              uniformName: {
-                includes: uniformName,
-              },
-            },
-          }
-        : {}),
+      orderBy: SeasonsOrderBy.IdDesc,
+      ...(Object.keys(filter).length > 0 ? { filter } : undefined),
+      now: new Date(),
     },
-    fetchPolicy: 'network-only',
   });
   if (error) {
     console.error(error);
@@ -270,7 +244,7 @@ async function queryGetAnimeList(
       success: false,
     };
   }
-  const result = data.allAnimeMetadata;
+  const result = data.allSeasons;
   if (!result) {
     return {
       success: false,
@@ -289,22 +263,21 @@ export default function MetadataPage() {
   const columns = useColumns();
 
   const ref = useRef<ActionType>();
-  const openNewAnime = useOpenDialog('NewAnime');
+  //   const openNewAnime = useOpenDialog('NewAnime');
   const history = useHistory();
 
   return (
     <ProTable<RowType, { uniformName?: string }>
       columns={columns}
-      request={(params, _sort) => queryGetAnimeList(client, params)}
+      request={(params, _sort, filter) =>
+        queryGetAnimeList(client, params, filter)
+      }
       rowKey="id"
       pagination={{
         pageSizeOptions: [10, 30, 50],
         defaultPageSize: 30,
       }}
       headerTitle="元数据"
-      scroll={{
-        x: '120%',
-      }}
       actionRef={ref}
       toolBarRender={() => [
         <Button
@@ -313,14 +286,19 @@ export default function MetadataPage() {
           type="primary"
           onClick={async () => {
             try {
-              const { id } = await openNewAnime();
-              history.push(`/details/${id}`);
+              //   const { id } = await openNewAnime();
+              //   history.push(`/details/${id}`);
             } catch (e) {}
           }}
         >
           新建
         </Button>,
       ]}
+      search={false}
+      options={{
+        search: true,
+      }}
+      defaultSize="large"
     />
   );
 }
