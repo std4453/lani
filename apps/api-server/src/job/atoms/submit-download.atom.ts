@@ -1,21 +1,29 @@
 import { GlobalAxiosService } from '@/common/axios.service';
-import { Atom } from '@/job/atoms';
+import { AsyncAtom, StepInput } from '@/job/atoms';
+import { DownloadWorkflowDefinition } from '@/job/atoms/types';
 import { QBittorrentService } from '@/job/qbt.service';
 import { Injectable } from '@nestjs/common';
-import { DownloadJob } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import FormData from 'form-data';
 import parseTorrent from 'parse-torrent';
 
 @Injectable()
-export class SubmitDownloadAtom extends Atom {
+export class SubmitDownloadAtom extends AsyncAtom<
+  DownloadWorkflowDefinition,
+  'submitDownload'
+> {
   constructor(
+    emitter: EventEmitter2,
     private global: GlobalAxiosService,
     private qbt: QBittorrentService,
   ) {
-    super();
+    super(emitter, 'submitDownload');
   }
 
-  async run({ torrentLink }: DownloadJob) {
+  override async run(
+    _id: number,
+    { params: { torrentLink } }: StepInput<DownloadWorkflowDefinition>,
+  ) {
     if (!torrentLink) {
       throw new Error('torrentLink not set');
     }

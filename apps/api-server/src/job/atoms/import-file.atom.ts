@@ -1,25 +1,33 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
-import { Atom } from '@/job/atoms';
+import { AsyncAtom, StepInput } from '@/job/atoms';
+import { DownloadWorkflowDefinition } from '@/job/atoms/types';
 import { mapPath, PathMapping } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DownloadJob } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import fs from 'fs/promises';
 import path from 'path';
 
 @Injectable()
-export class ImportFileAtom extends Atom {
+export class ImportFileAtom extends AsyncAtom<
+  DownloadWorkflowDefinition,
+  'importFile'
+> {
   constructor(
+    emitter: EventEmitter2,
     private prisma: PrismaService,
     private config: ConfigService<ConfigType, true>,
   ) {
-    super();
+    super(emitter, 'importFile');
   }
 
-  async run({ importPath, episodeId }: DownloadJob) {
-    if (!importPath) {
-      throw new Error('importPath not set');
+  async run(
+    _id: number,
+    { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
+  ) {
+    if (!steps.findVideoFile) {
+      throw new Error('findVideoFile step not finished');
     }
     const {
       index,
@@ -35,7 +43,7 @@ export class ImportFileAtom extends Atom {
     }
     const mappedImportPath = mapPath(
       this.config.get<PathMapping>('qbtPathMapping'),
-      importPath,
+      steps.findVideoFile.importPath,
     );
     const filePath = path.join(
       seasonRoot,
@@ -43,7 +51,7 @@ export class ImportFileAtom extends Atom {
       // 不加这个 jellyfin识别就会很成问题，还是加上
       'Season 1',
       `Episode - S01E${index.toString().padStart(2, '0')}${path.extname(
-        importPath,
+        steps.findVideoFile.importPath,
       )}`,
     );
     const absoluteFilePath = path.join(this.config.get('mediaRoot'), filePath);

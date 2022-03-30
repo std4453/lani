@@ -148,7 +148,7 @@ export class SyncMetadataResolver {
       {
         title: [title],
         ...(description ? { plot: [description] } : undefined),
-        genre: tags.length > 0 ? tags : undefined,
+        tag: tags.length > 0 ? tags : undefined,
         uniqueId: [
           {
             $: {

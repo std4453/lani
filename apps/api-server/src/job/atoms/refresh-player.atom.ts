@@ -1,21 +1,32 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { ItemRefreshService, TvShowsService } from '@/jellyfin';
-import { Atom } from '@/job/atoms';
+import { AsyncAtom, StepInput } from '@/job/atoms';
+import { DownloadWorkflowDefinition } from '@/job/atoms/types';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DownloadJob } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
-export class RefreshPlayerAtom extends Atom {
+export class RefreshPlayerAtom extends AsyncAtom<
+  DownloadWorkflowDefinition,
+  'refreshPlayer'
+> {
   constructor(
+    emitter: EventEmitter2,
     private prisma: PrismaService,
     private config: ConfigService<ConfigType, true>,
   ) {
-    super();
+    super(emitter, 'refreshPlayer');
   }
 
-  async run({ episodeId }: DownloadJob) {
+  async run(
+    _id: number,
+    { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
+  ) {
+    if (!steps.writeMetadata) {
+      throw new Error('writeMetadata step not finished');
+    }
     const {
       index,
       season: { jellyfinId: jellyfinSeriesId },

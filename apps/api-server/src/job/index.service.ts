@@ -1,76 +1,68 @@
 import { PrismaService } from '@/common/prisma.service';
-import { Atom } from '@/job/atoms';
+import {
+  StepCompletion,
+  StepInput,
+  WorkflowManager,
+  WorkflowState,
+} from '@/job/atoms';
 import { DownloadAtom } from '@/job/atoms/download-atom';
 import { FindVideoFileAtom } from '@/job/atoms/find-video-file.atom';
 import { ImportFileAtom } from '@/job/atoms/import-file.atom';
 import { RefreshPlayerAtom } from '@/job/atoms/refresh-player.atom';
 import { SubmitDownloadAtom } from '@/job/atoms/submit-download.atom';
+import { DownloadWorkflowDefinition } from '@/job/atoms/types';
 import { WriteMetadataAtom } from '@/job/atoms/write-metadata.atom';
-import { RefreshDownloadResult } from '@/job/index.model';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { DownloadJob, DownloadStatus } from '@prisma/client';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-
-interface JobStep {
-  id: DownloadStatus;
-  atom: Atom;
-  next: DownloadStatus;
-}
-
-type JobConfig = JobStep[];
 
 @Injectable()
 @Resolver()
-export class JobService {
+export class JobService
+  extends WorkflowManager<DownloadWorkflowDefinition>
+  implements OnModuleInit
+{
   constructor(
     private prisma: PrismaService,
 
     // atoms
-    private submitDownload: SubmitDownloadAtom,
-    private download: DownloadAtom,
-    private findVideoFile: FindVideoFileAtom,
-    private importFile: ImportFileAtom,
-    private writeMetadata: WriteMetadataAtom,
-    private refreshPlayer: RefreshPlayerAtom,
+    submitDownload: SubmitDownloadAtom,
+    download: DownloadAtom,
+    findVideoFile: FindVideoFileAtom,
+    importFile: ImportFileAtom,
+    writeMetadata: WriteMetadataAtom,
+    refreshPlayer: RefreshPlayerAtom,
   ) {
-    dayjs.extend(utc);
+    super({
+      initialType: 'download',
+      steps: {
+        submitDownload: {
+          atom: submitDownload,
+          next: 'download',
+        },
+        download: {
+          atom: download,
+          next: 'findVideoFile',
+        },
+        findVideoFile: {
+          atom: findVideoFile,
+          next: 'importFile',
+        },
+        importFile: {
+          atom: importFile,
+          next: 'writeMetadata',
+        },
+        writeMetadata: {
+          atom: writeMetadata,
+          next: 'refreshPlayer',
+        },
+        refreshPlayer: {
+          atom: refreshPlayer,
+        },
+      },
+    });
   }
-
-  private readonly jobConfig: JobConfig = [
-    {
-      id: DownloadStatus.DOWNLOAD_SUBMITTING,
-      atom: this.submitDownload,
-      next: DownloadStatus.DOWNLOADING,
-    },
-    {
-      id: DownloadStatus.DOWNLOADING,
-      atom: this.download,
-      next: DownloadStatus.DOWNLOAD_COMPLETED,
-    },
-    {
-      id: DownloadStatus.DOWNLOAD_COMPLETED,
-      atom: this.findVideoFile,
-      next: DownloadStatus.IMPORTING,
-    },
-    {
-      id: DownloadStatus.IMPORTING,
-      atom: this.importFile,
-      next: DownloadStatus.WRITING_METADATA,
-    },
-    {
-      id: DownloadStatus.WRITING_METADATA,
-      atom: this.writeMetadata,
-      next: DownloadStatus.PLAYER_WAITING,
-    },
-    {
-      id: DownloadStatus.PLAYER_WAITING,
-      atom: this.refreshPlayer,
-      next: DownloadStatus.AVAILABLE,
-    },
-  ];
 
   @Mutation(() => Int)
   async downloadTorrentForEpisode(
@@ -85,59 +77,7 @@ export class JobService {
     if (currentJob) {
       throw new ConflictException('A job is already running for this episode');
     } else {
-      this.createDownloadJobNoCheck(episodeId, torrentLink);
-    }
-  }
-
-  private async createDownloadJobNoCheck(
-    episodeId: number,
-    torrentLink: string,
-  ) {
-    const newJob = await this.prisma.downloadJob.create({
-      data: {
-        episodeId,
-        torrentLink,
-        status: DownloadStatus.DOWNLOAD_SUBMITTING,
-      },
-    });
-    this.triggerJobStep(newJob);
-    return newJob.id;
-  }
-
-  private triggerJobStep(job: DownloadJob) {
-    const step = this.jobConfig.find((step) => step.id === job.status);
-    // 如果当前步骤已经是最后一步，则不再执行
-    if (step) {
-      console.debug('Running step', step.id, 'for job', job.id);
-      void this.runStep(job, step);
-    } else {
-      console.debug('Job', job.id, 'finished');
-      // TODO: 错误处理
-      void this.prisma.episode.update({
-        where: { id: job.episodeId },
-        data: {
-          jellyfinEpisodeId: job.jellyfinEpisodeId,
-        },
-      });
-    }
-  }
-
-  private async runStep(job: DownloadJob, step: JobStep) {
-    try {
-      const result = await step.atom.run(job);
-      const newJob = await this.prisma.downloadJob.update({
-        where: { id: job.id },
-        data: {
-          ...result,
-          status: step.next,
-          isFailed: false,
-          failedAt: null,
-          failedReason: '',
-        },
-      });
-      this.triggerJobStep(newJob);
-    } catch (error) {
-      this.onError(job.id, error);
+      this.triggerWorkflow({ episodeId, torrentLink });
     }
   }
 
@@ -146,64 +86,9 @@ export class JobService {
     const job = await this.prisma.downloadJob.findUnique({
       where: { id: jobId },
     });
-    this.triggerJobStep(job);
+    // TODO: 检查
+    this.triggerWorkflowStep(this.jobToInput(job));
     return 'ok';
-  }
-
-  @Mutation(() => RefreshDownloadResult)
-  async refreshDownloadStatus(
-    @Args('jobId') jobId: number,
-  ): Promise<RefreshDownloadResult> {
-    const job = await this.prisma.downloadJob.findUnique({
-      where: { id: jobId },
-    });
-    const { status, isFailed } = job;
-    if (status !== DownloadStatus.DOWNLOADING) {
-      throw new ConflictException(`Job ${jobId} not downloading`);
-    }
-    if (isFailed) {
-      return {
-        changed: false,
-      };
-    }
-    // 由于 worker（也就是本进程）不能保证稳定，服务重启时内存中的下载队列会丢失，
-    // 所以这里需要重新将下载任务加入队列
-    if (!this.download.isTracked(job)) {
-      this.triggerJobStep(job);
-    }
-    return {
-      changed: await this.download.refreshDownloadStatus(job),
-    };
-  }
-
-  @Cron('*/30 * * * * *') // 每 30 秒
-  @Mutation(() => Int)
-  async refreshAllDownloadStatus() {
-    const jobs = await this.prisma.downloadJob.findMany({
-      where: { status: DownloadStatus.DOWNLOADING, isFailed: false },
-    });
-    for (const job of jobs) {
-      if (!this.download.isTracked(job)) {
-        this.triggerJobStep(job);
-      }
-    }
-    return this.download.batchRefreshDownloadStatus(jobs);
-  }
-
-  private async onError(jobId, error: Error) {
-    try {
-      console.debug('job', jobId, 'failed:', error);
-      await this.prisma.downloadJob.update({
-        where: { id: jobId },
-        data: {
-          isFailed: true,
-          failedAt: new Date(),
-          failedReason: error.message,
-        },
-      });
-    } catch (e) {
-      console.error(e);
-    }
   }
 
   @Cron('*/1 * * * *') // 每分钟运行一次
@@ -241,7 +126,158 @@ export class JobService {
       console.debug('queued', result.length, 'jobs');
     }
     for (const { episode_id, torrent_link } of result) {
-      this.createDownloadJobNoCheck(episode_id, torrent_link);
+      this.triggerWorkflow({
+        episodeId: episode_id,
+        torrentLink: torrent_link,
+      });
+    }
+  }
+
+  private completionToStatus(
+    completion: StepCompletion<DownloadWorkflowDefinition>,
+  ): DownloadStatus {
+    switch (completion) {
+      case 'submitDownload':
+        return DownloadStatus.DOWNLOAD_SUBMITTING;
+      case 'download':
+        return DownloadStatus.DOWNLOADING;
+      case 'findVideoFile':
+        return DownloadStatus.DOWNLOAD_COMPLETED;
+      case 'writeMetadata':
+        return DownloadStatus.WRITING_METADATA;
+      case 'importFile':
+        return DownloadStatus.IMPORTING;
+      case 'refreshPlayer':
+        return DownloadStatus.PLAYER_WAITING;
+    }
+  }
+
+  private statusToCompletion(
+    status: DownloadStatus,
+  ): StepCompletion<DownloadWorkflowDefinition> {
+    switch (status) {
+      case DownloadStatus.DOWNLOAD_SUBMITTING:
+        return 'submitDownload';
+      case DownloadStatus.DOWNLOADING:
+        return 'download';
+      case DownloadStatus.DOWNLOAD_COMPLETED:
+        return 'findVideoFile';
+      case DownloadStatus.WRITING_METADATA:
+        return 'writeMetadata';
+      case DownloadStatus.IMPORTING:
+        return 'importFile';
+      case DownloadStatus.PLAYER_WAITING:
+        return 'refreshPlayer';
+      case DownloadStatus.AVAILABLE:
+        return 'refreshPlayer';
+      default:
+        throw new Error(`Unknown status: ${status}`);
+    }
+  }
+
+  private jobToInput(job: DownloadJob): StepInput<DownloadWorkflowDefinition> {
+    return {
+      id: job.id,
+      completion: this.statusToCompletion(job.status),
+      params: {
+        episodeId: job.episodeId,
+        torrentLink: job.torrentLink ?? '',
+      },
+      steps: {
+        submitDownload: job.qbtTorrentHash
+          ? {
+              qbtTorrentHash: job.qbtTorrentHash,
+            }
+          : undefined,
+        download: job.downloadPath
+          ? { downloadPath: job.downloadPath }
+          : undefined,
+        findVideoFile: job.importPath
+          ? { importPath: job.importPath }
+          : undefined,
+        importFile: job.filePath ? { filePath: job.filePath } : undefined,
+        writeMetadata: job.nfoPath ? { nfoPath: job.nfoPath } : undefined,
+        refreshPlayer: job.jellyfinEpisodeId
+          ? { jellyfinEpisodeId: job.jellyfinEpisodeId }
+          : undefined,
+      },
+    };
+  }
+
+  protected async createWorkflow(
+    completion: StepCompletion<DownloadWorkflowDefinition>,
+    params: { episodeId: number; torrentLink: string },
+  ) {
+    const newJob = await this.prisma.downloadJob.create({
+      data: {
+        status: this.completionToStatus(completion),
+        episodeId: params.episodeId,
+        torrentLink: params.torrentLink,
+      },
+    });
+    return this.jobToInput(newJob);
+  }
+
+  protected async persistWorkflowState(
+    id: number,
+    state: WorkflowState<DownloadWorkflowDefinition>,
+    finished: boolean,
+  ) {
+    if (finished) {
+      console.debug('Job', id, 'finished');
+    } else {
+      console.debug('Running step', state.completion, 'for job', id);
+    }
+    const newJob = await this.prisma.downloadJob.update({
+      where: { id },
+      data: {
+        status: finished
+          ? DownloadStatus.AVAILABLE
+          : this.completionToStatus(state.completion),
+        qbtTorrentHash: state.steps.submitDownload?.qbtTorrentHash,
+        downloadPath: state.steps.download?.downloadPath,
+        importPath: state.steps.findVideoFile?.importPath,
+        filePath: state.steps.importFile?.filePath,
+        nfoPath: state.steps.writeMetadata?.nfoPath,
+        jellyfinEpisodeId: state.steps.refreshPlayer?.jellyfinEpisodeId,
+        isFailed: false,
+        failedAt: null,
+        failedReason: '',
+      },
+    });
+    return this.jobToInput(newJob);
+  }
+
+  protected async persistWorkflowError(id: number, reason: any) {
+    console.debug('job', id, 'failed:', reason);
+    await this.prisma.downloadJob.update({
+      where: { id },
+      data: {
+        isFailed: true,
+        failedAt: new Date(),
+        failedReason: reason?.message,
+      },
+    });
+  }
+
+  async onModuleInit() {
+    const jobs = await this.prisma.downloadJob.findMany({
+      where: {
+        isFailed: false,
+        status: {
+          in: [
+            DownloadStatus.DOWNLOAD_SUBMITTING,
+            DownloadStatus.DOWNLOADING,
+            DownloadStatus.DOWNLOAD_COMPLETED,
+            DownloadStatus.WRITING_METADATA,
+            DownloadStatus.IMPORTING,
+            DownloadStatus.PLAYER_WAITING,
+          ],
+        },
+      },
+    });
+    for (const job of jobs) {
+      this.triggerWorkflowStep(this.jobToInput(job));
     }
   }
 }
