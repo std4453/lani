@@ -1,16 +1,19 @@
+import client from '@/client';
 import { seasonToText, weekdayToText } from '@/constants';
 import { IconPath } from '@/constants/icon-path';
 import {
+  DeleteSeasonByIdDocument,
   ListSeasonsDocument,
   ListSeasonsQuery,
-  SeasonsOrderBy,
   SeasonFilter,
+  SeasonsOrderBy,
 } from '@/generated/types';
+import { useCreateSeasonDialog } from '@/pages/metadata/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Button, Space } from 'antd';
+import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
 import { useHistory } from 'umi';
@@ -119,18 +122,24 @@ function useColumns() {
           <div
             className={clsx(
               styles.episodesCell,
-              r.isMonitoring
+              r.isMonitoring && r.allEpisodes.totalCount > 0
                 ? r.availableEpisodes.totalCount < r.airedEpisodes.totalCount
                   ? styles.bad
                   : styles.good
                 : false,
             )}
           >
-            {r.availableEpisodes.totalCount}
-            <span className={styles.slash}>/</span>
-            {r.airedEpisodes.totalCount}
-            <span className={styles.slash}>/</span>
-            {r.allEpisodes.totalCount}
+            {r.allEpisodes.totalCount > 0 ? (
+              <>
+                {r.availableEpisodes.totalCount}
+                <span className={styles.slash}>/</span>
+                {r.airedEpisodes.totalCount}
+                <span className={styles.slash}>/</span>
+                {r.allEpisodes.totalCount}
+              </>
+            ) : (
+              '无'
+            )}
           </div>
         ),
       },
@@ -177,15 +186,36 @@ function useColumns() {
       {
         title: '操作',
         valueType: 'option',
-        render: (_, r) => [
-          <a
+        render: (_, r, __, action) => [
+          <Typography.Link
             key={0}
             onClick={() => {
               history.push(`/season/${r.id}`);
             }}
           >
             编辑
-          </a>,
+          </Typography.Link>,
+          <Popconfirm
+            key={1}
+            title="确定删除该季度吗？此操作不可恢复"
+            onConfirm={async () => {
+              try {
+                await client.mutate({
+                  mutation: DeleteSeasonByIdDocument,
+                  variables: {
+                    id: r.id,
+                  },
+                });
+                void message.success('删除成功');
+                void action?.reload();
+              } catch (e) {
+                console.error(e);
+                void message.error('删除失败');
+              }
+            }}
+          >
+            <Typography.Link type="danger">删除</Typography.Link>
+          </Popconfirm>,
         ],
         search: false,
         width: 120,
@@ -263,42 +293,45 @@ export default function MetadataPage() {
   const columns = useColumns();
 
   const ref = useRef<ActionType>();
-  //   const openNewAnime = useOpenDialog('NewAnime');
+  const [dialog, openCreateAnime] = useCreateSeasonDialog();
   const history = useHistory();
 
   return (
-    <ProTable<RowType, { uniformName?: string }>
-      columns={columns}
-      request={(params, _sort, filter) =>
-        queryGetAnimeList(client, params, filter)
-      }
-      rowKey="id"
-      pagination={{
-        pageSizeOptions: [10, 30, 50],
-        defaultPageSize: 30,
-      }}
-      headerTitle="元数据"
-      actionRef={ref}
-      toolBarRender={() => [
-        <Button
-          key="button"
-          icon={<PlusOutlined />}
-          type="primary"
-          onClick={async () => {
-            try {
-              //   const { id } = await openNewAnime();
-              //   history.push(`/details/${id}`);
-            } catch (e) {}
-          }}
-        >
-          新建
-        </Button>,
-      ]}
-      search={false}
-      options={{
-        search: true,
-      }}
-      defaultSize="large"
-    />
+    <>
+      <ProTable<RowType, { uniformName?: string }>
+        columns={columns}
+        request={(params, _sort, filter) =>
+          queryGetAnimeList(client, params, filter)
+        }
+        rowKey="id"
+        pagination={{
+          pageSizeOptions: [10, 30, 50],
+          defaultPageSize: 30,
+        }}
+        headerTitle="元数据"
+        actionRef={ref}
+        toolBarRender={() => [
+          <Button
+            key="button"
+            icon={<PlusOutlined />}
+            type="primary"
+            onClick={async () => {
+              try {
+                const { id } = await openCreateAnime();
+                history.push(`/season/${id}`);
+              } catch (e) {}
+            }}
+          >
+            新建
+          </Button>,
+        ]}
+        search={false}
+        options={{
+          search: true,
+        }}
+        defaultSize="large"
+      />
+      {dialog}
+    </>
   );
 }
