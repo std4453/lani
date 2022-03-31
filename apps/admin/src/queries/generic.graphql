@@ -86,7 +86,7 @@ mutation DeleteDownloadConfigById($id: Int!) {
   }
 }
 
-mutation DeleteAnimeById($id: Int!) {
+mutation DeleteSeasonById($id: Int!) {
   updateSeasonById(input: { id: $id, seasonPatch: { isArchived: true } }) {
     __typename
   }

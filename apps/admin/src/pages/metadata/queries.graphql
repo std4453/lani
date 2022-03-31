@@ -49,3 +49,11 @@ query ListSeasons(
     }
   }
 }
+
+mutation CreateSeason($season: SeasonInput!) {
+  createSeason(input: { season: $season }) {
+    season {
+      id
+    }
+  }
+}
