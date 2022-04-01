@@ -22278,7 +22278,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_ec4c31708447bd0b76e74aae9259d7cd:
-    resolution: {integrity: sha512-5INNhHodDA2DLfkE4p5wAoGal628GfFaayV8PW2KwdfXY+0Nc958ItEYqx+LQmXhwnmimvaZG9yXj6lgcaAiMA==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-rJ1TYDhpjsd7OUhkbtxC9StIhVIwF1jzZ7dCrERH2Cd3qe4YV33tSAsUgFUdSJ1zjRUWathK7V4O67PrBn31TA==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -22308,6 +22308,7 @@ packages:
       antd: 4.19.4_react-dom@17.0.2+react@17.0.2
       axios: 0.26.1
       clsx: 1.1.1
+      dayjs: 1.10.7
       eslint: 7.32.0
       eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
       lodash: 4.17.21

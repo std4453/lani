@@ -21,11 +21,11 @@ export default defineConfig({
           component: '@/pages/metadata',
           name: '元数据',
         },
-        // {
-        //   path: '/season/:id',
-        //   exact: true,
-        //   component: '@/pages/season',
-        // },
+        {
+          path: '/season/:id',
+          exact: true,
+          component: '@/pages/season',
+        },
       ],
     },
   ],
