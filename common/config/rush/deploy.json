@@ -22,7 +22,8 @@
     "@lani/data-server",
     "@lani/rss",
     "@lani/api-server",
-    "@lani/gateway"
+    "@lani/gateway",
+    "@lani/admin"
   ],
 
   /**

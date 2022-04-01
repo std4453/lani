@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": "true",
   "scripts": {
-    "start": "umi start",
     "dev": "run-p dev:*",
     "dev:codegen": "graphql-codegen --config codegen.yml --watch",
     "dev:umi": "umi dev",
@@ -58,6 +57,7 @@
     "dayjs": "~1.10.7"
   },
   "files": [
-    "/build"
+    "/dist",
+    "/nginx.conf"
   ]
 }
