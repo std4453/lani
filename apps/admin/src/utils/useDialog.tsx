@@ -8,7 +8,16 @@ export interface DialogState<Input, Output> {
   reject?: () => void;
 }
 
-export function useDialog<Input, Output>() {
+export type DialogOpenNoThrowResult<Output> =
+  | {
+      type: 'success';
+      output: Output;
+    }
+  | {
+      type: 'cancel';
+    };
+
+export function useDialog<Input = void, Output = void>() {
   const [state, setState] = useSetState<{
     visible: boolean;
     input?: Input;
@@ -35,6 +44,21 @@ export function useDialog<Input, Output>() {
     });
     return promise;
   });
+  const openNoThrow = useMemoizedFn(
+    async (input: Input): Promise<DialogOpenNoThrowResult<Output>> => {
+      try {
+        const output = await open(input);
+        return {
+          type: 'success',
+          output,
+        };
+      } catch (error) {
+        return {
+          type: 'cancel',
+        };
+      }
+    },
+  );
   const resolve = useMemoizedFn((output: Output) => {
     if (state.resolve) {
       state.resolve(output);
@@ -63,6 +87,7 @@ export function useDialog<Input, Output>() {
     resolve,
     reject,
     open,
+    openNoThrow,
   };
 }
 
@@ -76,9 +101,13 @@ export interface DialogProps<Input, Output> {
 export function createUseDialog<Input, Output>(
   Component: ComponentType<DialogProps<Input, Output>>,
 ) {
-  return (): [ReactNode, (input: Input) => Promise<Output>] => {
-    const { open, ...props } = useDialog<Input, Output>();
+  return (): [
+    ReactNode,
+    (input: Input) => Promise<Output>,
+    (input: Input) => Promise<DialogOpenNoThrowResult<Output>>,
+  ] => {
+    const { open, openNoThrow, ...props } = useDialog<Input, Output>();
     const dialog = <Component {...props} />;
-    return [dialog, open];
+    return [dialog, open, openNoThrow];
   };
 }

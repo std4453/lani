@@ -41,5 +41,8 @@ export function extractNode<
   const nonNullNodes = excludeNullAndUndefined(
     nonNullEdges.map(({ node }) => node),
   );
-  return nonNullNodes as ExtractNode<T>[];
+  return nonNullNodes.map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ({ __typename, ...node }: any) => node,
+  ) as ExtractNode<T>[];
 }

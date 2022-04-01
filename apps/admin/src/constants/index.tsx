@@ -13,6 +13,16 @@ export const weekdayToText = [
   '周日',
 ];
 
+export const weekdayToValueEnum = {
+  '0': '周一（月）',
+  '1': '周二（火）',
+  '2': '周三（水）',
+  '3': '周四（木）',
+  '4': '周五（金）',
+  '5': '周六（土）',
+  '6': '周日（日）',
+};
+
 // export const seasonOptions: SelectOptionType[] = [
 //   {
 //     value: SeasonEnum.Winter,

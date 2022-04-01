@@ -54,7 +54,8 @@
     "axios": "~0.26.0",
     "@lani/api": "~1.0.0",
     "@sentry/react": "~6.17.8",
-    "use-clipboard-copy": "~0.2.0"
+    "use-clipboard-copy": "~0.2.0",
+    "dayjs": "~1.10.7"
   },
   "files": [
     "/build"
