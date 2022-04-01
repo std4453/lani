@@ -7,25 +7,12 @@ import { SkyhookSeasonService } from '@/sync/skyhook/index.service';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  Args,
-  ID,
-  Mutation,
-  registerEnumType,
-  Resolver,
-} from '@nestjs/graphql';
+import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 import { Episode, MetadataSource, Season } from '@prisma/client';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
-
-export enum InfoSource {
-  BANGUMI = 'BANGUMI',
-  SKYHOOK = 'SKYHOOK',
-}
-
-registerEnumType(InfoSource, { name: 'InfoSource' });
 
 @Resolver()
 export class SyncMetadataResolver {
@@ -40,12 +27,8 @@ export class SyncMetadataResolver {
   private readonly parser = new xml2js.Parser();
 
   @Mutation(() => ID)
-  async syncMetadata(
-    @Args('seasonId') seasonId: number,
-    @Args({ name: 'infoSource', type: () => InfoSource })
-    infoSource: InfoSource,
-  ) {
-    const { bangumiId, tvdbId, tvdbSeason, isArchived } =
+  async syncMetadata(@Args('seasonId') seasonId: number) {
+    const { bangumiId, tvdbId, tvdbSeason, isArchived, infoSource } =
       await this.prisma.season.findUnique({
         where: { id: seasonId },
       });
@@ -54,7 +37,7 @@ export class SyncMetadataResolver {
     }
     let result: PartialSeason = {};
     switch (infoSource) {
-      case InfoSource.BANGUMI:
+      case MetadataSource.BGM_CN:
         if (!bangumiId) {
           throw new ConflictException('bangumiId not set');
         }
@@ -66,7 +49,7 @@ export class SyncMetadataResolver {
           bangumiId,
         );
         break;
-      case InfoSource.SKYHOOK:
+      case MetadataSource.SKYHOOK:
         if (!tvdbId) {
           throw new ConflictException('tvdbid not set');
         }
@@ -82,16 +65,14 @@ export class SyncMetadataResolver {
           tvdbSeason,
         );
         break;
+      default:
+        throw new ConflictException('infoSource not available for auto sync');
     }
     const { info } = result;
     const newSeason = await this.prisma.season.update({
       where: { id: seasonId },
       data: {
         description: info?.description ?? '',
-        infoSource: {
-          [InfoSource.BANGUMI]: MetadataSource.BGM_CN,
-          [InfoSource.SKYHOOK]: MetadataSource.SKYHOOK,
-        }[infoSource],
         tags: info?.tags ?? info?.genres ?? [],
         weekday: info?.weekday ?? null,
         airTime: info?.time ?? '',
@@ -134,6 +115,7 @@ export class SyncMetadataResolver {
       'tvshow.nfo',
     );
     let xmlObj: any = {};
+    await fs.mkdir(path.dirname(nfoPath), { recursive: true });
     try {
       await fs.stat(nfoPath);
       const currentContent = await fs.readFile(nfoPath, 'utf8');
@@ -269,21 +251,18 @@ export class SyncMetadataResolver {
     return 'ok';
   }
 
-  private getEpisodeAirTime(
-    seasonAirTime: string,
-    airDate: string | undefined,
-  ) {
+  private getEpisodeAirTime(airTime: string, airDate: string | undefined) {
     if (!airDate) {
       return undefined;
     }
-    if (!seasonAirTime) {
-      return undefined;
-    }
+    // 很多动画都是这个时候播，目前还没有日历模块，因此这个时间最多导致下载比出的晚，可以随便指定一个
+    // TODO: 想办法从skyhook拿播出时间
+    const seasonAirTime = airTime || '23:00';
     const airTimeHours = parseInt(seasonAirTime.substring(0, 2));
     const airTimeMinutes = parseInt(seasonAirTime.substring(3, 5));
-    const airTime = dayjs(airDate, DateFormat.NothingDay)
+    const combinedAirTime = dayjs(airDate, DateFormat.NothingDay)
       .add(airTimeHours, 'h')
       .add(airTimeMinutes, 'm');
-    return airTime.toDate();
+    return combinedAirTime.toDate();
   }
 }

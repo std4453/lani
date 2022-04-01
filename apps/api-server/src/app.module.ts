@@ -1,3 +1,4 @@
+import { AdminModule } from '@/admin/index.module';
 import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
@@ -23,6 +24,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
     MikanSyncModule,
     SyncModule,
     JobModule,
+    AdminModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       autoSchemaFile: true,
