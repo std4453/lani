@@ -15,50 +15,6 @@ mutation CreateDownloadSource($downloadSource: DownloadSourceInput!) {
   }
 }
 
-query GetSeasonById($id: Int!) {
-  seasonById(id: $id) {
-    id
-    infoSource
-    isMonitoring
-    jellyfinId
-    mikanAnimeId
-    seasonRoot
-    tags
-    title
-    tvdbId
-    tvdbSeason
-    weekday
-    yearAndSemester
-    airTime
-    bangumiId
-    bilibiliMainlandId
-    bilibiliThmId
-    createdAt
-    description
-    isArchived
-    episodesBySeasonId {
-      edges {
-        node {
-          airTime
-          id
-          jellyfinEpisodeId
-          title
-          downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
-            totalCount
-            edges {
-              node {
-                status
-                isFailed
-              }
-            }
-          }
-        }
-      }
-    }
-    episodesSource
-  }
-}
-
 query ListDownloadSources($condition: DownloadSourceCondition) {
   allDownloadSources(condition: $condition) {
     edges {
@@ -69,12 +25,6 @@ query ListDownloadSources($condition: DownloadSourceCondition) {
         id
       }
     }
-  }
-}
-
-mutation UpdateSeasonById($id: Int!, $seasonPatch: SeasonPatch!) {
-  updateSeasonById(input: { id: $id, seasonPatch: $seasonPatch }) {
-    __typename
   }
 }
 

@@ -1,6 +1,7 @@
 import { ImagePath } from '@/constants/icon-path';
 import {
   CreateSeasonDocument,
+  MetadataSource,
   SearchBangumiDocument,
   SearchBangumiQuery,
 } from '@/generated/types';
@@ -70,6 +71,8 @@ export default function AddFromBangumiDialog({
               season: {
                 title: selected.name,
                 bangumiId: selected.id,
+                infoSource: MetadataSource.BgmCn,
+                episodesSource: MetadataSource.BgmCn,
               },
             },
           });
