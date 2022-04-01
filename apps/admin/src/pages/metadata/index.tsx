@@ -8,12 +8,21 @@ import {
   SeasonFilter,
   SeasonsOrderBy,
 } from '@/generated/types';
+import { useAddFromBangumiDialog } from '@/pages/metadata/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/metadata/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Button, message, Popconfirm, Space, Typography } from 'antd';
+import {
+  Button,
+  Dropdown,
+  Menu,
+  message,
+  Popconfirm,
+  Space,
+  Typography,
+} from 'antd';
 import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
 import { useHistory } from 'umi';
@@ -43,11 +52,10 @@ function LinkIcon({
       <img
         src={icon}
         style={{
-          width: 24,
-          height: 24,
           filter: valid ? undefined : 'grayscale(1)',
           opacity: valid ? 1 : 0.6,
         }}
+        className={styles.icon}
       />
     </a>
   );
@@ -156,7 +164,7 @@ function useColumns() {
             />
             <LinkIcon
               icon={IconPath.thetvdbIcon}
-              href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.tvdbId}`}
+              href={`https://www.thetvdb.com/dereferrer/series/${r.tvdbId}`}
               valid={r.tvdbId && typeof r.tvdbSeason === 'number'}
             />
             <LinkIcon
@@ -225,7 +233,7 @@ function useColumns() {
   );
 }
 
-async function queryGetAnimeList(
+async function querySeasons(
   client: ApolloClient<object>,
   {
     pageSize = 10,
@@ -293,7 +301,9 @@ export default function MetadataPage() {
   const columns = useColumns();
 
   const ref = useRef<ActionType>();
-  const [dialog, openCreateAnime] = useCreateSeasonDialog();
+  const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
+  const [addFromBangumiDialog, , openAddFromBangumi] =
+    useAddFromBangumiDialog();
   const history = useHistory();
 
   return (
@@ -301,7 +311,7 @@ export default function MetadataPage() {
       <ProTable<RowType, { uniformName?: string }>
         columns={columns}
         request={(params, _sort, filter) =>
-          queryGetAnimeList(client, params, filter)
+          querySeasons(client, params, filter)
         }
         rowKey="id"
         pagination={{
@@ -311,19 +321,36 @@ export default function MetadataPage() {
         headerTitle="元数据"
         actionRef={ref}
         toolBarRender={() => [
-          <Button
+          <Dropdown.Button
             key="button"
-            icon={<PlusOutlined />}
             type="primary"
             onClick={async () => {
-              try {
-                const { id } = await openCreateAnime();
-                history.push(`/season/${id}`);
-              } catch (e) {}
+              const result = await openCreateAnime();
+              if (result.type === 'success') {
+                history.push(`/season/${result.output.id}`);
+              }
             }}
+            overlay={
+              <Menu>
+                <Menu.Item
+                  key={0}
+                  icon={
+                    <img src={IconPath.bangumiIcon} className={styles.icon} />
+                  }
+                  onClick={async () => {
+                    const result = await openAddFromBangumi();
+                    if (result.type === 'success') {
+                      history.push(`/season/${result.output.id}`);
+                    }
+                  }}
+                >
+                  从Bangumi添加
+                </Menu.Item>
+              </Menu>
+            }
           >
             新建
-          </Button>,
+          </Dropdown.Button>,
         ]}
         search={false}
         options={{
@@ -331,7 +358,8 @@ export default function MetadataPage() {
         }}
         defaultSize="large"
       />
-      {dialog}
+      {createSeasonDialog}
+      {addFromBangumiDialog}
     </>
   );
 }

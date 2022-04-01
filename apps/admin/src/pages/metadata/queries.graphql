@@ -57,3 +57,13 @@ mutation CreateSeason($season: SeasonInput!) {
     }
   }
 }
+
+query SearchBangumi($keywords: String!) {
+  searchBangumi(keywords: $keywords) {
+    added
+    airDate
+    id
+    image
+    name
+  }
+}
