@@ -166,6 +166,16 @@
     //    */
     //   // "autoinstallerName": "my-task"
     // }
+
+    // https://github.com/microsoft/rushstack/issues/1329#issuecomment-1024102517
+    {
+      "name": "build",
+      "commandKind": "bulk",
+      "summary": "Build all projects that haven't been built, or have changed since they were last built",
+      "incremental": true,
+      "enableParallelism": true,
+      "allowWarningsInSuccessfulBuild": true
+    },
   ],
 
   /**
