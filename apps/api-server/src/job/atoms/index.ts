@@ -223,6 +223,7 @@ export abstract class WorkflowManager<
       params,
     );
     this.triggerWorkflowStep(stepInput);
+    return stepInput.id;
   }
 
   triggerWorkflowStep(input: StepInput<WorkflowDefinition>) {
