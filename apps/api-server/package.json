@@ -4,7 +4,7 @@
   "private": "true",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "rimraf dist && prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
