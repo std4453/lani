@@ -8,7 +8,7 @@ spec:
     requests:
       storage: 400Gi
   volumeMode: Filesystem
-  volumeName: downloads-pv
+  volumeName: lani-downloads-pv
   accessModes:
     - ReadWriteMany
   storageClassName: ""
@@ -23,7 +23,51 @@ spec:
     requests:
       storage: 5Ti
   volumeMode: Filesystem
-  volumeName: media-pv
+  volumeName: lani-media-pv
   accessModes:
     - ReadWriteMany
   storageClassName: ""
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lani-downloads-pv
+spec:
+  capacity:
+    storage: 400Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /data/std4453/services/media/downloads
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - home
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lani-media-pv
+spec:
+  capacity:
+    storage: 5Ti
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /data/std4453/services/media/media
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - home
