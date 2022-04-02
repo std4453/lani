@@ -91,7 +91,7 @@ export function useDialog<Input = void, Output = void>() {
   };
 }
 
-export interface DialogProps<Input, Output> {
+export interface DialogProps<Input = void, Output = void> {
   visible: boolean;
   input?: Input;
   resolve: (output: Output) => void;
