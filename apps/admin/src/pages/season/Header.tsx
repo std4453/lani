@@ -47,7 +47,7 @@ const Header = forwardRef(
         return;
       }
       try {
-        if (formRef.current.isFieldsTouched(true)) {
+        if (formRef.current.isFieldsTouched(false)) {
           void message.info('有未保存的修改，请先保存再同步');
           return;
         }
@@ -69,7 +69,7 @@ const Header = forwardRef(
         return;
       }
       try {
-        if (formRef.current.isFieldsTouched(true)) {
+        if (formRef.current.isFieldsTouched(false)) {
           void message.info('有未保存的修改，请先保存再同步');
           return;
         }
@@ -125,7 +125,7 @@ const Header = forwardRef(
             />
           }
           onBack={async () => {
-            if (formRef.current?.isFieldsTouched(true)) {
+            if (formRef.current?.isFieldsTouched(false)) {
               const { type } = await openDiscard();
               if (type !== 'success') {
                 return;
