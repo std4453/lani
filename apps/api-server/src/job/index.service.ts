@@ -243,6 +243,17 @@ export class JobService
         isFailed: false,
         failedAt: null,
         failedReason: '',
+        // 完成流程后设置剧集上的jellyfinEpisodeId
+        ...(finished
+          ? {
+              episode: {
+                update: {
+                  jellyfinEpisodeId:
+                    state.steps.refreshPlayer?.jellyfinEpisodeId,
+                },
+              },
+            }
+          : undefined),
       },
     });
     return this.jobToInput(newJob);
