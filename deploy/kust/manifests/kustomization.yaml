@@ -11,6 +11,7 @@ resources:
   - data-server.yaml
   - api-server.yaml
   - gateway.yaml
+  - admin.yaml
   # - rss.yaml
   # istio
   - istio-vs.yaml

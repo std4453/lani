@@ -22,3 +22,9 @@ spec:
         host: gateway
         port:
           number: 8080
+  
+  - route:
+    - destination:
+        host: admin
+        port:
+          number: 8080
