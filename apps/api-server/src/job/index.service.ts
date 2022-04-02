@@ -35,7 +35,7 @@ export class JobService
     refreshPlayer: RefreshPlayerAtom,
   ) {
     super({
-      initialType: 'download',
+      initialType: 'submitDownload',
       steps: {
         submitDownload: {
           atom: submitDownload,
@@ -77,7 +77,7 @@ export class JobService
     if (currentJob) {
       throw new ConflictException('A job is already running for this episode');
     } else {
-      this.triggerWorkflow({ episodeId, torrentLink });
+      return await this.triggerWorkflow({ episodeId, torrentLink });
     }
   }
 
@@ -277,7 +277,9 @@ export class JobService
       },
     });
     for (const job of jobs) {
-      this.triggerWorkflowStep(this.jobToInput(job));
+      const input = this.jobToInput(job);
+      console.debug('Enqueuing step', input.completion, 'for job', job.id);
+      this.triggerWorkflowStep(input);
     }
   }
 }
