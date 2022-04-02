@@ -27,26 +27,47 @@ export class SubmitDownloadAtom extends AsyncAtom<
     if (!torrentLink) {
       throw new Error('torrentLink not set');
     }
-    const { data } = await this.global.get<Buffer>(torrentLink, {
-      responseType: 'arraybuffer',
-    });
-    const torrent = parseTorrent(data);
-    if (!torrent.name || !torrent.infoHash) {
-      throw new Error('Invalid torrent file');
-    }
-    const params = new FormData();
-    params.append('torrents', data, {
-      filename: torrent.name as string | undefined,
-    });
-    // 为了幂等，如果已经存在种子，就不再提交，也无需报错，相信hash不会碰撞
-    if (!(await this.qbt.getTorrent(torrent.infoHash))) {
-      await this.qbt.post('/torrents/add', params.getBuffer(), {
-        headers: params.getHeaders(),
+    // 判断磁力链
+    if (torrentLink.startsWith('magnet:')) {
+      const magnet = parseTorrent(torrentLink);
+      if (!magnet.infoHash) {
+        throw new Error('Invalid magnet link');
+      }
+      const params = new FormData();
+      params.append('urls', torrentLink);
+      if (!(await this.qbt.getTorrent(magnet.infoHash))) {
+        await this.qbt.post('/torrents/add', params.getBuffer(), {
+          headers: params.getHeaders(),
+        });
+        console.debug(`torrent ${magnet.xt} (${magnet.infoHash}) submitted`);
+      }
+      return {
+        qbtTorrentHash: magnet.infoHash,
+      };
+    } else {
+      const { data } = await this.global.get<Buffer>(torrentLink, {
+        responseType: 'arraybuffer',
       });
-      console.debug(`torrent ${torrent.name} (${torrent.infoHash}) submitted`);
+      const torrent = parseTorrent(data);
+      if (!torrent.name || !torrent.infoHash) {
+        throw new Error('Invalid torrent file');
+      }
+      const params = new FormData();
+      params.append('torrents', data, {
+        filename: torrent.name as string | undefined,
+      });
+      // 为了幂等，如果已经存在种子，就不再提交，也无需报错，相信hash不会碰撞
+      if (!(await this.qbt.getTorrent(torrent.infoHash))) {
+        await this.qbt.post('/torrents/add', params.getBuffer(), {
+          headers: params.getHeaders(),
+        });
+        console.debug(
+          `torrent ${torrent.name} (${torrent.infoHash}) submitted`,
+        );
+      }
+      return {
+        qbtTorrentHash: torrent.infoHash,
+      };
     }
-    return {
-      qbtTorrentHash: torrent.infoHash,
-    };
   }
 }
