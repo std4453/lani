@@ -106,9 +106,9 @@ export default function Metadata() {
       />
       <Form.Item label="标签" {...formItemProps} dependencies={['tags']}>
         {(form: FormInstance<FormValues>) => {
-          const tags = form.getFieldValue('tags') as string[];
+          const tags = (form.getFieldValue('tags') as string[]) ?? [];
           if (tags.length > 0) {
-            return (tags as string[]).map((tag) => (
+            return tags.map((tag) => (
               <Tag key={tag} color="blue">
                 {tag}
               </Tag>

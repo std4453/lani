@@ -150,7 +150,7 @@ function useColumns(
   );
 }
 
-export default function Episodes() {
+export default function Episodes({ episodes }: { episodes: Episode[] }) {
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
   const columns = useColumns(openDownloadMagnet);
@@ -228,20 +228,16 @@ export default function Episodes() {
         ]}
         width="sm"
       />
-      <ProFormDependency name={['episodes']}>
-        {({ episodes }) => (
-          <ProTable<Episode>
-            columns={columns}
-            dataSource={episodes as Episode[]}
-            rowKey="id"
-            pagination={false}
-            toolBarRender={false}
-            search={false}
-            defaultSize="middle"
-            actionRef={ref}
-          />
-        )}
-      </ProFormDependency>
+      <ProTable<Episode>
+        columns={columns}
+        dataSource={episodes}
+        rowKey="id"
+        pagination={false}
+        toolBarRender={false}
+        search={false}
+        defaultSize="middle"
+        actionRef={ref}
+      />
       {downloadMagnetDialog}
     </div>
   );

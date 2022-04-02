@@ -1,20 +1,28 @@
-import { GetSeasonByIdDocument } from '@/generated/types';
-import Header from '@/pages/season/Header';
-import ProForm, { ProFormInstance } from '@ant-design/pro-form';
-import { useApolloClient } from '@apollo/client';
-import { useMemo, useRef, useState } from 'react';
-import { useParams } from 'umi';
 import {
+  GetSeasonByIdAllDocument,
+  GetSeasonByIdConfigOnlyDocument,
+  GetSeasonByIdEpisodesOnlyDocument,
+} from '@/generated/types';
+import Connections from '@/pages/season/Connections';
+import DownloadSources from '@/pages/season/DownloadSources';
+import Episodes from '@/pages/season/Episodes';
+import Header from '@/pages/season/Header';
+import {
+  Episode,
   FormValues,
+  mapEpisode,
   queryToFormValues,
   useOnFinish,
 } from '@/pages/season/help';
-import { createPortal } from 'react-dom';
-import Connections from '@/pages/season/Connections';
 import Metadata from '@/pages/season/Metadata';
-import DownloadSources from '@/pages/season/DownloadSources';
-import Episodes from '@/pages/season/Episodes';
-import { useMemoizedFn } from 'ahooks';
+import { extractNode } from '@/utils/graphql';
+import ProForm, { ProFormInstance } from '@ant-design/pro-form';
+import { useApolloClient } from '@apollo/client';
+import { useMemoizedFn, useMount } from 'ahooks';
+import { message, Spin } from 'antd';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useParams } from 'umi';
 
 export default function SeasonPage() {
   const { id: idStr } = useParams<{
@@ -24,58 +32,107 @@ export default function SeasonPage() {
 
   const client = useApolloClient();
   const formRef = useRef<ProFormInstance<FormValues>>();
-  const onFinish = useOnFinish(id);
   const [headerExtraEl, setHeaderExtraEl] = useState<HTMLDivElement | null>(
     null,
   );
 
-  const [key, setKey] = useState(0);
-  const refresh = useMemoizedFn(() => {
-    setKey((key) => key + 1);
+  const [initialValues, setInitialValues] = useState<FormValues | undefined>(
+    undefined,
+  );
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loading, setLoading] = useState(false);
+  useMount(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdAllDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById || data.seasonById.isArchived) {
+        void message.error('动画不存在或已被删除');
+        return;
+      }
+      setInitialValues(queryToFormValues(data.seasonById));
+      formRef.current?.resetFields();
+      setEpisodes(
+        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
+      );
+    } finally {
+      setLoading(false);
+    }
+  });
+  const reloadConfig = useMemoizedFn(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdConfigOnlyDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById || data.seasonById.isArchived) {
+        return;
+      }
+      setInitialValues(queryToFormValues(data.seasonById));
+      formRef.current?.resetFields();
+    } finally {
+      setLoading(false);
+    }
+  });
+  const reloadEpisodes = useMemoizedFn(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdEpisodesOnlyDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById) {
+        return;
+      }
+      setEpisodes(
+        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
+      );
+    } finally {
+      setLoading(false);
+    }
   });
 
+  const onFinish = useOnFinish(id, reloadConfig);
+
   return (
-    <ProForm<FormValues>
-      key={key}
-      formRef={formRef}
-      onFinish={onFinish}
-      params={{ id }}
-      request={async ({ id }) => {
-        const { data, error } = await client.query({
-          query: GetSeasonByIdDocument,
-          variables: {
-            id,
-          },
-        });
-        if (error) {
-          throw error;
-        }
-        if (!data.seasonById || data.seasonById.isArchived) {
-          throw new Error('动画不存在或已被删除');
-        }
-        return queryToFormValues(data.seasonById);
-      }}
-      submitter={{
-        searchConfig: {
-          submitText: '保存',
-        },
-        render: (_props, dom) =>
-          headerExtraEl && createPortal(dom, headerExtraEl),
-      }}
-      layout="horizontal"
-      colon={false}
-    >
-      <Header
-        id={id}
+    <Spin spinning={loading}>
+      <ProForm<FormValues>
         formRef={formRef}
-        ref={setHeaderExtraEl}
-        refresh={refresh}
-      />
-      <Connections />
-      <Metadata />
-      <DownloadSources />
-      <Episodes />
-      <div style={{ height: 200 }} />
-    </ProForm>
+        onFinish={onFinish}
+        params={{ id }}
+        initialValues={initialValues}
+        submitter={{
+          searchConfig: {
+            submitText: '保存',
+          },
+          render: (_props, dom) =>
+            headerExtraEl && createPortal(dom, headerExtraEl),
+        }}
+        layout="horizontal"
+        colon={false}
+      >
+        <Header
+          id={id}
+          formRef={formRef}
+          ref={setHeaderExtraEl}
+          reloadConfig={reloadConfig}
+          reloadEpisodes={reloadEpisodes}
+        />
+        <Connections />
+        <Metadata />
+        <DownloadSources />
+        <Episodes episodes={episodes} />
+        <div style={{ height: 200 }} />
+      </ProForm>
+    </Spin>
   );
 }
