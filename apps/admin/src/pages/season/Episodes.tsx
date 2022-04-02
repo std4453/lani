@@ -6,9 +6,19 @@ import {
   formItemProps,
   FormValues,
 } from '@/pages/season/help';
+import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
+import { DownOutlined } from '@ant-design/icons';
 import { ProFormDependency, ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
-import { Alert, Divider, Tag, TagProps, Typography } from 'antd';
+import {
+  Alert,
+  Divider,
+  Dropdown,
+  Menu,
+  Tag,
+  TagProps,
+  Typography,
+} from 'antd';
 import { useMemo, useRef } from 'react';
 import styles from './Episodes.module.less';
 
@@ -53,7 +63,9 @@ const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
   },
 };
 
-function useColumns() {
+function useColumns(
+  openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2],
+) {
   return useMemo(
     (): ProColumns<Episode>[] => [
       {
@@ -109,7 +121,26 @@ function useColumns() {
         render: (_, r) => [
           <Typography.Link key={0}>查看详情</Typography.Link>,
           <Typography.Link key={1}>手动导入</Typography.Link>,
-          <Typography.Link key={2}>手动下载</Typography.Link>,
+          <Dropdown
+            key={2}
+            overlay={
+              <Menu>
+                <Menu.Item disabled>搜索种子</Menu.Item>
+                <Menu.Item
+                  onClick={() => {
+                    void openDownloadMagnet({ episodeId: r.id });
+                  }}
+                >
+                  磁力链接
+                </Menu.Item>
+              </Menu>
+            }
+          >
+            <Typography.Link>
+              手动下载&nbsp;
+              <DownOutlined />
+            </Typography.Link>
+          </Dropdown>,
         ],
         search: false,
         width: 300,
@@ -120,7 +151,9 @@ function useColumns() {
 }
 
 export default function Episodes() {
-  const columns = useColumns();
+  const [downloadMagnetDialog, , openDownloadMagnet] =
+    useManualDownloadMagnetDialog();
+  const columns = useColumns(openDownloadMagnet);
   const ref = useRef<ActionType>();
 
   return (
@@ -209,6 +242,7 @@ export default function Episodes() {
           />
         )}
       </ProFormDependency>
+      {downloadMagnetDialog}
     </div>
   );
 }

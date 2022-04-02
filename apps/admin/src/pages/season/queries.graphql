@@ -82,3 +82,7 @@ mutation SyncMetadata($seasonId: Int!) {
 mutation SyncEpisodeData($seasonId: Int!) {
   syncEpisodeData(seasonId: $seasonId)
 }
+
+mutation DownloadTorrentForEpisode($episodeId: Int!, $torrentLink: String!) {
+  downloadTorrentForEpisode(episodeId: $episodeId, torrentLink: $torrentLink)
+}
