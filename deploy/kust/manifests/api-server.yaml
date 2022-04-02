@@ -47,6 +47,8 @@ spec:
       - name: media
         persistentVolumeClaim: 
           claimName: media-pvc
+      securityContext:
+        runAsUser: 1000
 ---
 kind: Service
 apiVersion: v1
