@@ -6,6 +6,7 @@ resources:
   - regcred.yaml
   - lani-cd.yaml
   - redis.yaml
+  - volumes.yaml
   # services
   # - bilibili-bangumi-cc.yaml
   - data-server.yaml
