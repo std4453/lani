@@ -1,6 +1,7 @@
 import {
   DownloadStatus,
-  GetSeasonByIdQuery,
+  GetSeasonByIdConfigOnlyQuery,
+  GetSeasonByIdEpisodesOnlyQuery,
   MetadataSource,
   UpdateSeasonByIdDocument,
   UpdateSeasonDownloadSourcesDocument,
@@ -10,12 +11,17 @@ import { ProFormInstance } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn } from 'ahooks';
 import { FormItemProps, message } from 'antd';
-import { MutableRefObject } from 'react';
 import dayjs from 'dayjs';
+import { MutableRefObject } from 'react';
 
-export type Season = NonNullable<GetSeasonByIdQuery['seasonById']>;
+export type Season = NonNullable<GetSeasonByIdConfigOnlyQuery['seasonById']>;
 
-type RawEpisode = NonNullable<ExtractNode<Season['episodesBySeasonId']>>;
+type SeasonEpisodesOnly = NonNullable<
+  GetSeasonByIdEpisodesOnlyQuery['seasonById']
+>;
+type RawEpisode = NonNullable<
+  ExtractNode<SeasonEpisodesOnly['episodesBySeasonId']>
+>;
 type DownloadJob = NonNullable<
   ExtractNode<RawEpisode['downloadJobsByEpisodeId']>
 >;
@@ -51,7 +57,7 @@ function calcJobStatus(
   }
 }
 
-function mapEpisode({
+export function mapEpisode({
   downloadJobsByEpisodeId,
   ...episode
 }: RawEpisode): Episode {
@@ -85,7 +91,6 @@ export interface FormValues {
   bilibiliThmId: string;
   description: string;
   downloadSources: DownloadSource[];
-  episodes: Episode[];
   infoSource: MetadataSource;
   episodesSource: MetadataSource;
 }
@@ -107,7 +112,6 @@ export function queryToFormValues({
   bilibiliThmId,
   description,
   downloadSourcesBySeasonId,
-  episodesBySeasonId,
   infoSource,
   episodesSource,
 }: Season): FormValues {
@@ -131,13 +135,12 @@ export function queryToFormValues({
     bilibiliThmId,
     description,
     downloadSources: extractNode(downloadSourcesBySeasonId) ?? [],
-    episodes: (extractNode(episodesBySeasonId) ?? []).map(mapEpisode),
     infoSource,
     episodesSource,
   };
 }
 
-export function useOnFinish(id: number) {
+export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
   const client = useApolloClient();
 
   return useMemoizedFn(
@@ -199,6 +202,7 @@ export function useOnFinish(id: number) {
           },
         });
         void message.success('保存成功');
+        void reloadConfig();
         return true;
       } catch (error) {
         console.error(error);

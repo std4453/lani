@@ -18,11 +18,13 @@ const Header = forwardRef(
     {
       id,
       formRef,
-      refresh,
+      reloadConfig,
+      reloadEpisodes,
     }: {
       id: number;
       formRef: FormRef;
-      refresh: () => void;
+      reloadConfig: () => Promise<void>;
+      reloadEpisodes: () => Promise<void>;
     },
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
@@ -58,7 +60,7 @@ const Header = forwardRef(
           },
         });
         void message.success('同步剧集信息成功');
-        refresh();
+        void reloadEpisodes();
       } catch (error) {
         console.error(error);
         void message.error('同步剧集信息失败');
@@ -80,7 +82,7 @@ const Header = forwardRef(
           },
         });
         void message.success('同步元数据成功');
-        refresh();
+        void reloadConfig();
       } catch (error) {
         console.error(error);
         void message.error('同步元数据失败');

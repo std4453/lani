@@ -1,4 +1,4 @@
-query GetSeasonById($id: Int!) {
+query GetSeasonByIdAll($id: Int!) {
   seasonById(id: $id) {
     id
     infoSource
@@ -45,6 +45,64 @@ query GetSeasonById($id: Int!) {
         node {
           id
           pattern
+        }
+      }
+    }
+  }
+}
+
+query GetSeasonByIdConfigOnly($id: Int!) {
+  seasonById(id: $id) {
+    id
+    infoSource
+    isMonitoring
+    jellyfinId
+    mikanAnimeId
+    seasonRoot
+    tags
+    title
+    tvdbId
+    tvdbSeason
+    weekday
+    yearAndSemester
+    airTime
+    bangumiId
+    bilibiliMainlandId
+    bilibiliThmId
+    createdAt
+    description
+    isArchived
+    episodesSource
+    downloadSourcesBySeasonId {
+      edges {
+        node {
+          id
+          pattern
+        }
+      }
+    }
+  }
+}
+
+query GetSeasonByIdEpisodesOnly($id: Int!) {
+  seasonById(id: $id) {
+    episodesBySeasonId(orderBy: INDEX_ASC) {
+      edges {
+        node {
+          airTime
+          id
+          index
+          jellyfinEpisodeId
+          title
+          downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
+            totalCount
+            edges {
+              node {
+                status
+                isFailed
+              }
+            }
+          }
         }
       }
     }
