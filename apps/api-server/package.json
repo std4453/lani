@@ -4,8 +4,7 @@
   "private": "true",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "rimraf dist && prisma generate",
-    "build": "nest build",
+    "build": "rimraf dist && prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "NODE_ENV=development nest start --watch",
@@ -23,7 +22,6 @@
     "codegen:bangumi": "openapi -i https://bangumi.github.io/api/dist.json -o src/bangumi -c axios --indent 2 --postfix BangumiAPIService",
     "prisma:pull": "prisma db pull",
     "prisma:gen": "prisma generate",
-    "postinstall": "prisma generate",
     "devops": "lani-cli devops"
   },
   "dependencies": {
