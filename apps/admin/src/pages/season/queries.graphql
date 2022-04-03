@@ -5,7 +5,7 @@ query GetSeasonByIdAll($id: Int!) {
     isMonitoring
     jellyfinId
     mikanAnimeId
-    seasonRoot
+    jellyfinFolderId
     tags
     title
     tvdbId
@@ -58,7 +58,7 @@ query GetSeasonByIdConfigOnly($id: Int!) {
     isMonitoring
     jellyfinId
     mikanAnimeId
-    seasonRoot
+    jellyfinFolderId
     tags
     title
     tvdbId
@@ -143,4 +143,16 @@ mutation SyncEpisodeData($seasonId: Int!) {
 
 mutation DownloadTorrentForEpisode($episodeId: Int!, $torrentLink: String!) {
   downloadTorrentForEpisode(episodeId: $episodeId, torrentLink: $torrentLink)
+}
+
+query AllJellyfinFolders {
+  allJellyfinFolders {
+    edges {
+      node {
+        id
+        location
+        name
+      }
+    }
+  }
 }

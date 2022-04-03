@@ -77,7 +77,7 @@ export interface FormValues {
   isMonitoring: boolean;
   jellyfinId: string;
   mikanAnimeId: string;
-  seasonRoot: string;
+  jellyfinFolderId: number | null;
   tags: string[];
   title: string;
   tvdbId: string;
@@ -99,7 +99,7 @@ export function queryToFormValues({
   isMonitoring,
   jellyfinId,
   mikanAnimeId,
-  seasonRoot,
+  jellyfinFolderId,
   tags,
   title,
   tvdbId,
@@ -119,7 +119,7 @@ export function queryToFormValues({
     isMonitoring,
     jellyfinId,
     mikanAnimeId,
-    seasonRoot: seasonRoot ?? '',
+    jellyfinFolderId: jellyfinFolderId ?? null,
     tags: tags.filter((tag): tag is string => Boolean(tag)),
     title,
     tvdbId,
@@ -148,7 +148,7 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
       isMonitoring,
       jellyfinId,
       mikanAnimeId,
-      seasonRoot,
+      jellyfinFolderId,
       title,
       tvdbId,
       tvdbSeason,
@@ -175,7 +175,7 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
               isMonitoring,
               jellyfinId,
               mikanAnimeId,
-              seasonRoot: seasonRoot || null,
+              jellyfinFolderId: jellyfinFolderId ?? null,
               title,
               tvdbId,
               tvdbSeason: tvdbSeason ?? null,

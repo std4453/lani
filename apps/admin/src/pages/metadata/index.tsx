@@ -11,18 +11,9 @@ import {
 import { useAddFromBangumiDialog } from '@/pages/metadata/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/metadata/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
-import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import {
-  Button,
-  Dropdown,
-  Menu,
-  message,
-  Popconfirm,
-  Space,
-  Typography,
-} from 'antd';
+import { Dropdown, Menu, message, Popconfirm, Space, Typography } from 'antd';
 import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
 import { useHistory } from 'umi';
@@ -58,6 +49,31 @@ function LinkIcon({
         className={styles.icon}
       />
     </a>
+  );
+}
+
+function ColoredCell({
+  className,
+  children,
+  status = 'default',
+}: {
+  className?: string;
+  children?: React.ReactNode;
+  status?: 'success' | 'error' | 'default';
+}) {
+  return (
+    <div
+      className={clsx(
+        styles.coloredCell,
+        {
+          [styles.bad]: status === 'error',
+          [styles.good]: status === 'success',
+        },
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -99,10 +115,16 @@ function useColumns() {
         key: 'airTime',
         width: 120,
         search: false,
-        render: (_, r) =>
-          typeof r.weekday === 'number' && r.airTime
-            ? `${weekdayToText[r.weekday]} ${r.airTime}`
-            : '-',
+        render: (_, r) => {
+          if (typeof r.weekday !== 'number') {
+            return '-';
+          }
+          if (!r.airTime) {
+            return weekdayToText[r.weekday];
+          } else {
+            return `${weekdayToText[r.weekday]} ${r.airTime}`;
+          }
+        },
       },
       {
         title: '追番状态',
@@ -121,21 +143,37 @@ function useColumns() {
         filters: true,
       },
       {
+        title: '媒体库',
+        key: 'library',
+        width: 100,
+        render: (_, r) => (
+          <ColoredCell
+            status={
+              r.isMonitoring && !r.jellyfinFolderByJellyfinFolderId?.name
+                ? 'error'
+                : 'default'
+            }
+          >
+            {r.jellyfinFolderByJellyfinFolderId?.name ?? '-'}
+          </ColoredCell>
+        ),
+      },
+      {
         title: '剧集',
         tooltip: '可用集数 / 已放送集数 / 总集数',
         key: 'episodes',
         width: 120,
         search: false,
         render: (_, r) => (
-          <div
-            className={clsx(
-              styles.episodesCell,
+          <ColoredCell
+            className={styles.episodesCell}
+            status={
               r.isMonitoring && r.allEpisodes.totalCount > 0
                 ? r.availableEpisodes.totalCount < r.airedEpisodes.totalCount
-                  ? styles.bad
-                  : styles.good
-                : false,
-            )}
+                  ? 'error'
+                  : 'success'
+                : 'default'
+            }
           >
             {r.allEpisodes.totalCount > 0 ? (
               <>
@@ -148,7 +186,7 @@ function useColumns() {
             ) : (
               '无'
             )}
-          </div>
+          </ColoredCell>
         ),
       },
       {
