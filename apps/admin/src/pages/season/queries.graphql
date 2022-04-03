@@ -1,3 +1,8 @@
+fragment displayImageFields on Image {
+  id
+  downloadPath
+}
+
 query GetSeasonByIdAll($id: Int!) {
   seasonById(id: $id) {
     id
@@ -48,6 +53,15 @@ query GetSeasonByIdAll($id: Int!) {
         }
       }
     }
+    poster: imageByPosterImageId {
+      ...displayImageFields
+    }
+    banner: imageByBannerImageId {
+      ...displayImageFields
+    }
+    fanart: imageByFanartImageId {
+      ...displayImageFields
+    }
   }
 }
 
@@ -80,6 +94,18 @@ query GetSeasonByIdConfigOnly($id: Int!) {
           pattern
         }
       }
+    }
+    poster: imageByPosterImageId {
+      id
+      downloadPath
+    }
+    banner: imageByBannerImageId {
+      id
+      downloadPath
+    }
+    fanart: imageByFanartImageId {
+      id
+      downloadPath
     }
   }
 }
