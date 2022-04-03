@@ -9,7 +9,6 @@ import {
   ApolloFederationDriver,
   ApolloFederationDriverConfig,
 } from '@nestjs/apollo';
-import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -36,13 +35,6 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
       load: [() => config],
     }),
     ScheduleModule.forRoot(),
-    BullModule.forRoot({
-      redis: {
-        host: config.redisHost,
-        port: 6379,
-        password: config.redisPassword,
-      },
-    }),
     SentryModule.forRoot({
       //dsn: 'https://5f167e91f71f406a9e11a7aebbfcb6d4@o639057.ingest.sentry.io/6292676',
       dsn: 'https://1f3b8d2e87f9423194c36bce2c790d2e@sentry.std4453.com:444/2',
