@@ -76,6 +76,10 @@ export class SyncMetadataResolver {
         tags: info?.tags ?? info?.genres ?? [],
         weekday: info?.weekday ?? null,
         airTime: info?.time ?? '',
+        yearAndSemester:
+          info?.year && info?.semester
+            ? `${info.year}${info.semester.toString().padStart(2, '0')}`
+            : '',
       },
     });
     await this.writeSeasonMetadata(newSeason);
