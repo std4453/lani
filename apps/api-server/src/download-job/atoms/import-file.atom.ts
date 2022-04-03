@@ -31,15 +31,20 @@ export class ImportFileAtom extends AsyncAtom<
     }
     const {
       index,
-      season: { title: seasonTitle, seasonRoot },
+      season: { title: seasonTitle, jellyfinFolder },
     } = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: {
-        season: true,
+        season: {
+          include: {
+            jellyfinFolder: true,
+          },
+        },
       },
     });
+    const seasonRoot = jellyfinFolder?.location;
     if (!seasonRoot) {
-      throw new Error('seasonRoot not set');
+      throw new Error('jellyfinFolder not set');
     }
     const mappedImportPath = mapPath(
       this.config.get<PathMapping>('qbtPathMapping'),

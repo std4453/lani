@@ -8,7 +8,12 @@ import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
-import { Episode, MetadataSource, Season } from '@prisma/client';
+import {
+  Episode,
+  JellyfinFolder,
+  MetadataSource,
+  Season,
+} from '@prisma/client';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
@@ -81,6 +86,9 @@ export class SyncMetadataResolver {
             ? `${info.year}${info.semester.toString().padStart(2, '0')}`
             : '',
       },
+      include: {
+        jellyfinFolder: true,
+      },
     });
     await this.writeSeasonMetadata(newSeason);
     return 'ok';
@@ -90,6 +98,9 @@ export class SyncMetadataResolver {
   async writeMetadata(@Args('seasonId') seasonId: number) {
     const season = await this.prisma.season.findUnique({
       where: { id: seasonId },
+      include: {
+        jellyfinFolder: true,
+      },
     });
     if (season.isArchived) {
       throw new ConflictException('season is archived (deleted)');
@@ -99,7 +110,6 @@ export class SyncMetadataResolver {
   }
 
   private async writeSeasonMetadata({
-    seasonRoot,
     title,
     description,
     tags,
@@ -107,7 +117,11 @@ export class SyncMetadataResolver {
     bangumiId,
     id,
     yearAndSemester,
-  }: Season) {
+    jellyfinFolder,
+  }: Season & {
+    jellyfinFolder: JellyfinFolder | null;
+  }) {
+    const seasonRoot = jellyfinFolder?.location;
     if (!seasonRoot) {
       throw new ConflictException('seasonRoot not set');
     }
