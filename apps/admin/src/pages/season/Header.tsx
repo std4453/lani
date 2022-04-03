@@ -137,10 +137,6 @@ const Header = forwardRef(
             }
             history.goBack();
           }}
-          style={{
-            paddingTop: 0,
-            paddingBottom: 0,
-          }}
           extra={
             <div className={styles.extra}>
               <Button type="primary" ghost {...syncMetadataProps}>
@@ -152,6 +148,7 @@ const Header = forwardRef(
               <div ref={ref} className={styles.submitter} />
             </div>
           }
+          className={styles.root}
         />
         <Modal
           title="确认返回"
