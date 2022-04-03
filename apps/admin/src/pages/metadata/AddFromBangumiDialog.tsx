@@ -1,4 +1,3 @@
-import { ImagePath } from '@/constants/icon-path';
 import {
   CreateSeasonDocument,
   MetadataSource,
@@ -51,6 +50,8 @@ export default function AddFromBangumiDialog({
     }
   }, [visible]);
 
+  const [submitting, setSubmitting] = useState(false);
+
   return (
     <Modal
       title="从Bangumi添加季度"
@@ -59,12 +60,14 @@ export default function AddFromBangumiDialog({
       okText="添加"
       okButtonProps={{
         disabled: !selected || selected.added,
+        loading: submitting,
       }}
       onOk={async () => {
-        if (!selected) {
+        if (!selected || submitting) {
           return;
         }
         try {
+          setSubmitting(true);
           const { data } = await client.mutate({
             mutation: CreateSeasonDocument,
             variables: {
@@ -85,6 +88,8 @@ export default function AddFromBangumiDialog({
         } catch (e) {
           console.error(e);
           void message.error('新建失败');
+        } finally {
+          setSubmitting(false);
         }
       }}
       width={900}

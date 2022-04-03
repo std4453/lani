@@ -40,7 +40,7 @@ function calcJobStatus(
   job?: DownloadJob,
 ): ExtendedDownloadStatus {
   if (job) {
-    if (job.status === DownloadStatus.Downloading && job.isFailed) {
+    if (job.isFailed) {
       return 'DOWNLOAD_FAILED';
     }
     return job.status;

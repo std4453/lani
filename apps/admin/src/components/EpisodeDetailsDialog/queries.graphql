@@ -1,0 +1,35 @@
+query GetEpisodeById($episodeByIdId: Int!) {
+  episodeById(id: $episodeByIdId) {
+    airTime
+    createdAt
+    description
+    downloadJobsByEpisodeId(orderBy: ID_DESC) {
+      edges {
+        node {
+          createdAt
+          downloadPath
+          failedAt
+          failedReason
+          filePath
+          id
+          importPath
+          isFailed
+          nfoPath
+          qbtTorrentHash
+          qbtLastSync
+          status
+          torrentLink
+          jellyfinEpisodeId
+        }
+      }
+    }
+    id
+    index
+    jellyfinEpisodeId
+    seasonBySeasonId {
+      id
+      title
+    }
+    title
+  }
+}

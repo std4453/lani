@@ -146,7 +146,7 @@ export default function Connections() {
                 placeholder="32位季度ID"
                 addonBefore="中的"
                 style={{
-                  width: 280,
+                  width: 360,
                 }}
               />
             </Form.Item>
