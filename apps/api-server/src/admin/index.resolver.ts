@@ -81,4 +81,21 @@ export class AdminResolver {
         added.find((season) => season.bangumiId === `${item.id}`) !== undefined,
     }));
   }
+
+  @Query(() => [String])
+  async getAvailableSemesters() {
+    const results = await this.prisma.season.findMany({
+      where: {
+        isArchived: false,
+      },
+      select: {
+        yearAndSemester: true,
+      },
+      distinct: ['yearAndSemester'],
+      orderBy: {
+        yearAndSemester: 'desc',
+      },
+    });
+    return results.map((result) => result.yearAndSemester);
+  }
 }
