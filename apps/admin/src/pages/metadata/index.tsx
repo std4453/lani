@@ -3,6 +3,7 @@ import { seasonToText, weekdayToText } from '@/constants';
 import { IconPath } from '@/constants/icon-path';
 import {
   DeleteSeasonByIdDocument,
+  GetMetadataPageOptionsDocument,
   ListSeasonsDocument,
   ListSeasonsQuery,
   SeasonFilter,
@@ -12,8 +13,9 @@ import { useAddFromBangumiDialog } from '@/pages/metadata/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/metadata/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
-import { ApolloClient, useApolloClient } from '@apollo/client';
+import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
 import { Dropdown, Menu, message, Popconfirm, Space, Typography } from 'antd';
+import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
 import { useHistory } from 'umi';
@@ -79,24 +81,48 @@ function ColoredCell({
 
 function useColumns() {
   const history = useHistory();
+  const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
+  const semesterOptions = useMemo(
+    (): ColumnFilterItem[] =>
+      (optionsData?.getAvailableSemesters ?? []).map((yearAndSemester) => ({
+        text: yearAndSemester
+          ? `${yearAndSemester.substring(0, 4)} / ${
+              seasonToText[parseInt(yearAndSemester.substring(4, 6))]
+            }`
+          : '未设定',
+        value: yearAndSemester,
+      })),
+    [optionsData],
+  );
+  const foldersOptions = useMemo(
+    (): ColumnFilterItem[] =>
+      (extractNode(optionsData?.allJellyfinFolders) ?? []).map((folder) => ({
+        value: folder.id,
+        text: folder.name,
+      })),
+    [optionsData],
+  );
+
   return useMemo(
     (): ProColumns<RowType>[] => [
       {
-        title: '#',
+        title: '',
         dataIndex: 'id',
         align: 'center',
         search: false,
         width: 48,
+        sorter: true,
       },
       {
         title: '季度标题',
         dataIndex: 'title',
         copyable: true,
         ellipsis: false,
+        sorter: true,
       },
       {
         title: '季度',
-        key: 'semester',
+        dataIndex: 'yearAndSemester',
         width: 120,
         search: false,
         render: (_, r) =>
@@ -109,6 +135,7 @@ function useColumns() {
           ) : (
             '-'
           ),
+        filters: semesterOptions,
       },
       {
         title: '放送时间',
@@ -144,7 +171,7 @@ function useColumns() {
       },
       {
         title: '媒体库',
-        key: 'library',
+        dataIndex: 'folder',
         width: 100,
         render: (_, r) => (
           <ColoredCell
@@ -157,6 +184,7 @@ function useColumns() {
             {r.jellyfinFolderByJellyfinFolderId?.name ?? '-'}
           </ColoredCell>
         ),
+        filters: foldersOptions,
       },
       {
         title: '剧集',
@@ -267,7 +295,7 @@ function useColumns() {
         width: 120,
       },
     ],
-    [history],
+    [history, semesterOptions, foldersOptions],
   );
 }
 
@@ -283,9 +311,20 @@ async function querySeasons(
     keyword?: string;
   },
   {
+    id: idSort,
+    title: titleSort,
+  }: {
+    id?: 'ascend' | 'descend';
+    title?: 'ascend' | 'descend';
+  },
+  {
     isMonitoring,
+    yearAndSemester,
+    folder,
   }: {
     isMonitoring?: ('true' | 'false')[];
+    yearAndSemester?: string[];
+    folder?: number[];
   },
 ) {
   const filter: SeasonFilter = {
@@ -303,13 +342,39 @@ async function querySeasons(
           },
         }
       : undefined),
+    ...(yearAndSemester
+      ? {
+          yearAndSemester: {
+            in: yearAndSemester,
+          },
+        }
+      : undefined),
+    ...(folder
+      ? {
+          jellyfinFolderId: {
+            in: folder,
+          },
+        }
+      : undefined),
   };
+  const orderBy: SeasonsOrderBy[] = [
+    ...(titleSort
+      ? titleSort === 'ascend'
+        ? [SeasonsOrderBy.TitleAsc]
+        : [SeasonsOrderBy.TitleDesc]
+      : []),
+    ...(idSort
+      ? idSort === 'ascend'
+        ? [SeasonsOrderBy.IdAsc]
+        : [SeasonsOrderBy.IdDesc]
+      : []),
+  ];
   const { data, error } = await client.query({
     query: ListSeasonsDocument,
     variables: {
       first: pageSize,
       offset: pageSize * (current - 1),
-      orderBy: SeasonsOrderBy.IdDesc,
+      orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdAsc],
       ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       now: new Date(),
     },
@@ -347,9 +412,12 @@ export default function MetadataPage() {
   return (
     <>
       <ProTable<RowType, { uniformName?: string }>
+        form={{
+          syncToUrl: true,
+        }}
         columns={columns}
-        request={(params, _sort, filter) =>
-          querySeasons(client, params, filter)
+        request={(params, sort, filter) =>
+          querySeasons(client, params, sort, filter)
         }
         rowKey="id"
         pagination={{
