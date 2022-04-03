@@ -1,3 +1,4 @@
+import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
 import { CommonModule } from '@/common/index.module';
 import config from '@/config';
@@ -31,6 +32,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
       autoSchemaFile: true,
       buildSchemaOptions: {
         numberScalarMode: 'integer',
+        orphanedTypes: [Image],
       },
     }),
     ConfigModule.forRoot({

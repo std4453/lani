@@ -1,6 +1,11 @@
 import { mergeConfig } from '@lani/framework';
 import { PathMapping } from '@/utils/path';
 
+export interface COSBucket {
+  bucket: string;
+  region: string;
+}
+
 const config = mergeConfig({
   hk1Proxy: 'http://hk1.v2ray:8889',
   globalProxy: 'http://v2ray.v2ray:8889',
@@ -25,6 +30,10 @@ const config = mergeConfig({
   jellyfinToken: '231e55e0d1c240cd9e58cc47f61f521b',
   jellyfinUserId: '786d13a822ed4f6ba27b28f5cf374133',
   jellyfinPathMapping: [] as PathMapping,
+  imagesBucket: {
+    bucket: 'lani-images-1308701035',
+    region: 'ap-shanghai',
+  } as COSBucket,
 })({
   dev: {
     sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',

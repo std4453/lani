@@ -1,5 +1,8 @@
+import { ItemRefreshService } from '@/api/jellyfin';
+import { ChinaAxiosService } from '@/common/axios.service';
+import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import { ConfigType, COSBucket } from '@/config';
 import { DateFormat } from '@/constants/date-format';
 import { BangumiSeasonService } from '@/season-sync/bangumi/index.service';
 import { PartialSeason } from '@/season-sync/index.model';
@@ -10,12 +13,15 @@ import { ConfigService } from '@nestjs/config';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 import {
   Episode,
+  Image,
   JellyfinFolder,
   MetadataSource,
   Season,
 } from '@prisma/client';
 import dayjs from 'dayjs';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsPromises from 'fs/promises';
+import md5 from 'md5';
 import path from 'path';
 import xml2js from 'xml2js';
 
@@ -24,8 +30,10 @@ export class SyncMetadataResolver {
   constructor(
     private skyhook: SkyhookSeasonService,
     private bangumi: BangumiSeasonService,
+    private china: ChinaAxiosService,
     private prisma: PrismaService,
     private config: ConfigService<ConfigType, true>,
+    private cos: COSService,
   ) {}
 
   private readonly builder = new xml2js.Builder();
@@ -50,6 +58,7 @@ export class SyncMetadataResolver {
           {
             info: true,
             characters: true,
+            images: true,
           },
           bangumiId,
         );
@@ -65,6 +74,7 @@ export class SyncMetadataResolver {
           {
             info: true,
             characters: true,
+            images: true,
           },
           tvdbId,
           tvdbSeason,
@@ -73,7 +83,7 @@ export class SyncMetadataResolver {
       default:
         throw new ConflictException('infoSource not available for auto sync');
     }
-    const { info } = result;
+    const { info, images } = result;
     const newSeason = await this.prisma.season.update({
       where: { id: seasonId },
       data: {
@@ -85,9 +95,54 @@ export class SyncMetadataResolver {
           info?.year && info?.semester
             ? `${info.year}${info.semester.toString().padStart(2, '0')}`
             : '',
+        ...(images?.posterURL
+          ? {
+              posterImage: {
+                connectOrCreate: {
+                  where: {
+                    sourceUrl: images.posterURL,
+                  },
+                  create: {
+                    sourceUrl: images.posterURL,
+                  },
+                },
+              },
+            }
+          : undefined),
+        ...(images?.fanartURL
+          ? {
+              fanartImage: {
+                connectOrCreate: {
+                  where: {
+                    sourceUrl: images.fanartURL,
+                  },
+                  create: {
+                    sourceUrl: images.fanartURL,
+                  },
+                },
+              },
+            }
+          : undefined),
+        ...(images?.bannerURL
+          ? {
+              bannerImage: {
+                connectOrCreate: {
+                  where: {
+                    sourceUrl: images.bannerURL,
+                  },
+                  create: {
+                    sourceUrl: images.bannerURL,
+                  },
+                },
+              },
+            }
+          : undefined),
       },
       include: {
         jellyfinFolder: true,
+        bannerImage: true,
+        fanartImage: true,
+        posterImage: true,
       },
     });
     await this.writeSeasonMetadata(newSeason);
@@ -100,6 +155,9 @@ export class SyncMetadataResolver {
       where: { id: seasonId },
       include: {
         jellyfinFolder: true,
+        bannerImage: true,
+        fanartImage: true,
+        posterImage: true,
       },
     });
     if (season.isArchived) {
@@ -107,6 +165,40 @@ export class SyncMetadataResolver {
     }
     await this.writeSeasonMetadata(season);
     return 'ok';
+  }
+
+  private async ensureImage(image: Image) {
+    if (image.cosPath) {
+      return image;
+    }
+    // TODO: SSRF
+    const ext = image.sourceUrl
+      .substring(image.sourceUrl.lastIndexOf('.'))
+      .toLowerCase();
+    // 防止XSS攻击，这里过滤一下后缀名
+    if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
+      throw new Error('unsupported image type');
+    }
+    const { data } = await this.china.get<Buffer>(image.sourceUrl, {
+      responseType: 'arraybuffer',
+      // 最大10M
+      maxContentLength: 10 * 1024 * 1024,
+    });
+    const hash = md5(data);
+    const bucket = this.config.get<COSBucket>('imagesBucket');
+    const key = `${hash}${ext}`;
+    await this.cos.putObject({
+      Bucket: bucket.bucket,
+      Region: bucket.region,
+      Key: key,
+      Body: data,
+    });
+    return await this.prisma.image.update({
+      where: { id: image.id },
+      data: {
+        cosPath: key,
+      },
+    });
   }
 
   private async writeSeasonMetadata({
@@ -118,8 +210,15 @@ export class SyncMetadataResolver {
     id,
     yearAndSemester,
     jellyfinFolder,
+    bannerImage,
+    fanartImage,
+    posterImage,
+    jellyfinId,
   }: Season & {
     jellyfinFolder: JellyfinFolder | null;
+    bannerImage: Image | null;
+    fanartImage: Image | null;
+    posterImage: Image | null;
   }) {
     const seasonRoot = jellyfinFolder?.location;
     if (!seasonRoot) {
@@ -133,10 +232,10 @@ export class SyncMetadataResolver {
       'tvshow.nfo',
     );
     let xmlObj: any = {};
-    await fs.mkdir(path.dirname(nfoPath), { recursive: true });
+    await fsPromises.mkdir(path.dirname(nfoPath), { recursive: true });
     try {
-      await fs.stat(nfoPath);
-      const currentContent = await fs.readFile(nfoPath, 'utf8');
+      await fsPromises.stat(nfoPath);
+      const currentContent = await fsPromises.readFile(nfoPath, 'utf8');
       xmlObj = await this.parser.parseStringPromise(currentContent);
     } catch (error) {
       // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
@@ -181,7 +280,40 @@ export class SyncMetadataResolver {
       xmlObj.tvshow,
     );
     const nfoContent = this.builder.buildObject(xmlObj);
-    await fs.writeFile(nfoPath, nfoContent, 'utf-8');
+    await fsPromises.writeFile(nfoPath, nfoContent, 'utf-8');
+    await Promise.all(
+      [
+        { image: bannerImage, type: 'banner' },
+        { image: fanartImage, type: 'fanart' },
+        { image: posterImage, type: 'poster' },
+      ].map(async ({ image, type }) => {
+        if (!image) {
+          return;
+        }
+        const { cosPath } = await this.ensureImage(image);
+        if (!cosPath) {
+          throw new Error('cosPath not set');
+        }
+        const bucket = this.config.get<COSBucket>('imagesBucket');
+        const ext = cosPath.substring(cosPath.lastIndexOf('.'));
+        await this.cos.getObject({
+          Bucket: bucket.bucket,
+          Region: bucket.region,
+          Key: cosPath,
+          Output: fs.createWriteStream(
+            path.join(
+              this.config.get('mediaRoot'),
+              seasonRoot,
+              title,
+              `${type}${ext}`,
+            ),
+          ),
+        });
+      }),
+    );
+    if (jellyfinId) {
+      await ItemRefreshService.post(jellyfinId);
+    }
   }
 
   @Mutation(() => ID)
