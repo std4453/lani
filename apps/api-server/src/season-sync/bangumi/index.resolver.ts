@@ -1,5 +1,8 @@
-import { BangumiSeasonService } from '@/sync/bangumi/index.service';
-import { FetchPartialSeasonRequest, PartialSeason } from '@/sync/index.model';
+import { BangumiSeasonService } from '@/season-sync/bangumi/index.service';
+import {
+  FetchPartialSeasonRequest,
+  PartialSeason,
+} from '@/season-sync/index.model';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 
 @Resolver()

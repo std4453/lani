@@ -1,6 +1,6 @@
 import { AxiosService } from '@/common/axios.service';
 import { ConfigType } from '@/config';
-import { QBTFiles, QBTTorrent, QBTTorrents } from '@/job/types';
+import { QBTFiles, QBTTorrent, QBTTorrents } from '@/download-job/types';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';

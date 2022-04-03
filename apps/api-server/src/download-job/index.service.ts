@@ -4,14 +4,14 @@ import {
   StepInput,
   WorkflowManager,
   WorkflowState,
-} from '@/job/atoms';
-import { DownloadAtom } from '@/job/atoms/download-atom';
-import { FindVideoFileAtom } from '@/job/atoms/find-video-file.atom';
-import { ImportFileAtom } from '@/job/atoms/import-file.atom';
-import { RefreshPlayerAtom } from '@/job/atoms/refresh-player.atom';
-import { SubmitDownloadAtom } from '@/job/atoms/submit-download.atom';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
-import { WriteMetadataAtom } from '@/job/atoms/write-metadata.atom';
+} from '@/download-job/atoms';
+import { DownloadAtom } from '@/download-job/atoms/download-atom';
+import { FindVideoFileAtom } from '@/download-job/atoms/find-video-file.atom';
+import { ImportFileAtom } from '@/download-job/atoms/import-file.atom';
+import { RefreshPlayerAtom } from '@/download-job/atoms/refresh-player.atom';
+import { SubmitDownloadAtom } from '@/download-job/atoms/submit-download.atom';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
+import { WriteMetadataAtom } from '@/download-job/atoms/write-metadata.atom';
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';

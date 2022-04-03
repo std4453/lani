@@ -1,9 +1,9 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { DateFormat } from '@/constants/date-format';
-import { BangumiSeasonService } from '@/sync/bangumi/index.service';
-import { PartialSeason } from '@/sync/index.model';
-import { SkyhookSeasonService } from '@/sync/skyhook/index.service';
+import { BangumiSeasonService } from '@/season-sync/bangumi/index.service';
+import { PartialSeason } from '@/season-sync/index.model';
+import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

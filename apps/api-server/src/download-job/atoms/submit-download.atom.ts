@@ -1,7 +1,7 @@
 import { GlobalAxiosService } from '@/common/axios.service';
-import { AsyncAtom, StepInput } from '@/job/atoms';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
-import { QBittorrentService } from '@/job/qbt.service';
+import { AsyncAtom, StepInput } from '@/download-job/atoms';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
+import { QBittorrentService } from '@/download-job/qbt.service';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import FormData from 'form-data';

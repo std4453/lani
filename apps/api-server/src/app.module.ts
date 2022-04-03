@@ -2,9 +2,9 @@ import { AdminModule } from '@/admin/index.module';
 import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
-import { JobModule } from '@/job/index.module';
+import { DownloadJobModule } from '@/download-job/index.module';
 import { MikanSyncModule } from '@/mikan-sync/index.module';
-import { SyncModule } from '@/sync/index.module';
+import { SeasonSyncModule } from '@/season-sync/index.module';
 import {
   ApolloFederationDriver,
   ApolloFederationDriverConfig,
@@ -21,8 +21,8 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
     CommonModule,
     FetchMikanModule,
     MikanSyncModule,
-    SyncModule,
-    JobModule,
+    SeasonSyncModule,
+    DownloadJobModule,
     AdminModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,

@@ -1,8 +1,8 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { ItemRefreshService, TvShowsService } from '@/api/jellyfin';
-import { Atom, StepInput } from '@/job/atoms';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
+import { Atom, StepInput } from '@/download-job/atoms';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';

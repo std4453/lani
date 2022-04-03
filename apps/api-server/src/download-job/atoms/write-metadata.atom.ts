@@ -1,8 +1,8 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { DateFormat } from '@/constants/date-format';
-import { AsyncAtom, StepInput } from '@/job/atoms';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
+import { AsyncAtom, StepInput } from '@/download-job/atoms';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

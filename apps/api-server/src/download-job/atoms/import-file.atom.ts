@@ -1,7 +1,7 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
-import { AsyncAtom, StepInput } from '@/job/atoms';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
+import { AsyncAtom, StepInput } from '@/download-job/atoms';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { mapPath, PathMapping } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

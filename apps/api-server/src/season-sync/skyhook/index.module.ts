@@ -1,6 +1,6 @@
 import { CommonModule } from '@/common/index.module';
-import { SkyhookResolver } from '@/sync/skyhook/index.resolver';
-import { SkyhookSeasonService } from '@/sync/skyhook/index.service';
+import { SkyhookResolver } from '@/season-sync/skyhook/index.resolver';
+import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { Module } from '@nestjs/common';
 
 @Module({
