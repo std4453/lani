@@ -22,7 +22,9 @@ query ListSeasons(
         weekday
         mikanAnimeId
         isMonitoring
-        seasonRoot
+        jellyfinFolderByJellyfinFolderId {
+          name
+        }
         title
         id
         yearAndSemester

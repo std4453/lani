@@ -1,5 +1,10 @@
+import FormDependency from '@/components/FormDependency';
 import { IconPath } from '@/constants/icon-path';
-import ProForm, { ProFormDependency, ProFormText } from '@ant-design/pro-form';
+import { AllJellyfinFoldersDocument } from '@/generated/types';
+import { FormValues } from '@/pages/season/help';
+import { extractNode } from '@/utils/graphql';
+import ProForm, { ProFormSelect, ProFormText } from '@ant-design/pro-form';
+import { useApolloClient } from '@apollo/client';
 import {
   Alert,
   Divider,
@@ -12,15 +17,16 @@ import {
 import styles from './Connections.module.less';
 
 export default function Connections() {
+  const client = useApolloClient();
   return (
     <div className={styles.root}>
       <Typography.Text>关联设置</Typography.Text>
       <Divider className={styles.divider} />
-      <ProFormDependency name={['jellyfinId']}>
-        {({ jellyfinId }) =>
-          !jellyfinId ? (
+      <FormDependency<FormValues> name={['jellyfinFolderId']}>
+        {({ jellyfinFolderId }) =>
+          !jellyfinFolderId ? (
             <Alert
-              message="Jellyfin季度ID未设置，下载流程中无法获取Jellyfin剧集ID，无法进行推送，点击“写入元数据”写入并获取季度ID"
+              message="Jellyfin媒体库未设置，同步元数据、剧集信息、下载将不可用"
               type="warning"
               showIcon
               style={{
@@ -29,7 +35,21 @@ export default function Connections() {
             />
           ) : null
         }
-      </ProFormDependency>
+      </FormDependency>
+      <FormDependency<FormValues> name={['jellyfinFolderId', 'jellyfinId']}>
+        {({ jellyfinFolderId, jellyfinId }) =>
+          jellyfinFolderId && !jellyfinId ? (
+            <Alert
+              message="Jellyfin季度ID未设置，下载流程中无法获取Jellyfin剧集ID，无法进行推送"
+              type="warning"
+              showIcon
+              style={{
+                marginBottom: 16,
+              }}
+            />
+          ) : null
+        }
+      </FormDependency>
       <ProForm.Group>
         <ProFormText
           name="bangumiId"
@@ -88,16 +108,50 @@ export default function Connections() {
           }
           width="sm"
         />
-        <ProFormText
-          name="jellyfinId"
+        <Form.Item
           label={
             <Space>
               <img src={IconPath.jellyfinIcon} className={styles.icon} />
               <Typography.Text>Jellyfin</Typography.Text>
             </Space>
           }
-          width="md"
-        />
+        >
+          <Input.Group
+            compact
+            style={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <ProFormSelect
+              name="jellyfinFolderId"
+              formItemProps={{
+                noStyle: true,
+              }}
+              request={async () => {
+                const { data } = await client.query({
+                  query: AllJellyfinFoldersDocument,
+                });
+                return (extractNode(data.allJellyfinFolders) ?? []).map(
+                  (folder) => ({
+                    value: folder.id,
+                    label: `${folder.name} (${folder.location})`,
+                  }),
+                );
+              }}
+              width={160}
+              placeholder="媒体库"
+            />
+            <Form.Item name="jellyfinId" noStyle>
+              <Input
+                placeholder="32位季度ID"
+                addonBefore="中的"
+                style={{
+                  width: 280,
+                }}
+              />
+            </Form.Item>
+          </Input.Group>
+        </Form.Item>
         <Form.Item
           label={
             <Space>

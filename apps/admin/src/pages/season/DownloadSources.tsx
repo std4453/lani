@@ -3,7 +3,6 @@ import { MinusOutlined } from '@ant-design/icons';
 import {
   ProFormList,
   ProFormSwitch,
-  ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-form';
 import { Divider, Form, Typography } from 'antd';
@@ -14,12 +13,6 @@ export default function DownloadSources() {
     <div className={styles.root}>
       <Typography.Text>下载配置</Typography.Text>
       <Divider className={styles.divider} />
-      <ProFormText
-        label="下载根目录"
-        name="seasonRoot"
-        formItemProps={formItemProps}
-        width="lg"
-      />
       <ProFormSwitch
         label="追番中"
         name="isMonitoring"

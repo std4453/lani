@@ -8,7 +8,7 @@ import { useAsyncButton } from '@/utils/useAsyncButton';
 import { useDialog } from '@/utils/useDialog';
 import { ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
-import { Button, message, Modal, PageHeader } from 'antd';
+import { Button, message, Modal, PageHeader, Space } from 'antd';
 import { ForwardedRef, forwardRef } from 'react';
 import { useHistory } from 'umi';
 import styles from './Header.module.less';
@@ -93,38 +93,40 @@ const Header = forwardRef(
       <>
         <PageHeader
           title={
-            <ProFormText
-              width="lg"
-              name="title"
-              rules={[
-                {
-                  required: true,
-                  message: '请输入季度标题',
-                },
-                {
-                  validator: async (_, value) => {
-                    const { data } = await client.query({
-                      query: GetSeasonByTitleDocument,
-                      variables: {
-                        title: value,
-                      },
-                    });
-                    if (
-                      data?.seasonByTitle?.id &&
-                      data?.seasonByTitle?.id !== id
-                    ) {
-                      throw new Error('存在同名季度');
-                    }
+            <Space direction="horizontal" className={styles.space}>
+              <ProFormText
+                width="lg"
+                name="title"
+                rules={[
+                  {
+                    required: true,
+                    message: '请输入季度标题',
                   },
-                },
-              ]}
-              placeholder="标题"
-              formItemProps={{
-                style: {
-                  marginTop: 24,
-                },
-              }}
-            />
+                  {
+                    validator: async (_, value) => {
+                      const { data } = await client.query({
+                        query: GetSeasonByTitleDocument,
+                        variables: {
+                          title: value,
+                        },
+                      });
+                      if (
+                        data?.seasonByTitle?.id &&
+                        data?.seasonByTitle?.id !== id
+                      ) {
+                        throw new Error('存在同名季度');
+                      }
+                    },
+                  },
+                ]}
+                placeholder="标题"
+                formItemProps={{
+                  style: {
+                    marginTop: 24,
+                  },
+                }}
+              />
+            </Space>
           }
           onBack={async () => {
             if (formRef.current?.isFieldsTouched(false)) {
