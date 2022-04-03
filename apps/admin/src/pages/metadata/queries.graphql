@@ -69,3 +69,15 @@ query SearchBangumi($keywords: String!) {
     name
   }
 }
+
+query GetMetadataPageOptions {
+  getAvailableSemesters
+  allJellyfinFolders {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
