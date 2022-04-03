@@ -19,7 +19,30 @@ import {
   Tag,
   Typography,
 } from 'antd';
+import clsx from 'clsx';
 import styles from './Metadata.module.less';
+
+function ImageDisplay({
+  src,
+  className,
+}: {
+  src: string | undefined | null;
+  className?: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        styles.imageContainer,
+        {
+          [styles.withImage]: Boolean(src),
+        },
+        className,
+      )}
+    >
+      {src ? <img className={styles.image} src={src} /> : null}
+    </div>
+  );
+}
 
 export default function Metadata() {
   return (
@@ -194,6 +217,28 @@ export default function Metadata() {
             </ProFormDependency>
           </Typography.Text>
         </Space>
+      </Form.Item>
+      <Form.Item label="图片" {...formItemProps}>
+        <FormDependency<FormValues> name={['poster', 'fanart', 'banner']}>
+          {({ poster, fanart, banner }) => (
+            <div className={styles.images}>
+              <ImageDisplay
+                src={poster?.downloadPath}
+                className={styles.posterContainer}
+              />
+              <div className={styles.rightColumn}>
+                <ImageDisplay
+                  src={banner?.downloadPath}
+                  className={styles.bannerContainer}
+                />
+                <ImageDisplay
+                  src={fanart?.downloadPath}
+                  className={styles.fanartContainer}
+                />
+              </div>
+            </div>
+          )}
+        </FormDependency>
       </Form.Item>
     </div>
   );

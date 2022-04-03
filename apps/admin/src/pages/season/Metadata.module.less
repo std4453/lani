@@ -9,3 +9,68 @@
 .noData {
   color: #666666;
 }
+
+.images {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.posterContainer {
+  width: 0;
+  height: 0;
+  position: relative;
+  padding-right: 32.6%;
+  padding-bottom: 47.9%;
+}
+
+.rightColumn {
+  width: 0;
+  height: 0;
+  position: relative;
+  padding-left: 65.2%;
+  padding-bottom: 47.9%;
+}
+
+.bannerContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 19.3%;
+}
+
+.fanartContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 76.5%;
+}
+
+.image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageContainer {
+  background-color: #e6e6e6;
+  
+  &.withImage {
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.25);
+    }
+  }
+}

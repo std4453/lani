@@ -1,4 +1,5 @@
 import {
+  DisplayImageFieldsFragment,
   DownloadStatus,
   GetSeasonByIdConfigOnlyQuery,
   GetSeasonByIdEpisodesOnlyQuery,
@@ -93,6 +94,9 @@ export interface FormValues {
   downloadSources: DownloadSource[];
   infoSource: MetadataSource;
   episodesSource: MetadataSource;
+  poster: DisplayImageFieldsFragment | null;
+  fanart: DisplayImageFieldsFragment | null;
+  banner: DisplayImageFieldsFragment | null;
 }
 
 export function queryToFormValues({
@@ -114,6 +118,9 @@ export function queryToFormValues({
   downloadSourcesBySeasonId,
   infoSource,
   episodesSource,
+  poster,
+  banner,
+  fanart,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -137,6 +144,9 @@ export function queryToFormValues({
     downloadSources: extractNode(downloadSourcesBySeasonId) ?? [],
     infoSource,
     episodesSource,
+    poster: poster ?? null,
+    banner: banner ?? null,
+    fanart: fanart ?? null,
   };
 }
 
