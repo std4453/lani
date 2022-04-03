@@ -1,3 +1,4 @@
+import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { DownloadStatus, MetadataSource } from '@/generated/types';
 import {
@@ -63,9 +64,13 @@ const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
   },
 };
 
-function useColumns(
-  openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2],
-) {
+function useColumns({
+  openDownloadMagnet,
+  openEpisodeDetails,
+}: {
+  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
+}) {
   return useMemo(
     (): ProColumns<Episode>[] => [
       {
@@ -119,7 +124,14 @@ function useColumns(
         title: '操作',
         valueType: 'option',
         render: (_, r) => [
-          <Typography.Link key={0}>查看详情</Typography.Link>,
+          <Typography.Link
+            key={0}
+            onClick={() => {
+              void openEpisodeDetails({ episodeId: r.id });
+            }}
+          >
+            查看详情
+          </Typography.Link>,
           <Typography.Link key={1}>手动导入</Typography.Link>,
           <Dropdown
             key={2}
@@ -153,8 +165,10 @@ function useColumns(
 export default function Episodes({ episodes }: { episodes: Episode[] }) {
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
-  const columns = useColumns(openDownloadMagnet);
   const ref = useRef<ActionType>();
+  const [episodeDetailsDiglog, , openEpisodeDetails] =
+    useEpisodeDetailsDialog();
+  const columns = useColumns({ openDownloadMagnet, openEpisodeDetails });
 
   return (
     <div className={styles.root}>
@@ -239,6 +253,7 @@ export default function Episodes({ episodes }: { episodes: Episode[] }) {
         actionRef={ref}
       />
       {downloadMagnetDialog}
+      {episodeDetailsDiglog}
     </div>
   );
 }
