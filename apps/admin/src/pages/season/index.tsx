@@ -119,6 +119,10 @@ export default function SeasonPage() {
         }}
         layout="horizontal"
         colon={false}
+        style={{
+          maxHeight: '100vh',
+          overflow: 'auto',
+        }}
       >
         <Header
           id={id}
@@ -131,7 +135,7 @@ export default function SeasonPage() {
         <Metadata />
         <DownloadSources />
         <Episodes episodes={episodes} />
-        <div style={{ height: 200 }} />
+        <div style={{ height: 80 }} />
       </ProForm>
     </Spin>
   );
