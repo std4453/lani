@@ -115,7 +115,7 @@ export class JobService
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
         AND seasons.is_archived = false
-        AND seasons.season_root IS NOT NULL
+        AND seasons.jellyfin_folder_id IS NOT NULL
         AND episodes.index = cast(substring(torrents.title FROM download_sources.pattern) AS integer)
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()

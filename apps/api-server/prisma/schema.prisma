@@ -11,7 +11,7 @@ model DownloadSource {
   id         Int       @id @default(autoincrement())
   seasonId   Int       @map("season_id")
   groupId    String    @default("") @map("group_id")
-  pattern    String    @default("")
+  pattern    String    @unique @default("")
   isArchived Boolean   @default(false) @map("is_archived")
   archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -33,6 +33,7 @@ model Episode {
   season            Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   downloadJobs      DownloadJob[] @relation("download_jobsToepisodes")
 
+  @@unique([seasonId, index])
   @@map("episodes")
 }
 
@@ -46,7 +47,7 @@ model Image {
 
 model Season {
   id                 Int              @id @default(autoincrement())
-  title              String           @default("")
+  title              String           @unique @default("")
   description        String           @default("")
   infoSource         MetadataSource   @default(MANUAL) @map("info_source")
   tags               String[]         @db.VarChar
@@ -66,6 +67,8 @@ model Season {
   episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
   seasonRoot         String?          @map("season_root")
   jellyfinId         String           @default("") @map("jellyfin_id")
+  jellyfinFolderId   Int?             @map("jellyfin_folder_id")
+  jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   downloadSources    DownloadSource[]
   episodes           Episode[]
 
@@ -81,6 +84,7 @@ model Torrent {
   hash        String   @unique
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@index([title, id, torrentLink], map: "torrent_title_idx")
   @@map("torrents")
 }
 
@@ -105,6 +109,16 @@ model DownloadJob {
   episode           Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
 
   @@map("download_jobs")
+}
+
+model JellyfinFolder {
+  id         Int      @id @default(autoincrement())
+  name       String
+  jellyfinId String   @unique @map("jellyfin_id")
+  location   String
+  seasons    Season[] @relation("jellyfin_foldersToseasons")
+
+  @@map("jellyfin_folders")
 }
 
 enum DownloadStatus {

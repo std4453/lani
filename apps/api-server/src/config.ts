@@ -24,6 +24,7 @@ const config = mergeConfig({
   jellyfinEndpoint: 'http://jellyfin.media:80',
   jellyfinToken: '231e55e0d1c240cd9e58cc47f61f521b',
   jellyfinUserId: '786d13a822ed4f6ba27b28f5cf374133',
+  jellyfinPathMapping: [] as PathMapping,
 })({
   dev: {
     sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',
@@ -40,6 +41,12 @@ const config = mergeConfig({
       },
     ] as PathMapping,
     jellyfinEndpoint: 'https://jellyfin.std4453.com:444',
+    jellyfinPathMapping: [
+      {
+        from: '/media',
+        to: '/data/std4453/services/media/media',
+      },
+    ],
   },
   offline: {
     sonarrEndpoint: 'http://sonarr.media:80/api/v3',
