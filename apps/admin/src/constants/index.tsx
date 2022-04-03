@@ -1,7 +1,5 @@
-// import { SeasonEnum } from '@/generated/types';
-// import { DefaultOptionType as SelectOptionType } from 'antd/lib/select';
-
-export const seasonToText = ['春', '夏', '秋', '冬'];
+// 1~4对应春夏秋冬，0未知
+export const seasonToText = ['其他', '春', '夏', '秋', '冬'];
 
 export const weekdayToText = [
   '周一',
@@ -22,29 +20,6 @@ export const weekdayToValueEnum = {
   '5': '周六（土）',
   '6': '周日（日）',
 };
-
-// export const seasonOptions: SelectOptionType[] = [
-//   {
-//     value: SeasonEnum.Winter,
-//     label: '冬（1月）',
-//     display: seasonToText[SeasonEnum.Winter],
-//   },
-//   {
-//     value: SeasonEnum.Spring,
-//     label: '春（4月）',
-//     display: seasonToText[SeasonEnum.Spring],
-//   },
-//   {
-//     value: SeasonEnum.Summer,
-//     label: '夏（7月）',
-//     display: seasonToText[SeasonEnum.Summer],
-//   },
-//   {
-//     value: SeasonEnum.Autumn,
-//     label: '秋（10月）',
-//     display: seasonToText[SeasonEnum.Autumn],
-//   },
-// ];
 
 // export const publishGroupExamples = `
 // 常见字幕组:
