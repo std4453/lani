@@ -4,8 +4,8 @@ import {
   HKAxiosService,
   LocalAxiosService,
 } from '@/common/axios.service';
+import { BigIntScalar } from '@/common/bigint.scalar';
 import { PrismaService } from '@/common/prisma.service';
-import { BigIntScalar } from '@/scalars/bigint.scalar';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
