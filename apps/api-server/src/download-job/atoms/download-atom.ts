@@ -1,7 +1,7 @@
-import { Atom, StepInput } from '@/job/atoms';
-import { DownloadWorkflowDefinition } from '@/job/atoms/types';
-import { QBittorrentService } from '@/job/qbt.service';
-import { QBTTorrent, QBTTorrentState } from '@/job/types';
+import { Atom, StepInput } from '@/download-job/atoms';
+import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
+import { QBittorrentService } from '@/download-job/qbt.service';
+import { QBTTorrent, QBTTorrentState } from '@/download-job/types';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';

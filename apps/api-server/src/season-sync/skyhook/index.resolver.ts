@@ -1,5 +1,8 @@
-import { FetchPartialSeasonRequest, PartialSeason } from '@/sync/index.model';
-import { SkyhookSeasonService } from '@/sync/skyhook/index.service';
+import {
+  FetchPartialSeasonRequest,
+  PartialSeason,
+} from '@/season-sync/index.model';
+import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 
 @Resolver()
