@@ -1,4 +1,4 @@
-import { BangumiAPIService, EpType } from '@/bangumi';
+import { BangumiAPIService, EpType } from '@/api/bangumi';
 import { DateFormat } from '@/constants/date-format';
 import { decomposeAirDate } from '@/sync/help';
 import {

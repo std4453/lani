@@ -2,7 +2,7 @@ import {
   SearchBangumiSeason,
   UpdateSeasonDownloadSourcesInput,
 } from '@/admin/index.model';
-import { BangumiAPIService, ResponseGroup, SubjectType } from '@/bangumi';
+import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
