@@ -1,41 +1,48 @@
 import { GlobalAxiosService } from '@/common/axios.service';
 import { Injectable } from '@nestjs/common';
+import { plainToClass } from 'class-transformer';
+import { IsOptional, ValidateNested, validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-import { isLeft } from 'fp-ts/lib/Either';
-import * as t from 'io-ts';
 import xml2js from 'xml2js';
 
-const tRSSItems = t.type({
-  rss: t.type({
-    channel: t.tuple([
-      t.type({
-        item: t.union([
-          t.array(
-            t.type({
-              title: t.tuple([t.string]),
-              link: t.tuple([t.string]),
-              torrent: t.tuple([
-                t.type({
-                  contentLength: t.tuple([t.string]),
-                  pubDate: t.tuple([t.string]),
-                }),
-              ]),
-              enclosure: t.tuple([
-                t.type({
-                  $: t.type({
-                    url: t.string,
-                  }),
-                }),
-              ]),
-            }),
-          ),
-          t.undefined,
-        ]),
-      }),
-    ]),
-  }),
-});
+class EnclosureProps {
+  url: string;
+}
+
+class Enclosure {
+  @ValidateNested()
+  $: EnclosureProps;
+}
+
+class Item {
+  title: string[];
+  link: string[];
+  @ValidateNested()
+  torrent: Torrent[];
+  @ValidateNested()
+  enclosure: Enclosure[];
+}
+class Channel {
+  @IsOptional()
+  @ValidateNested()
+  item?: Item[];
+}
+
+class Torrent {
+  contentLength: string[];
+  pubDate: string[];
+}
+
+class RSS {
+  @ValidateNested()
+  channel: Channel[];
+}
+
+class RSSItems {
+  @ValidateNested()
+  rss: RSS;
+}
 
 @Injectable()
 export class FetchMikanService {
@@ -53,17 +60,14 @@ export class FetchMikanService {
       },
     );
     const parseResult = await this.parser.parseStringPromise(xmlStr);
-    const decoded = tRSSItems.decode(parseResult);
-
-    if (isLeft(decoded)) {
-      throw new Error('XML result does not match schema');
-    }
+    const obj = plainToClass(RSSItems, parseResult);
+    await validateOrReject(obj);
 
     const {
       rss: {
         channel: [{ item: items }],
       },
-    } = decoded.right;
+    } = obj;
 
     return (items ?? []).map(
       ({

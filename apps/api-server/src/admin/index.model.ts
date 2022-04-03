@@ -1,5 +1,4 @@
 import { InputType, ObjectType } from '@nestjs/graphql';
-import { boolean } from 'fp-ts';
 
 @InputType()
 export class DownloadSourcesInput {
