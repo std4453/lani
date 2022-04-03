@@ -1,5 +1,6 @@
 import { BangumiAPIService, EpType } from '@/bangumi';
 import { DateFormat } from '@/constants/date-format';
+import { decomposeAirDate } from '@/sync/help';
 import {
   FetchPartialSeasonRequest,
   PartialSeason,
@@ -20,13 +21,12 @@ export class BangumiSeasonService {
       tags: season.tags.map((tag) => tag.name),
     };
     if (season.date) {
-      // dayjs里0表示星期天，6表示星期六，我们这里0表示星期一，7表示星期天
-      const weekday = { 0: 6, 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 }[
-        dayjs(season.date, DateFormat.NothingDay).day()
-      ];
+      const { semester, weekday, year } = decomposeAirDate(season.date);
+      result.info.year = year;
+      result.info.semester = semester;
       result.info.weekday = weekday;
     }
-    // 很不幸，bangumi的数据没有放松时间，只能手动录入
+    // 很不幸，bangumi的数据没有放送时间，只能手动录入
     result.images = {
       posterURL: season.images?.large,
     };

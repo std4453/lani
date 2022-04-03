@@ -5,6 +5,8 @@ export class SeasonInfo {
   description?: string;
   tags: string[];
   genres: string[];
+  year?: number;
+  semester?: number;
   // TODO: 卡司
   /**
    * 0 (Monday) - 6 (Sunday)

@@ -1,5 +1,6 @@
 import { GlobalAxiosService } from '@/common/axios.service';
 import { DateFormat } from '@/constants/date-format';
+import { decomposeAirDate } from '@/sync/help';
 import {
   FetchPartialSeasonRequest,
   PartialSeason,
@@ -54,6 +55,17 @@ export class SkyhookSeasonService {
               .padStart(2, '0')}`
           : undefined,
       };
+      const episodes = show.episodes
+        .filter((episode) => episode.seasonNumer === seasonId)
+        .filter((episode) => Boolean(episode.title));
+      // 存在剧集时优先使用季度中第一集的放送时间，否则使用全系列的，否则不设置相关数据
+      const airDate = episodes[0]?.airDate ?? show.firstAired;
+      if (airDate) {
+        const { semester, weekday, year } = decomposeAirDate(airDate);
+        result.info.year = year;
+        result.info.semester = semester;
+        result.info.weekday = weekday;
+      }
     }
 
     if (needEpisodes) {
