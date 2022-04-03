@@ -132,10 +132,11 @@ export default function Metadata() {
           <ProFormSelect
             name="semester"
             valueEnum={{
-              0: '春季（4月）',
-              1: '夏季（7月）',
-              2: '秋季（10月）',
-              3: '冬季（1月）',
+              0: '其他',
+              1: '春季（4月）',
+              2: '夏季（7月）',
+              3: '秋季（10月）',
+              4: '冬季（1月）',
             }}
             placeholder="请选择"
             formItemProps={{

@@ -88,7 +88,7 @@ function useColumns() {
             <>
               {r.yearAndSemester.substring(0, 4)}
               <span className={styles.slash}>/</span>
-              {seasonToText[parseInt(r.yearAndSemester.substring(5, 6))]}
+              {seasonToText[parseInt(r.yearAndSemester.substring(4, 6))]}
             </>
           ) : (
             '-'
