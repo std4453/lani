@@ -74,6 +74,7 @@ model Season {
   posterImageId      Int?             @map("poster_image_id")
   bannerImageId      Int?             @map("banner_image_id")
   fanartImageId      Int?             @map("fanart_image_id")
+  episodesLastSync   DateTime?        @map("episodes_last_sync") @db.Timestamptz(6)
   bannerImage        Image?           @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fanartImage        Image?           @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
