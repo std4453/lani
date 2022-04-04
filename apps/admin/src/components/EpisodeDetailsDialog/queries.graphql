@@ -33,3 +33,7 @@ query GetEpisodeById($episodeByIdId: Int!) {
     title
   }
 }
+
+mutation RetryJobStep($jobId: Int!) {
+  retryJobStep(jobId: $jobId)
+}
