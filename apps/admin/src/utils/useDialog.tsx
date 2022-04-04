@@ -152,17 +152,16 @@ export function useDialogWithOnResolve<
   };
 }
 
-export function createUseDialogWithOnResolve<
-  Input extends object | void,
-  Output,
->(Component: ComponentType<DialogPropsWithOnResolve<Input, Output>>) {
-  return (): [
-    ReactNode,
-    (input: InputWithOnResolve<Input, Output>) => Promise<Output>,
-    (
-      input: InputWithOnResolve<Input, Output>,
-    ) => Promise<DialogOpenNoThrowResult<Output>>,
-  ] => {
+export function createUseDialogWithOnResolve<Input extends object | void, Output>(
+  Component: ComponentType<DialogPropsWithOnResolve<Input, Output>>,
+): () => [
+  ReactNode,
+  (input: InputWithOnResolve<Input, Output>) => Promise<Output>,
+  (
+    input: InputWithOnResolve<Input, Output>,
+  ) => Promise<DialogOpenNoThrowResult<Output>>,
+] {
+  return () => {
     const { open, openNoThrow, ...props } = useDialogWithOnResolve<
       Input,
       Output
