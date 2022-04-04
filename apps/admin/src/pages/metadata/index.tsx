@@ -411,10 +411,7 @@ export default function MetadataPage() {
 
   return (
     <>
-      <ProTable<RowType, { uniformName?: string }>
-        form={{
-          syncToUrl: true,
-        }}
+      <ProTable<RowType>
         columns={columns}
         request={(params, sort, filter) =>
           querySeasons(client, params, sort, filter)

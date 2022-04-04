@@ -2,14 +2,16 @@ import {
   DownloadStatus,
   GetEpisodeByIdDocument,
   GetEpisodeByIdQuery,
+  RetryJobStepDocument,
 } from '@/generated/types';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
+import { ReloadOutlined } from '@ant-design/icons';
 import ProDescriptions from '@ant-design/pro-descriptions';
-import { useQuery } from '@apollo/client';
-import { Modal, Spin, Steps, Tabs, Tag, Typography } from 'antd';
+import { useApolloClient, useQuery } from '@apollo/client';
+import { Modal, Space, Spin, Steps, Tabs, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 type Episode = NonNullable<GetEpisodeByIdQuery['episodeById']>;
 type Job = NonNullable<ExtractNode<Episode['downloadJobsByEpisodeId']>>;
@@ -65,6 +67,42 @@ function JobStepDescription({
   }
 }
 
+function JobStepTitle({
+  current,
+  step,
+  job,
+  title,
+}: {
+  current: number;
+  step: number;
+  job: Job;
+  title: ReactNode;
+}) {
+  const client = useApolloClient();
+  return (
+    <Space direction="horizontal">
+      {title}
+      {current === step && job.isFailed && (
+        <Typography.Link
+          onClick={async () => {
+            await client.mutate({
+              mutation: RetryJobStepDocument,
+              variables: {
+                jobId: job.id,
+              },
+            });
+          }}
+          style={{
+            fontSize: 14,
+          }}
+        >
+          <ReloadOutlined /> 重试
+        </Typography.Link>
+      )}
+    </Space>
+  );
+}
+
 function EpisodeJob({ job }: { job: Job }) {
   const current = jobStatusToStep[job.status] ?? 0;
   return (
@@ -108,7 +146,9 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="提交下载"
+        title={
+          <JobStepTitle title="提交下载" step={1} current={current} job={job} />
+        }
         description={
           <JobStepDescription
             step={1}
@@ -120,7 +160,9 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="下载中"
+        title={
+          <JobStepTitle title="下载中" step={2} current={current} job={job} />
+        }
         description={
           <JobStepDescription
             step={2}
@@ -132,7 +174,14 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="寻找视频文件"
+        title={
+          <JobStepTitle
+            title="寻找视频文件"
+            step={3}
+            current={current}
+            job={job}
+          />
+        }
         description={
           <JobStepDescription
             step={3}
@@ -144,7 +193,9 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="导入文件"
+        title={
+          <JobStepTitle title="导入文件" step={4} current={current} job={job} />
+        }
         description={
           <JobStepDescription
             step={4}
@@ -156,7 +207,14 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="写入元数据"
+        title={
+          <JobStepTitle
+            title="写入元数据"
+            step={5}
+            current={current}
+            job={job}
+          />
+        }
         description={
           <JobStepDescription
             step={5}
@@ -168,7 +226,14 @@ function EpisodeJob({ job }: { job: Job }) {
         }
       />
       <Steps.Step
-        title="刷新Jellyfin"
+        title={
+          <JobStepTitle
+            title="刷新Jellyfin"
+            step={6}
+            current={current}
+            job={job}
+          />
+        }
         description={
           <JobStepDescription
             step={6}
