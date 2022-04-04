@@ -1,4 +1,3 @@
-import { Typography } from 'antd';
 import clsx from 'clsx';
 import { useMemo } from 'react';
 import styles from './index.module.less';
@@ -11,31 +10,59 @@ interface HighlightPart {
 export default function Highlight({
   content,
   keyword,
+  match,
 }: {
   content: string;
-  keyword: string;
+  keyword?: string;
+  match?: RegExp;
 }) {
   const parts = useMemo((): HighlightPart[] => {
-    const index = content.toLowerCase().indexOf(keyword.toLowerCase());
-    if (index < 0) {
-      return [{ text: content, highlight: false }];
-    } else {
-      return [
-        {
-          text: content.substring(0, index),
-          highlight: false,
-        },
-        {
-          text: content.substring(index, index + keyword.length),
-          highlight: true,
-        },
-        {
-          text: content.substring(index + keyword.length),
-          highlight: false,
-        },
-      ];
+    if (keyword) {
+      const index = content.toLowerCase().indexOf(keyword.toLowerCase());
+      if (index < 0) {
+        return [{ text: content, highlight: false }];
+      } else {
+        return [
+          {
+            text: content.substring(0, index),
+            highlight: false,
+          },
+          {
+            text: content.substring(index, index + keyword.length),
+            highlight: true,
+          },
+          {
+            text: content.substring(index + keyword.length),
+            highlight: false,
+          },
+        ];
+      }
     }
-  }, [content, keyword]);
+    if (match) {
+      const result = content.match(match);
+      const index = result?.index;
+      const matchLength = result?.[0]?.length;
+      if (!index || !matchLength) {
+        return [{ text: content, highlight: false }];
+      } else {
+        return [
+          {
+            text: content.substring(0, index),
+            highlight: false,
+          },
+          {
+            text: content.substring(index, index + matchLength),
+            highlight: true,
+          },
+          {
+            text: content.substring(index + matchLength),
+            highlight: false,
+          },
+        ];
+      }
+    }
+    return [{ text: content, highlight: false }];
+  }, [content, keyword, match]);
 
   return (
     <>
