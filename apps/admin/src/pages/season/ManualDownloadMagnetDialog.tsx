@@ -1,5 +1,8 @@
 import { DownloadTorrentForEpisodeDocument } from '@/generated/types';
-import { createUseDialog, DialogProps } from '@/utils/useDialog';
+import {
+  createUseDialogWithOnResolve,
+  DialogPropsWithOnResolve,
+} from '@/utils/useDialog';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { message } from 'antd';
@@ -9,7 +12,7 @@ export default function ManualDownloadMagnetDialog({
   resolve,
   visible,
   input,
-}: DialogProps<{
+}: DialogPropsWithOnResolve<{
   episodeId: number;
 }>) {
   const client = useApolloClient();
@@ -34,7 +37,7 @@ export default function ManualDownloadMagnetDialog({
             },
           });
           void message.success('下载任务创建成功');
-          resolve();
+          await resolve();
           return true;
         } catch (e) {
           console.error(e);
@@ -63,6 +66,6 @@ export default function ManualDownloadMagnetDialog({
   );
 }
 
-export const useManualDownloadMagnetDialog = createUseDialog(
+export const useManualDownloadMagnetDialog = createUseDialogWithOnResolve(
   ManualDownloadMagnetDialog,
 );

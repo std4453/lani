@@ -1,6 +1,12 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
-import { DownloadStatus, MetadataSource } from '@/generated/types';
+import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
+import {
+  DownloadStatus,
+  DownloadTorrentForEpisodeDocument,
+  MetadataSource,
+  TorrentFieldsFragment,
+} from '@/generated/types';
 import {
   Episode,
   ExtendedDownloadStatus,
@@ -9,13 +15,15 @@ import {
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
 import { DownOutlined } from '@ant-design/icons';
-import { ProFormDependency, ProFormSelect } from '@ant-design/pro-form';
+import { ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
+import { useApolloClient } from '@apollo/client';
 import {
   Alert,
   Divider,
   Dropdown,
   Menu,
+  message,
   Tag,
   TagProps,
   Typography,
@@ -48,6 +56,10 @@ const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
     children: '写入元数据',
     color: 'purple',
   },
+  [DownloadStatus.DownloadSubmitting]: {
+    children: '提交下载',
+    color: 'blue',
+  },
   NOT_AIRED: {
     children: '未放送',
   },
@@ -67,10 +79,15 @@ const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
 function useColumns({
   openDownloadMagnet,
   openEpisodeDetails,
+  openSearchTorrent,
+  reloadEpisodes,
 }: {
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
+  openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
+  reloadEpisodes: () => Promise<void>;
 }) {
+  const client = useApolloClient();
   return useMemo(
     (): ProColumns<Episode>[] => [
       {
@@ -137,10 +154,36 @@ function useColumns({
             key={2}
             overlay={
               <Menu>
-                <Menu.Item disabled>搜索种子</Menu.Item>
                 <Menu.Item
                   onClick={() => {
-                    void openDownloadMagnet({ episodeId: r.id });
+                    void openSearchTorrent({
+                      async onResolve(torrent: TorrentFieldsFragment) {
+                        try {
+                          await client.mutate({
+                            mutation: DownloadTorrentForEpisodeDocument,
+                            variables: {
+                              episodeId: r.id,
+                              torrentLink: torrent.torrentLink,
+                            },
+                          });
+                          void message.success('下载任务创建成功');
+                          void reloadEpisodes();
+                        } catch (e) {
+                          console.error(e);
+                          void message.error('下载任务创建成功');
+                        }
+                      },
+                    });
+                  }}
+                >
+                  搜索种子
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => {
+                    void openDownloadMagnet({
+                      episodeId: r.id,
+                      onResolve: reloadEpisodes,
+                    });
                   }}
                 >
                   磁力链接
@@ -158,17 +201,35 @@ function useColumns({
         width: 300,
       },
     ],
-    [],
+    [
+      openDownloadMagnet,
+      openEpisodeDetails,
+      openSearchTorrent,
+      reloadEpisodes,
+      client,
+    ],
   );
 }
 
-export default function Episodes({ episodes }: { episodes: Episode[] }) {
+export default function Episodes({
+  episodes,
+  reloadEpisodes,
+}: {
+  episodes: Episode[];
+  reloadEpisodes: () => Promise<void>;
+}) {
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
   const ref = useRef<ActionType>();
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
-  const columns = useColumns({ openDownloadMagnet, openEpisodeDetails });
+  const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
+  const columns = useColumns({
+    openDownloadMagnet,
+    openEpisodeDetails,
+    openSearchTorrent,
+    reloadEpisodes,
+  });
 
   return (
     <div className={styles.root}>
@@ -254,6 +315,7 @@ export default function Episodes({ episodes }: { episodes: Episode[] }) {
       />
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
+      {searchTorrentDialog}
     </div>
   );
 }
