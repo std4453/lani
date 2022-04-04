@@ -134,7 +134,7 @@ export default function SeasonPage() {
         <Connections />
         <Metadata />
         <DownloadSources />
-        <Episodes episodes={episodes} />
+        <Episodes episodes={episodes} reloadEpisodes={reloadEpisodes} />
         <div style={{ height: 80 }} />
       </ProForm>
     </Spin>

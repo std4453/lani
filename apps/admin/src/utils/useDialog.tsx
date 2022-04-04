@@ -1,3 +1,4 @@
+import useMutex from '@/utils/useMutex';
 import { useMemoizedFn, useSetState } from 'ahooks';
 import { ComponentType, ReactNode } from 'react';
 
@@ -94,7 +95,25 @@ export function useDialog<Input = void, Output = void>() {
 export interface DialogProps<Input = void, Output = void> {
   visible: boolean;
   input?: Input;
-  resolve: (output: Output) => void;
+  resolve: (output: Output) => void | Promise<void>;
+  reject: () => void;
+}
+
+type InputWithOnResolve<
+  Input extends object | void,
+  Output,
+> = (Input extends void ? {} : Input) & {
+  onResolve?: (output: Output) => void | Promise<void>;
+};
+
+export interface DialogPropsWithOnResolve<
+  Input extends object | void = void,
+  Output = void,
+> {
+  visible: boolean;
+  input?: Input;
+  submitting: boolean;
+  resolve: (output: Output) => Promise<void>;
   reject: () => void;
 }
 
@@ -107,6 +126,47 @@ export function createUseDialog<Input, Output>(
     (input: Input) => Promise<DialogOpenNoThrowResult<Output>>,
   ] => {
     const { open, openNoThrow, ...props } = useDialog<Input, Output>();
+    const dialog = <Component {...props} />;
+    return [dialog, open, openNoThrow];
+  };
+}
+
+export function useDialogWithOnResolve<
+  Input extends object | void = void,
+  Output = void,
+>() {
+  const { input, resolve, ...props } = useDialog<
+    InputWithOnResolve<Input, Output>,
+    Output
+  >();
+  const resolveWithOnResolve = useMemoizedFn(async (output: Output) => {
+    await input?.onResolve?.(output);
+    resolve(output);
+  });
+  const [submitting, resolveMutex] = useMutex(resolveWithOnResolve);
+  return {
+    ...props,
+    resolve: resolveMutex,
+    submitting,
+    input: input as Input | undefined,
+  };
+}
+
+export function createUseDialogWithOnResolve<
+  Input extends object | void,
+  Output,
+>(Component: ComponentType<DialogPropsWithOnResolve<Input, Output>>) {
+  return (): [
+    ReactNode,
+    (input: InputWithOnResolve<Input, Output>) => Promise<Output>,
+    (
+      input: InputWithOnResolve<Input, Output>,
+    ) => Promise<DialogOpenNoThrowResult<Output>>,
+  ] => {
+    const { open, openNoThrow, ...props } = useDialogWithOnResolve<
+      Input,
+      Output
+    >();
     const dialog = <Component {...props} />;
     return [dialog, open, openNoThrow];
   };
