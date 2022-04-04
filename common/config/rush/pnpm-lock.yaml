@@ -64,6 +64,7 @@ specifiers:
   '@types/koa-router': ~7.4.4
   '@types/koa__cors': ~3.1.1
   '@types/lodash': ~4.14.178
+  '@types/md5': ~2.3.2
   '@types/node': ~17.0.4
   '@types/parse-torrent': ~5.8.4
   '@types/react': ~17.0.38
@@ -204,6 +205,7 @@ dependencies:
   '@types/koa-router': 7.4.4
   '@types/koa__cors': 3.1.1
   '@types/lodash': 4.14.181
+  '@types/md5': 2.3.2
   '@types/node': 17.0.23
   '@types/parse-torrent': 5.8.4
   '@types/react': 17.0.43
@@ -15745,6 +15747,11 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /pretty-bytes/6.0.0:
+    resolution: {integrity: sha512-6UqkYefdogmzqAZWzJ7laYeJnaXDy2/J+ZqiiMtS7t7OfpXWTlaeGMwX8U6EFvPV/YWWEKRkS8hKS4k60WHTOg==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+    dev: false
+
   /pretty-format/26.6.2:
     resolution: {integrity: sha512-7AeGuCYNGmycyQbCqd/3PWH4eOoX/OiCa0uphp57NVTeAGdJGaAliecxwBDHYQCIvrW7aDBZCYeNTP/WX69mkg==}
     engines: {node: '>= 10'}
@@ -20163,7 +20170,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-B3c1JhZb9E12KBbaswMD4dtuyJoiiVZFEfJ/B+TIFVCoonWaw9aC4bDwevBVfTgrPsE63KuiDVaRWIwjPO3ZPg==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-u3F5oTARnF8YIdM+yN4eM+551wL9rTQ2nihou6TtR2IY6PzGVsQIDnNWmzl8Y/I0Mv+vjrJVUplm6j9utk8jiQ==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20200,6 +20207,7 @@ packages:
       lodash: 4.17.21
       npm-run-all: 4.1.5
       prettier: 2.5.1
+      pretty-bytes: 6.0.0
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       sass: 1.49.11

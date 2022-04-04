@@ -51,9 +51,3 @@ query GetDownloadSourceById($downloadSourceByIdId: Int!) {
     pattern
   }
 }
-
-mutation CreateDownloadSource($downloadSource: DownloadSourceInput!) {
-  createDownloadSource(input: { downloadSource: $downloadSource }) {
-    __typename
-  }
-}

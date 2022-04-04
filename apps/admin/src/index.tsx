@@ -1,5 +1,10 @@
+import laniText from '@/assets/lani-text.svg';
 import client from '@/client';
-import { DatabaseOutlined, HomeOutlined } from '@ant-design/icons';
+import {
+  DatabaseOutlined,
+  DownloadOutlined,
+  HomeOutlined,
+} from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
 import { ApolloProvider } from '@apollo/client';
 import 'antd/dist/antd.less';
@@ -7,11 +12,11 @@ import clsx from 'clsx';
 import { ElementType } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
-import laniText from '@/assets/lani-text.svg';
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
   '/metadata': DatabaseOutlined,
+  '/torrents': DownloadOutlined,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
