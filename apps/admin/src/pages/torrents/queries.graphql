@@ -1,0 +1,32 @@
+fragment torrentFields on Torrent {
+  id
+  publishDate
+  size
+  title
+  torrentLink
+}
+
+query ListTorrents(
+  $offset: Int
+  $first: Int
+  $orderBy: [TorrentsOrderBy!] = []
+  $filter: TorrentFilter
+) {
+  allTorrents(
+    offset: $offset
+    first: $first
+    orderBy: $orderBy
+    filter: $filter
+  ) {
+    edges {
+      node {
+        ...torrentFields
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+    }
+    totalCount
+  }
+}
