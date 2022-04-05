@@ -20376,7 +20376,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.23:
-    resolution: {integrity: sha512-fXmM9ag1NMJHHkeIhIGYOwo2xeKeqy+Rec0py/GVeJrI7WI/h/UqJMXILT3E+7Xg02wAZt46/vDHy4AB1tS2eQ==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-ut+20fMbLU/KcT0MWr2YJkspv0zx3Rc2ibb5fQE4mD0MCQHWhdKdS7GsBK3rAXcC7yhtAqvv9E5xl7ZEocHiHA==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -20384,8 +20384,10 @@ packages:
       '@graphile-contrib/pg-omit-archived': 2.1.0_69b991bab972e73015d7b02856703263
       '@graphile-contrib/pg-simplify-inflector': 6.1.0
       '@graphile/federation': 0.1.0_6130c89331ecac3323ebe7f3a64be2b5
+      '@types/koa': 2.13.4
       graphile-build: 4.12.2_graphql@15.8.0
       graphql: 15.8.0
+      koa: 2.13.4
       postgraphile: 4.12.8
       postgraphile-plugin-connection-filter: 2.2.2
       ts-node: 10.7.0_f617194e5939c51b27c7a156f2544bd6
@@ -20430,7 +20432,7 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-FvoGPHoSBjFp6wiOUDMAkgfyjNgUG3O3Bs5Cij5AG5CjVgLmagME6Kfr1OGwTZoF3CC1e3wH08FUH3fy4OTn3g==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-ax2OTr8vBsaTKIFjvfGRRnblEPga/XwhRhlSXJO83urQor59rWmKB8yo4ixEEGz2AUMdip8QsQGh7catmxyXVQ==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
