@@ -34,19 +34,14 @@ spec:
         - name: NODE_ENV
           value: "offline" 
         volumeMounts:
-          - mountPath: /downloads
-            name: downloads
           - mountPath: /media
-            name: media
+            name: media-root
       imagePullSecrets:
       - name: ghcr-io-regcred
       volumes:
-      - name: downloads
+      - name: media-root
         persistentVolumeClaim: 
-          claimName: downloads-pvc
-      - name: media
-        persistentVolumeClaim: 
-          claimName: media-pvc
+          claimName: media-root-pvc
       securityContext:
         runAsUser: 1000
 ---

@@ -1,29 +1,14 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: downloads-pvc
-  namespace: lani-offline
-spec:
-  resources:
-    requests:
-      storage: 400Gi
-  volumeMode: Filesystem
-  volumeName: lani-downloads-pv
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: media-pvc
+  name: media-root-pvc
   namespace: lani-offline
 spec:
   resources:
     requests:
       storage: 5Ti
   volumeMode: Filesystem
-  volumeName: lani-media-pv
+  volumeName: lani-media-root-pv
   accessModes:
     - ReadWriteMany
   storageClassName: ""
@@ -31,29 +16,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: lani-downloads-pv
-spec:
-  capacity:
-    storage: 400Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  local:
-    path: /data/std4453/services/media/downloads
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - home
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: lani-media-pv
+  name: lani-media-root-pv
 spec:
   capacity:
     storage: 5Ti
@@ -62,7 +25,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   local:
-    path: /data/std4453/services/media/media
+    path: /data/std4453/services/media
   nodeAffinity:
     required:
       nodeSelectorTerms:
