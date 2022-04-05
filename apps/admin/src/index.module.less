@@ -2,6 +2,16 @@
   height: 44px;
   width: 100%;
   position: relative;
+  transition: transform 125ms ease;
+
+  &.collapsed {
+    transform: scale(0.8);
+
+    .logoBlock {
+      width: 40px;
+      left: -2px;
+    }
+  }
 }
 
 .logoBlock {
@@ -13,11 +23,6 @@
   overflow: hidden;
   transform: translateY(-50%);
   transition: all 125ms ease;
-
-  &.collapsed {
-    width: 44px;
-    left: -6px;
-  }
 }
 
 .logo {
@@ -30,4 +35,12 @@
 .content {
   background-color: white;
   padding: 0px 32px 16px;
+}
+
+.layout {
+  :global {
+    .ant-layout-sider {
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
+    }
+  }
 }

@@ -8,7 +8,7 @@ import {
 import ProLayout from '@ant-design/pro-layout';
 import { ApolloProvider } from '@apollo/client';
 import clsx from 'clsx';
-import { ElementType } from 'react';
+import { ElementType, useState } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
 
@@ -20,6 +20,7 @@ const pathToIcon: { [x: string]: ElementType } = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function App(props: any) {
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <ApolloProvider client={client}>
       <ProLayout
@@ -29,14 +30,20 @@ export default function App(props: any) {
         style={{
           height: '100vh',
         }}
-        collapsed={false}
-        collapsedButtonRender={false}
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
         menuHeaderRender={() => (
-          <div className={styles.logoContainer}>
-            <div className={clsx(styles.logoBlock)}>
-              <img src={laniText} alt="Lani" className={styles.logo} />
+          <Link to="/">
+            <div
+              className={clsx(styles.logoContainer, {
+                [styles.collapsed]: collapsed,
+              })}
+            >
+              <div className={styles.logoBlock}>
+                <img src={laniText} alt="Lani" className={styles.logo} />
+              </div>
             </div>
-          </div>
+          </Link>
         )}
         menuItemRender={(item, dom) => {
           const Icon = item.path ? pathToIcon[item.path] : undefined;
@@ -51,7 +58,10 @@ export default function App(props: any) {
         contentStyle={{
           margin: 0,
           backgroundColor: '#FFFFFF',
+          maxHeight: '100vh',
+          overflow: 'auto',
         }}
+        className={styles.layout}
       />
     </ApolloProvider>
   );
