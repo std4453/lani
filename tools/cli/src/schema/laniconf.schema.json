@@ -21,30 +21,6 @@
         "mp:taro:react:ts"
       ]
     },
-    "abilities": {
-      "description": "Abilities to use with this project",
-      "type": "array",
-      "items": {
-        "anyOf": [
-          {
-            "enum": ["tracing"]
-          },
-          {
-            "type": "array",
-            "items": [
-              {
-                "enum": ["tracing"]
-              },
-              {
-                "type": "object"
-              }
-            ],
-            "minItems": 2,
-            "maxItems": 2
-          }
-        ]
-      }
-    },
     "node": {
       "description": "Node.JS app-related settings",
       "type": "object",
@@ -87,5 +63,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["type", "abilities"]
+  "required": ["type"]
 }

@@ -10,7 +10,7 @@
     "generate:schema": "ts-node src/scripts/generate-schema.ts"
   },
   "dependencies": {
-    "postgraphile": "4.12.8",
+    "postgraphile": "~4.12.9",
     "graphql": "15.8.0",
     "@lani/framework": "~1.0.0",
     "@graphile-contrib/pg-simplify-inflector": "~6.1.0",
