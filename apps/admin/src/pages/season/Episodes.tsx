@@ -22,12 +22,14 @@ import {
   Alert,
   Divider,
   Dropdown,
+  Form,
   Menu,
   message,
   Tag,
   TagProps,
   Typography,
 } from 'antd';
+import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
 import styles from './Episodes.module.less';
 
@@ -242,7 +244,6 @@ export default function Episodes({
               message="剧集数据来源为手动，无法自动同步。目前剧集数据无法前端修改，这部分数据将缺失"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
@@ -257,7 +258,6 @@ export default function Episodes({
               message="Bangumi关联信息未设置，无法从Bangumi同步剧集数据"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
@@ -275,7 +275,6 @@ export default function Episodes({
               message="theTVDB关联信息不完整，无法从Skyhook同步剧集数据"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
@@ -303,6 +302,17 @@ export default function Episodes({
         ]}
         width="sm"
       />
+      <Form.Item label="上次同步时间" {...formItemProps}>
+        <FormDependency<FormValues> name={['episodesLastSync']}>
+          {({ episodesLastSync }) =>
+            episodesLastSync ? (
+              dayjs(episodesLastSync).format('YYYY-MM-DD HH:mm:ss')
+            ) : (
+              <Typography.Text type="secondary">未同步</Typography.Text>
+            )
+          }
+        </FormDependency>
+      </Form.Item>
       <ProTable<Episode>
         columns={columns}
         dataSource={episodes}

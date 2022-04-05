@@ -56,7 +56,6 @@ export default function Metadata() {
               message="元数据来源为手动，无法自动同步。目前部分元数据字段无法前端修改，这部分字段将缺失"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
@@ -71,7 +70,6 @@ export default function Metadata() {
               message="Bangumi关联信息未设置，无法从Bangumi同步元数据"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
@@ -87,7 +85,6 @@ export default function Metadata() {
               message="theTVDB关联信息不完整，无法从Skyhook同步元数据"
               type="warning"
               showIcon
-              className={styles.warning}
               style={{
                 marginBottom: 16,
               }}
