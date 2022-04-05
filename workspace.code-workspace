@@ -5,10 +5,6 @@
 			"path": "."
 		},
 		{
-			"name": "🔗 @lani/api",
-			"path": "interfaces/api"
-		},
-		{
 			"name": "📦 @lani/framework",
 			"path": "libs/framework"
 		},
