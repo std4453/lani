@@ -1,12 +1,12 @@
 import { Command, Flags } from "@oclif/core";
-import { loadLaniConfig } from "../../utils/laniconfig";
-import { resolveProjectConfig } from "../../utils/project";
+import * as inquirer from "inquirer";
 import kleur from "kleur";
+import { Octokit } from "octokit";
 import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
-import * as _ from "lodash";
-import { Octokit } from "octokit";
 import globalConfig from "../../config";
+import { loadLaniConfig } from "../../utils/laniconfig";
+import { resolveProjectConfig } from "../../utils/project";
 
 const DEFAULT_WORKFLOW = "node_default.yaml";
 
@@ -17,11 +17,17 @@ export default class Devops extends Command {
     "no-auto-push": Flags.boolean(),
     strict: Flags.boolean(),
     "log-git": Flags.boolean(),
+    "no-cd": Flags.boolean(),
   };
 
   async run(): Promise<void> {
     const {
-      flags: { "no-auto-push": noAutoPush, strict, "log-git": logGit },
+      flags: {
+        "no-auto-push": noAutoPush,
+        strict,
+        "log-git": logGit,
+        "no-cd": noCd,
+      },
     } = await this.parse(Devops);
 
     const project = resolveProjectConfig();
@@ -117,9 +123,25 @@ export default class Devops extends Command {
       project_name: project.packageName,
     };
 
-    if (config.ci.deployment) {
-      const { name } = config.ci.deployment;
-      inputs.deploy_name = name;
+    if (config.ci.deployment && !noCd) {
+      const { env: envList } = config.ci.deployment;
+      if (envList.length === 0) {
+        console.log(kleur.red("No available environment"));
+        process.exit(1);
+      }
+      let env = envList[0];
+      if (envList.length > 1) {
+        const result = await inquirer.prompt([
+          {
+            name: "env",
+            message: "Select deployment environment",
+            type: "list",
+            choices: [envList],
+          },
+        ]);
+        env = result.env as "offline" | "prerelease" | "production";
+      }
+      inputs.deploy_env = env;
     }
 
     const createTime = new Date().getTime();

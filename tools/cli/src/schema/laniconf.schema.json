@@ -49,13 +49,17 @@
           "description": "Deployment-related settings",
           "type": "object",
           "properties": {
-            "name": {
-              "description": "k8s deploy name",
-              "type": "string"
+            "env": {
+              "description": "Enabled environments",
+              "type": "array",
+              "items": {
+                "description": "Environment type",
+                "enum": ["offline", "prerelease", "production"]
+              }
             }
           },
           "additionalProperties": false,
-          "required": ["name"]
+          "required": ["env"]
         }
       },
       "additionalProperties": false,

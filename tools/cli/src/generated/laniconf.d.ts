@@ -48,9 +48,9 @@ export interface LaniConfig {
      */
     deployment?: {
       /**
-       * k8s deploy name
+       * Enabled environments
        */
-      name: string;
+      env: ("offline" | "prerelease" | "production")[];
     };
   };
 }

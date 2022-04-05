@@ -9,7 +9,7 @@ resources:
   # services
   - data-server.yaml
   - api-server.yaml
-  - gateway.yaml
+  # - gateway.yaml
   - admin.yaml
   # istio
   - istio-vs.yaml
