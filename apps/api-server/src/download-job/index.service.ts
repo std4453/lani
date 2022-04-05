@@ -102,13 +102,14 @@ export class JobService
         episode_id: number;
       }[]
     >`
-      SELECT torrents.torrent_link,
-        episodes.id AS episode_id
+      SELECT 
+        DISTINCT ON (episodes.id) episodes.id AS episode_id,
+		    torrents.torrent_link
       FROM torrents,
         download_sources,
         seasons,
-        episodes,
-        download_jobs
+        episodes
+      LEFT JOIN download_jobs ON episodes.id = download_jobs.episode_id
       WHERE download_sources.is_disabled = false
         AND download_sources.is_archived = false
         AND torrents.title ~ download_sources.pattern
@@ -120,7 +121,6 @@ export class JobService
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
         AND download_jobs.episode_id IS NULL
-		    AND episodes.id = download_jobs.episode_id
     `;
     if (result.length > 0) {
       console.debug('queued', result.length, 'jobs');
