@@ -22,7 +22,7 @@ const config = mergeConfig({
   qbtUsername: 'std4453',
   qbtPassword: 'dyQB2QT&8kFqRBe#',
   timeoutLocal: 5000,
-  timeoutChina: 10000,
+  timeoutChina: 15000,
   timeoutGlobal: 30000,
   mediaRoot: '/media',
   qbtPathMapping: [] as PathMapping,
