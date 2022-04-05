@@ -26,7 +26,7 @@ const config = mergeConfig({
   timeoutGlobal: 30000,
   mediaRoot: '/media',
   qbtPathMapping: [] as PathMapping,
-  jellyfinEndpoint: 'http://jellyfin.media:80',
+  jellyfinEndpoint: 'http://jellyfin-server-prod.media:80',
   jellyfinToken: '231e55e0d1c240cd9e58cc47f61f521b',
   jellyfinUserId: '786d13a822ed4f6ba27b28f5cf374133',
   jellyfinPathMapping: [] as PathMapping,
