@@ -10,7 +10,8 @@
     "postinstall": "umi generate tmp",
     "devops": "lani-cli devops",
     "generate": "graphql-codegen --config codegen.yml",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "manifest": "lani-cli manifest"
   },
   "devDependencies": {
     "@lani/cli": "~1.0.0",

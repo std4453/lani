@@ -1,25 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gateway
+  name: admin
   namespace: lani-offline
   labels:
-    app: gateway
+    app: admin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gateway
+      app: admin
   template:
     metadata:
       labels:
-        app: gateway
+        app: admin
     spec:
       containers:
-      - name: gateway
-        # TODO:
-        image: ghcr.io/std4453/gateway:dev-admin
-        imagePullPolicy: Always
+      - name: admin
+        image: {{image}}
+        imagePullPolicy: IfNotPresent
         ports:
         - name: http
           containerPort: 8080
@@ -39,11 +38,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: gateway
+  name: admin
   namespace: lani-offline
 spec:
   selector:
-    app: gateway
+    app: admin
   ports:
   - name: http
     port: 8080

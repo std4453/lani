@@ -7,7 +7,8 @@
     "build": "lani-cli build",
     "devops": "lani-cli devops",
     "dev": "lani-cli dev",
-    "generate:schema": "ts-node src/scripts/generate-schema.ts"
+    "generate:schema": "ts-node src/scripts/generate-schema.ts",
+    "manifest": "lani-cli manifest"
   },
   "dependencies": {
     "postgraphile": "~4.12.9",

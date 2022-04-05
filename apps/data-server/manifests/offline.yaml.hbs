@@ -1,25 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: admin
+  name: data-server
   namespace: lani-offline
   labels:
-    app: admin
+    app: data-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: admin
+      app: data-server
   template:
     metadata:
       labels:
-        app: admin
+        app: data-server
     spec:
       containers:
-      - name: admin
-        # TODO:
-        image: ghcr.io/std4453/admin:dev-admin
-        imagePullPolicy: Always
+      - name: data-server
+        image: {{image}}
+        imagePullPolicy: IfNotPresent
         ports:
         - name: http
           containerPort: 8080
@@ -32,18 +31,18 @@ spec:
             cpu: "10m"
         env:
         - name: NODE_ENV
-          value: "offline" 
+          value: "offline"  
       imagePullSecrets:
       - name: ghcr-io-regcred
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: admin
+  name: data-server
   namespace: lani-offline
 spec:
   selector:
-    app: admin
+    app: data-server
   ports:
   - name: http
     port: 8080

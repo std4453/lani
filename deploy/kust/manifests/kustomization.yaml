@@ -6,10 +6,5 @@ resources:
   - regcred.yaml
   - lani-cd.yaml
   - volumes.yaml
-  # services
-  - data-server.yaml
-  - api-server.yaml
-  # - gateway.yaml
-  - admin.yaml
-  # istio
   - istio-vs.yaml
+  # services are deployed on per-service basis
