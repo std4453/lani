@@ -97,6 +97,7 @@ export interface FormValues {
   poster: DisplayImageFieldsFragment | null;
   fanart: DisplayImageFieldsFragment | null;
   banner: DisplayImageFieldsFragment | null;
+  episodesLastSync: Date | null;
 }
 
 export function queryToFormValues({
@@ -121,6 +122,7 @@ export function queryToFormValues({
   poster,
   banner,
   fanart,
+  episodesLastSync,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -147,6 +149,7 @@ export function queryToFormValues({
     poster: poster ?? null,
     banner: banner ?? null,
     fanart: fanart ?? null,
+    episodesLastSync: episodesLastSync ?? null,
   };
 }
 

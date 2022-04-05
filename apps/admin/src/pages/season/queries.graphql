@@ -3,135 +3,86 @@ fragment displayImageFields on Image {
   downloadPath
 }
 
-query GetSeasonByIdAll($id: Int!) {
-  seasonById(id: $id) {
-    id
-    infoSource
-    isMonitoring
-    jellyfinId
-    mikanAnimeId
-    jellyfinFolderId
-    tags
-    title
-    tvdbId
-    tvdbSeason
-    weekday
-    yearAndSemester
-    airTime
-    bangumiId
-    bilibiliMainlandId
-    bilibiliThmId
-    createdAt
-    description
-    isArchived
-    episodesBySeasonId(orderBy: INDEX_ASC) {
-      edges {
-        node {
-          airTime
-          id
-          index
-          jellyfinEpisodeId
-          title
-          downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
-            totalCount
-            edges {
-              node {
-                status
-                isFailed
-              }
+fragment seasonEpisodes on Season {
+  episodesBySeasonId(orderBy: INDEX_ASC) {
+    edges {
+      node {
+        airTime
+        id
+        index
+        jellyfinEpisodeId
+        title
+        downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
+          totalCount
+          edges {
+            node {
+              status
+              isFailed
             }
           }
         }
       }
     }
-    episodesSource
-    downloadSourcesBySeasonId {
-      edges {
-        node {
-          id
-          pattern
-        }
+  }
+}
+
+fragment seasonConfigFields on Season {
+  id
+  infoSource
+  isMonitoring
+  jellyfinId
+  mikanAnimeId
+  jellyfinFolderId
+  tags
+  title
+  tvdbId
+  tvdbSeason
+  weekday
+  yearAndSemester
+  airTime
+  bangumiId
+  bilibiliMainlandId
+  bilibiliThmId
+  createdAt
+  description
+  isArchived
+  episodesSource
+  downloadSourcesBySeasonId {
+    edges {
+      node {
+        id
+        pattern
       }
     }
-    poster: imageByPosterImageId {
-      ...displayImageFields
-    }
-    banner: imageByBannerImageId {
-      ...displayImageFields
-    }
-    fanart: imageByFanartImageId {
-      ...displayImageFields
-    }
+  }
+  poster: imageByPosterImageId {
+    ...displayImageFields
+  }
+  banner: imageByBannerImageId {
+    ...displayImageFields
+  }
+  fanart: imageByFanartImageId {
+    ...displayImageFields
+  }
+  episodesLastSync
+}
+
+query GetSeasonByIdAll($id: Int!) {
+  seasonById(id: $id) {
+    ...seasonConfigFields
+    ...seasonEpisodes
   }
 }
 
 query GetSeasonByIdConfigOnly($id: Int!) {
   seasonById(id: $id) {
-    id
-    infoSource
-    isMonitoring
-    jellyfinId
-    mikanAnimeId
-    jellyfinFolderId
-    tags
-    title
-    tvdbId
-    tvdbSeason
-    weekday
-    yearAndSemester
-    airTime
-    bangumiId
-    bilibiliMainlandId
-    bilibiliThmId
-    createdAt
-    description
-    isArchived
-    episodesSource
-    downloadSourcesBySeasonId {
-      edges {
-        node {
-          id
-          pattern
-        }
-      }
-    }
-    poster: imageByPosterImageId {
-      id
-      downloadPath
-    }
-    banner: imageByBannerImageId {
-      id
-      downloadPath
-    }
-    fanart: imageByFanartImageId {
-      id
-      downloadPath
-    }
+    ...seasonConfigFields
   }
 }
 
 query GetSeasonByIdEpisodesOnly($id: Int!) {
   seasonById(id: $id) {
-    episodesBySeasonId(orderBy: INDEX_ASC) {
-      edges {
-        node {
-          airTime
-          id
-          index
-          jellyfinEpisodeId
-          title
-          downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
-            totalCount
-            edges {
-              node {
-                status
-                isFailed
-              }
-            }
-          }
-        }
-      }
-    }
+    ...seasonEpisodes
   }
 }
 
