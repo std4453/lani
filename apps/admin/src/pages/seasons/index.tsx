@@ -9,8 +9,8 @@ import {
   SeasonFilter,
   SeasonsOrderBy,
 } from '@/generated/types';
-import { useAddFromBangumiDialog } from '@/pages/metadata/AddFromBangumiDialog';
-import { useCreateSeasonDialog } from '@/pages/metadata/CreateSeasonDialog';
+import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
+import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';

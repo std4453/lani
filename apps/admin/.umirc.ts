@@ -12,13 +12,12 @@ export default defineConfig({
         {
           path: '/',
           exact: true,
-          component: '@/pages/index',
-          name: '首页',
+          redirect: '/seasons',
         },
         {
-          path: '/metadata',
+          path: '/seasons',
           exact: true,
-          component: '@/pages/metadata',
+          component: '@/pages/seasons',
           name: '季度列表',
         },
         {

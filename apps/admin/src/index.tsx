@@ -14,7 +14,7 @@ import styles from './index.module.less';
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
-  '/metadata': DatabaseOutlined,
+  '/seasons': DatabaseOutlined,
   '/torrents': DownloadOutlined,
 };
 
