@@ -449,10 +449,6 @@
     //   "reviewCategory": "tools"
     // }
     {
-      "packageName": "@lani/api",
-      "projectFolder": "interfaces/api"
-    },
-    {
       "packageName": "@lani/framework",
       "projectFolder": "libs/framework"
     },
