@@ -9,22 +9,6 @@ import axios, {
 } from 'axios';
 import createHttpsProxyAgent from 'https-proxy-agent';
 
-function pTimeout<T>(
-  promise: Promise<T>,
-  timeout: number,
-  message?: string,
-): Promise<T> {
-  if (timeout <= 0) {
-    return promise;
-  }
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      reject(new Error(message));
-    }, timeout);
-    promise.then(resolve, reject);
-  });
-}
-
 // extends Axios 这里只是个幌子，因为 Axios.constructor 制造的 instance 比
 // axios.create() 制造的少很多默认值，导致了问题，因此实际上我们的 request
 // 托管给 instance 而非 super
@@ -43,10 +27,12 @@ export class AxiosService extends Axios {
   request<T = any, R = AxiosResponse<T>, D = any>(
     config: AxiosRequestConfig<D>,
   ): Promise<R> {
-    return pTimeout(
-      this.instance.request<T, R, D>(config),
-      config.timeout ?? this.requestConfig.timeout ?? 0,
-    );
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject(config);
+      }, config.timeout ?? this.requestConfig.timeout ?? 0);
+      this.instance.request<T, R, D>(config).then(resolve, reject);
+    });
   }
 }
 

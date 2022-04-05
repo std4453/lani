@@ -52,7 +52,6 @@ export class SyncMetadataResolver {
         result = await this.bangumi.fetch(
           {
             info: true,
-            characters: true,
             images: true,
           },
           bangumiId,
@@ -68,7 +67,6 @@ export class SyncMetadataResolver {
         result = await this.skyhook.fetch(
           {
             info: true,
-            characters: true,
             images: true,
           },
           tvdbId,
