@@ -1,5 +1,5 @@
-import { mergeConfig } from '@lani/framework';
 import { PathMapping } from '@/utils/path';
+import { mergeConfig } from '@lani/framework';
 
 export interface COSBucket {
   bucket: string;
@@ -64,6 +64,19 @@ const config = mergeConfig({
       'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
     redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
+    mediaRoot: '/media/media',
+    qbtPathMapping: [
+      {
+        from: '/downloads',
+        to: '/media/downloads',
+      },
+    ] as PathMapping,
+    jellyfinPathMapping: [
+      {
+        from: '/media',
+        to: '/media/media',
+      },
+    ],
   },
 });
 
