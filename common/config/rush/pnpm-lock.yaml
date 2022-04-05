@@ -40,15 +40,12 @@ specifiers:
   '@rush-temp/admin': file:./projects/admin.tgz
   '@rush-temp/api': file:./projects/api.tgz
   '@rush-temp/api-server': file:./projects/api-server.tgz
-  '@rush-temp/bilibili-bangumi-cc': file:./projects/bilibili-bangumi-cc.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
-  '@rush-temp/gql-utils': file:./projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:./projects/k8s-gen.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
-  '@rush-temp/rss': file:./projects/rss.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
   '@sentry/react': ~6.17.8
@@ -119,6 +116,7 @@ specifiers:
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: ~2.2.2
   prettier: ~2.5.1
+  pretty-bytes: ~6.0.0
   prisma: ~3.11.0
   qs: ~6.10.3
   react: ~17.0.2
@@ -181,15 +179,12 @@ dependencies:
   '@rush-temp/admin': file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a
   '@rush-temp/api': file:projects/api.tgz
   '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.46.0
-  '@rush-temp/bilibili-bangumi-cc': file:projects/bilibili-bangumi-cc.tgz
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.23
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
-  '@rush-temp/gql-utils': file:projects/gql-utils.tgz
   '@rush-temp/k8s-gen': file:projects/k8s-gen.tgz
   '@rush-temp/kust': file:projects/kust.tgz
-  '@rush-temp/rss': file:projects/rss.tgz
   '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.3
   '@sentry/react': 6.17.9_react@17.0.2
@@ -260,6 +255,7 @@ dependencies:
   postgraphile: 4.12.8
   postgraphile-plugin-connection-filter: 2.2.2
   prettier: 2.5.1
+  pretty-bytes: 6.0.0
   prisma: 3.11.1
   qs: 6.10.3
   react: 17.0.2
@@ -20342,23 +20338,6 @@ packages:
       typescript-transform-paths: 3.3.1_typescript@4.5.5
     dev: false
 
-  file:projects/bilibili-bangumi-cc.tgz:
-    resolution: {integrity: sha512-Pp7xVxhdjVucGDXgx5uf34Q5+zOed+rk3duWKswQCB0Oi4DUKNXZPd/gDkHeyW1G4Xe7YwqFlyc3dykMseUeRA==, tarball: file:projects/bilibili-bangumi-cc.tgz}
-    name: '@rush-temp/bilibili-bangumi-cc'
-    version: 0.0.0
-    dependencies:
-      axios: 0.26.1
-      cos-nodejs-sdk-v5: 2.11.6
-      fp-ts: 2.11.9
-      https-proxy-agent: 5.0.0
-      io-ts: 2.2.16_fp-ts@2.11.9
-      typescript: 4.5.5
-      typescript-transform-paths: 3.3.1_typescript@4.5.5
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-    dev: false
-
   file:projects/cli.tgz:
     resolution: {integrity: sha512-fAE+S4rnj0eH37kW3txnr+tczdXSvz5bMCCVSzW3ik5X1wMAzGIM+tT0LierwzH79OsaXSIZfFubHvNSWlKvZQ==, tarball: file:projects/cli.tgz}
     name: '@rush-temp/cli'
@@ -20467,15 +20446,6 @@ packages:
       - supports-color
     dev: false
 
-  file:projects/gql-utils.tgz:
-    resolution: {integrity: sha512-rMF9Tc/U1rBS/ScybE0deaEScHkk2eRJS6CeZt9LY84nNZHuvNLT0OokpAUD8TdmSvHkK1m9ru1s1dBf8ltztA==, tarball: file:projects/gql-utils.tgz}
-    name: '@rush-temp/gql-utils'
-    version: 0.0.0
-    dependencies:
-      typescript: 4.5.5
-      typescript-transform-paths: 3.3.1_typescript@4.5.5
-    dev: false
-
   file:projects/k8s-gen.tgz:
     resolution: {integrity: sha512-WpHfS7gyVsTWYWEtZKhXAUcL9LsD/t+kVpMqGgYsnm7be9SBEfaqSW977zUH5TAlFVLQ1eAI2dbw2UU7ekVXbQ==, tarball: file:projects/k8s-gen.tgz}
     name: '@rush-temp/k8s-gen'
@@ -20486,21 +20456,4 @@ packages:
     resolution: {integrity: sha512-AjZy88TwMbI1CQgyj+F+AAO30zZpR1yzXAArrInmtktmfy3uOkiUMQzfKTT3KYFEev9dSpVW2cLpFGtJl188ZQ==, tarball: file:projects/kust.tgz}
     name: '@rush-temp/kust'
     version: 0.0.0
-    dev: false
-
-  file:projects/rss.tgz:
-    resolution: {integrity: sha512-8VM8RqIHAGhDR/NReAl0UgugUAk6uOK8JPP1U44ASz04g4VbR2JILpwEBYwuftxj0OB2CKkKx4NCdGzAw9m3Tw==, tarball: file:projects/rss.tgz}
-    name: '@rush-temp/rss'
-    version: 0.0.0
-    dependencies:
-      '@types/koa-router': 7.4.4
-      '@types/xml2js': 0.4.9
-      axios: 0.26.1
-      koa-router: 10.1.1
-      typescript: 4.5.5
-      typescript-transform-paths: 3.3.1_typescript@4.5.5
-      xml2js: 0.4.23
-    transitivePeerDependencies:
-      - debug
-      - supports-color
     dev: false

@@ -20,10 +20,6 @@
 			"name": "🚚 @lani/kust",
 			"path": "deploy/kust"
 		},
-    {
-			"name": "🚀 @lani/bilibili-bangumi-cc",
-			"path": "apps/bilibili-bangumi-cc"
-		},
 		{
 			"name": "🚀 @lani/admin",
 			"path": "apps/admin"
@@ -36,14 +32,6 @@
       "name": "🚚 @lani/k8s-gen",
 			"path": "deploy/k8s-gen"
     },
-    {
-			"name": "🚀 @lani/rss",
-			"path": "apps/rss"
-		},
-    {
-			"name": "📦 @lani/gql-utils",
-			"path": "libs/gql-utils"
-		},
     {
 			"name": "🚀 @lani/api-server",
 			"path": "apps/api-server"
