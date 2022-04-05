@@ -5,14 +5,11 @@ resources:
   - namespace.yaml
   - regcred.yaml
   - lani-cd.yaml
-  - redis.yaml
   - volumes.yaml
   # services
-  # - bilibili-bangumi-cc.yaml
   - data-server.yaml
   - api-server.yaml
   - gateway.yaml
   - admin.yaml
-  # - rss.yaml
   # istio
   - istio-vs.yaml
