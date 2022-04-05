@@ -25,6 +25,7 @@ export default defineConfig({
           path: '/season/:id',
           exact: true,
           component: '@/pages/season',
+          title: '季度详情',
         },
         {
           path: '/torrents',
@@ -32,6 +33,7 @@ export default defineConfig({
           component: '@/pages/torrents',
           name: '种子列表',
         },
+        { component: '@/pages/404' },
       ],
     },
   ],
@@ -48,4 +50,5 @@ export default defineConfig({
   ignoreMomentLocale: true,
   esbuild: {},
   antd: {},
+  title: 'Lani管理后台',
 });
