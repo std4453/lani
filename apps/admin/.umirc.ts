@@ -43,4 +43,9 @@ export default defineConfig({
       changeOrigin: true,
     },
   },
+  cssModulesTypescriptLoader: {},
+  hash: true,
+  ignoreMomentLocale: true,
+  esbuild: {},
+  antd: {},
 });
