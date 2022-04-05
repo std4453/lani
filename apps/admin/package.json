@@ -27,7 +27,8 @@
     "@types/lodash": "~4.14.178",
     "eslint": "^7.32.0",
     "@rushstack/eslint-config": "~2.5.1",
-    "eslint-plugin-react-hooks": "~4.3.0"
+    "eslint-plugin-react-hooks": "~4.3.0",
+    "@umijs/plugin-esbuild": "~1.4.1"
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
@@ -37,7 +38,6 @@
     "clsx": "~1.1.1",
     "@apollo/client": "~3.5.7",
     "@ant-design/pro-table": "~2.62.8",
-    "@ant-design/pro-card": "~1.18.26",
     "@ant-design/pro-form": "~1.61.0",
     "@ant-design/pro-layout": "^6.5.0",
     "umi": "^3.5.20",
@@ -46,10 +46,8 @@
     "ahooks": "~3.1.9",
     "lodash": "~4.17.21",
     "@types/history": "2.0.45",
-    "@ant-design/pro-list": "~1.21.21",
     "axios": "~0.26.0",
     "@sentry/react": "~6.17.8",
-    "use-clipboard-copy": "~0.2.0",
     "dayjs": "~1.10.7",
     "@ant-design/pro-descriptions": "~1.10.60",
     "pretty-bytes": "~6.0.0"

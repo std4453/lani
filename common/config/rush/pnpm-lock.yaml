@@ -2,11 +2,9 @@ lockfileVersion: 5.3
 
 specifiers:
   '@ant-design/icons': ^4.7.0
-  '@ant-design/pro-card': ~1.18.26
   '@ant-design/pro-descriptions': ~1.10.60
   '@ant-design/pro-form': ~1.61.0
   '@ant-design/pro-layout': ^6.5.0
-  '@ant-design/pro-list': ~1.21.21
   '@ant-design/pro-table': ~2.62.8
   '@apollo/client': ~3.5.7
   '@apollo/gateway': ^0.46.0
@@ -52,6 +50,7 @@ specifiers:
   '@types/cron': ~1.7.3
   '@types/express': ^4.17.13
   '@types/history': 2.0.45
+  '@types/inquirer': ~8.2.1
   '@types/jest': 27.4.1
   '@types/koa': ~2.13.4
   '@types/lodash': ~4.14.178
@@ -64,6 +63,7 @@ specifiers:
   '@types/xml2js': ~0.4.9
   '@typescript-eslint/eslint-plugin': ^5.0.0
   '@typescript-eslint/parser': ^5.0.0
+  '@umijs/plugin-esbuild': ~1.4.1
   '@umijs/preset-react': 1.x
   '@umijs/route-utils': ~2.0.4
   ahooks: ~3.1.9
@@ -126,16 +126,13 @@ specifiers:
   typescript: ~4.5.4
   typescript-transform-paths: ~3.3.1
   umi: ^3.5.20
-  use-clipboard-copy: ~0.2.0
   xml2js: ~0.4.23
 
 dependencies:
   '@ant-design/icons': 4.7.0_react-dom@17.0.2+react@17.0.2
-  '@ant-design/pro-card': 1.18.42_9c0de265bc3f25e6004b7ce7608693c1
   '@ant-design/pro-descriptions': 1.10.60_9c0de265bc3f25e6004b7ce7608693c1
   '@ant-design/pro-form': 1.61.0_9c0de265bc3f25e6004b7ce7608693c1
   '@ant-design/pro-layout': 6.34.8_9c0de265bc3f25e6004b7ce7608693c1
-  '@ant-design/pro-list': 1.21.46_9c0de265bc3f25e6004b7ce7608693c1
   '@ant-design/pro-table': 2.62.8_9c0de265bc3f25e6004b7ce7608693c1
   '@apollo/client': 3.5.10_graphql@15.8.0+react@17.0.2
   '@apollo/gateway': 0.46.0_graphql@15.8.0
@@ -181,6 +178,7 @@ dependencies:
   '@types/cron': 1.7.3
   '@types/express': 4.17.13
   '@types/history': 2.0.45
+  '@types/inquirer': 8.2.1
   '@types/jest': 27.4.1
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.181
@@ -193,6 +191,7 @@ dependencies:
   '@types/xml2js': 0.4.9
   '@typescript-eslint/eslint-plugin': 5.17.0_774b14a0587fa14f49b58eca49953a7f
   '@typescript-eslint/parser': 5.17.0_eslint@7.32.0+typescript@4.5.5
+  '@umijs/plugin-esbuild': 1.4.1_umi@3.5.21
   '@umijs/preset-react': 1.8.30_22d272bcb75d2e9880a18f3be721e9b0
   '@umijs/route-utils': 2.0.5
   ahooks: 3.1.14_react@17.0.2
@@ -255,7 +254,6 @@ dependencies:
   typescript: 4.5.5
   typescript-transform-paths: 3.3.1_typescript@4.5.5
   umi: 3.5.21
-  use-clipboard-copy: 0.2.0_react@17.0.2
   xml2js: 0.4.23
 
 packages:
@@ -5446,6 +5444,19 @@ packages:
       - react-dom
     dev: false
 
+  /@umijs/plugin-antd/0.15.0_505e49b6ea53e755a9c64b9c31ef1e2a:
+    resolution: {integrity: sha512-HnEvox1+jrnlqNg7jpbviCUt6gSgF7o3jE2TjAEC/qMg/a5a5bi/TxpmVouR8sgcIvh7jusmp6VrCK0vvoSGtg==}
+    peerDependencies:
+      umi: 3.x
+    dependencies:
+      antd: 4.19.5_react-dom@17.0.2+react@17.0.2
+      semver: 7.3.5
+      umi: 3.5.21
+    transitivePeerDependencies:
+      - react
+      - react-dom
+    dev: false
+
   /@umijs/plugin-crossorigin/1.2.1_umi@3.5.21:
     resolution: {integrity: sha512-4oXNFBLOCH1FHTgFi7EDmlcjjYMthOQlrTT+mSbNeMzvl0P/WKldSJsYAUXUTg+I7vlbb5bNby4dpHKK37JcbQ==}
     peerDependencies:
@@ -5471,6 +5482,17 @@ packages:
       - react-native
       - react-router
       - redbox-react
+    dev: false
+
+  /@umijs/plugin-esbuild/1.4.1_umi@3.5.21:
+    resolution: {integrity: sha512-3B5vhffgbtB/D/Xv2JQ4WRvDo3wvhr9YD90XrRbO17bgl50yj6CVVU6ulM2kCRtn4d7qcM+aMSGz220AwnfCOQ==}
+    peerDependencies:
+      umi: 3.x
+    dependencies:
+      esbuild-loader: 2.9.2
+      umi: 3.5.21
+    transitivePeerDependencies:
+      - webpack
     dev: false
 
   /@umijs/plugin-helmet/1.1.3_react@17.0.2+umi@3.5.21:
@@ -9032,8 +9054,27 @@ packages:
       es6-symbol: 3.1.3
     dev: false
 
+  /esbuild-loader/2.9.2:
+    resolution: {integrity: sha512-HpF+r/ES2aC40VDOIFsP8OIOM2y2vj8LyLwJ4G8DCMOi8Kov68TwCtxiMMTuSuxR/xKDu/ykgVyCEgps6BXpYw==}
+    peerDependencies:
+      webpack: ^4.40.0 || ^5.0.0
+    dependencies:
+      esbuild: 0.8.57
+      joycon: 2.2.5
+      json5: 2.2.1
+      loader-utils: 2.0.2
+      type-fest: 0.20.2
+      webpack-sources: 2.3.1
+    dev: false
+
   /esbuild/0.12.15:
     resolution: {integrity: sha512-72V4JNd2+48eOVCXx49xoSWHgC3/cCy96e7mbXKY+WOWghN00cCmlGnwVLRhRHorvv0dgCyuMYBZlM2xDM5OQw==}
+    hasBin: true
+    requiresBuild: true
+    dev: false
+
+  /esbuild/0.8.57:
+    resolution: {integrity: sha512-j02SFrUwFTRUqiY0Kjplwjm1psuzO1d6AjaXKuOR9hrY0HuPsT6sV42B6myW34h1q4CRy+Y3g4RU/cGJeI/nNA==}
     hasBin: true
     requiresBuild: true
     dev: false
@@ -12786,6 +12827,11 @@ packages:
     engines: {node: '>= 0.6.0'}
     dev: false
 
+  /joycon/2.2.5:
+    resolution: {integrity: sha512-YqvUxoOcVPnCp0VU1/56f+iKSdvIRJYPznH22BdXV3xMk75SFXhWeJkZ8C9XxUWt1b5x2X1SxuFygW1U0FmkEQ==}
+    engines: {node: '>=6'}
+    dev: false
+
   /js-cookie/2.2.1:
     resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}
     dev: false
@@ -13342,6 +13388,15 @@ packages:
       big.js: 5.2.2
       emojis-list: 3.0.0
       json5: 1.0.1
+    dev: false
+
+  /loader-utils/2.0.2:
+    resolution: {integrity: sha512-TM57VeHptv569d/GKh6TAYdzKblwDNiumOdkFnejjD0XwTH87K90w3O7AiJRqdQoXygvi1VQTJTLGhJl7WqA7A==}
+    engines: {node: '>=8.9.0'}
+    dependencies:
+      big.js: 5.2.2
+      emojis-list: 3.0.0
+      json5: 2.2.1
     dev: false
 
   /locate-path/3.0.0:
@@ -17959,6 +18014,10 @@ packages:
       is-plain-obj: 2.1.0
     dev: false
 
+  /source-list-map/2.0.1:
+    resolution: {integrity: sha512-qnQ7gVMxGNxsiL4lEuJwe/To8UnK7fAnmbGEEH8RpLouuKbeEm0lhbQVFIrNSuB+G7tVrAlVsZgETT5nljf+Iw==}
+    dev: false
+
   /source-map-js/1.0.2:
     resolution: {integrity: sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==}
     engines: {node: '>=0.10.0'}
@@ -19598,6 +19657,14 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /webpack-sources/2.3.1:
+    resolution: {integrity: sha512-y9EI9AO42JjEcrTJFOYmVywVZdKVUfOvDUPsJea5GIr1JOEGFVqwlY2K098fFoIjOkDzHn2AjRvM8dsBZu+gCA==}
+    engines: {node: '>=10.13.0'}
+    dependencies:
+      source-list-map: 2.0.1
+      source-map: 0.6.1
+    dev: false
+
   /webpack-sources/3.2.3:
     resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
     engines: {node: '>=10.13.0'}
@@ -20159,7 +20226,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-u3F5oTARnF8YIdM+yN4eM+551wL9rTQ2nihou6TtR2IY6PzGVsQIDnNWmzl8Y/I0Mv+vjrJVUplm6j9utk8jiQ==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-5FH8bhOl8+2VOK43ke/vmpVWlMXwj8THHA/SLD5TO6PSxPopKS57MqEV7MZCq7J7e045zHEs0zsIdU8GqCQMtA==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20184,6 +20251,8 @@ packages:
       '@types/lodash': 4.14.181
       '@types/react': 17.0.43
       '@types/react-dom': 17.0.14
+      '@umijs/plugin-antd': 0.15.0_505e49b6ea53e755a9c64b9c31ef1e2a
+      '@umijs/plugin-esbuild': 1.4.1_umi@3.5.21
       '@umijs/preset-react': 1.8.30_22d272bcb75d2e9880a18f3be721e9b0
       '@umijs/route-utils': 2.0.5
       ahooks: 3.1.14_react@17.0.2
@@ -20220,6 +20289,7 @@ packages:
       - supports-color
       - ts-node
       - utf-8-validate
+      - webpack
       - zen-observable
     dev: false
 

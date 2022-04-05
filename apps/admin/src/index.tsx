@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
 import { ApolloProvider } from '@apollo/client';
-import 'antd/dist/antd.less';
+// import 'antd/dist/antd.less';
 import clsx from 'clsx';
 import { ElementType } from 'react';
 import { Link } from 'umi';

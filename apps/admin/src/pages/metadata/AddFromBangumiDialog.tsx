@@ -84,7 +84,7 @@ export default function AddFromBangumiDialog({
             throw new Error('no id');
           }
           void message.success('新建成功');
-          resolve({ id });
+          void resolve({ id });
         } catch (e) {
           console.error(e);
           void message.error('新建失败');
