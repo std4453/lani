@@ -20,7 +20,8 @@
     "codegen:bangumi": "openapi -i https://bangumi.github.io/api/dist.json -o src/api/bangumi -c axios --indent 2 --postfix BangumiAPIService",
     "prisma:pull": "prisma db pull",
     "prisma:gen": "prisma generate",
-    "devops": "lani-cli devops"
+    "devops": "lani-cli devops",
+    "manifest": "lani-cli manifest"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
