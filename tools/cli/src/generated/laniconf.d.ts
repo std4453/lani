@@ -23,18 +23,6 @@ export interface LaniConfig {
     | "qiankun:raw"
     | "mp:taro:react:ts";
   /**
-   * Abilities to use with this project
-   */
-  abilities: (
-    | "tracing"
-    | [
-        "tracing",
-        {
-          [k: string]: unknown;
-        }
-      ]
-  )[];
-  /**
    * Node.JS app-related settings
    */
   node?: {
