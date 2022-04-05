@@ -12,7 +12,6 @@
   "dependencies": {
     "postgraphile": "4.12.8",
     "graphql": "15.8.0",
-    "@lani/api": "~1.0.0",
     "@lani/framework": "~1.0.0",
     "@graphile-contrib/pg-simplify-inflector": "~6.1.0",
     "postgraphile-plugin-connection-filter": "~2.2.2",

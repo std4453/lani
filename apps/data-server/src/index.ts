@@ -1,6 +1,5 @@
 import OmitArchivedPlugin from "@graphile-contrib/pg-omit-archived";
 import FederationPlugin from "@graphile/federation";
-import { dataServerService } from "@lani/api";
 import Koa from "koa";
 import { postgraphile } from "postgraphile";
 import ConnectionFilterPlugin from "postgraphile-plugin-connection-filter";
@@ -17,4 +16,4 @@ app.use(
     ],
   })
 );
-app.listen(dataServerService.port);
+app.listen(8080);
