@@ -13,6 +13,14 @@ rules:
   - apps
   resources:
   - deployments
+  verbs:
+  - create
+  - get
+  - patch
+  - update
+  - delete
+- apiGroups: [""]
+  resources:
   - services
   verbs:
   - create
