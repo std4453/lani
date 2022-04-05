@@ -7,7 +7,7 @@ import cors from "@koa/cors";
 export function bodyParserMiddleware() {
   return bodyParser({
     enableTypes: ["json"],
-    encode: "utf-8",
+    encoding: "utf-8",
   });
 }
 
