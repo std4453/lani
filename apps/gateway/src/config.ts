@@ -1,9 +1,7 @@
 import { ServiceEndpointDefinition } from "@apollo/gateway";
 import { mergeConfig } from "@lani/framework";
 
-export default mergeConfig<{
-  subgraphs: ServiceEndpointDefinition[];
-}>({
+export default mergeConfig({
   subgraphs: [
     {
       name: "data",
@@ -13,10 +11,11 @@ export default mergeConfig<{
       name: "api",
       url: "http://api-server.lani:8080",
     },
-  ],
-})<{
-  subgraphs: ServiceEndpointDefinition[];
-}>({
+  ] as ServiceEndpointDefinition[],
+  issuer: "https://accounts.std4453.com:444/auth/realms/apps",
+  audience: "lani",
+  role: "lani-admin",
+})({
   dev: {
     subgraphs: [
       {
@@ -27,7 +26,7 @@ export default mergeConfig<{
         name: "api",
         url: "http://api-server.lani-offline:8080/graphql",
       },
-    ],
+    ] as ServiceEndpointDefinition[],
   },
   offline: {
     subgraphs: [
@@ -39,6 +38,6 @@ export default mergeConfig<{
         name: "api",
         url: "http://api-server.lani-offline:8080/graphql",
       },
-    ],
+    ] as ServiceEndpointDefinition[],
   },
 });

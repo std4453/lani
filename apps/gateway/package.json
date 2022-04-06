@@ -20,7 +20,9 @@
     "axios": "~0.26.0",
     "graphql": "15.8.0",
     "apollo-server": "~3.6.4",
-    "@apollo/gateway": "^0.46.0"
+    "@apollo/gateway": "^0.46.0",
+    "openid-client": "~5.1.4",
+    "jose": "~4.6.0"
   },
   "files": [
     "/dist"
