@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
       - name: api-server
-        # TODO:
-        image: ghcr.io/std4453/api-server:dev-admin
+        image: {{image}}
         imagePullPolicy: Always
         ports:
         - name: http
