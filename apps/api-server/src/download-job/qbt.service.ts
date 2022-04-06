@@ -36,6 +36,7 @@ export interface ListTorrentsParams {
 @Injectable()
 export class QBittorrentService extends AxiosService {
   private SID = '';
+  private loginTime = 0;
   private authPromise: Promise<void> | null = null;
 
   constructor(private config: ConfigService<ConfigType, true>) {
@@ -74,6 +75,7 @@ export class QBittorrentService extends AxiosService {
     });
     const cookies = cookie.parse(headers?.['set-cookie']?.[0] ?? '');
     this.SID = cookies.SID;
+    this.loginTime = new Date().getTime();
     console.debug(`logged in to qBittorrent, SID=${this.SID}`);
   }
 
@@ -100,7 +102,8 @@ export class QBittorrentService extends AxiosService {
       return this.authPromise;
     }
     // 已经登录，直接返回
-    if (this.SID) {
+    // qbt cookie会过期，每6小时刷新一次
+    if (this.SID && new Date().getTime() - this.loginTime <= 6 * 3600 * 1000) {
       return;
     } else {
       return this.loginNoCheck();
