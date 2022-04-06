@@ -86,13 +86,14 @@ model Season {
 }
 
 model Torrent {
-  id          Int      @id(map: "mikan_items_pkey") @default(autoincrement())
-  title       String
-  torrentLink String   @map("torrent_link")
-  size        BigInt
-  publishDate DateTime @map("publish_date") @db.Timestamptz(6)
-  hash        String   @unique
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id           Int      @id(map: "mikan_items_pkey") @default(autoincrement())
+  title        String
+  torrentLink  String   @map("torrent_link")
+  size         BigInt
+  publishDate  DateTime @map("publish_date") @db.Timestamptz(6)
+  hash         String   @unique
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  episodeIndex Int?     @map("episode_index")
 
   @@index([title, id, torrentLink], map: "torrent_title_idx")
   @@map("torrents")
