@@ -469,10 +469,6 @@
       "projectFolder": "apps/data-server"
     },
     {
-      "packageName": "@lani/k8s-gen",
-      "projectFolder": "deploy/k8s-gen"
-    },
-    {
       "packageName": "@lani/api-server",
       "projectFolder": "apps/api-server"
     },

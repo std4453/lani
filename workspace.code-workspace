@@ -25,10 +25,6 @@
 			"path": "apps/data-server"
 		},
     {
-      "name": "🚚 @lani/k8s-gen",
-			"path": "deploy/k8s-gen"
-    },
-    {
 			"name": "🚀 @lani/api-server",
 			"path": "apps/api-server"
 		},

@@ -40,7 +40,6 @@ specifiers:
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
-  '@rush-temp/k8s-gen': file:./projects/k8s-gen.tgz
   '@rush-temp/kust': file:./projects/kust.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
@@ -168,7 +167,6 @@ dependencies:
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.23
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
-  '@rush-temp/k8s-gen': file:projects/k8s-gen.tgz
   '@rush-temp/kust': file:projects/kust.tgz
   '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.3
@@ -20226,7 +20224,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-5FH8bhOl8+2VOK43ke/vmpVWlMXwj8THHA/SLD5TO6PSxPopKS57MqEV7MZCq7J7e045zHEs0zsIdU8GqCQMtA==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-o0+yNiApD94/CbPVEgx51q7cHk/w4CCswJrEdTqHXe7Qobn2voE/XfssxPt90Eqoulezhf3vgzR05M938eVE3Q==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20497,12 +20495,6 @@ packages:
       - debug
       - encoding
       - supports-color
-    dev: false
-
-  file:projects/k8s-gen.tgz:
-    resolution: {integrity: sha512-WpHfS7gyVsTWYWEtZKhXAUcL9LsD/t+kVpMqGgYsnm7be9SBEfaqSW977zUH5TAlFVLQ1eAI2dbw2UU7ekVXbQ==, tarball: file:projects/k8s-gen.tgz}
-    name: '@rush-temp/k8s-gen'
-    version: 0.0.0
     dev: false
 
   file:projects/kust.tgz:
