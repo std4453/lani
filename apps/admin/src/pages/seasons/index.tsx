@@ -1,4 +1,3 @@
-import client from '@/client';
 import { seasonToText, weekdayToText } from '@/constants';
 import { IconPath } from '@/constants/icon-path';
 import {
@@ -102,6 +101,7 @@ function useColumns() {
       })),
     [optionsData],
   );
+  const client = useApolloClient();
 
   return useMemo(
     (): ProColumns<RowType>[] => [
@@ -295,7 +295,7 @@ function useColumns() {
         width: 120,
       },
     ],
-    [history, semesterOptions, foldersOptions],
+    [history, semesterOptions, foldersOptions, client],
   );
 }
 
