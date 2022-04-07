@@ -133,3 +133,7 @@ query AllJellyfinFolders {
     }
   }
 }
+
+mutation SyncJellyfinSeriesId($seasonId: Int!) {
+  syncJellyfinSeriesId(seasonId: $seasonId)
+}

@@ -1,22 +1,35 @@
+import AsyncButton from '@/components/AsyncButton';
 import FormDependency from '@/components/FormDependency';
 import { IconPath } from '@/constants/icon-path';
-import { AllJellyfinFoldersDocument } from '@/generated/types';
+import {
+  AllJellyfinFoldersDocument,
+  SyncJellyfinSeriesIdDocument,
+} from '@/generated/types';
 import { FormValues } from '@/pages/season/help';
 import { extractNode } from '@/utils/graphql';
+import { SearchOutlined } from '@ant-design/icons';
 import ProForm, { ProFormSelect, ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
+  Button,
   Divider,
   Form,
   Input,
   InputNumber,
+  message,
   Space,
   Typography,
 } from 'antd';
 import styles from './Connections.module.less';
 
-export default function Connections() {
+export default function Connections({
+  id,
+  reloadConfig,
+}: {
+  id: number;
+  reloadConfig: () => Promise<void>;
+}) {
   const client = useApolloClient();
   return (
     <div className={styles.root}>
@@ -141,15 +154,44 @@ export default function Connections() {
               width={160}
               placeholder="媒体库"
             />
-            <Form.Item name="jellyfinId" noStyle>
-              <Input
-                placeholder="32位季度ID"
-                addonBefore="中的"
-                style={{
-                  width: 360,
-                }}
-              />
-            </Form.Item>
+            <FormDependency<FormValues> name={['jellyfinFolderId']}>
+              {({ jellyfinFolderId }) => [
+                <Form.Item name="jellyfinId" noStyle key={0}>
+                  <Input
+                    placeholder="32位季度ID"
+                    addonBefore="中的"
+                    style={{
+                      width: 360,
+                    }}
+                    disabled={!jellyfinFolderId}
+                  />
+                </Form.Item>,
+                <AsyncButton
+                  key={1}
+                  icon={<SearchOutlined />}
+                  disabled={!jellyfinFolderId}
+                  onClick={async () => {
+                    try {
+                      const { data } = await client.mutate({
+                        mutation: SyncJellyfinSeriesIdDocument,
+                        variables: {
+                          seasonId: id,
+                        },
+                      });
+                      if (!data?.syncJellyfinSeriesId) {
+                        void message.error('获取Jellyfin季度ID失败');
+                        return;
+                      }
+                      void message.success('获取Jellyfin季度ID成功');
+                      void reloadConfig();
+                    } catch (error) {
+                      console.error(error);
+                      void message.error('获取Jellyfin季度ID失败');
+                    }
+                  }}
+                />,
+              ]}
+            </FormDependency>
           </Input.Group>
         </Form.Item>
         <Form.Item
