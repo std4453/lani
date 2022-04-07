@@ -70,13 +70,18 @@ query SearchBangumi($keywords: String!) {
   }
 }
 
+fragment jellyfinFolderFields on JellyfinFolder {
+  id
+  name
+  location
+}
+
 query GetMetadataPageOptions {
   getAvailableSemesters
   allJellyfinFolders {
     edges {
       node {
-        id
-        name
+        ...jellyfinFolderFields
       }
     }
   }
@@ -85,5 +90,15 @@ query GetMetadataPageOptions {
 mutation DeleteSeasonById($id: Int!) {
   updateSeasonById(input: { id: $id, seasonPatch: { isArchived: true } }) {
     __typename
+  }
+}
+
+query ListJellyfinFolders {
+  allJellyfinFolders {
+    edges {
+      node {
+        ...jellyfinFolderFields
+      }
+    }
   }
 }

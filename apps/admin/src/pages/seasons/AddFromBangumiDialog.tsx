@@ -1,25 +1,29 @@
 import {
   CreateSeasonDocument,
+  ListJellyfinFoldersDocument,
   MetadataSource,
   SearchBangumiDocument,
   SearchBangumiQuery,
 } from '@/generated/types';
+import { extractNode } from '@/utils/graphql';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useDebounce } from 'ahooks';
 import {
+  Button,
   Image,
   Input,
   List,
   message,
   Modal,
+  Select,
   Space,
   Spin,
   Tag,
   Typography,
 } from 'antd';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 
 export default function AddFromBangumiDialog({
@@ -50,48 +54,100 @@ export default function AddFromBangumiDialog({
     }
   }, [visible]);
 
+  const { data: foldersData, loading: foldersLoading } = useQuery(
+    ListJellyfinFoldersDocument,
+  );
+  const [folderId, setFolderId] = useState<number | null>(null);
+  const animeFolderId = useMemo(
+    () =>
+      (extractNode(foldersData?.allJellyfinFolders) ?? []).find(
+        (folder) => folder.location === 'anime',
+      )?.id,
+    [foldersData],
+  );
+  useEffect(() => {
+    if (visible) {
+      if (animeFolderId) {
+        setFolderId(animeFolderId);
+      } else {
+        setFolderId(null);
+      }
+    }
+  }, [visible, animeFolderId]);
+
   const [submitting, setSubmitting] = useState(false);
+
+  const disabled = !selected || selected.added || !folderId;
 
   return (
     <Modal
       title="从Bangumi添加季度"
       visible={visible}
       onCancel={reject}
-      okText="添加"
-      okButtonProps={{
-        disabled: !selected || selected.added,
-        loading: submitting,
-      }}
-      onOk={async () => {
-        if (!selected || submitting) {
-          return;
-        }
-        try {
-          setSubmitting(true);
-          const { data } = await client.mutate({
-            mutation: CreateSeasonDocument,
-            variables: {
-              season: {
-                title: selected.name,
-                bangumiId: selected.id,
-                infoSource: MetadataSource.BgmCn,
-                episodesSource: MetadataSource.BgmCn,
-              },
-            },
-          });
-          const id = data?.createSeason?.season?.id;
-          if (!id) {
-            throw new Error('no id');
-          }
-          void message.success('新建成功');
-          void resolve({ id });
-        } catch (e) {
-          console.error(e);
-          void message.error('新建失败');
-        } finally {
-          setSubmitting(false);
-        }
-      }}
+      footer={[
+        <Select
+          key="folder"
+          loading={foldersLoading}
+          value={folderId}
+          onChange={setFolderId}
+          style={{
+            width: 200,
+            marginRight: 16,
+            textAlign: 'left',
+          }}
+          placeholder="选择媒体库"
+        >
+          {(extractNode(foldersData?.allJellyfinFolders) ?? []).map(
+            (folder) => (
+              <Select.Option key={folder.id} value={folder.id}>
+                {folder.name} ({folder.location})
+              </Select.Option>
+            ),
+          )}
+        </Select>,
+        <Button key="cancel" onClick={reject}>
+          取消
+        </Button>,
+        <Button
+          key="ok"
+          disabled={disabled}
+          loading={submitting}
+          type="primary"
+          onClick={async () => {
+            if (disabled) {
+              return;
+            }
+            try {
+              setSubmitting(true);
+              const { data } = await client.mutate({
+                mutation: CreateSeasonDocument,
+                variables: {
+                  season: {
+                    title: selected.name,
+                    bangumiId: selected.id,
+                    infoSource: MetadataSource.BgmCn,
+                    episodesSource: MetadataSource.BgmCn,
+                    jellyfinFolderId: folderId,
+                  },
+                },
+              });
+              const id = data?.createSeason?.season?.id;
+              if (!id) {
+                throw new Error('no id');
+              }
+              void message.success('新建成功');
+              void resolve({ id });
+            } catch (e) {
+              console.error(e);
+              void message.error('新建失败');
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          添加
+        </Button>,
+      ]}
       width={900}
     >
       <Space
