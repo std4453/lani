@@ -131,7 +131,7 @@ export default function SeasonPage() {
           reloadConfig={reloadConfig}
           reloadEpisodes={reloadEpisodes}
         />
-        <Connections />
+        <Connections id={id} reloadConfig={reloadConfig} />
         <Metadata />
         <DownloadSources />
         <Episodes episodes={episodes} reloadEpisodes={reloadEpisodes} />
