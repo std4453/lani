@@ -76,111 +76,6 @@ export type BooleanFilter = {
   notIn?: InputMaybe<Array<Scalars['Boolean']>>;
 };
 
-/** All input for the create `DownloadJob` mutation. */
-export type CreateDownloadJobInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `DownloadJob` to be created by this mutation. */
-  downloadJob: DownloadJobInput;
-};
-
-/** The output of our create `DownloadJob` mutation. */
-export type CreateDownloadJobPayload = {
-  __typename?: 'CreateDownloadJobPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadJob` that was created by this mutation. */
-  downloadJob?: Maybe<DownloadJob>;
-  /** An edge for our `DownloadJob`. May be used by Relay 1. */
-  downloadJobEdge?: Maybe<DownloadJobsEdge>;
-  /** Reads a single `Episode` that is related to this `DownloadJob`. */
-  episodeByEpisodeId?: Maybe<Episode>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our create `DownloadJob` mutation. */
-export type CreateDownloadJobPayloadDownloadJobEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
-};
-
-/** All input for the create `DownloadSource` mutation. */
-export type CreateDownloadSourceInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `DownloadSource` to be created by this mutation. */
-  downloadSource: DownloadSourceInput;
-};
-
-/** The output of our create `DownloadSource` mutation. */
-export type CreateDownloadSourcePayload = {
-  __typename?: 'CreateDownloadSourcePayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadSource` that was created by this mutation. */
-  downloadSource?: Maybe<DownloadSource>;
-  /** An edge for our `DownloadSource`. May be used by Relay 1. */
-  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** Reads a single `Season` that is related to this `DownloadSource`. */
-  seasonBySeasonId?: Maybe<Season>;
-};
-
-
-/** The output of our create `DownloadSource` mutation. */
-export type CreateDownloadSourcePayloadDownloadSourceEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
-};
-
-/** All input for the create `Episode` mutation. */
-export type CreateEpisodeInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `Episode` to be created by this mutation. */
-  episode: EpisodeInput;
-};
-
-/** The output of our create `Episode` mutation. */
-export type CreateEpisodePayload = {
-  __typename?: 'CreateEpisodePayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `Episode` that was created by this mutation. */
-  episode?: Maybe<Episode>;
-  /** An edge for our `Episode`. May be used by Relay 1. */
-  episodeEdge?: Maybe<EpisodesEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** Reads a single `Season` that is related to this `Episode`. */
-  seasonBySeasonId?: Maybe<Season>;
-};
-
-
-/** The output of our create `Episode` mutation. */
-export type CreateEpisodePayloadEpisodeEdgeArgs = {
-  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
-};
-
 /** All input for the create `Image` mutation. */
 export type CreateImageInput = {
   /**
@@ -212,39 +107,6 @@ export type CreateImagePayload = {
 /** The output of our create `Image` mutation. */
 export type CreateImagePayloadImageEdgeArgs = {
   orderBy?: InputMaybe<Array<ImagesOrderBy>>;
-};
-
-/** All input for the create `JellyfinFolder` mutation. */
-export type CreateJellyfinFolderInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `JellyfinFolder` to be created by this mutation. */
-  jellyfinFolder: JellyfinFolderInput;
-};
-
-/** The output of our create `JellyfinFolder` mutation. */
-export type CreateJellyfinFolderPayload = {
-  __typename?: 'CreateJellyfinFolderPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `JellyfinFolder` that was created by this mutation. */
-  jellyfinFolder?: Maybe<JellyfinFolder>;
-  /** An edge for our `JellyfinFolder`. May be used by Relay 1. */
-  jellyfinFolderEdge?: Maybe<JellyfinFoldersEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our create `JellyfinFolder` mutation. */
-export type CreateJellyfinFolderPayloadJellyfinFolderEdgeArgs = {
-  orderBy?: InputMaybe<Array<JellyfinFoldersOrderBy>>;
 };
 
 /** All input for the create `Season` mutation. */
@@ -288,39 +150,6 @@ export type CreateSeasonPayloadSeasonEdgeArgs = {
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
 };
 
-/** All input for the create `Torrent` mutation. */
-export type CreateTorrentInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The `Torrent` to be created by this mutation. */
-  torrent: TorrentInput;
-};
-
-/** The output of our create `Torrent` mutation. */
-export type CreateTorrentPayload = {
-  __typename?: 'CreateTorrentPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** The `Torrent` that was created by this mutation. */
-  torrent?: Maybe<Torrent>;
-  /** An edge for our `Torrent`. May be used by Relay 1. */
-  torrentEdge?: Maybe<TorrentsEdge>;
-};
-
-
-/** The output of our create `Torrent` mutation. */
-export type CreateTorrentPayloadTorrentEdgeArgs = {
-  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
-};
-
 /** A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’ */
 export type DatetimeFilter = {
   /** Not equal to the specified value, treating null like an ordinary value. */
@@ -345,165 +174,6 @@ export type DatetimeFilter = {
   notEqualTo?: InputMaybe<Scalars['Datetime']>;
   /** Not included in the specified list. */
   notIn?: InputMaybe<Array<Scalars['Datetime']>>;
-};
-
-/** All input for the `deleteDownloadJobById` mutation. */
-export type DeleteDownloadJobByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-};
-
-/** All input for the `deleteDownloadJob` mutation. */
-export type DeleteDownloadJobInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `DownloadJob` to be deleted. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our delete `DownloadJob` mutation. */
-export type DeleteDownloadJobPayload = {
-  __typename?: 'DeleteDownloadJobPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  deletedDownloadJobId?: Maybe<Scalars['ID']>;
-  /** The `DownloadJob` that was deleted by this mutation. */
-  downloadJob?: Maybe<DownloadJob>;
-  /** An edge for our `DownloadJob`. May be used by Relay 1. */
-  downloadJobEdge?: Maybe<DownloadJobsEdge>;
-  /** Reads a single `Episode` that is related to this `DownloadJob`. */
-  episodeByEpisodeId?: Maybe<Episode>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our delete `DownloadJob` mutation. */
-export type DeleteDownloadJobPayloadDownloadJobEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
-};
-
-/** All input for the `deleteDownloadSourceById` mutation. */
-export type DeleteDownloadSourceByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-};
-
-/** All input for the `deleteDownloadSourceByPattern` mutation. */
-export type DeleteDownloadSourceByPatternInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  pattern: Scalars['String'];
-};
-
-/** All input for the `deleteDownloadSource` mutation. */
-export type DeleteDownloadSourceInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `DownloadSource` to be deleted. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our delete `DownloadSource` mutation. */
-export type DeleteDownloadSourcePayload = {
-  __typename?: 'DeleteDownloadSourcePayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  deletedDownloadSourceId?: Maybe<Scalars['ID']>;
-  /** The `DownloadSource` that was deleted by this mutation. */
-  downloadSource?: Maybe<DownloadSource>;
-  /** An edge for our `DownloadSource`. May be used by Relay 1. */
-  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** Reads a single `Season` that is related to this `DownloadSource`. */
-  seasonBySeasonId?: Maybe<Season>;
-};
-
-
-/** The output of our delete `DownloadSource` mutation. */
-export type DeleteDownloadSourcePayloadDownloadSourceEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
-};
-
-/** All input for the `deleteEpisodeById` mutation. */
-export type DeleteEpisodeByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-};
-
-/** All input for the `deleteEpisodeBySeasonIdAndIndex` mutation. */
-export type DeleteEpisodeBySeasonIdAndIndexInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  index: Scalars['Int'];
-  seasonId: Scalars['Int'];
-};
-
-/** All input for the `deleteEpisode` mutation. */
-export type DeleteEpisodeInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `Episode` to be deleted. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our delete `Episode` mutation. */
-export type DeleteEpisodePayload = {
-  __typename?: 'DeleteEpisodePayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  deletedEpisodeId?: Maybe<Scalars['ID']>;
-  /** The `Episode` that was deleted by this mutation. */
-  episode?: Maybe<Episode>;
-  /** An edge for our `Episode`. May be used by Relay 1. */
-  episodeEdge?: Maybe<EpisodesEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** Reads a single `Season` that is related to this `Episode`. */
-  seasonBySeasonId?: Maybe<Season>;
-};
-
-
-/** The output of our delete `Episode` mutation. */
-export type DeleteEpisodePayloadEpisodeEdgeArgs = {
-  orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
 };
 
 /** All input for the `deleteImageById` mutation. */
@@ -558,60 +228,6 @@ export type DeleteImagePayload = {
 /** The output of our delete `Image` mutation. */
 export type DeleteImagePayloadImageEdgeArgs = {
   orderBy?: InputMaybe<Array<ImagesOrderBy>>;
-};
-
-/** All input for the `deleteJellyfinFolderById` mutation. */
-export type DeleteJellyfinFolderByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-};
-
-/** All input for the `deleteJellyfinFolderByJellyfinId` mutation. */
-export type DeleteJellyfinFolderByJellyfinIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  jellyfinId: Scalars['String'];
-};
-
-/** All input for the `deleteJellyfinFolder` mutation. */
-export type DeleteJellyfinFolderInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `JellyfinFolder` to be deleted. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our delete `JellyfinFolder` mutation. */
-export type DeleteJellyfinFolderPayload = {
-  __typename?: 'DeleteJellyfinFolderPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  deletedJellyfinFolderId?: Maybe<Scalars['ID']>;
-  /** The `JellyfinFolder` that was deleted by this mutation. */
-  jellyfinFolder?: Maybe<JellyfinFolder>;
-  /** An edge for our `JellyfinFolder`. May be used by Relay 1. */
-  jellyfinFolderEdge?: Maybe<JellyfinFoldersEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our delete `JellyfinFolder` mutation. */
-export type DeleteJellyfinFolderPayloadJellyfinFolderEdgeArgs = {
-  orderBy?: InputMaybe<Array<JellyfinFoldersOrderBy>>;
 };
 
 /** All input for the `deleteSeasonById` mutation. */
@@ -674,60 +290,6 @@ export type DeleteSeasonPayload = {
 /** The output of our delete `Season` mutation. */
 export type DeleteSeasonPayloadSeasonEdgeArgs = {
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
-};
-
-/** All input for the `deleteTorrentByHash` mutation. */
-export type DeleteTorrentByHashInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  hash: Scalars['String'];
-};
-
-/** All input for the `deleteTorrentById` mutation. */
-export type DeleteTorrentByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-};
-
-/** All input for the `deleteTorrent` mutation. */
-export type DeleteTorrentInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `Torrent` to be deleted. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our delete `Torrent` mutation. */
-export type DeleteTorrentPayload = {
-  __typename?: 'DeleteTorrentPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  deletedTorrentId?: Maybe<Scalars['ID']>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** The `Torrent` that was deleted by this mutation. */
-  torrent?: Maybe<Torrent>;
-  /** An edge for our `Torrent`. May be used by Relay 1. */
-  torrentEdge?: Maybe<TorrentsEdge>;
-};
-
-
-/** The output of our delete `Torrent` mutation. */
-export type DeleteTorrentPayloadTorrentEdgeArgs = {
-  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
 };
 
 export type DownloadJob = Node & {
@@ -852,76 +414,6 @@ export type DownloadJobFilter = {
   status?: InputMaybe<DownloadStatusFilter>;
   /** Filter by the object’s `torrentLink` field. */
   torrentLink?: InputMaybe<StringFilter>;
-};
-
-/** An input for mutations affecting `DownloadJob` */
-export type DownloadJobInput = {
-  cancelledAt?: InputMaybe<Scalars['Datetime']>;
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  /**
-   * Only available after torrent finished downloading.
-   * This is the save_path from qbt, which might be a directory.
-   * If job is started after this step, this field will also be null.
-   */
-  downloadPath?: InputMaybe<Scalars['String']>;
-  episodeId: Scalars['Int'];
-  failedAt?: InputMaybe<Scalars['Datetime']>;
-  failedReason?: InputMaybe<Scalars['String']>;
-  /**
-   * Available after file is imported (hard-linked) (and torrent is deleted from qbt).
-   * The value is path to the video file, with the extension.
-   */
-  filePath?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  importPath?: InputMaybe<Scalars['String']>;
-  isCancelled?: InputMaybe<Scalars['Boolean']>;
-  isFailed?: InputMaybe<Scalars['Boolean']>;
-  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
-  nfoPath?: InputMaybe<Scalars['String']>;
-  qbtLastSync?: InputMaybe<Scalars['Datetime']>;
-  /**
-   * Available as soon as torrent has been submitted to qbt.
-   * This hash is used to query qbt, and might differ from torrents.hash
-   * If job is started after this step, this field will be null.
-   */
-  qbtTorrentHash?: InputMaybe<Scalars['String']>;
-  status: DownloadStatus;
-  torrentLink?: InputMaybe<Scalars['String']>;
-};
-
-/** Represents an update to a `DownloadJob`. Fields that are set will be updated. */
-export type DownloadJobPatch = {
-  cancelledAt?: InputMaybe<Scalars['Datetime']>;
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  /**
-   * Only available after torrent finished downloading.
-   * This is the save_path from qbt, which might be a directory.
-   * If job is started after this step, this field will also be null.
-   */
-  downloadPath?: InputMaybe<Scalars['String']>;
-  episodeId?: InputMaybe<Scalars['Int']>;
-  failedAt?: InputMaybe<Scalars['Datetime']>;
-  failedReason?: InputMaybe<Scalars['String']>;
-  /**
-   * Available after file is imported (hard-linked) (and torrent is deleted from qbt).
-   * The value is path to the video file, with the extension.
-   */
-  filePath?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  importPath?: InputMaybe<Scalars['String']>;
-  isCancelled?: InputMaybe<Scalars['Boolean']>;
-  isFailed?: InputMaybe<Scalars['Boolean']>;
-  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
-  nfoPath?: InputMaybe<Scalars['String']>;
-  qbtLastSync?: InputMaybe<Scalars['Datetime']>;
-  /**
-   * Available as soon as torrent has been submitted to qbt.
-   * This hash is used to query qbt, and might differ from torrents.hash
-   * If job is started after this step, this field will be null.
-   */
-  qbtTorrentHash?: InputMaybe<Scalars['String']>;
-  status?: InputMaybe<DownloadStatus>;
-  torrentLink?: InputMaybe<Scalars['String']>;
 };
 
 /** A connection to a list of `DownloadJob` values. */
@@ -1050,30 +542,6 @@ export type DownloadSourceFilter = {
   pattern?: InputMaybe<StringFilter>;
   /** Filter by the object’s `seasonId` field. */
   seasonId?: InputMaybe<IntFilter>;
-};
-
-/** An input for mutations affecting `DownloadSource` */
-export type DownloadSourceInput = {
-  archivedAt?: InputMaybe<Scalars['Datetime']>;
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  groupId?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  isDisabled?: InputMaybe<Scalars['Boolean']>;
-  pattern?: InputMaybe<Scalars['String']>;
-  seasonId: Scalars['Int'];
-};
-
-/** Represents an update to a `DownloadSource`. Fields that are set will be updated. */
-export type DownloadSourcePatch = {
-  archivedAt?: InputMaybe<Scalars['Datetime']>;
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  groupId?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  isArchived?: InputMaybe<Scalars['Boolean']>;
-  isDisabled?: InputMaybe<Scalars['Boolean']>;
-  pattern?: InputMaybe<Scalars['String']>;
-  seasonId?: InputMaybe<Scalars['Int']>;
 };
 
 /** A connection to a list of `DownloadSource` values. */
@@ -1238,18 +706,6 @@ export type EpisodeFilter = {
   seasonId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `title` field. */
   title?: InputMaybe<StringFilter>;
-};
-
-/** An input for mutations affecting `Episode` */
-export type EpisodeInput = {
-  airTime?: InputMaybe<Scalars['Datetime']>;
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  description?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  index: Scalars['Int'];
-  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
-  seasonId: Scalars['Int'];
-  title?: InputMaybe<Scalars['String']>;
 };
 
 /** Represents an update to a `Episode`. Fields that are set will be updated. */
@@ -1542,22 +998,6 @@ export type JellyfinFolderFilter = {
   or?: InputMaybe<Array<JellyfinFolderFilter>>;
 };
 
-/** An input for mutations affecting `JellyfinFolder` */
-export type JellyfinFolderInput = {
-  id?: InputMaybe<Scalars['Int']>;
-  jellyfinId: Scalars['String'];
-  location: Scalars['String'];
-  name: Scalars['String'];
-};
-
-/** Represents an update to a `JellyfinFolder`. Fields that are set will be updated. */
-export type JellyfinFolderPatch = {
-  id?: InputMaybe<Scalars['Int']>;
-  jellyfinId?: InputMaybe<Scalars['String']>;
-  location?: InputMaybe<Scalars['String']>;
-  name?: InputMaybe<Scalars['String']>;
-};
-
 /** A connection to a list of `JellyfinFolder` values. */
 export type JellyfinFoldersConnection = {
   __typename?: 'JellyfinFoldersConnection';
@@ -1640,60 +1080,22 @@ export type MikanRssItem = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  /** Creates a single `DownloadJob`. */
-  createDownloadJob?: Maybe<CreateDownloadJobPayload>;
-  /** Creates a single `DownloadSource`. */
-  createDownloadSource?: Maybe<CreateDownloadSourcePayload>;
-  /** Creates a single `Episode`. */
-  createEpisode?: Maybe<CreateEpisodePayload>;
   /** Creates a single `Image`. */
   createImage?: Maybe<CreateImagePayload>;
-  /** Creates a single `JellyfinFolder`. */
-  createJellyfinFolder?: Maybe<CreateJellyfinFolderPayload>;
   /** Creates a single `Season`. */
   createSeason?: Maybe<CreateSeasonPayload>;
-  /** Creates a single `Torrent`. */
-  createTorrent?: Maybe<CreateTorrentPayload>;
-  /** Deletes a single `DownloadJob` using its globally unique id. */
-  deleteDownloadJob?: Maybe<DeleteDownloadJobPayload>;
-  /** Deletes a single `DownloadJob` using a unique key. */
-  deleteDownloadJobById?: Maybe<DeleteDownloadJobPayload>;
-  /** Deletes a single `DownloadSource` using its globally unique id. */
-  deleteDownloadSource?: Maybe<DeleteDownloadSourcePayload>;
-  /** Deletes a single `DownloadSource` using a unique key. */
-  deleteDownloadSourceById?: Maybe<DeleteDownloadSourcePayload>;
-  /** Deletes a single `DownloadSource` using a unique key. */
-  deleteDownloadSourceByPattern?: Maybe<DeleteDownloadSourcePayload>;
-  /** Deletes a single `Episode` using its globally unique id. */
-  deleteEpisode?: Maybe<DeleteEpisodePayload>;
-  /** Deletes a single `Episode` using a unique key. */
-  deleteEpisodeById?: Maybe<DeleteEpisodePayload>;
-  /** Deletes a single `Episode` using a unique key. */
-  deleteEpisodeBySeasonIdAndIndex?: Maybe<DeleteEpisodePayload>;
   /** Deletes a single `Image` using its globally unique id. */
   deleteImage?: Maybe<DeleteImagePayload>;
   /** Deletes a single `Image` using a unique key. */
   deleteImageById?: Maybe<DeleteImagePayload>;
   /** Deletes a single `Image` using a unique key. */
   deleteImageBySourceUrl?: Maybe<DeleteImagePayload>;
-  /** Deletes a single `JellyfinFolder` using its globally unique id. */
-  deleteJellyfinFolder?: Maybe<DeleteJellyfinFolderPayload>;
-  /** Deletes a single `JellyfinFolder` using a unique key. */
-  deleteJellyfinFolderById?: Maybe<DeleteJellyfinFolderPayload>;
-  /** Deletes a single `JellyfinFolder` using a unique key. */
-  deleteJellyfinFolderByJellyfinId?: Maybe<DeleteJellyfinFolderPayload>;
   /** Deletes a single `Season` using its globally unique id. */
   deleteSeason?: Maybe<DeleteSeasonPayload>;
   /** Deletes a single `Season` using a unique key. */
   deleteSeasonById?: Maybe<DeleteSeasonPayload>;
   /** Deletes a single `Season` using a unique key. */
   deleteSeasonByTitle?: Maybe<DeleteSeasonPayload>;
-  /** Deletes a single `Torrent` using its globally unique id. */
-  deleteTorrent?: Maybe<DeleteTorrentPayload>;
-  /** Deletes a single `Torrent` using a unique key. */
-  deleteTorrentByHash?: Maybe<DeleteTorrentPayload>;
-  /** Deletes a single `Torrent` using a unique key. */
-  deleteTorrentById?: Maybe<DeleteTorrentPayload>;
   downloadTorrentForEpisode: Scalars['Int'];
   refreshAllDownloadStatus: Scalars['Int'];
   refreshAllPlayerWaitingStatus: Scalars['Int'];
@@ -1704,16 +1106,6 @@ export type Mutation = {
   syncMetadata: Scalars['ID'];
   /** Returns newly added torrent count */
   syncMikan: Scalars['Int'];
-  /** Updates a single `DownloadJob` using its globally unique id and a patch. */
-  updateDownloadJob?: Maybe<UpdateDownloadJobPayload>;
-  /** Updates a single `DownloadJob` using a unique key and a patch. */
-  updateDownloadJobById?: Maybe<UpdateDownloadJobPayload>;
-  /** Updates a single `DownloadSource` using its globally unique id and a patch. */
-  updateDownloadSource?: Maybe<UpdateDownloadSourcePayload>;
-  /** Updates a single `DownloadSource` using a unique key and a patch. */
-  updateDownloadSourceById?: Maybe<UpdateDownloadSourcePayload>;
-  /** Updates a single `DownloadSource` using a unique key and a patch. */
-  updateDownloadSourceByPattern?: Maybe<UpdateDownloadSourcePayload>;
   /** Updates a single `Episode` using its globally unique id and a patch. */
   updateEpisode?: Maybe<UpdateEpisodePayload>;
   /** Updates a single `Episode` using a unique key and a patch. */
@@ -1726,12 +1118,6 @@ export type Mutation = {
   updateImageById?: Maybe<UpdateImagePayload>;
   /** Updates a single `Image` using a unique key and a patch. */
   updateImageBySourceUrl?: Maybe<UpdateImagePayload>;
-  /** Updates a single `JellyfinFolder` using its globally unique id and a patch. */
-  updateJellyfinFolder?: Maybe<UpdateJellyfinFolderPayload>;
-  /** Updates a single `JellyfinFolder` using a unique key and a patch. */
-  updateJellyfinFolderById?: Maybe<UpdateJellyfinFolderPayload>;
-  /** Updates a single `JellyfinFolder` using a unique key and a patch. */
-  updateJellyfinFolderByJellyfinId?: Maybe<UpdateJellyfinFolderPayload>;
   /** Updates a single `Season` using its globally unique id and a patch. */
   updateSeason?: Maybe<UpdateSeasonPayload>;
   /** Updates a single `Season` using a unique key and a patch. */
@@ -1739,28 +1125,7 @@ export type Mutation = {
   /** Updates a single `Season` using a unique key and a patch. */
   updateSeasonByTitle?: Maybe<UpdateSeasonPayload>;
   updateSeasonDownloadSources: Scalars['ID'];
-  /** Updates a single `Torrent` using its globally unique id and a patch. */
-  updateTorrent?: Maybe<UpdateTorrentPayload>;
-  /** Updates a single `Torrent` using a unique key and a patch. */
-  updateTorrentByHash?: Maybe<UpdateTorrentPayload>;
-  /** Updates a single `Torrent` using a unique key and a patch. */
-  updateTorrentById?: Maybe<UpdateTorrentPayload>;
   writeMetadata: Scalars['ID'];
-};
-
-
-export type MutationCreateDownloadJobArgs = {
-  input: CreateDownloadJobInput;
-};
-
-
-export type MutationCreateDownloadSourceArgs = {
-  input: CreateDownloadSourceInput;
-};
-
-
-export type MutationCreateEpisodeArgs = {
-  input: CreateEpisodeInput;
 };
 
 
@@ -1769,58 +1134,8 @@ export type MutationCreateImageArgs = {
 };
 
 
-export type MutationCreateJellyfinFolderArgs = {
-  input: CreateJellyfinFolderInput;
-};
-
-
 export type MutationCreateSeasonArgs = {
   input: CreateSeasonInput;
-};
-
-
-export type MutationCreateTorrentArgs = {
-  input: CreateTorrentInput;
-};
-
-
-export type MutationDeleteDownloadJobArgs = {
-  input: DeleteDownloadJobInput;
-};
-
-
-export type MutationDeleteDownloadJobByIdArgs = {
-  input: DeleteDownloadJobByIdInput;
-};
-
-
-export type MutationDeleteDownloadSourceArgs = {
-  input: DeleteDownloadSourceInput;
-};
-
-
-export type MutationDeleteDownloadSourceByIdArgs = {
-  input: DeleteDownloadSourceByIdInput;
-};
-
-
-export type MutationDeleteDownloadSourceByPatternArgs = {
-  input: DeleteDownloadSourceByPatternInput;
-};
-
-
-export type MutationDeleteEpisodeArgs = {
-  input: DeleteEpisodeInput;
-};
-
-
-export type MutationDeleteEpisodeByIdArgs = {
-  input: DeleteEpisodeByIdInput;
-};
-
-
-export type MutationDeleteEpisodeBySeasonIdAndIndexArgs = {
-  input: DeleteEpisodeBySeasonIdAndIndexInput;
 };
 
 
@@ -1839,21 +1154,6 @@ export type MutationDeleteImageBySourceUrlArgs = {
 };
 
 
-export type MutationDeleteJellyfinFolderArgs = {
-  input: DeleteJellyfinFolderInput;
-};
-
-
-export type MutationDeleteJellyfinFolderByIdArgs = {
-  input: DeleteJellyfinFolderByIdInput;
-};
-
-
-export type MutationDeleteJellyfinFolderByJellyfinIdArgs = {
-  input: DeleteJellyfinFolderByJellyfinIdInput;
-};
-
-
 export type MutationDeleteSeasonArgs = {
   input: DeleteSeasonInput;
 };
@@ -1866,21 +1166,6 @@ export type MutationDeleteSeasonByIdArgs = {
 
 export type MutationDeleteSeasonByTitleArgs = {
   input: DeleteSeasonByTitleInput;
-};
-
-
-export type MutationDeleteTorrentArgs = {
-  input: DeleteTorrentInput;
-};
-
-
-export type MutationDeleteTorrentByHashArgs = {
-  input: DeleteTorrentByHashInput;
-};
-
-
-export type MutationDeleteTorrentByIdArgs = {
-  input: DeleteTorrentByIdInput;
 };
 
 
@@ -1902,31 +1187,6 @@ export type MutationSyncEpisodeDataArgs = {
 
 export type MutationSyncMetadataArgs = {
   seasonId: Scalars['Int'];
-};
-
-
-export type MutationUpdateDownloadJobArgs = {
-  input: UpdateDownloadJobInput;
-};
-
-
-export type MutationUpdateDownloadJobByIdArgs = {
-  input: UpdateDownloadJobByIdInput;
-};
-
-
-export type MutationUpdateDownloadSourceArgs = {
-  input: UpdateDownloadSourceInput;
-};
-
-
-export type MutationUpdateDownloadSourceByIdArgs = {
-  input: UpdateDownloadSourceByIdInput;
-};
-
-
-export type MutationUpdateDownloadSourceByPatternArgs = {
-  input: UpdateDownloadSourceByPatternInput;
 };
 
 
@@ -1960,21 +1220,6 @@ export type MutationUpdateImageBySourceUrlArgs = {
 };
 
 
-export type MutationUpdateJellyfinFolderArgs = {
-  input: UpdateJellyfinFolderInput;
-};
-
-
-export type MutationUpdateJellyfinFolderByIdArgs = {
-  input: UpdateJellyfinFolderByIdInput;
-};
-
-
-export type MutationUpdateJellyfinFolderByJellyfinIdArgs = {
-  input: UpdateJellyfinFolderByJellyfinIdInput;
-};
-
-
 export type MutationUpdateSeasonArgs = {
   input: UpdateSeasonInput;
 };
@@ -1992,21 +1237,6 @@ export type MutationUpdateSeasonByTitleArgs = {
 
 export type MutationUpdateSeasonDownloadSourcesArgs = {
   input: UpdateSeasonDownloadSourcesInput;
-};
-
-
-export type MutationUpdateTorrentArgs = {
-  input: UpdateTorrentInput;
-};
-
-
-export type MutationUpdateTorrentByHashArgs = {
-  input: UpdateTorrentByHashInput;
-};
-
-
-export type MutationUpdateTorrentByIdArgs = {
-  input: UpdateTorrentByIdInput;
 };
 
 
@@ -2835,6 +2065,7 @@ export type StringListFilter = {
 export type Torrent = Node & {
   __typename?: 'Torrent';
   createdAt: Scalars['Datetime'];
+  episodeIndex?: Maybe<Scalars['Int']>;
   hash: Scalars['String'];
   id: Scalars['Int'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -2850,6 +2081,8 @@ export type Torrent = Node & {
 export type TorrentCondition = {
   /** Checks for equality with the object’s `createdAt` field. */
   createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `episodeIndex` field. */
+  episodeIndex?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `hash` field. */
   hash?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `id` field. */
@@ -2870,6 +2103,8 @@ export type TorrentFilter = {
   and?: InputMaybe<Array<TorrentFilter>>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `episodeIndex` field. */
+  episodeIndex?: InputMaybe<IntFilter>;
   /** Filter by the object’s `hash` field. */
   hash?: InputMaybe<StringFilter>;
   /** Filter by the object’s `id` field. */
@@ -2886,30 +2121,6 @@ export type TorrentFilter = {
   title?: InputMaybe<StringFilter>;
   /** Filter by the object’s `torrentLink` field. */
   torrentLink?: InputMaybe<StringFilter>;
-};
-
-/** An input for mutations affecting `Torrent` */
-export type TorrentInput = {
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  hash: Scalars['String'];
-  id?: InputMaybe<Scalars['Int']>;
-  publishDate: Scalars['Datetime'];
-  size: Scalars['BigInt'];
-  title: Scalars['String'];
-  /** Link used to download */
-  torrentLink: Scalars['String'];
-};
-
-/** Represents an update to a `Torrent`. Fields that are set will be updated. */
-export type TorrentPatch = {
-  createdAt?: InputMaybe<Scalars['Datetime']>;
-  hash?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
-  publishDate?: InputMaybe<Scalars['Datetime']>;
-  size?: InputMaybe<Scalars['BigInt']>;
-  title?: InputMaybe<Scalars['String']>;
-  /** Link used to download */
-  torrentLink?: InputMaybe<Scalars['String']>;
 };
 
 /** A connection to a list of `Torrent` values. */
@@ -2938,6 +2149,8 @@ export type TorrentsEdge = {
 export enum TorrentsOrderBy {
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
+  EpisodeIndexAsc = 'EPISODE_INDEX_ASC',
+  EpisodeIndexDesc = 'EPISODE_INDEX_DESC',
   HashAsc = 'HASH_ASC',
   HashDesc = 'HASH_DESC',
   IdAsc = 'ID_ASC',
@@ -2954,116 +2167,6 @@ export enum TorrentsOrderBy {
   TorrentLinkAsc = 'TORRENT_LINK_ASC',
   TorrentLinkDesc = 'TORRENT_LINK_DESC'
 }
-
-/** All input for the `updateDownloadJobById` mutation. */
-export type UpdateDownloadJobByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadJob` being updated. */
-  downloadJobPatch: DownloadJobPatch;
-  id: Scalars['Int'];
-};
-
-/** All input for the `updateDownloadJob` mutation. */
-export type UpdateDownloadJobInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadJob` being updated. */
-  downloadJobPatch: DownloadJobPatch;
-  /** The globally unique `ID` which will identify a single `DownloadJob` to be updated. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our update `DownloadJob` mutation. */
-export type UpdateDownloadJobPayload = {
-  __typename?: 'UpdateDownloadJobPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadJob` that was updated by this mutation. */
-  downloadJob?: Maybe<DownloadJob>;
-  /** An edge for our `DownloadJob`. May be used by Relay 1. */
-  downloadJobEdge?: Maybe<DownloadJobsEdge>;
-  /** Reads a single `Episode` that is related to this `DownloadJob`. */
-  episodeByEpisodeId?: Maybe<Episode>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our update `DownloadJob` mutation. */
-export type UpdateDownloadJobPayloadDownloadJobEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadJobsOrderBy>>;
-};
-
-/** All input for the `updateDownloadSourceById` mutation. */
-export type UpdateDownloadSourceByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
-  downloadSourcePatch: DownloadSourcePatch;
-  id: Scalars['Int'];
-};
-
-/** All input for the `updateDownloadSourceByPattern` mutation. */
-export type UpdateDownloadSourceByPatternInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
-  downloadSourcePatch: DownloadSourcePatch;
-  pattern: Scalars['String'];
-};
-
-/** All input for the `updateDownloadSource` mutation. */
-export type UpdateDownloadSourceInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `DownloadSource` being updated. */
-  downloadSourcePatch: DownloadSourcePatch;
-  /** The globally unique `ID` which will identify a single `DownloadSource` to be updated. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our update `DownloadSource` mutation. */
-export type UpdateDownloadSourcePayload = {
-  __typename?: 'UpdateDownloadSourcePayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `DownloadSource` that was updated by this mutation. */
-  downloadSource?: Maybe<DownloadSource>;
-  /** An edge for our `DownloadSource`. May be used by Relay 1. */
-  downloadSourceEdge?: Maybe<DownloadSourcesEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** Reads a single `Season` that is related to this `DownloadSource`. */
-  seasonBySeasonId?: Maybe<Season>;
-};
-
-
-/** The output of our update `DownloadSource` mutation. */
-export type UpdateDownloadSourcePayloadDownloadSourceEdgeArgs = {
-  orderBy?: InputMaybe<Array<DownloadSourcesOrderBy>>;
-};
 
 /** All input for the `updateEpisodeById` mutation. */
 export type UpdateEpisodeByIdInput = {
@@ -3186,65 +2289,6 @@ export type UpdateImagePayloadImageEdgeArgs = {
   orderBy?: InputMaybe<Array<ImagesOrderBy>>;
 };
 
-/** All input for the `updateJellyfinFolderById` mutation. */
-export type UpdateJellyfinFolderByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-  /** An object where the defined keys will be set on the `JellyfinFolder` being updated. */
-  jellyfinFolderPatch: JellyfinFolderPatch;
-};
-
-/** All input for the `updateJellyfinFolderByJellyfinId` mutation. */
-export type UpdateJellyfinFolderByJellyfinIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `JellyfinFolder` being updated. */
-  jellyfinFolderPatch: JellyfinFolderPatch;
-  jellyfinId: Scalars['String'];
-};
-
-/** All input for the `updateJellyfinFolder` mutation. */
-export type UpdateJellyfinFolderInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** An object where the defined keys will be set on the `JellyfinFolder` being updated. */
-  jellyfinFolderPatch: JellyfinFolderPatch;
-  /** The globally unique `ID` which will identify a single `JellyfinFolder` to be updated. */
-  nodeId: Scalars['ID'];
-};
-
-/** The output of our update `JellyfinFolder` mutation. */
-export type UpdateJellyfinFolderPayload = {
-  __typename?: 'UpdateJellyfinFolderPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** The `JellyfinFolder` that was updated by this mutation. */
-  jellyfinFolder?: Maybe<JellyfinFolder>;
-  /** An edge for our `JellyfinFolder`. May be used by Relay 1. */
-  jellyfinFolderEdge?: Maybe<JellyfinFoldersEdge>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-};
-
-
-/** The output of our update `JellyfinFolder` mutation. */
-export type UpdateJellyfinFolderPayloadJellyfinFolderEdgeArgs = {
-  orderBy?: InputMaybe<Array<JellyfinFoldersOrderBy>>;
-};
-
 /** All input for the `updateSeasonById` mutation. */
 export type UpdateSeasonByIdInput = {
   /**
@@ -3315,65 +2359,6 @@ export type UpdateSeasonPayload = {
 /** The output of our update `Season` mutation. */
 export type UpdateSeasonPayloadSeasonEdgeArgs = {
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
-};
-
-/** All input for the `updateTorrentByHash` mutation. */
-export type UpdateTorrentByHashInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  hash: Scalars['String'];
-  /** An object where the defined keys will be set on the `Torrent` being updated. */
-  torrentPatch: TorrentPatch;
-};
-
-/** All input for the `updateTorrentById` mutation. */
-export type UpdateTorrentByIdInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  id: Scalars['Int'];
-  /** An object where the defined keys will be set on the `Torrent` being updated. */
-  torrentPatch: TorrentPatch;
-};
-
-/** All input for the `updateTorrent` mutation. */
-export type UpdateTorrentInput = {
-  /**
-   * An arbitrary string value with no semantic meaning. Will be included in the
-   * payload verbatim. May be used to track mutations by the client.
-   */
-  clientMutationId?: InputMaybe<Scalars['String']>;
-  /** The globally unique `ID` which will identify a single `Torrent` to be updated. */
-  nodeId: Scalars['ID'];
-  /** An object where the defined keys will be set on the `Torrent` being updated. */
-  torrentPatch: TorrentPatch;
-};
-
-/** The output of our update `Torrent` mutation. */
-export type UpdateTorrentPayload = {
-  __typename?: 'UpdateTorrentPayload';
-  /**
-   * The exact same `clientMutationId` that was provided in the mutation input,
-   * unchanged and unused. May be used by a client to track mutations.
-   */
-  clientMutationId?: Maybe<Scalars['String']>;
-  /** Our root query field type. Allows us to run any query from our mutation payload. */
-  query?: Maybe<Query>;
-  /** The `Torrent` that was updated by this mutation. */
-  torrent?: Maybe<Torrent>;
-  /** An edge for our `Torrent`. May be used by Relay 1. */
-  torrentEdge?: Maybe<TorrentsEdge>;
-};
-
-
-/** The output of our update `Torrent` mutation. */
-export type UpdateTorrentPayloadTorrentEdgeArgs = {
-  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
 };
 
 export type GetEpisodeByIdQueryVariables = Exact<{
@@ -3511,6 +2496,13 @@ export type GetMetadataPageOptionsQueryVariables = Exact<{ [key: string]: never;
 
 export type GetMetadataPageOptionsQuery = { __typename?: 'Query', getAvailableSemesters: Array<string>, allJellyfinFolders?: { __typename?: 'JellyfinFoldersConnection', edges: Array<{ __typename?: 'JellyfinFoldersEdge', node?: { __typename?: 'JellyfinFolder', id: number, name: string } | null }> } | null };
 
+export type DeleteSeasonByIdMutationVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type DeleteSeasonByIdMutation = { __typename?: 'Mutation', updateSeasonById?: { __typename: 'UpdateSeasonPayload' } | null };
+
 export type TorrentFieldsFragment = { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string };
 
 export type ListTorrentsQueryVariables = Exact<{
@@ -3522,49 +2514,6 @@ export type ListTorrentsQueryVariables = Exact<{
 
 
 export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
-
-export type UpdateDownloadSourceByIdMutationVariables = Exact<{
-  id: Scalars['Int'];
-  downloadSourcePatch: DownloadSourcePatch;
-}>;
-
-
-export type UpdateDownloadSourceByIdMutation = { __typename?: 'Mutation', updateDownloadSourceById?: { __typename: 'UpdateDownloadSourcePayload' } | null };
-
-export type CreateDownloadSourceMutationVariables = Exact<{
-  downloadSource: DownloadSourceInput;
-}>;
-
-
-export type CreateDownloadSourceMutation = { __typename?: 'Mutation', createDownloadSource?: { __typename: 'CreateDownloadSourcePayload' } | null };
-
-export type ListDownloadSourcesQueryVariables = Exact<{
-  condition?: InputMaybe<DownloadSourceCondition>;
-}>;
-
-
-export type ListDownloadSourcesQuery = { __typename?: 'Query', allDownloadSources?: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', isDisabled: boolean, groupId: string, pattern: string, id: number } | null }> } | null };
-
-export type DeleteDownloadConfigByIdMutationVariables = Exact<{
-  id: Scalars['Int'];
-}>;
-
-
-export type DeleteDownloadConfigByIdMutation = { __typename?: 'Mutation', updateDownloadSourceById?: { __typename: 'UpdateDownloadSourcePayload' } | null };
-
-export type DeleteSeasonByIdMutationVariables = Exact<{
-  id: Scalars['Int'];
-}>;
-
-
-export type DeleteSeasonByIdMutation = { __typename?: 'Mutation', updateSeasonById?: { __typename: 'UpdateSeasonPayload' } | null };
-
-export type GetDownloadSourceByIdQueryVariables = Exact<{
-  downloadSourceByIdId: Scalars['Int'];
-}>;
-
-
-export type GetDownloadSourceByIdQuery = { __typename?: 'Query', downloadSourceById?: { __typename?: 'DownloadSource', isArchived: boolean, id: number, groupId: string, isDisabled: boolean, pattern: string } | null };
 
 export const SeasonEpisodesFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonEpisodes"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"CREATED_AT_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SeasonEpisodesFragment, unknown>;
 export const DisplayImageFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"displayImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}}]}}]} as unknown as DocumentNode<DisplayImageFieldsFragment, unknown>;
@@ -3588,10 +2537,5 @@ export const ListSeasonsDocument = {"kind":"Document","definitions":[{"kind":"Op
 export const CreateSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"season"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSeason"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"season"},"value":{"kind":"Variable","name":{"kind":"Name","value":"season"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"season"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<CreateSeasonMutation, CreateSeasonMutationVariables>;
 export const SearchBangumiDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBangumi"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"keywords"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchBangumi"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"keywords"},"value":{"kind":"Variable","name":{"kind":"Name","value":"keywords"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"added"}},{"kind":"Field","name":{"kind":"Name","value":"airDate"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<SearchBangumiQuery, SearchBangumiQueryVariables>;
 export const GetMetadataPageOptionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMetadataPageOptions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getAvailableSemesters"}},{"kind":"Field","name":{"kind":"Name","value":"allJellyfinFolders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMetadataPageOptionsQuery, GetMetadataPageOptionsQueryVariables>;
-export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
-export const UpdateDownloadSourceByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDownloadSourceById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourcePatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourcePatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSourcePatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourcePatch"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateDownloadSourceByIdMutation, UpdateDownloadSourceByIdMutationVariables>;
-export const CreateDownloadSourceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDownloadSource"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSource"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDownloadSource"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSource"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSource"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<CreateDownloadSourceMutation, CreateDownloadSourceMutationVariables>;
-export const ListDownloadSourcesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListDownloadSources"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"condition"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadSourceCondition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allDownloadSources"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"condition"},"value":{"kind":"Variable","name":{"kind":"Name","value":"condition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isDisabled"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<ListDownloadSourcesQuery, ListDownloadSourcesQueryVariables>;
-export const DeleteDownloadConfigByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteDownloadConfigById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDownloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"downloadSourcePatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteDownloadConfigByIdMutation, DeleteDownloadConfigByIdMutationVariables>;
 export const DeleteSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSeasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"seasonPatch"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isArchived"},"value":{"kind":"BooleanValue","value":true}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<DeleteSeasonByIdMutation, DeleteSeasonByIdMutationVariables>;
-export const GetDownloadSourceByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDownloadSourceById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourceByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadSourceById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"downloadSourceByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"isDisabled"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}}]}}]}}]} as unknown as DocumentNode<GetDownloadSourceByIdQuery, GetDownloadSourceByIdQueryVariables>;
+export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
