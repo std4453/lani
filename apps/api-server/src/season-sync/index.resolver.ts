@@ -15,7 +15,6 @@ import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { Image, JellyfinFolder, MetadataSource, Season } from '@prisma/client';
 import dayjs from 'dayjs';
-import fs from 'fs';
 import fsPromises from 'fs/promises';
 import md5 from 'md5';
 import path from 'path';
@@ -227,9 +226,11 @@ export class SyncMetadataResolver {
     );
     let xmlObj: any = {};
     await fsPromises.mkdir(path.dirname(nfoPath), { recursive: true });
+    let modified = false;
+    let currentContent = '';
     try {
       await fsPromises.stat(nfoPath);
-      const currentContent = await fsPromises.readFile(nfoPath, 'utf8');
+      currentContent = await fsPromises.readFile(nfoPath, 'utf8');
       xmlObj = await this.parser.parseStringPromise(currentContent);
     } catch (error) {
       // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
@@ -274,7 +275,10 @@ export class SyncMetadataResolver {
       xmlObj.tvshow,
     );
     const nfoContent = this.builder.buildObject(xmlObj);
-    await fsPromises.writeFile(nfoPath, nfoContent, 'utf-8');
+    if (currentContent !== nfoContent) {
+      await fsPromises.writeFile(nfoPath, nfoContent, 'utf-8');
+      modified = true;
+    }
     await Promise.all(
       [
         { image: bannerImage, type: 'banner' },
@@ -290,23 +294,40 @@ export class SyncMetadataResolver {
         }
         const bucket = this.config.get<COSBucket>('imagesBucket');
         const ext = cosPath.substring(cosPath.lastIndexOf('.'));
-        await this.cos.getObject({
+        const { Body: content } = await this.cos.getObject({
           Bucket: bucket.bucket,
           Region: bucket.region,
           Key: cosPath,
-          Output: fs.createWriteStream(
-            path.join(
-              this.config.get('mediaRoot'),
-              seasonRoot,
-              title,
-              `${type}${ext}`,
-            ),
-          ),
         });
+        const newFileHash = md5(content);
+        const filePath = path.join(
+          this.config.get('mediaRoot'),
+          seasonRoot,
+          title,
+          `${type}${ext}`,
+        );
+        let currentFileHash = '';
+        try {
+          const currentFileContent = await fsPromises.readFile(filePath);
+          currentFileHash = md5(currentFileContent);
+        } catch (error) {
+          // 无论文件有没有问题，我们这里只是为了判断hash，因此忽略错误
+        }
+        if (currentFileHash !== newFileHash) {
+          await fsPromises.writeFile(filePath, content);
+          modified = true;
+        }
       }),
     );
-    if (jellyfinId) {
-      await ItemRefreshService.post(jellyfinId);
+    if (modified) {
+      if (jellyfinId) {
+        await JellyfinHelp.refreshItem({ itemId: jellyfinId });
+      } else {
+        await JellyfinHelp.refreshItem({
+          itemId: jellyfinFolder.jellyfinId,
+          recursive: true,
+        });
+      }
     }
   }
 
