@@ -41,7 +41,7 @@ export default function ManualDownloadMagnetDialog({
           return true;
         } catch (e) {
           console.error(e);
-          void message.error('下载任务创建成功');
+          void message.error('下载任务创建失败');
           return false;
         }
       }}
