@@ -1,13 +1,17 @@
 import {
+  CancelablePromise,
   ImageType,
   ItemFields,
   ItemFilter,
   ItemsService,
   LocationType,
+  MetadataRefreshMode,
+  OpenAPI,
   SeriesStatus,
   SortOrder,
   VideoType,
 } from '@/api/jellyfin';
+import { request as __request } from '@/api/jellyfin/core/request';
 
 // 这OpenAPI生成的破API突出一个难用，包一层
 export class JellyfinHelp {
@@ -256,5 +260,41 @@ export class JellyfinHelp {
       enableTotalRecordCount,
       enableImages,
     );
+  }
+
+  public static refreshItem({
+    itemId,
+    metadataRefreshMode,
+    imageRefreshMode,
+    replaceAllMetadata,
+    replaceAllImages,
+    recursive,
+  }: {
+    itemId: string;
+    metadataRefreshMode?: MetadataRefreshMode;
+    imageRefreshMode?: MetadataRefreshMode;
+    replaceAllMetadata?: boolean;
+    replaceAllImages?: boolean;
+    recursive?: boolean;
+  }): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/Items/{itemId}/Refresh',
+      path: {
+        itemId: itemId,
+      },
+      query: {
+        metadataRefreshMode: metadataRefreshMode,
+        imageRefreshMode: imageRefreshMode,
+        replaceAllMetadata: replaceAllMetadata,
+        replaceAllImages: replaceAllImages,
+        recursive: recursive,
+      },
+      errors: {
+        401: `Unauthorized`,
+        403: `Forbidden`,
+        404: `Item to refresh not found.`,
+      },
+    });
   }
 }

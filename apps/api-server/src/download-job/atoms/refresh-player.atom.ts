@@ -1,8 +1,9 @@
+import { TvShowsService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
-import { ItemRefreshService, TvShowsService } from '@/api/jellyfin';
 import { Atom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
+import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -65,7 +66,7 @@ export class RefreshPlayerAtom extends Atom<
           jellyfinEpisodeId,
         });
       } else {
-        await ItemRefreshService.post(jellyfinSeriesId);
+        await JellyfinHelp.refreshItem({ itemId: jellyfinSeriesId });
         this.queue[id] = {
           jellyfinSeriesId,
           index,
