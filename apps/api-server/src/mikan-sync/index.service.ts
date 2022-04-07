@@ -10,18 +10,6 @@ export class MikanSyncService {
     private fetchMikanService: FetchMikanService,
   ) {}
 
-  static episodeRegex =
-    /((?<=-\s)\d{1,3}(?=\s))|((?<=\[)\d{1,3}(?=((\sEND)|(v\d+))?\]))|(?<=\u7b2c)\d{1,3}(?=\u96c6)/;
-
-  private matchTorrentEpisode(title: string) {
-    const result = title.match(MikanSyncService.episodeRegex);
-    const matched = result?.[0];
-    if (!matched) {
-      return null;
-    }
-    return parseInt(matched);
-  }
-
   @Cron('*/5 * * * *')
   async syncMikan() {
     console.debug('Syncing mikan...');
@@ -34,7 +22,6 @@ export class MikanSyncService {
           size,
           publishDate,
           hash,
-          episodeIndex: this.matchTorrentEpisode(title),
         })),
         skipDuplicates: true,
       });

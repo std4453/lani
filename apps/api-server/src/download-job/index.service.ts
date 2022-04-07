@@ -93,6 +93,31 @@ export class JobService
 
   @Cron('*/1 * * * *') // 每分钟运行一次
   async enqueueDownloadJobs() {
+    this.prisma.episode.findMany({
+      where: {
+        jellyfinEpisodeId: null,
+        season: {
+          isArchived: false,
+          jellyfinFolderId: {
+            not: null,
+          },
+          title: {},
+          downloadSources: {
+            some: {
+              isDisabled: false,
+              isArchived: false,
+            },
+          },
+        },
+        downloadJobs: {
+          none: {},
+        },
+        airTime: {
+          lt: new Date(),
+        },
+      },
+    });
+
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
     // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
