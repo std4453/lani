@@ -4,6 +4,7 @@ import {
   MetadataSource,
   SearchBangumiDocument,
   SearchBangumiQuery,
+  SyncMetadataDocument,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
@@ -135,6 +136,12 @@ export default function AddFromBangumiDialog({
               if (!id) {
                 throw new Error('no id');
               }
+              await client.mutate({
+                mutation: SyncMetadataDocument,
+                variables: {
+                  seasonId: id,
+                },
+              });
               void message.success('新建成功');
               void resolve({ id });
             } catch (e) {
