@@ -172,7 +172,7 @@ function useColumns({
                           void reloadEpisodes();
                         } catch (e) {
                           console.error(e);
-                          void message.error('下载任务创建成功');
+                          void message.error('下载任务创建失败');
                         }
                       },
                     });
