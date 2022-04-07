@@ -10,13 +10,13 @@ import {
   GlobalAxiosService,
   HKAxiosService,
 } from '@/common/axios.service';
-import { ConfigType } from '@/config';
+import { COSService } from '@/common/cos.service';
+import { ConfigType, COSBucket } from '@/config';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Axios } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
-import COS from 'cos-nodejs-sdk-v5';
 
 @Injectable()
 export class BilibiliBangumiCCService {
@@ -25,6 +25,7 @@ export class BilibiliBangumiCCService {
     private hk: HKAxiosService,
     private china: ChinaAxiosService,
     private config: ConfigService<ConfigType, true>,
+    private cos: COSService,
   ) {}
 
   private regionToAxios: Record<BilibiliRegion, Axios> = {
@@ -32,11 +33,6 @@ export class BilibiliBangumiCCService {
     thm: this.hk,
     mainland: this.china,
   };
-
-  private cos = new COS({
-    SecretId: this.config.get('cosSecretId'),
-    SecretKey: this.config.get('cosSecretKey'),
-  });
 
   async fetchSeason(ssid: string, region = BilibiliRegion.THM) {
     const resp = await this.regionToAxios[region].get(
@@ -126,10 +122,11 @@ export class BilibiliBangumiCCService {
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       const key = `bilibili-bangumi-cc/ss${ssid}-ep-${episode}-${language}.srt`;
+      const bucket = this.config.get<COSBucket>('tempBucket');
       this.cos.putObject(
         {
-          Bucket: this.config.get('cosBucket'),
-          Region: this.config.get('cosRegion'),
+          Bucket: bucket.bucket,
+          Region: bucket.region,
           Key: key,
           Body: srtText,
         },

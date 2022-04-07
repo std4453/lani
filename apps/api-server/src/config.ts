@@ -9,15 +9,14 @@ export interface COSBucket {
 const config = mergeConfig({
   hk1Proxy: 'http://hk1.v2ray:8889',
   globalProxy: 'http://v2ray.v2ray:8889',
-  sonarrEndpoint: 'http://sonarr.media:80/api/v3',
-  redisHost: 'redis-master.lani',
-  redisPassword: '',
   postgresURL:
     'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani?schema=public',
   cosSecretId: 'AKIDXtzoNfgPs88qIVQ4RYOxFH3YmiOnwpSo',
   cosSecretKey: '6vTkkTv72g5E6hBPN3SaS3NQChvsXx6y',
-  cosBucket: 'temp-1308701035',
-  cosRegion: 'ap-shanghai',
+  tempBucket: {
+    bucket: 'temp-1308701035',
+    region: 'ap-shanghai',
+  } as COSBucket,
   qbtEndpoint: 'http://qbittorrent.media:80/api/v2',
   qbtUsername: 'std4453',
   qbtPassword: 'dyQB2QT&8kFqRBe#',
@@ -36,12 +35,9 @@ const config = mergeConfig({
   } as COSBucket,
 })({
   dev: {
-    sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',
-    redisHost: 'redis-master.lani-offline',
     postgresURL:
       'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
-    redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
     mediaRoot: '/data/std4453/services/media/media',
     qbtPathMapping: [
       {
@@ -58,12 +54,9 @@ const config = mergeConfig({
     ],
   },
   offline: {
-    sonarrEndpoint: 'http://sonarr.media:80/api/v3',
-    redisHost: 'redis-master.lani-offline',
     postgresURL:
       'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
-    redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
     mediaRoot: '/media/media',
     qbtPathMapping: [
       {
