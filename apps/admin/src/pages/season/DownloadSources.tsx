@@ -9,7 +9,6 @@ import {
 } from '@ant-design/pro-form';
 import { Button, Divider, Form, Typography } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
-import { escapeRegExp } from 'lodash';
 import { useRef } from 'react';
 import styles from './DownloadSources.module.less';
 
@@ -113,14 +112,14 @@ export default function DownloadSources() {
                 ref.current?.add({
                   id: 0,
                   // 匹配到剧集的部分使用\d+代替，其余部分保持不变
-                  pattern: `${escapeRegExp(
-                    title.substring(0, index),
-                  )}(\\d+)${escapeRegExp(title.substring(index + length))}`,
+                  pattern: `${title.substring(0, index)}%${title.substring(
+                    index + length,
+                  )}`,
                 });
               } else {
                 ref.current?.add({
                   id: 0,
-                  pattern: escapeRegExp(title),
+                  pattern: title,
                 });
               }
             }}
