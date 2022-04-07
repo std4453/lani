@@ -4,6 +4,7 @@ import {
   MetadataSource,
   SearchBangumiDocument,
   SearchBangumiQuery,
+  SyncEpisodeDataDocument,
   SyncMetadataDocument,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
@@ -136,14 +137,26 @@ export default function AddFromBangumiDialog({
               if (!id) {
                 throw new Error('no id');
               }
-              await client.mutate({
-                mutation: SyncMetadataDocument,
-                variables: {
-                  seasonId: id,
-                },
-              });
-              void message.success('新建成功');
-              void resolve({ id });
+              void message.loading('新建成功，同步元数据中……');
+              try {
+                await client.mutate({
+                  mutation: SyncMetadataDocument,
+                  variables: {
+                    seasonId: id,
+                  },
+                });
+                await client.mutate({
+                  mutation: SyncEpisodeDataDocument,
+                  variables: {
+                    seasonId: id,
+                  },
+                });
+                void message.success('同步元数据成功');
+                void resolve({ id });
+              } catch (e) {
+                console.error(e);
+                void message.error('同步元数据失败');
+              }
             } catch (e) {
               console.error(e);
               void message.error('新建失败');
