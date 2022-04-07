@@ -11,9 +11,10 @@ import {
 import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
+import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
-import { Dropdown, Menu, message, Popconfirm, Space, Typography } from 'antd';
+import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import { useMemo, useRef } from 'react';
@@ -424,36 +425,35 @@ export default function MetadataPage() {
         headerTitle="元数据"
         actionRef={ref}
         toolBarRender={() => [
-          <Dropdown.Button
-            key="button"
+          <Button
+            key={0}
             type="primary"
+            onClick={async () => {
+              const result = await openAddFromBangumi();
+              if (result.type === 'success') {
+                history.push(`/season/${result.output.id}`);
+              }
+            }}
+            icon={
+              <img src={IconPath.bangumiIcon} className={styles.buttonIcon} />
+            }
+          >
+            从Bangumi新建
+          </Button>,
+          <Button
+            key={1}
+            type="primary"
+            ghost
+            icon={<PlusOutlined />}
             onClick={async () => {
               const result = await openCreateAnime();
               if (result.type === 'success') {
                 history.push(`/season/${result.output.id}`);
               }
             }}
-            overlay={
-              <Menu>
-                <Menu.Item
-                  key={0}
-                  icon={
-                    <img src={IconPath.bangumiIcon} className={styles.icon} />
-                  }
-                  onClick={async () => {
-                    const result = await openAddFromBangumi();
-                    if (result.type === 'success') {
-                      history.push(`/season/${result.output.id}`);
-                    }
-                  }}
-                >
-                  从Bangumi添加
-                </Menu.Item>
-              </Menu>
-            }
           >
-            新建
-          </Dropdown.Button>,
+            手动新建
+          </Button>,
         ]}
         search={false}
         options={{
