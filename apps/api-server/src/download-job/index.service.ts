@@ -86,7 +86,17 @@ export class JobService
     const job = await this.prisma.downloadJob.findUnique({
       where: { id: jobId },
     });
-    // TODO: 检查
+    if (!job.isFailed) {
+      return 'not failed';
+    }
+    await this.prisma.downloadJob.update({
+      where: { id: jobId },
+      data: {
+        isFailed: false,
+        failedAt: null,
+        failedReason: '',
+      },
+    });
     this.triggerWorkflowStep(this.jobToInput(job));
     return 'ok';
   }
@@ -134,18 +144,19 @@ export class JobService
         download_sources,
         seasons,
         episodes
-      LEFT JOIN download_jobs ON episodes.id = download_jobs.episode_id
       WHERE download_sources.is_disabled = false
         AND download_sources.is_archived = false
-        AND torrents.title ~ download_sources.pattern
+        AND torrents.title LIKE download_sources.pattern
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
         AND seasons.is_archived = false
         AND seasons.jellyfin_folder_id IS NOT NULL
-        AND episodes.index = cast(substring(torrents.title FROM download_sources.pattern) AS integer)
+        AND episodes.index = torrents.episode_index
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
-        AND download_jobs.episode_id IS NULL
+		    AND NOT EXISTS (
+			    SELECT id from download_jobs WHERE episodes.id = download_jobs.episode_id
+	    	)
     `;
     if (result.length > 0) {
       console.debug('queued', result.length, 'jobs');

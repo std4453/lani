@@ -39,7 +39,7 @@ const config = mergeConfig({
     sonarrEndpoint: 'https://sonarr.std4453.com:444/api/v3',
     redisHost: 'redis-master.lani-offline',
     postgresURL:
-      'postgresql://postgres:a*qLweVSC!4yRvBNP%405VGfyR@10.43.222.73:5432/lani-offline?schema=public',
+      'postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public',
     qbtEndpoint: 'https://qbittorrent.std4453.com:444/api/v2',
     redisPassword: 'Hd75x0NJNblIC9o9pSalT5x9KXr5Hamg',
     mediaRoot: '/data/std4453/services/media/media',
