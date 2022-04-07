@@ -7,6 +7,7 @@ import { DateFormat } from '@/constants/date-format';
 import { BangumiSeasonService } from '@/season-sync/bangumi/index.service';
 import { PartialSeason } from '@/season-sync/index.model';
 import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
+import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -480,5 +481,41 @@ export class SyncMetadataResolver {
       }),
     );
     return results.filter((result) => result).length;
+  }
+
+  @Mutation(() => Boolean)
+  async syncJellyfinSeriesId(@Args('seasonId') seasonId: number) {
+    const { jellyfinId, title, jellyfinFolder } =
+      await this.prisma.season.findUnique({
+        where: { id: seasonId },
+        include: {
+          jellyfinFolder: true,
+        },
+      });
+    if (!jellyfinFolder) {
+      return false;
+    }
+    const items = await JellyfinHelp.getItemsByUserId({
+      userId: this.config.get('jellyfinUserId'),
+      searchTerm: title,
+      limit: 10,
+      parentId: jellyfinFolder.jellyfinId,
+      recursive: true,
+      includeItemTypes: ['Series'],
+    });
+    const id = (items.Items ?? []).find((item) => item.Name === title)?.Id;
+    if (!id) {
+      return false;
+    }
+    if (id === jellyfinId) {
+      return true;
+    }
+    await this.prisma.season.update({
+      where: { id: seasonId },
+      data: {
+        jellyfinId: id,
+      },
+    });
+    return true;
   }
 }
