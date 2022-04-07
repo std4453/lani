@@ -58,15 +58,6 @@ export default function DownloadSources() {
                       }
                     },
                   },
-                  {
-                    validator: async (_, value: string) => {
-                      try {
-                        RegExp(`^(${value})$`);
-                      } catch (error) {
-                        throw new Error('正则表达式错误');
-                      }
-                    },
-                  },
                 ]}
                 fieldProps={{
                   autoSize: true,
