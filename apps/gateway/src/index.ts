@@ -1,6 +1,7 @@
 import config from "@/config";
 import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 import { ApolloServer, AuthenticationError } from "apollo-server";
+import { getIntrospectionQuery, parse, print } from "graphql";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { Issuer } from "openid-client";
 
@@ -18,11 +19,18 @@ import { Issuer } from "openid-client";
   }
   const JWKS = createRemoteJWKSet(new URL(issuer.metadata.jwks_uri));
 
+  const introspectionQuery = print(parse(getIntrospectionQuery()));
+
   const server = new ApolloServer({
     gateway,
     context: async ({ req }) => {
       const auth = (req.headers.authorization ?? "").replace("Bearer ", "");
       try {
+        const query = print(parse(req.body.query));
+        if (query === introspectionQuery) {
+          return {};
+        }
+
         const { payload } = await jwtVerify(auth, JWKS, {
           issuer: issuer.metadata.issuer,
           audience: config.audience,
