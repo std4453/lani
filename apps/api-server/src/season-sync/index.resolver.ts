@@ -1,4 +1,3 @@
-import { ItemRefreshService } from '@/api/jellyfin';
 import { ChinaAxiosService } from '@/common/axios.service';
 import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
