@@ -84,12 +84,10 @@ export class QBittorrentService extends AxiosService {
    * 没有并发检查，也不检查是否已经登录
    */
   private loginNoCheck() {
-    const promise = this.doLogin();
-    this.authPromise = promise;
-    promise.finally(() => {
+    const promise = this.doLogin().finally(() => {
       this.authPromise = null;
     });
-    return promise;
+    return (this.authPromise = promise);
   }
 
   /**
@@ -102,8 +100,8 @@ export class QBittorrentService extends AxiosService {
       return this.authPromise;
     }
     // 已经登录，直接返回
-    // qbt cookie会过期，每6小时刷新一次
-    if (this.SID && new Date().getTime() - this.loginTime <= 6 * 3600 * 1000) {
+    // qbt cookie会过期，过期（超过1小时）的话不等到请求失败直接刷新
+    if (this.SID && new Date().getTime() - this.loginTime <= 60 * 60 * 1000) {
       return;
     } else {
       return this.loginNoCheck();
@@ -129,8 +127,12 @@ export class QBittorrentService extends AxiosService {
     try {
       return super.request<T, R, D>(config);
     } catch (error) {
-      // 401 报错（如cookie过期）时，尝试一次重新登陆
-      if (error['isAxiosError'] && error.response?.status === 401) {
+      // 401/403 报错（如cookie过期）时，尝试一次重新登陆
+      if (
+        error['isAxiosError'] &&
+        error.response?.status === 401 &&
+        error.response?.status === 403
+      ) {
         await this.refreshCredentials();
         return super.request<T, R, D>(config);
       }
