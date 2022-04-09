@@ -12,6 +12,7 @@ import {
   VideoType,
 } from '@/api/jellyfin';
 import { request as __request } from '@/api/jellyfin/core/request';
+import dayjs from 'dayjs';
 
 // 这OpenAPI生成的破API突出一个难用，包一层
 export class JellyfinHelp {
@@ -277,6 +278,11 @@ export class JellyfinHelp {
     replaceAllImages?: boolean;
     recursive?: boolean;
   }): CancelablePromise<void> {
+    console.debug(
+      dayjs().format('YYYY-MM-DD HH:mm:ss'),
+      'JellyfinHelp.RefreshItem',
+      itemId,
+    );
     return __request(OpenAPI, {
       method: 'POST',
       url: '/Items/{itemId}/Refresh',
