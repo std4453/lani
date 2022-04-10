@@ -1,15 +1,18 @@
+import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
-import { formItemProps } from '@/pages/season/help';
+import { formItemProps, FormValues } from '@/pages/season/help';
 import Section from '@/pages/season/Section';
 import { episodeRegex } from '@/utils/matchTorrentTitle';
 import { MinusOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
+  ProFormDigit,
   ProFormList,
   ProFormSwitch,
   ProFormTextArea,
 } from '@ant-design/pro-form';
-import { Button, Form } from 'antd';
+import { Alert, Button, Form, Typography } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
+import clsx from 'clsx';
 import { useRef } from 'react';
 import styles from './DownloadSources.module.less';
 
@@ -18,6 +21,20 @@ export default function DownloadSources() {
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
   return (
     <Section title="下载配置">
+      <FormDependency<FormValues> name={['needDownloadCc', 'bilibiliThmId']}>
+        {({ needDownloadCc, bilibiliThmId }) =>
+          needDownloadCc && !bilibiliThmId ? (
+            <Alert
+              message="未设置Bilibili港澳台ID，无法自动下载字幕"
+              type="warning"
+              showIcon
+              style={{
+                marginBottom: 16,
+              }}
+            />
+          ) : null
+        }
+      </FormDependency>
       <ProFormSwitch
         label="追番中"
         name="isMonitoring"
@@ -65,6 +82,23 @@ export default function DownloadSources() {
                   className: styles.item,
                 }}
               />
+              <Typography.Text className={styles.offsetText}>
+                （标题中第
+              </Typography.Text>
+              <ProFormDigit
+                name="offset"
+                min={1}
+                max={100}
+                width="xs"
+                formItemProps={{
+                  noStyle: true,
+                }}
+              />
+              <Typography.Text
+                className={clsx(styles.offsetText, styles.after)}
+              >
+                集对应季度第1集）
+              </Typography.Text>
             </div>
           )}
         </ProFormList>
@@ -77,6 +111,7 @@ export default function DownloadSources() {
               ref.current?.add({
                 id: 0,
                 pattern: '',
+                offset: 1,
               });
             }}
           >
@@ -105,11 +140,13 @@ export default function DownloadSources() {
                   pattern: `${title.substring(0, index)}%${title.substring(
                     index + length,
                   )}`,
+                  offset: 1,
                 });
               } else {
                 ref.current?.add({
                   id: 0,
                   pattern: title,
+                  offset: 1,
                 });
               }
             }}
@@ -118,6 +155,11 @@ export default function DownloadSources() {
           </Button>
         </div>
       </Form.Item>
+      <ProFormSwitch
+        label="需要下载字幕"
+        name="needDownloadCc"
+        formItemProps={formItemProps}
+      />
       {searchTorrentDialog}
     </Section>
   );
