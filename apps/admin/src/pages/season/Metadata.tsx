@@ -129,7 +129,7 @@ export default function Metadata() {
           const tags = (form.getFieldValue('tags') as string[]) ?? [];
           if (tags.length > 0) {
             return tags.map((tag) => (
-              <Tag key={tag} color="blue">
+              <Tag key={tag} color="blue" className={styles.tag}>
                 {tag}
               </Tag>
             ));
