@@ -1,7 +1,10 @@
 import {
   DisplayImageFieldsFragment,
   DownloadStatus,
+  GetSeasonByIdAllDocument,
+  GetSeasonByIdConfigOnlyDocument,
   GetSeasonByIdConfigOnlyQuery,
+  GetSeasonByIdEpisodesOnlyDocument,
   GetSeasonByIdEpisodesOnlyQuery,
   MetadataSource,
   UpdateSeasonByIdDocument,
@@ -10,10 +13,17 @@ import {
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { ProFormInstance } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
-import { useMemoizedFn } from 'ahooks';
+import { useMemoizedFn, useMount } from 'ahooks';
 import { FormItemProps, message } from 'antd';
 import dayjs from 'dayjs';
-import { MutableRefObject } from 'react';
+import {
+  createContext,
+  MutableRefObject,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 export type Season = NonNullable<GetSeasonByIdConfigOnlyQuery['seasonById']>;
 
@@ -243,3 +253,118 @@ export const formItemProps: FormItemProps = {
 };
 
 export type FormRef = MutableRefObject<ProFormInstance<FormValues> | undefined>;
+
+export interface SeasonPageContextValues {
+  id: number;
+  episodes: Episode[];
+  reloadConfig: () => Promise<void>;
+  reloadEpisodes: () => Promise<void>;
+  formRef: FormRef;
+}
+
+export const SeasonPageContext = createContext<SeasonPageContextValues>({
+  id: 0,
+  episodes: [],
+  async reloadConfig() {},
+  async reloadEpisodes() {},
+  formRef: {
+    current: undefined,
+  },
+});
+
+export function useSeasonPageContext() {
+  return useContext(SeasonPageContext);
+}
+
+export function useSeasonId() {
+  return useSeasonPageContext().id;
+}
+
+export function useLoad(id: number) {
+  const client = useApolloClient();
+
+  const formRef = useRef<ProFormInstance<FormValues>>();
+
+  const [initialValues, setInitialValues] = useState<FormValues | undefined>(
+    undefined,
+  );
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loading, setLoading] = useState(false);
+  useMount(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdAllDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById || data.seasonById.isArchived) {
+        void message.error('动画不存在或已被删除');
+        return;
+      }
+      setInitialValues(queryToFormValues(data.seasonById));
+      formRef.current?.resetFields();
+      setEpisodes(
+        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
+      );
+    } finally {
+      setLoading(false);
+    }
+  });
+  const reloadConfig = useMemoizedFn(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdConfigOnlyDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById || data.seasonById.isArchived) {
+        return;
+      }
+      setInitialValues(queryToFormValues(data.seasonById));
+      formRef.current?.resetFields();
+    } finally {
+      setLoading(false);
+    }
+  });
+  const reloadEpisodes = useMemoizedFn(async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.query({
+        query: GetSeasonByIdEpisodesOnlyDocument,
+        variables: {
+          id,
+        },
+      });
+      if (!data.seasonById) {
+        return;
+      }
+      setEpisodes(
+        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
+      );
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  const values: SeasonPageContextValues = useMemo(
+    () => ({
+      id,
+      episodes,
+      reloadConfig,
+      reloadEpisodes,
+      formRef,
+    }),
+    [id, episodes, reloadConfig, reloadEpisodes],
+  );
+
+  return {
+    initialValues,
+    loading,
+    formRef,
+    values,
+  };
+}
