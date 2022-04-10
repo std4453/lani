@@ -2,6 +2,7 @@ import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
 import {
+  DownloadBilibiliCcDocument,
   DownloadStatus,
   DownloadTorrentForEpisodeDocument,
   MetadataSource,
@@ -83,13 +84,13 @@ function useColumns({
   openDownloadMagnet,
   openEpisodeDetails,
   openSearchTorrent,
-  reloadEpisodes,
 }: {
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
-  reloadEpisodes: () => Promise<void>;
 }) {
+  const { reloadEpisodes, formRef } = useSeasonPageContext();
+
   const client = useApolloClient();
   return useMemo(
     (): ProColumns<Episode>[] => [
@@ -199,9 +200,47 @@ function useColumns({
               <DownOutlined />
             </Typography.Link>
           </Dropdown>,
+          <Dropdown
+            key={2}
+            overlay={
+              <Menu>
+                <Menu.Item
+                  onClick={async () => {
+                    const values = formRef.current?.getFieldsValue();
+                    if (!values?.bilibiliThmId) {
+                      void message.error('未设置Bilibili港澳台ID');
+                      return;
+                    }
+                    const hide = message.loading('正在下载字幕', 0);
+                    try {
+                      await client.mutate({
+                        mutation: DownloadBilibiliCcDocument,
+                        variables: {
+                          episodeId: r.id,
+                        },
+                      });
+                      void message.success('字幕下载成功');
+                    } catch (e) {
+                      console.error(e);
+                      void message.error('字幕下载失败');
+                    } finally {
+                      hide();
+                    }
+                  }}
+                >
+                  下载字幕
+                </Menu.Item>
+              </Menu>
+            }
+          >
+            <Typography.Link>
+              更多操作&nbsp;
+              <DownOutlined />
+            </Typography.Link>
+          </Dropdown>,
         ],
         search: false,
-        width: 300,
+        width: 360,
       },
     ],
     [
@@ -210,13 +249,13 @@ function useColumns({
       openSearchTorrent,
       reloadEpisodes,
       client,
+      formRef,
     ],
   );
 }
 
 export default function Episodes() {
-  const { episodes, reloadEpisodes, formRef, syncEpisodes } =
-    useSeasonPageContext();
+  const { episodes, formRef, syncEpisodes } = useSeasonPageContext();
 
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
@@ -228,7 +267,6 @@ export default function Episodes() {
     openDownloadMagnet,
     openEpisodeDetails,
     openSearchTorrent,
-    reloadEpisodes,
   });
 
   const syncEpisodeProps = useAsyncButton(async () => {
