@@ -1,5 +1,6 @@
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
 import { formItemProps } from '@/pages/season/help';
+import Section from '@/pages/season/Section';
 import { episodeRegex } from '@/utils/matchTorrentTitle';
 import { MinusOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
@@ -7,7 +8,7 @@ import {
   ProFormSwitch,
   ProFormTextArea,
 } from '@ant-design/pro-form';
-import { Button, Divider, Form, Typography } from 'antd';
+import { Button, Form } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
 import { useRef } from 'react';
 import styles from './DownloadSources.module.less';
@@ -16,9 +17,7 @@ export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
   return (
-    <div className={styles.root}>
-      <Typography.Text>下载配置</Typography.Text>
-      <Divider className={styles.divider} />
+    <Section title="下载配置">
       <ProFormSwitch
         label="追番中"
         name="isMonitoring"
@@ -120,6 +119,6 @@ export default function DownloadSources() {
         </div>
       </Form.Item>
       {searchTorrentDialog}
-    </div>
+    </Section>
   );
 }

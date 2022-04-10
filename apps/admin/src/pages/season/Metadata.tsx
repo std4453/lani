@@ -2,6 +2,8 @@ import FormDependency from '@/components/FormDependency';
 import { weekdayToText, weekdayToValueEnum } from '@/constants';
 import { MetadataSource } from '@/generated/types';
 import { formItemProps, FormValues } from '@/pages/season/help';
+import Section from '@/pages/season/Section';
+import SectionTitle from '@/pages/season/Section';
 import {
   ProFormDependency,
   ProFormDigit,
@@ -9,16 +11,7 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-form';
-import {
-  Alert,
-  Divider,
-  Form,
-  FormInstance,
-  Input,
-  Space,
-  Tag,
-  Typography,
-} from 'antd';
+import { Alert, Form, FormInstance, Input, Space, Tag, Typography } from 'antd';
 import clsx from 'clsx';
 import styles from './Metadata.module.less';
 
@@ -46,9 +39,7 @@ function ImageDisplay({
 
 export default function Metadata() {
   return (
-    <div className={styles.root}>
-      <Typography.Text>元数据</Typography.Text>
-      <Divider className={styles.divider} />
+    <Section title="元数据">
       <FormDependency<FormValues> name={['infoSource']}>
         {({ infoSource }) =>
           infoSource === MetadataSource.Manual ? (
@@ -237,6 +228,6 @@ export default function Metadata() {
           )}
         </FormDependency>
       </Form.Item>
-    </div>
+    </Section>
   );
 }

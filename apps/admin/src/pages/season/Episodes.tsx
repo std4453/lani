@@ -14,13 +14,13 @@ import {
   FormValues,
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
+import Section from '@/pages/season/Section';
 import { DownOutlined } from '@ant-design/icons';
 import { ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
-  Divider,
   Dropdown,
   Form,
   Menu,
@@ -31,7 +31,6 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
-import styles from './Episodes.module.less';
 
 const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
   [DownloadStatus.Available]: {
@@ -234,9 +233,7 @@ export default function Episodes({
   });
 
   return (
-    <div className={styles.root}>
-      <Typography.Text>剧集列表</Typography.Text>
-      <Divider className={styles.divider} />
+    <Section title="剧集列表">
       <FormDependency<FormValues> name={['episodesSource']}>
         {({ episodesSource }) =>
           episodesSource === MetadataSource.Manual ? (
@@ -326,6 +323,6 @@ export default function Episodes({
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
       {searchTorrentDialog}
-    </div>
+    </Section>
   );
 }

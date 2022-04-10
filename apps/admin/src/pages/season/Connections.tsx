@@ -6,14 +6,13 @@ import {
   SyncJellyfinSeriesIdDocument,
 } from '@/generated/types';
 import { FormValues } from '@/pages/season/help';
+import Section from '@/pages/season/Section';
 import { extractNode } from '@/utils/graphql';
 import { SearchOutlined } from '@ant-design/icons';
 import ProForm, { ProFormSelect, ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
-  Button,
-  Divider,
   Form,
   Input,
   InputNumber,
@@ -32,9 +31,7 @@ export default function Connections({
 }) {
   const client = useApolloClient();
   return (
-    <div className={styles.root}>
-      <Typography.Text>关联设置</Typography.Text>
-      <Divider className={styles.divider} />
+    <Section title="关联设置">
       <FormDependency<FormValues> name={['jellyfinFolderId']}>
         {({ jellyfinFolderId }) =>
           !jellyfinFolderId ? (
@@ -223,6 +220,6 @@ export default function Connections({
           </Input.Group>
         </Form.Item>
       </ProForm.Group>
-    </div>
+    </Section>
   );
 }
