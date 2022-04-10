@@ -6,11 +6,17 @@ import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { env } from '@lani/framework';
 
 @Injectable()
 @Resolver()
 export class AdminResolver {
   constructor(private prisma: PrismaService) {}
+
+  @Query(() => ID)
+  environment() {
+    return env;
+  }
 
   @Mutation(() => ID)
   async updateSeasonDownloadSources(
