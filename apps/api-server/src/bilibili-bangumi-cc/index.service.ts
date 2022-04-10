@@ -1,9 +1,10 @@
 import {
   BilibiliCCJSON,
   BilibiliDanmaku,
-  BilibiliProxyRegion as BilibiliRegion,
+  BilibiliProxyRegion,
   BilibiliSeason,
   BilibiliSuccessResponse,
+  BilibiliSuccessResponse2,
 } from '@/bilibili-bangumi-cc/types';
 import {
   ChinaAxiosService,
@@ -11,7 +12,7 @@ import {
   HKAxiosService,
 } from '@/common/axios.service';
 import { COSService } from '@/common/cos.service';
-import { ConfigType, COSBucket } from '@/config';
+import { ConfigType } from '@/config';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Axios } from 'axios';
@@ -28,13 +29,13 @@ export class BilibiliBangumiCCService {
     private cos: COSService,
   ) {}
 
-  private regionToAxios: Record<BilibiliRegion, Axios> = {
+  private regionToAxios: Record<BilibiliProxyRegion, Axios> = {
     global: this.global,
     thm: this.hk,
     mainland: this.china,
   };
 
-  async fetchSeason(ssid: string, region = BilibiliRegion.THM) {
+  async fetchSeason(ssid: string, region = BilibiliProxyRegion.THM) {
     const resp = await this.regionToAxios[region].get(
       `https://api.bilibili.com/pgc/view/web/season?season_id=${ssid}`,
     );
@@ -57,9 +58,9 @@ export class BilibiliBangumiCCService {
     const resp = await this.china.get(
       `https://api.bilibili.com/x/v2/dm/view?oid=${cid}&type=1`,
     );
-    const obj = plainToClass(BilibiliSuccessResponse, resp.data);
+    const obj = plainToClass(BilibiliSuccessResponse2, resp.data);
     await validateOrReject(obj);
-    const data = plainToClass(BilibiliDanmaku, obj.result);
+    const data = plainToClass(BilibiliDanmaku, obj.data);
     return data;
   }
 
@@ -79,9 +80,7 @@ export class BilibiliBangumiCCService {
   private async fetchCCJson(url: string) {
     // TODO: SSRF!
     const resp = await this.china.get(url);
-    const obj = plainToClass(BilibiliSuccessResponse, resp.data);
-    await validateOrReject(obj);
-    const data = plainToClass(BilibiliCCJSON, obj.result);
+    const data = plainToClass(BilibiliCCJSON, resp.data);
     return data;
   }
 
@@ -114,38 +113,11 @@ export class BilibiliBangumiCCService {
       .join('');
   }
 
-  private uploadCOS(
-    ssid: string,
-    episode: number,
-    language: string,
-    srtText: string,
-  ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const key = `bilibili-bangumi-cc/ss${ssid}-ep-${episode}-${language}.srt`;
-      const bucket = this.config.get<COSBucket>('tempBucket');
-      this.cos.putObject(
-        {
-          Bucket: bucket.bucket,
-          Region: bucket.region,
-          Key: key,
-          Body: srtText,
-        },
-        (error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(key);
-          }
-        },
-      );
-    });
-  }
-
   async downloadSRT(
     ssid: string,
     episode: number,
     language: string,
-    region: BilibiliRegion,
+    region: BilibiliProxyRegion,
   ) {
     const season = await this.fetchSeason(ssid, region);
     const cid = this.findCID(season, episode);
@@ -153,7 +125,6 @@ export class BilibiliBangumiCCService {
     const url = this.getSubtitleURL(danmaku, language);
     const ccJSON = await this.fetchCCJson(url);
     const srtText = this.generateSRTText(ccJSON);
-    const cosKey = await this.uploadCOS(ssid, episode, language, srtText);
-    return cosKey;
+    return srtText;
   }
 }

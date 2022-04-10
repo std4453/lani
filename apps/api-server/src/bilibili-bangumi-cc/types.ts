@@ -14,6 +14,13 @@ export class BilibiliSuccessResponse {
   result: any;
 }
 
+export class BilibiliSuccessResponse2 {
+  code: number;
+  @IsOptional()
+  message?: string;
+  data: any;
+}
+
 export class BilibiliArea {
   id: number;
   name: string;
@@ -152,6 +159,68 @@ export class BilibiliSeasonSeason {
   stat?: BilibiliSeasonSeasonStat;
 }
 
+export class BilibiliSeasonStat {
+  coins: number;
+  danmakus: number;
+  favorite: number;
+  favorites: number;
+  likes: number;
+  reply: number;
+  share: number;
+  views: number;
+}
+
+export class BilibiliSeries {
+  @IsInt()
+  series_id: number;
+  @IsNotEmpty()
+  series_title: string;
+}
+
+export class BilibiliSubtitle {
+  id: number;
+  id_str: string;
+  lan: string;
+  lan_doc: string;
+  @IsUrl()
+  subtitle_url: string;
+  type: number;
+  ai_type: number;
+}
+
+export class BilibiliSubtitles {
+  lan: string;
+  lan_doc: string;
+  @ValidateNested()
+  subtitles: BilibiliSubtitle[];
+}
+
+export class BilibiliDanmaku {
+  closed: boolean;
+
+  // "dm_seg": { "page_size": 360000, "total": 100 },
+  // "flag": {
+  //   "rec_flag": 3,
+  //   "rec_text": "开启后，全站视频将按等级等优化弹幕",
+  //   "rec_switch": 1
+  // },
+
+  @ValidateNested()
+  subtitle: BilibiliSubtitles;
+}
+
+export class BilibiliCCJSONItem {
+  content: string;
+  from: number;
+  location: number;
+  to: number;
+}
+
+export class BilibiliCCJSON {
+  @ValidateNested()
+  body: BilibiliCCJSONItem[];
+}
+
 export class BilibiliSeason {
   // "activity": { "head_bg_url": "", "id": 0, "title": "" },
   // "alias": "",
@@ -172,7 +241,7 @@ export class BilibiliSeason {
   // "freya": { "bubble_desc": "", "bubble_show_cnt": 0, "icon_show": 1 },
   // "jp_title": "",
 
-  @IsUrl()
+  // 现在link似乎会返回 bilibili://pgc/media/28237167 这种格式
   link: string;
   media_id: number;
 
@@ -294,68 +363,6 @@ export class BilibiliSeason {
   //   "pay_pack_paid": 0,
   //   "sponsor": 0
   // }
-}
-
-export class BilibiliSeasonStat {
-  coins: number;
-  danmakus: number;
-  favorite: number;
-  favorites: number;
-  likes: number;
-  reply: number;
-  share: number;
-  views: number;
-}
-
-export class BilibiliSeries {
-  @IsInt()
-  series_id: number;
-  @IsNotEmpty()
-  series_title: string;
-}
-
-export class BilibiliSubtitle {
-  id: number;
-  id_str: string;
-  lan: string;
-  lan_doc: string;
-  @IsUrl()
-  subtitle_url: string;
-  type: number;
-  ai_type: number;
-}
-
-export class BilibiliSubtitles {
-  lan: string;
-  lan_doc: string;
-  @ValidateNested()
-  subtitles: BilibiliSubtitle[];
-}
-
-export class BilibiliDanmaku {
-  closed: boolean;
-
-  // "dm_seg": { "page_size": 360000, "total": 100 },
-  // "flag": {
-  //   "rec_flag": 3,
-  //   "rec_text": "开启后，全站视频将按等级等优化弹幕",
-  //   "rec_switch": 1
-  // },
-
-  @ValidateNested()
-  subtitle: BilibiliSubtitles;
-}
-
-export class BilibiliCCJSONItem {
-  content: string;
-  from: number;
-  location: number;
-  to: number;
-}
-
-export class BilibiliCCJSON {
-  @ValidateNested()
-  body: BilibiliCCJSONItem[];
 }
 
 export enum BilibiliProxyRegion {

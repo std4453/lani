@@ -1,5 +1,6 @@
 import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
+import { BilibiliBangumiCCModule } from '@/bilibili-bangumi-cc/index.module';
 import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { DownloadJobModule } from '@/download-job/index.module';
@@ -27,6 +28,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
     DownloadJobModule,
     AdminModule,
     JellyfinSyncModule,
+    BilibiliBangumiCCModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       autoSchemaFile: true,
