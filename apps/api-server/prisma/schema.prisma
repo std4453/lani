@@ -16,6 +16,7 @@ model DownloadSource {
   archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   isDisabled Boolean   @default(false) @map("is_disabled")
+  offset     Int       @default(0)
   season     Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   @@map("download_sources")
@@ -75,6 +76,7 @@ model Season {
   bannerImageId      Int?             @map("banner_image_id")
   fanartImageId      Int?             @map("fanart_image_id")
   episodesLastSync   DateTime?        @map("episodes_last_sync") @db.Timestamptz(6)
+  needDownloadCc     Boolean          @default(false) @map("need_download_cc")
   bannerImage        Image?           @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
   fanartImage        Image?           @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
   jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -93,14 +95,6 @@ model Torrent {
   publishDate  DateTime @map("publish_date") @db.Timestamptz(6)
   hash         String   @unique
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  // alter table torrents add column episode_index integer
-  // generated always as (
-  //   cast(
-  //     substring(
-  //       title from '(((?<=-\s)\d{1,3}(?=\s))|((?<=\[)\d{1,3}(?=((\sEND)|(v\d+))?\]))|(?<=\u7b2c)\d{1,3}(?=\u96c6))'
-  //     ) as integer
-  //   )
-  // ) stored;
   episodeIndex Int?     @map("episode_index")
 
   @@index([title, id, torrentLink], map: "torrent_title_idx")
