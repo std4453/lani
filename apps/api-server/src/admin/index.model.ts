@@ -4,6 +4,7 @@ import { InputType, ObjectType } from '@nestjs/graphql';
 export class DownloadSourcesInput {
   id: number;
   pattern: string;
+  offset: number;
 }
 
 @InputType()

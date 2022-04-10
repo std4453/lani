@@ -157,7 +157,7 @@ export class JobService
         AND episodes.season_id = seasons.id
         AND seasons.is_archived = false
         AND seasons.jellyfin_folder_id IS NOT NULL
-        AND episodes.index = torrents.episode_index
+        AND episodes.index + download_sources.offset = torrents.episode_index
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
 		    AND NOT EXISTS (

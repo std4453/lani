@@ -4,9 +4,9 @@ import {
 } from '@/admin/index.model';
 import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
+import { env } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { env } from '@lani/framework';
 
 @Injectable()
 @Resolver()
@@ -37,22 +37,24 @@ export class AdminResolver {
       }),
       ...sources
         .filter(({ id }) => id !== 0)
-        .map(({ id, pattern }) =>
+        .map(({ id, pattern, offset }) =>
           this.prisma.downloadSource.update({
             where: {
               id: id,
             },
             data: {
               pattern,
+              offset,
             },
           }),
         ),
       this.prisma.downloadSource.createMany({
         data: sources
           .filter(({ id }) => id === 0)
-          .map(({ pattern }) => ({
+          .map(({ pattern, offset }) => ({
             seasonId,
             pattern,
+            offset,
           })),
       }),
     ]);
