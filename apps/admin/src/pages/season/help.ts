@@ -1,12 +1,12 @@
 import {
   DisplayImageFieldsFragment,
   DownloadStatus,
-  GetSeasonByIdAllDocument,
-  GetSeasonByIdConfigOnlyDocument,
   GetSeasonByIdConfigOnlyQuery,
-  GetSeasonByIdEpisodesOnlyDocument,
+  GetSeasonByIdDocument,
   GetSeasonByIdEpisodesOnlyQuery,
   MetadataSource,
+  SyncEpisodeDataDocument,
+  SyncMetadataDocument,
   UpdateSeasonByIdDocument,
   UpdateSeasonDownloadSourcesDocument,
 } from '@/generated/types';
@@ -259,6 +259,8 @@ export interface SeasonPageContextValues {
   episodes: Episode[];
   reloadConfig: () => Promise<void>;
   reloadEpisodes: () => Promise<void>;
+  syncMetadataAndEpisodes: () => Promise<void>;
+  syncEpisodes: () => Promise<void>;
   formRef: FormRef;
 }
 
@@ -267,6 +269,8 @@ export const SeasonPageContext = createContext<SeasonPageContextValues>({
   episodes: [],
   async reloadConfig() {},
   async reloadEpisodes() {},
+  async syncMetadataAndEpisodes() {},
+  async syncEpisodes() {},
   formRef: {
     current: undefined,
   },
@@ -290,42 +294,55 @@ export function useLoad(id: number) {
   );
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const reload = useMemoizedFn(
+    async ({
+      withConfig = false,
+      withEpisodes = false,
+    }: {
+      withConfig?: boolean;
+      withEpisodes?: boolean;
+    }) => {
+      const { data } = await client.query({
+        query: GetSeasonByIdDocument,
+        variables: {
+          id,
+          withConfig,
+          withEpisodes,
+        },
+      });
+      if (!data.seasonById) {
+        return;
+      }
+      if (data.seasonById.id) {
+        setInitialValues(queryToFormValues(data.seasonById));
+        formRef.current?.resetFields();
+      }
+      if (data.seasonById.episodesBySeasonId) {
+        setEpisodes(
+          (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(
+            mapEpisode,
+          ),
+        );
+      }
+    },
+  );
+
   useMount(async () => {
     setLoading(true);
     try {
-      const { data } = await client.query({
-        query: GetSeasonByIdAllDocument,
-        variables: {
-          id,
-        },
-      });
-      if (!data.seasonById || data.seasonById.isArchived) {
-        void message.error('动画不存在或已被删除');
-        return;
-      }
-      setInitialValues(queryToFormValues(data.seasonById));
-      formRef.current?.resetFields();
-      setEpisodes(
-        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
-      );
+      await reload({ withConfig: true, withEpisodes: true });
     } finally {
       setLoading(false);
     }
   });
+
   const reloadConfig = useMemoizedFn(async () => {
     setLoading(true);
     try {
-      const { data } = await client.query({
-        query: GetSeasonByIdConfigOnlyDocument,
-        variables: {
-          id,
-        },
+      await reload({
+        withConfig: true,
       });
-      if (!data.seasonById || data.seasonById.isArchived) {
-        return;
-      }
-      setInitialValues(queryToFormValues(data.seasonById));
-      formRef.current?.resetFields();
     } finally {
       setLoading(false);
     }
@@ -333,18 +350,58 @@ export function useLoad(id: number) {
   const reloadEpisodes = useMemoizedFn(async () => {
     setLoading(true);
     try {
-      const { data } = await client.query({
-        query: GetSeasonByIdEpisodesOnlyDocument,
+      await reload({
+        withEpisodes: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  const syncMetadataAndEpisodes = useMemoizedFn(async () => {
+    try {
+      setLoading(true);
+      await client.mutate({
+        mutation: SyncMetadataDocument,
         variables: {
-          id,
+          seasonId: id,
         },
       });
-      if (!data.seasonById) {
-        return;
-      }
-      setEpisodes(
-        (extractNode(data.seasonById.episodesBySeasonId) ?? []).map(mapEpisode),
-      );
+      await client.mutate({
+        mutation: SyncEpisodeDataDocument,
+        variables: {
+          seasonId: id,
+        },
+      });
+      await reload({
+        withConfig: true,
+        withEpisodes: true,
+      });
+      void message.success('同步元数据成功');
+    } catch (error) {
+      console.error(error);
+      void message.error('同步元数据失败');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  const syncEpisodes = useMemoizedFn(async () => {
+    try {
+      setLoading(true);
+      await client.mutate({
+        mutation: SyncEpisodeDataDocument,
+        variables: {
+          seasonId: id,
+        },
+      });
+      await reload({
+        withEpisodes: true,
+      });
+      void message.success('同步剧集信息成功');
+    } catch (error) {
+      console.error(error);
+      void message.error('同步剧集信息失败');
     } finally {
       setLoading(false);
     }
@@ -356,9 +413,18 @@ export function useLoad(id: number) {
       episodes,
       reloadConfig,
       reloadEpisodes,
+      syncMetadataAndEpisodes,
+      syncEpisodes,
       formRef,
     }),
-    [id, episodes, reloadConfig, reloadEpisodes],
+    [
+      id,
+      episodes,
+      reloadConfig,
+      reloadEpisodes,
+      syncMetadataAndEpisodes,
+      syncEpisodes,
+    ],
   );
 
   return {

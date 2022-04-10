@@ -16,14 +16,15 @@ import {
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
 import Section from '@/pages/season/Section';
-import { DownOutlined } from '@ant-design/icons';
+import { useAsyncButton } from '@/utils/useAsyncButton';
+import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
+  Button,
   Dropdown,
-  Form,
   Menu,
   message,
   Tag,
@@ -214,7 +215,8 @@ function useColumns({
 }
 
 export default function Episodes() {
-  const { episodes, reloadEpisodes } = useSeasonPageContext();
+  const { episodes, reloadEpisodes, formRef, syncEpisodes } =
+    useSeasonPageContext();
 
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
@@ -229,8 +231,49 @@ export default function Episodes() {
     reloadEpisodes,
   });
 
+  const syncEpisodeProps = useAsyncButton(async () => {
+    if (!formRef.current) {
+      return;
+    }
+    if (formRef.current.isFieldsTouched(false)) {
+      void message.info('有未保存的修改，请先保存再同步');
+      return;
+    }
+    await syncEpisodes();
+  });
+
   return (
-    <Section title="剧集列表">
+    <Section
+      title="剧集列表"
+      extra={[
+        <div
+          style={{
+            display: 'flex',
+          }}
+          key={1}
+        >
+          上次同步时间：
+          <FormDependency<FormValues> name={['episodesLastSync']}>
+            {({ episodesLastSync }) =>
+              episodesLastSync ? (
+                dayjs(episodesLastSync).format('YYYY-MM-DD HH:mm:ss')
+              ) : (
+                <Typography.Text type="secondary">未同步</Typography.Text>
+              )
+            }
+          </FormDependency>
+        </div>,
+        <Button
+          type="primary"
+          ghost
+          {...syncEpisodeProps}
+          key={0}
+          icon={<ReloadOutlined />}
+        >
+          立即同步
+        </Button>,
+      ]}
+    >
       <FormDependency<FormValues> name={['episodesSource']}>
         {({ episodesSource }) =>
           episodesSource === MetadataSource.Manual ? (
@@ -296,17 +339,6 @@ export default function Episodes() {
         ]}
         width="sm"
       />
-      <Form.Item label="上次同步时间" {...formItemProps}>
-        <FormDependency<FormValues> name={['episodesLastSync']}>
-          {({ episodesLastSync }) =>
-            episodesLastSync ? (
-              dayjs(episodesLastSync).format('YYYY-MM-DD HH:mm:ss')
-            ) : (
-              <Typography.Text type="secondary">未同步</Typography.Text>
-            )
-          }
-        </FormDependency>
-      </Form.Item>
       <ProTable<Episode>
         columns={columns}
         dataSource={episodes}

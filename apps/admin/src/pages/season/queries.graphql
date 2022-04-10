@@ -67,6 +67,18 @@ fragment seasonConfigFields on Season {
   episodesLastSync
 }
 
+query GetSeasonById(
+  $id: Int!
+  $withConfig: Boolean! = true
+  $withEpisodes: Boolean! = true
+) {
+  __typename
+  seasonById(id: $id) {
+    ...seasonConfigFields @include(if: $withConfig)
+    ...seasonEpisodes @include(if: $withEpisodes)
+  }
+}
+
 query GetSeasonByIdAll($id: Int!) {
   seasonById(id: $id) {
     ...seasonConfigFields

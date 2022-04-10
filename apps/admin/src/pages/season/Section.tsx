@@ -15,7 +15,9 @@ export default function Section({ title, extra, children }: SectionProps) {
         <Typography.Title level={5} className={styles.title}>
           {title}
         </Typography.Title>
-        <Space direction="horizontal">{extra}</Space>
+        <Space direction="horizontal" size="large">
+          {extra}
+        </Space>
       </div>
       <Divider className={styles.divider} />
       {children}

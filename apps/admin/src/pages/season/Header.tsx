@@ -1,8 +1,4 @@
-import {
-  GetSeasonByTitleDocument,
-  SyncEpisodeDataDocument,
-  SyncMetadataDocument,
-} from '@/generated/types';
+import { GetSeasonByTitleDocument } from '@/generated/types';
 import { useSeasonPageContext } from '@/pages/season/help';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { useDialog } from '@/utils/useDialog';
@@ -14,7 +10,7 @@ import { useHistory } from 'umi';
 import styles from './Header.module.less';
 
 const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
-  const { formRef, id, reloadEpisodes, reloadConfig } = useSeasonPageContext();
+  const { formRef, id, syncMetadataAndEpisodes } = useSeasonPageContext();
 
   const client = useApolloClient();
   const history = useHistory();
@@ -32,49 +28,15 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
     input: saveInput,
   } = useDialog<{ type: string }>();
 
-  const syncEpisodeProps = useAsyncButton(async () => {
-    if (!formRef.current) {
-      return;
-    }
-    try {
-      if (formRef.current.isFieldsTouched(false)) {
-        void message.info('有未保存的修改，请先保存再同步');
-        return;
-      }
-      await client.mutate({
-        mutation: SyncEpisodeDataDocument,
-        variables: {
-          seasonId: id,
-        },
-      });
-      void message.success('同步剧集信息成功');
-      void reloadEpisodes();
-    } catch (error) {
-      console.error(error);
-      void message.error('同步剧集信息失败');
-    }
-  });
   const syncMetadataProps = useAsyncButton(async () => {
     if (!formRef.current) {
       return;
     }
-    try {
-      if (formRef.current.isFieldsTouched(false)) {
-        void message.info('有未保存的修改，请先保存再同步');
-        return;
-      }
-      await client.mutate({
-        mutation: SyncMetadataDocument,
-        variables: {
-          seasonId: id,
-        },
-      });
-      void message.success('同步元数据成功');
-      void reloadConfig();
-    } catch (error) {
-      console.error(error);
-      void message.error('同步元数据失败');
+    if (formRef.current.isFieldsTouched(false)) {
+      void message.info('有未保存的修改，请先保存再同步');
+      return;
     }
+    await syncMetadataAndEpisodes();
   });
 
   return (
@@ -129,9 +91,6 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
           <div className={styles.extra}>
             <Button type="primary" ghost {...syncMetadataProps}>
               同步元数据
-            </Button>
-            <Button type="primary" ghost {...syncEpisodeProps}>
-              同步剧集信息
             </Button>
             <div ref={ref} className={styles.submitter} />
           </div>
