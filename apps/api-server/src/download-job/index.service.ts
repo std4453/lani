@@ -16,6 +16,7 @@ import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { DownloadJob, DownloadStatus } from '@prisma/client';
+import dayjs from 'dayjs';
 
 @Injectable()
 @Resolver()
@@ -72,6 +73,11 @@ export class JobService
     const currentJob = await this.prisma.downloadJob.findFirst({
       where: {
         episodeId,
+        isFailed: false,
+        isCancelled: false,
+        status: {
+          not: DownloadStatus.AVAILABLE,
+        },
       },
     });
     if (currentJob) {
@@ -262,7 +268,13 @@ export class JobService
     if (finished) {
       console.debug('Job', id, 'finished');
     } else {
-      console.debug('Running step', state.completion, 'for job', id);
+      console.debug(
+        dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        'Running step',
+        state.completion,
+        'for job',
+        id,
+      );
     }
     const newJob = await this.prisma.downloadJob.update({
       where: { id },

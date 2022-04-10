@@ -1,3 +1,4 @@
+import { MetadataRefreshMode } from '@/api/jellyfin';
 import { ChinaAxiosService } from '@/common/axios.service';
 import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
@@ -320,7 +321,11 @@ export class SyncMetadataResolver {
     );
     if (modified) {
       if (jellyfinId) {
-        await JellyfinHelp.refreshItem({ itemId: jellyfinId });
+        await JellyfinHelp.refreshItem({
+          itemId: jellyfinId,
+          metadataRefreshMode: MetadataRefreshMode.DEFAULT,
+          imageRefreshMode: MetadataRefreshMode.DEFAULT,
+        });
       } else {
         await JellyfinHelp.refreshItem({
           itemId: jellyfinFolder.jellyfinId,

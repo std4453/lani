@@ -278,11 +278,6 @@ export class JellyfinHelp {
     replaceAllImages?: boolean;
     recursive?: boolean;
   }): CancelablePromise<void> {
-    console.debug(
-      dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      'JellyfinHelp.RefreshItem',
-      itemId,
-    );
     return __request(OpenAPI, {
       method: 'POST',
       url: '/Items/{itemId}/Refresh',

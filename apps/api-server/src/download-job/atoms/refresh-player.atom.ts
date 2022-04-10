@@ -1,4 +1,4 @@
-import { TvShowsService } from '@/api/jellyfin';
+import { MetadataRefreshMode, TvShowsService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
 import { Atom, StepInput } from '@/download-job/atoms';
@@ -66,7 +66,11 @@ export class RefreshPlayerAtom extends Atom<
           jellyfinEpisodeId,
         });
       } else {
-        await JellyfinHelp.refreshItem({ itemId: jellyfinSeriesId });
+        await JellyfinHelp.refreshItem({
+          itemId: jellyfinSeriesId,
+          metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+          imageRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+        });
         this.queue[id] = {
           jellyfinSeriesId,
           index,
