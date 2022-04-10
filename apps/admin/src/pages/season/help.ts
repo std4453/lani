@@ -5,6 +5,7 @@ import {
   GetSeasonByIdDocument,
   GetSeasonByIdEpisodesOnlyQuery,
   MetadataSource,
+  SeasonConfigFieldsFragment,
   SyncEpisodeDataDocument,
   SyncMetadataDocument,
   UpdateSeasonByIdDocument,
@@ -79,10 +80,9 @@ export function mapEpisode({
   };
 }
 
-export interface DownloadSource {
-  id: number;
-  pattern: string;
-}
+type DownloadSource = ExtractNode<
+  SeasonConfigFieldsFragment['downloadSourcesBySeasonId']
+>;
 
 export interface FormValues {
   isMonitoring: boolean;
@@ -108,6 +108,7 @@ export interface FormValues {
   fanart: DisplayImageFieldsFragment | null;
   banner: DisplayImageFieldsFragment | null;
   episodesLastSync: Date | null;
+  needDownloadCc: boolean;
 }
 
 export function queryToFormValues({
@@ -133,6 +134,7 @@ export function queryToFormValues({
   banner,
   fanart,
   episodesLastSync,
+  needDownloadCc,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -153,13 +155,19 @@ export function queryToFormValues({
     bilibiliMainlandId,
     bilibiliThmId,
     description,
-    downloadSources: extractNode(downloadSourcesBySeasonId) ?? [],
+    downloadSources: (extractNode(downloadSourcesBySeasonId) ?? []).map(
+      ({ offset, ...source }) => ({
+        ...source,
+        offset: offset + 1,
+      }),
+    ),
     infoSource,
     episodesSource,
     poster: poster ?? null,
     banner: banner ?? null,
     fanart: fanart ?? null,
     episodesLastSync: episodesLastSync ?? null,
+    needDownloadCc,
   };
 }
 
@@ -185,6 +193,7 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
       downloadSources,
       infoSource,
       episodesSource,
+      needDownloadCc,
     }: // 这种只能同步的字段暂时不允许前端修改
     // tags,
     // description,
@@ -212,6 +221,7 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
               // description,
               infoSource,
               episodesSource,
+              needDownloadCc,
             },
           },
         });
@@ -220,7 +230,10 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
           variables: {
             input: {
               seasonId: id,
-              sources: downloadSources,
+              sources: downloadSources.map(({ offset, ...source }) => ({
+                ...source,
+                offset: offset - 1,
+              })),
             },
           },
         });
