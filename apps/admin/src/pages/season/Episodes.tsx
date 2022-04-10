@@ -12,6 +12,7 @@ import {
   ExtendedDownloadStatus,
   formItemProps,
   FormValues,
+  useSeasonPageContext,
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
 import Section from '@/pages/season/Section';
@@ -212,13 +213,9 @@ function useColumns({
   );
 }
 
-export default function Episodes({
-  episodes,
-  reloadEpisodes,
-}: {
-  episodes: Episode[];
-  reloadEpisodes: () => Promise<void>;
-}) {
+export default function Episodes() {
+  const { episodes, reloadEpisodes } = useSeasonPageContext();
+
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
   const ref = useRef<ActionType>();

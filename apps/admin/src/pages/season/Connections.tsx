@@ -5,7 +5,7 @@ import {
   AllJellyfinFoldersDocument,
   SyncJellyfinSeriesIdDocument,
 } from '@/generated/types';
-import { FormValues } from '@/pages/season/help';
+import { FormValues, useSeasonPageContext } from '@/pages/season/help';
 import Section from '@/pages/season/Section';
 import { extractNode } from '@/utils/graphql';
 import { SearchOutlined } from '@ant-design/icons';
@@ -22,13 +22,8 @@ import {
 } from 'antd';
 import styles from './Connections.module.less';
 
-export default function Connections({
-  id,
-  reloadConfig,
-}: {
-  id: number;
-  reloadConfig: () => Promise<void>;
-}) {
+export default function Connections() {
+  const { id, reloadConfig } = useSeasonPageContext();
   const client = useApolloClient();
   return (
     <Section title="关联设置">
