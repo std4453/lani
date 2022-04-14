@@ -105,6 +105,6 @@
   },
   "files": [
     "/dist",
-    "/prisma"
+    "/prisma/schema.prisma"
   ]
 }
