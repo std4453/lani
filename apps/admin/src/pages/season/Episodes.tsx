@@ -2,15 +2,17 @@ import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
 import {
+  downloadStatusMap,
+  DownloadStatusTag,
+} from '@/constants/download-status';
+import {
   DownloadBilibiliCcDocument,
-  DownloadStatus,
   DownloadTorrentForEpisodeDocument,
   MetadataSource,
   TorrentFieldsFragment,
 } from '@/generated/types';
 import {
   Episode,
-  ExtendedDownloadStatus,
   formItemProps,
   FormValues,
   useSeasonPageContext,
@@ -22,63 +24,9 @@ import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
-import {
-  Alert,
-  Button,
-  Dropdown,
-  Menu,
-  message,
-  Tag,
-  TagProps,
-  Typography,
-} from 'antd';
+import { Alert, Button, Dropdown, Menu, message, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
-
-const downloadStatusMap: Partial<Record<ExtendedDownloadStatus, TagProps>> = {
-  [DownloadStatus.Available]: {
-    children: '可用',
-    color: 'green',
-  },
-  [DownloadStatus.Downloading]: {
-    children: '下载中',
-    color: 'blue',
-  },
-  [DownloadStatus.DownloadCompleted]: {
-    children: '寻找文件',
-    color: 'purple',
-  },
-  [DownloadStatus.Importing]: {
-    children: '导入中',
-    color: 'purple',
-  },
-  [DownloadStatus.PlayerWaiting]: {
-    children: '等待识别',
-    color: 'cyan',
-  },
-  [DownloadStatus.WritingMetadata]: {
-    children: '写入元数据',
-    color: 'purple',
-  },
-  [DownloadStatus.DownloadSubmitting]: {
-    children: '提交下载',
-    color: 'blue',
-  },
-  NOT_AIRED: {
-    children: '未放送',
-  },
-  DOWNLOAD_FAILED: {
-    children: '下载失败',
-    color: 'red',
-  },
-  RESOURCE_WAITING: {
-    children: '等待资源',
-    color: 'gold',
-  },
-  DATE_UNKNOWN: {
-    children: '日期未知',
-  },
-};
 
 function useColumns({
   openDownloadMagnet,
@@ -116,12 +64,7 @@ function useColumns({
         title: '下载状态',
         dataIndex: 'jobStatus',
         width: 120,
-        render: (_, r) =>
-          downloadStatusMap[r.jobStatus] ? (
-            <Tag {...downloadStatusMap[r.jobStatus]} />
-          ) : (
-            <Tag color="red">未知状态</Tag>
-          ),
+        render: (_, r) => <DownloadStatusTag status={r.jobStatus} />,
       },
       {
         title: 'Jellyfin',

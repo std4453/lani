@@ -1,4 +1,8 @@
 import { seasonToText, weekdayToText } from '@/constants';
+import {
+  calcEpisodeStatus,
+  DownloadStatusTag,
+} from '@/constants/download-status';
 import { IconPath } from '@/constants/icon-path';
 import {
   DeleteSeasonByIdDocument,
@@ -188,7 +192,24 @@ function useColumns() {
         filters: foldersOptions,
       },
       {
-        title: '剧集',
+        title: '最新集',
+        tooltip: '季度最新一集的下载状态',
+        key: 'latestEpisode',
+        width: 84,
+        render: (_, r) => {
+          if (!r.isMonitoring) {
+            return '-';
+          }
+          const episode = extractNode(r.latestEpisode)?.[0];
+          if (!episode) {
+            return '-';
+          }
+          const status = calcEpisodeStatus(episode);
+          return <DownloadStatusTag status={status} />;
+        },
+      },
+      {
+        title: '集数',
         tooltip: '可用集数 / 已放送集数 / 总集数',
         key: 'episodes',
         width: 120,
