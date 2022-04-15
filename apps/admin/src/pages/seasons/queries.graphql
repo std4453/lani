@@ -30,7 +30,7 @@ fragment listSeasonsFields on Season {
   }
   latestEpisode: episodesBySeasonId(
     first: 1
-    orderBy: AIR_TIME_DESC
+    orderBy: INDEX_DESC
     filter: { airTime: { lessThanOrEqualTo: $now } }
   ) {
     edges {
