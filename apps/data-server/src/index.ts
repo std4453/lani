@@ -14,6 +14,9 @@ app.use(
       ConnectionFilterPlugin,
       FederationPlugin,
     ],
+    graphileBuildOptions: {
+      connectionFilterRelations: true,
+    },
   })
 );
 app.listen(8080);
