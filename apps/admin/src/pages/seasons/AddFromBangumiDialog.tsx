@@ -137,7 +137,7 @@ export default function AddFromBangumiDialog({
               if (!id) {
                 throw new Error('no id');
               }
-              void message.loading('新建成功，同步元数据中……');
+              const hide = message.loading('新建成功，同步元数据中……', 0);
               try {
                 await client.mutate({
                   mutation: SyncMetadataDocument,
@@ -156,6 +156,8 @@ export default function AddFromBangumiDialog({
               } catch (e) {
                 console.error(e);
                 void message.error('同步元数据失败');
+              } finally {
+                hide();
               }
             } catch (e) {
               console.error(e);
