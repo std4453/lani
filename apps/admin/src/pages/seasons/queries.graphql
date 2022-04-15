@@ -1,3 +1,46 @@
+fragment listSeasonsFields on Season {
+  bangumiId
+  airTime
+  weekday
+  mikanAnimeId
+  isMonitoring
+  jellyfinFolderByJellyfinFolderId {
+    name
+  }
+  title
+  id
+  yearAndSemester
+  tvdbId
+  tvdbSeason
+  bilibiliThmId
+  bilibiliMainlandId
+  jellyfinId
+  allEpisodes: episodesBySeasonId {
+    totalCount
+  }
+  airedEpisodes: episodesBySeasonId(
+    filter: { airTime: { lessThanOrEqualTo: $now } }
+  ) {
+    totalCount
+  }
+  availableEpisodes: episodesBySeasonId(
+    filter: { jellyfinEpisodeId: { isNull: false } }
+  ) {
+    totalCount
+  }
+  latestEpisode: episodesBySeasonId(
+    first: 1
+    orderBy: AIR_TIME_DESC
+    filter: { airTime: { lessThanOrEqualTo: $now } }
+  ) {
+    edges {
+      node {
+        ...episodeStatusFields
+      }
+    }
+  }
+}
+
 query ListSeasons(
   $offset: Int
   $first: Int
@@ -17,35 +60,7 @@ query ListSeasons(
     totalCount
     edges {
       node {
-        bangumiId
-        airTime
-        weekday
-        mikanAnimeId
-        isMonitoring
-        jellyfinFolderByJellyfinFolderId {
-          name
-        }
-        title
-        id
-        yearAndSemester
-        tvdbId
-        tvdbSeason
-        bilibiliThmId
-        bilibiliMainlandId
-        jellyfinId
-        allEpisodes: episodesBySeasonId {
-          totalCount
-        }
-        airedEpisodes: episodesBySeasonId(
-          filter: { airTime: { lessThanOrEqualTo: $now } }
-        ) {
-          totalCount
-        }
-        availableEpisodes: episodesBySeasonId(
-          filter: { jellyfinEpisodeId: { isNull: false } }
-        ) {
-          totalCount
-        }
+        ...listSeasonsFields
       }
       cursor
     }

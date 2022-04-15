@@ -1,6 +1,6 @@
+import { calcEpisodeStatus, EpisodeStatus } from '@/constants/download-status';
 import {
   DisplayImageFieldsFragment,
-  DownloadStatus,
   GetSeasonByIdConfigOnlyQuery,
   GetSeasonByIdDocument,
   GetSeasonByIdEpisodesOnlyQuery,
@@ -16,7 +16,6 @@ import { ProFormInstance } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn, useMount } from 'ahooks';
 import { FormItemProps, message } from 'antd';
-import dayjs from 'dayjs';
 import {
   createContext,
   MutableRefObject,
@@ -34,49 +33,14 @@ type SeasonEpisodesOnly = NonNullable<
 type RawEpisode = NonNullable<
   ExtractNode<SeasonEpisodesOnly['episodesBySeasonId']>
 >;
-type DownloadJob = NonNullable<
-  ExtractNode<RawEpisode['downloadJobsByEpisodeId']>
->;
-export type ExtendedDownloadStatus =
-  | DownloadStatus
-  | 'DOWNLOAD_FAILED'
-  | 'NOT_AIRED'
-  | 'DATE_UNKNOWN'
-  | 'RESOURCE_WAITING';
 export type Episode = Omit<RawEpisode, 'downloadJobsByEpisodeId'> & {
-  jobStatus: ExtendedDownloadStatus;
+  jobStatus: EpisodeStatus;
 };
 
-function calcJobStatus(
-  airTime: string | undefined,
-  job?: DownloadJob,
-): ExtendedDownloadStatus {
-  if (job) {
-    if (job.isFailed) {
-      return 'DOWNLOAD_FAILED';
-    }
-    return job.status;
-  } else {
-    if (airTime) {
-      if (dayjs(airTime).isBefore(dayjs())) {
-        return 'RESOURCE_WAITING';
-      } else {
-        return 'NOT_AIRED';
-      }
-    } else {
-      return 'DATE_UNKNOWN';
-    }
-  }
-}
-
-export function mapEpisode({
-  downloadJobsByEpisodeId,
-  ...episode
-}: RawEpisode): Episode {
-  const jobs = extractNode(downloadJobsByEpisodeId) ?? [];
+export function mapEpisode(episode: RawEpisode): Episode {
   return {
     ...episode,
-    jobStatus: calcJobStatus(episode.airTime, jobs[0]),
+    jobStatus: calcEpisodeStatus(episode),
   };
 }
 

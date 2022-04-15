@@ -1,4 +1,7 @@
-export type ExcludeTypename<T> = T extends object
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type ExcludeTypename<T> = T extends Function
+  ? T
+  : T extends object
   ? Omit<ExcludeTypenameObject<T>, '__typename'>
   : T extends Array<infer U>
   ? ExcludeTypename<U>

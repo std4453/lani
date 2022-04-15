@@ -1,0 +1,15 @@
+fragment downloadJobStatusFields on DownloadJob {
+  status
+  isFailed
+}
+
+fragment episodeStatusFields on Episode {
+  airTime
+  jobs: downloadJobsByEpisodeId(first: 1, orderBy: ID_DESC) {
+    edges {
+      node {
+        ...downloadJobStatusFields
+      }
+    }
+  }
+}

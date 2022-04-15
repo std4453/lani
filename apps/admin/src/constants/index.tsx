@@ -21,10 +21,3 @@ export const weekdayToValueEnum = {
   '6': '周日（日）',
 };
 
-// export const publishGroupExamples = `
-// 常见字幕组:
-// c.c动漫: 181
-// NC-Raws: 562
-// NaN-Raws: 577
-// Lilith-Raws: 552
-// LoliHouse: 370`.trim();

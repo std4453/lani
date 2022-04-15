@@ -12,15 +12,7 @@ fragment seasonEpisodes on Season {
         index
         jellyfinEpisodeId
         title
-        downloadJobsByEpisodeId(first: 1, orderBy: CREATED_AT_DESC) {
-          totalCount
-          edges {
-            node {
-              status
-              isFailed
-            }
-          }
-        }
+        ...episodeStatusFields
       }
     }
   }
