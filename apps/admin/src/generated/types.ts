@@ -415,6 +415,8 @@ export type DownloadJobFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `downloadPath` field. */
   downloadPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `episodeByEpisodeId` relation. */
+  episodeByEpisodeId?: InputMaybe<EpisodeFilter>;
   /** Filter by the object’s `episodeId` field. */
   episodeId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `failedAt` field. */
@@ -578,6 +580,8 @@ export type DownloadSourceFilter = {
   or?: InputMaybe<Array<DownloadSourceFilter>>;
   /** Filter by the object’s `pattern` field. */
   pattern?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `seasonBySeasonId` relation. */
+  seasonBySeasonId?: InputMaybe<SeasonFilter>;
   /** Filter by the object’s `seasonId` field. */
   seasonId?: InputMaybe<IntFilter>;
 };
@@ -849,6 +853,10 @@ export type EpisodeFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `description` field. */
   description?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `downloadJobsByEpisodeId` relation. */
+  downloadJobsByEpisodeId?: InputMaybe<EpisodeToManyDownloadJobFilter>;
+  /** Some related `downloadJobsByEpisodeId` exist. */
+  downloadJobsByEpisodeIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<IntFilter>;
   /** Filter by the object’s `index` field. */
@@ -859,6 +867,8 @@ export type EpisodeFilter = {
   not?: InputMaybe<EpisodeFilter>;
   /** Checks for any expressions in this list. */
   or?: InputMaybe<Array<EpisodeFilter>>;
+  /** Filter by the object’s `seasonBySeasonId` relation. */
+  seasonBySeasonId?: InputMaybe<SeasonFilter>;
   /** Filter by the object’s `seasonId` field. */
   seasonId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `title` field. */
@@ -875,6 +885,16 @@ export type EpisodePatch = {
   jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
   seasonId?: InputMaybe<Scalars['Int']>;
   title?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against many `DownloadJob` object types. All fields are combined with a logical ‘and.’ */
+export type EpisodeToManyDownloadJobFilter = {
+  /** Every related `DownloadJob` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<DownloadJobFilter>;
+  /** No related `DownloadJob` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<DownloadJobFilter>;
+  /** Some related `DownloadJob` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<DownloadJobFilter>;
 };
 
 /** A connection to a list of `Episode` values. */
@@ -1006,6 +1026,18 @@ export type ImageFilter = {
   not?: InputMaybe<ImageFilter>;
   /** Checks for any expressions in this list. */
   or?: InputMaybe<Array<ImageFilter>>;
+  /** Filter by the object’s `seasonsByBannerImageId` relation. */
+  seasonsByBannerImageId?: InputMaybe<ImageToManySeasonFilter>;
+  /** Some related `seasonsByBannerImageId` exist. */
+  seasonsByBannerImageIdExist?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `seasonsByFanartImageId` relation. */
+  seasonsByFanartImageId?: InputMaybe<ImageToManySeasonFilter>;
+  /** Some related `seasonsByFanartImageId` exist. */
+  seasonsByFanartImageIdExist?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `seasonsByPosterImageId` relation. */
+  seasonsByPosterImageId?: InputMaybe<ImageToManySeasonFilter>;
+  /** Some related `seasonsByPosterImageId` exist. */
+  seasonsByPosterImageIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `sourceUrl` field. */
   sourceUrl?: InputMaybe<StringFilter>;
 };
@@ -1022,6 +1054,16 @@ export type ImagePatch = {
   cosPath?: InputMaybe<Scalars['String']>;
   id?: InputMaybe<Scalars['Int']>;
   sourceUrl?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against many `Season` object types. All fields are combined with a logical ‘and.’ */
+export type ImageToManySeasonFilter = {
+  /** Every related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<SeasonFilter>;
+  /** No related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<SeasonFilter>;
+  /** Some related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<SeasonFilter>;
 };
 
 /** A connection to a list of `Image` values. */
@@ -1153,6 +1195,20 @@ export type JellyfinFolderFilter = {
   not?: InputMaybe<JellyfinFolderFilter>;
   /** Checks for any expressions in this list. */
   or?: InputMaybe<Array<JellyfinFolderFilter>>;
+  /** Filter by the object’s `seasonsByJellyfinFolderId` relation. */
+  seasonsByJellyfinFolderId?: InputMaybe<JellyfinFolderToManySeasonFilter>;
+  /** Some related `seasonsByJellyfinFolderId` exist. */
+  seasonsByJellyfinFolderIdExist?: InputMaybe<Scalars['Boolean']>;
+};
+
+/** A filter to be used against many `Season` object types. All fields are combined with a logical ‘and.’ */
+export type JellyfinFolderToManySeasonFilter = {
+  /** Every related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<SeasonFilter>;
+  /** No related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<SeasonFilter>;
+  /** Some related `Season` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<SeasonFilter>;
 };
 
 /** A connection to a list of `JellyfinFolder` values. */
@@ -1910,6 +1966,14 @@ export type SeasonFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `description` field. */
   description?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `downloadSourcesBySeasonId` relation. */
+  downloadSourcesBySeasonId?: InputMaybe<SeasonToManyDownloadSourceFilter>;
+  /** Some related `downloadSourcesBySeasonId` exist. */
+  downloadSourcesBySeasonIdExist?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `episodesBySeasonId` relation. */
+  episodesBySeasonId?: InputMaybe<SeasonToManyEpisodeFilter>;
+  /** Some related `episodesBySeasonId` exist. */
+  episodesBySeasonIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `episodesLastSync` field. */
   episodesLastSync?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `episodesSource` field. */
@@ -1918,12 +1982,28 @@ export type SeasonFilter = {
   fanartImageId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `imageByBannerImageId` relation. */
+  imageByBannerImageId?: InputMaybe<ImageFilter>;
+  /** A related `imageByBannerImageId` exists. */
+  imageByBannerImageIdExists?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `imageByFanartImageId` relation. */
+  imageByFanartImageId?: InputMaybe<ImageFilter>;
+  /** A related `imageByFanartImageId` exists. */
+  imageByFanartImageIdExists?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `imageByPosterImageId` relation. */
+  imageByPosterImageId?: InputMaybe<ImageFilter>;
+  /** A related `imageByPosterImageId` exists. */
+  imageByPosterImageIdExists?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `infoSource` field. */
   infoSource?: InputMaybe<MetadataSourceFilter>;
   /** Filter by the object’s `isArchived` field. */
   isArchived?: InputMaybe<BooleanFilter>;
   /** Filter by the object’s `isMonitoring` field. */
   isMonitoring?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `jellyfinFolderByJellyfinFolderId` relation. */
+  jellyfinFolderByJellyfinFolderId?: InputMaybe<JellyfinFolderFilter>;
+  /** A related `jellyfinFolderByJellyfinFolderId` exists. */
+  jellyfinFolderByJellyfinFolderIdExists?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `jellyfinFolderId` field. */
   jellyfinFolderId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `jellyfinId` field. */
@@ -2060,6 +2140,26 @@ export type SeasonPatch = {
   weekday?: InputMaybe<Scalars['Int']>;
   /** like '202201' ~ '202204', or null if unknown */
   yearAndSemester?: InputMaybe<Scalars['String']>;
+};
+
+/** A filter to be used against many `DownloadSource` object types. All fields are combined with a logical ‘and.’ */
+export type SeasonToManyDownloadSourceFilter = {
+  /** Every related `DownloadSource` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<DownloadSourceFilter>;
+  /** No related `DownloadSource` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<DownloadSourceFilter>;
+  /** Some related `DownloadSource` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<DownloadSourceFilter>;
+};
+
+/** A filter to be used against many `Episode` object types. All fields are combined with a logical ‘and.’ */
+export type SeasonToManyEpisodeFilter = {
+  /** Every related `Episode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<EpisodeFilter>;
+  /** No related `Episode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<EpisodeFilter>;
+  /** Some related `Episode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<EpisodeFilter>;
 };
 
 /** A connection to a list of `Season` values. */

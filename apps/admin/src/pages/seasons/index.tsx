@@ -83,6 +83,13 @@ function ColoredCell({
   );
 }
 
+enum EpisodesFilter {
+  NO_LACK,
+  LACK,
+  NO_AIRED,
+  ALL_AIRED,
+}
+
 function useColumns() {
   const history = useHistory();
   const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
@@ -211,9 +218,8 @@ function useColumns() {
       {
         title: '集数',
         tooltip: '可用集数 / 已放送集数 / 总集数',
-        key: 'episodes',
+        dataIndex: 'episodes',
         width: 120,
-        search: false,
         render: (_, r) => (
           <ColoredCell
             className={styles.episodesCell}
@@ -238,6 +244,24 @@ function useColumns() {
             )}
           </ColoredCell>
         ),
+        filters: [
+          {
+            text: '缺集',
+            value: EpisodesFilter.LACK,
+          },
+          {
+            text: '不缺集',
+            value: EpisodesFilter.NO_LACK,
+          },
+          {
+            text: '未放送',
+            value: EpisodesFilter.NO_AIRED,
+          },
+          {
+            text: '全部放送',
+            value: EpisodesFilter.ALL_AIRED,
+          },
+        ] as ColumnFilterItem[],
       },
       {
         title: '链接',
@@ -323,6 +347,7 @@ function useColumns() {
 
 async function querySeasons(
   client: ApolloClient<object>,
+  // search
   {
     pageSize = 10,
     current = 0,
@@ -332,6 +357,7 @@ async function querySeasons(
     current?: number;
     keyword?: string;
   },
+  // sort
   {
     id: idSort,
     title: titleSort,
@@ -339,16 +365,20 @@ async function querySeasons(
     id?: 'ascend' | 'descend';
     title?: 'ascend' | 'descend';
   },
+  // filter
   {
     isMonitoring,
     yearAndSemester,
     folder,
+    episodes: episodesFilter,
   }: {
     isMonitoring?: ('true' | 'false')[];
     yearAndSemester?: string[];
     folder?: number[];
+    episodes?: EpisodesFilter[];
   },
 ) {
+  const now = new Date();
   const filter: SeasonFilter = {
     ...(keyword
       ? {
@@ -379,6 +409,79 @@ async function querySeasons(
         }
       : undefined),
   };
+  if (episodesFilter?.length) {
+    const filters = [] as SeasonFilter[];
+    for (const filter of episodesFilter) {
+      switch (filter) {
+        case EpisodesFilter.LACK:
+          // 存在已放送且未完成下载
+          filters.push({
+            // 强制过滤已追番，因为未追番的话缺集没有意义
+            isMonitoring: {
+              equalTo: true,
+            },
+            episodesBySeasonId: {
+              some: {
+                jellyfinEpisodeId: {
+                  isNull: true,
+                },
+                airTime: {
+                  lessThanOrEqualTo: now,
+                },
+              },
+            },
+          });
+          break;
+        case EpisodesFilter.NO_LACK:
+          filters.push({
+            // 强制过滤已追番，因为未追番的话缺集没有意义
+            isMonitoring: {
+              equalTo: true,
+            },
+            // 不存在存在已放送且未完成下载
+            episodesBySeasonId: {
+              none: {
+                jellyfinEpisodeId: {
+                  isNull: true,
+                },
+                airTime: {
+                  lessThanOrEqualTo: now,
+                },
+              },
+            },
+          });
+          break;
+        case EpisodesFilter.NO_AIRED:
+          filters.push({
+            // 不存在已放送
+            episodesBySeasonId: {
+              none: {
+                airTime: {
+                  lessThanOrEqualTo: now,
+                },
+              },
+            },
+          });
+          break;
+        case EpisodesFilter.ALL_AIRED:
+          filters.push({
+            // 全部已放送
+            episodesBySeasonId: {
+              every: {
+                airTime: {
+                  lessThanOrEqualTo: now,
+                },
+              },
+            },
+          });
+          break;
+      }
+    }
+    if (!filter.or) {
+      filter.or = [];
+    }
+    filter.or.push(...filters);
+  }
   const orderBy: SeasonsOrderBy[] = [
     ...(titleSort
       ? titleSort === 'ascend'
@@ -398,7 +501,7 @@ async function querySeasons(
       offset: pageSize * (current - 1),
       orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdAsc],
       ...(Object.keys(filter).length > 0 ? { filter } : undefined),
-      now: new Date(),
+      now,
     },
   });
   if (error) {
