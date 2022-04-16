@@ -1,8 +1,13 @@
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
-import { formItemProps, FormValues } from '@/pages/season/help';
+import {
+  formItemProps,
+  FormValues,
+  useSeasonPageContext,
+} from '@/pages/season/help';
 import Section from '@/pages/season/Section';
 import { episodeRegex } from '@/utils/matchTorrentTitle';
+import { getSeasonKeyword } from '@/utils/season';
 import { MinusOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   ProFormDigit,
@@ -18,7 +23,9 @@ import styles from './DownloadSources.module.less';
 
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
+  const { formRef } = useSeasonPageContext();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
+
   return (
     <Section title="下载配置">
       <FormDependency<FormValues> name={['needDownloadCc', 'bilibiliThmId']}>
@@ -125,7 +132,14 @@ export default function DownloadSources() {
             ghost
             className={styles.create}
             onClick={async () => {
-              const result = await openSearchTorrent({});
+              if (!formRef.current) {
+                return;
+              }
+              const result = await openSearchTorrent({
+                keyword: getSeasonKeyword(
+                  formRef.current.getFieldValue('title'),
+                ),
+              });
               if (result.type !== 'success') {
                 return;
               }
