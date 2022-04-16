@@ -51,7 +51,6 @@ specifiers:
   '@types/history': 2.0.45
   '@types/inquirer': ~8.2.1
   '@types/jest': 27.4.1
-  '@types/jsonwebtoken': ~8.5.8
   '@types/koa': ~2.13.4
   '@types/lodash': ~4.14.178
   '@types/md5': ~2.3.2
@@ -92,9 +91,9 @@ specifiers:
   inclusion: ~1.0.1
   inquirer: ~8.2.2
   jest: ^27.2.5
+  jose: ~4.6.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
-  jsonwebtoken: ~8.5.1
   keycloak-js: 15.0.2
   kleur: ~4.1.4
   koa: ~2.13.4
@@ -182,7 +181,6 @@ dependencies:
   '@types/history': 2.0.45
   '@types/inquirer': 8.2.1
   '@types/jest': 27.4.1
-  '@types/jsonwebtoken': 8.5.8
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.181
   '@types/md5': 2.3.2
@@ -223,9 +221,9 @@ dependencies:
   inclusion: 1.0.1
   inquirer: 8.2.2
   jest: 27.5.1_ts-node@10.7.0
+  jose: 4.6.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
-  jsonwebtoken: 8.5.1
   keycloak-js: 15.0.2
   kleur: 4.1.4
   koa: 2.13.4
@@ -20271,7 +20269,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-F1ZhNmu6YJOJ1DEldo5Vve18siIGfu7Xw0ARbwaqIuH04vGS8uHdGBEvfwvZiwGOpxStsmPHJw8aUNgQwGcCfg==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-cHo9rXpHAAnmKthBcJt/17Vmk290ToNqOm2XFJWtTl5c06wshpKrzUvkw9/yjGXpaFQkvUiqxM+a3YDizO81uQ==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20294,6 +20292,7 @@ packages:
       '@sentry/react': 6.17.9_react@17.0.2
       '@types/history': 2.0.45
       '@types/lodash': 4.14.181
+      '@types/qs': 6.9.7
       '@types/react': 17.0.43
       '@types/react-dom': 17.0.14
       '@umijs/plugin-antd': 0.15.0_505e49b6ea53e755a9c64b9c31ef1e2a
@@ -20312,6 +20311,7 @@ packages:
       npm-run-all: 4.1.5
       prettier: 2.5.1
       pretty-bytes: 6.0.0
+      qs: 6.10.3
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       sass: 1.49.11
@@ -20529,7 +20529,7 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-96u91XJ4RfD9QEC4frnU64fRRnxEekITGuwe05IrU9Jr6z0FLdUeZgl0IMggQoBY4B4J7C8V+JiCk1p+txhFEw==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-Uy+jrWxR5sxBZ650Arlw5WScfuXwR23SicRKFz5VSQCNugvvDmym75/qufYsGOcJuKwJKfFoI4GYgiySmfvjMg==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:

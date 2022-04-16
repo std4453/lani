@@ -22,13 +22,18 @@ import {
 import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
 import { extractNode, ExtractNode } from '@/utils/graphql';
+import {
+  AntdTableState,
+  encodeAntdSearch,
+  useAntdTableState,
+} from '@/utils/search';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
 import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
 
@@ -91,13 +96,13 @@ function ColoredCell({
 }
 
 enum EpisodesFilter {
-  NO_LACK,
-  LACK,
-  NO_AIRED,
-  ALL_AIRED,
+  NO_LACK = 'no_lack',
+  LACK = 'lack',
+  NO_AIRED = 'no_aired',
+  ALL_AIRED = 'all_aired',
 }
 
-function useColumns() {
+function useColumns(state: AntdTableState) {
   const history = useHistory();
   const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
   const semesterOptions = useMemo(
@@ -131,6 +136,8 @@ function useColumns() {
         search: false,
         width: 48,
         sorter: true,
+        defaultSortOrder: state.sort.id,
+        sortOrder: state.sort.id,
       },
       {
         title: '季度标题',
@@ -138,6 +145,8 @@ function useColumns() {
         copyable: true,
         ellipsis: false,
         sorter: true,
+        defaultSortOrder: state.sort.title,
+        sortOrder: state.sort.title,
       },
       {
         title: '季度',
@@ -155,6 +164,8 @@ function useColumns() {
             '-'
           ),
         filters: semesterOptions,
+        defaultFilteredValue: state.filter.yearAndSemester,
+        filteredValue: state.filter.yearAndSemester,
       },
       {
         title: '放送时间',
@@ -187,6 +198,8 @@ function useColumns() {
         },
         width: 120,
         filters: true,
+        defaultFilteredValue: state.filter.isMonitoring,
+        filteredValue: state.filter.isMonitoring,
       },
       {
         title: '媒体库',
@@ -204,6 +217,8 @@ function useColumns() {
           </ColoredCell>
         ),
         filters: foldersOptions,
+        defaultFilteredValue: state.filter.folder?.map((f) => Number(f)),
+        filteredValue: state.filter.folder?.map((f) => Number(f)),
       },
       {
         title: '最新集',
@@ -269,6 +284,8 @@ function useColumns() {
             value: EpisodesFilter.ALL_AIRED,
           },
         ] as ColumnFilterItem[],
+        defaultFilteredValue: state.filter.episodes,
+        filteredValue: state.filter.episodes,
       },
       {
         title: '链接',
@@ -356,7 +373,7 @@ function useColumns() {
         width: 120,
       },
     ],
-    [history, semesterOptions, foldersOptions, client],
+    [history, semesterOptions, foldersOptions, client, state],
   );
 }
 
@@ -541,25 +558,34 @@ async function querySeasons(
 export default function MetadataPage() {
   const client = useApolloClient();
 
-  const columns = useColumns();
+  const state = useAntdTableState();
+  const columns = useColumns(state);
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
   const [addFromBangumiDialog, , openAddFromBangumi] =
     useAddFromBangumiDialog();
   const history = useHistory();
+  const [keyword, setKeyword] = useState(state.keyword);
 
   return (
     <>
       <ProTable<RowType>
         columns={columns}
-        request={(params, sort, filter) =>
-          querySeasons(client, params, sort, filter)
-        }
+        request={(params, sort, filter) => {
+          const search = { ...params, keyword };
+          history.replace({
+            pathname: history.location.pathname,
+            hash: history.location.hash,
+            query: encodeAntdSearch(search, sort, filter),
+          });
+          return querySeasons(client, search, sort, filter);
+        }}
         rowKey="id"
         pagination={{
           pageSizeOptions: [10, 30, 50],
-          defaultPageSize: 30,
+          defaultPageSize: state.pageSize ?? 30,
+          defaultCurrent: state.current ?? 1,
         }}
         headerTitle="元数据"
         actionRef={ref}
@@ -596,7 +622,11 @@ export default function MetadataPage() {
         ]}
         search={false}
         options={{
-          search: true,
+          search: {
+            defaultValue: keyword,
+            value: keyword,
+            onChange: (e) => setKeyword(e.target.value),
+          },
         }}
         defaultSize="large"
       />
