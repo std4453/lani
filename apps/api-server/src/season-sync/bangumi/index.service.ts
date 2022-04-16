@@ -44,7 +44,10 @@ export class BangumiSeasonService {
       // 因为过滤了本篇，应当总有此字段
       index: episode.ep ?? 0,
       // 兜底文案
-      title: episode.name_cn || episode.name || '未定',
+      title:
+        episode.name_cn ||
+        episode.name ||
+        (episode.ep ? `第${episode.ep}话` : '未定'),
       description: episode.desc,
       airDate: dayjs(episode.airdate, DateFormat.BarDay).format(
         DateFormat.NothingDay,
