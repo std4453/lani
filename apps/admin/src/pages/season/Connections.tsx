@@ -2,17 +2,25 @@ import AsyncButton from '@/components/AsyncButton';
 import FormDependency from '@/components/FormDependency';
 import { IconPath } from '@/constants/icon-path';
 import {
+  bangumiLink,
+  bilibiliSeasonLink,
+  jellyfinSeasonLink,
+  mikanAnimeLink,
+  tvdbLinkById,
+} from '@/constants/link';
+import {
   AllJellyfinFoldersDocument,
   SyncJellyfinSeriesIdDocument,
 } from '@/generated/types';
 import { FormValues, useSeasonPageContext } from '@/pages/season/help';
 import Section from '@/pages/season/Section';
 import { extractNode } from '@/utils/graphql';
-import { SearchOutlined } from '@ant-design/icons';
+import { LinkOutlined, SearchOutlined } from '@ant-design/icons';
 import ProForm, { ProFormSelect, ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
+  Button,
   Form,
   Input,
   InputNumber,
@@ -23,7 +31,7 @@ import {
 import styles from './Connections.module.less';
 
 export default function Connections() {
-  const { id, reloadConfig } = useSeasonPageContext();
+  const { id, reloadConfig, formRef } = useSeasonPageContext();
   const client = useApolloClient();
   return (
     <Section title="关联设置">
@@ -56,18 +64,41 @@ export default function Connections() {
         }
       </FormDependency>
       <ProForm.Group>
-        <ProFormText
-          name="bangumiId"
+        <Form.Item
           label={
             <Space>
               <img src={IconPath.bangumiIcon} className={styles.icon} />
               <Typography.Text>bangumi.tv</Typography.Text>
             </Space>
           }
-          width="sm"
-        />
+        >
+          <Input.Group
+            compact
+            style={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <ProFormText
+              name="bangumiId"
+              width="sm"
+              formItemProps={{
+                noStyle: true,
+              }}
+            />
+            <FormDependency<FormValues> name={['bangumiId']}>
+              {({ bangumiId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!bangumiId}
+                  href={bangumiLink(bangumiId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
+            </FormDependency>
+          </Input.Group>
+        </Form.Item>
         <Form.Item
-          name="bilibiliThmId"
           label={
             <Space>
               <img src={IconPath.bilibiliIcon} className={styles.icon} />
@@ -75,16 +106,36 @@ export default function Connections() {
             </Space>
           }
         >
-          <Input
-            addonBefore="ss"
-            placeholder="请输入"
+          <Input.Group
+            compact
             style={{
-              width: 216,
+              whiteSpace: 'nowrap',
             }}
-          />
+          >
+            <ProFormText
+              name="bilibiliThmId"
+              width={216}
+              formItemProps={{
+                noStyle: true,
+              }}
+              fieldProps={{
+                addonBefore: 'ss',
+              }}
+            />
+            <FormDependency<FormValues> name={['bilibiliThmId']}>
+              {({ bilibiliThmId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!bilibiliThmId}
+                  href={bilibiliSeasonLink(bilibiliThmId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
+            </FormDependency>
+          </Input.Group>
         </Form.Item>
         <Form.Item
-          name="bilibiliMainlandId"
           label={
             <Space>
               <img
@@ -95,24 +146,69 @@ export default function Connections() {
             </Space>
           }
         >
-          <Input
-            addonBefore="ss"
-            placeholder="请输入"
+          <Input.Group
+            compact
             style={{
-              width: 216,
+              whiteSpace: 'nowrap',
             }}
-          />
+          >
+            <ProFormText
+              name="bilibiliMainlandId"
+              fieldProps={{
+                addonBefore: 'ss',
+              }}
+              width={216}
+              formItemProps={{
+                noStyle: true,
+              }}
+            />
+            <FormDependency<FormValues> name={['bilibiliMainlandId']}>
+              {({ bilibiliMainlandId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!bilibiliMainlandId}
+                  href={bilibiliSeasonLink(bilibiliMainlandId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
+            </FormDependency>
+          </Input.Group>
         </Form.Item>
-        <ProFormText
-          name="mikanAnimeId"
+        <Form.Item
           label={
             <Space>
               <img src={IconPath.mikanAnimeIcon} className={styles.icon} />
               <Typography.Text>Mikan Anime</Typography.Text>
             </Space>
           }
-          width="sm"
-        />
+        >
+          <Input.Group
+            compact
+            style={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <ProFormText
+              name="mikanAnimeId"
+              width="sm"
+              formItemProps={{
+                noStyle: true,
+              }}
+            />
+            <FormDependency<FormValues> name={['mikanAnimeId']}>
+              {({ mikanAnimeId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!mikanAnimeId}
+                  href={mikanAnimeLink(mikanAnimeId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
+            </FormDependency>
+          </Input.Group>
+        </Form.Item>
         <Form.Item
           label={
             <Space>
@@ -182,6 +278,17 @@ export default function Connections() {
                     }
                   }}
                 />,
+                <FormDependency<FormValues> name={['jellyfinId']} key={2}>
+                  {({ jellyfinId }) => (
+                    <Button
+                      icon={<LinkOutlined />}
+                      disabled={!jellyfinId}
+                      href={jellyfinSeasonLink(jellyfinId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  )}
+                </FormDependency>,
               ]}
             </FormDependency>
           </Input.Group>
@@ -212,6 +319,18 @@ export default function Connections() {
             <Form.Item name="tvdbSeason" noStyle>
               <InputNumber min={1} placeholder="季度" />
             </Form.Item>
+            <FormDependency<FormValues> name={['tvdbId']} key={2}>
+              {({ tvdbId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!tvdbId}
+                  href={tvdbLinkById(tvdbId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
+            </FormDependency>
+            ,
           </Input.Group>
         </Form.Item>
       </ProForm.Group>
