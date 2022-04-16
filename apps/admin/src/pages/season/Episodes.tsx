@@ -1,10 +1,7 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
-import {
-  downloadStatusMap,
-  DownloadStatusTag,
-} from '@/constants/download-status';
+import { DownloadStatusTag } from '@/constants/download-status';
 import {
   DownloadBilibiliCcDocument,
   DownloadTorrentForEpisodeDocument,
@@ -24,7 +21,7 @@ import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProFormSelect } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
-import { Alert, Button, Dropdown, Menu, message, Tag, Typography } from 'antd';
+import { Alert, Button, Dropdown, Menu, message, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
 
@@ -198,7 +195,8 @@ function useColumns({
 }
 
 export default function Episodes() {
-  const { episodes, formRef, syncEpisodes } = useSeasonPageContext();
+  const { episodes, formRef, syncEpisodes, reloadEpisodes } =
+    useSeasonPageContext();
 
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
@@ -223,6 +221,8 @@ export default function Episodes() {
     await syncEpisodes();
   });
 
+  const refreshEpisodesProps = useAsyncButton(reloadEpisodes);
+
   return (
     <Section
       title="剧集列表"
@@ -244,14 +244,16 @@ export default function Episodes() {
             }
           </FormDependency>
         </div>,
-        <Button
-          type="primary"
-          ghost
-          {...syncEpisodeProps}
-          key={0}
-          icon={<ReloadOutlined />}
-        >
+        <Button type="primary" ghost {...syncEpisodeProps} key={0}>
           立即同步
+        </Button>,
+        <Button
+          {...refreshEpisodesProps}
+          key={2}
+          icon={<ReloadOutlined />}
+          type="default"
+        >
+          刷新
         </Button>,
       ]}
     >
