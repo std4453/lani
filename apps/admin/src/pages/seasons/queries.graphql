@@ -103,9 +103,7 @@ query GetMetadataPageOptions {
 }
 
 mutation DeleteSeasonById($id: Int!) {
-  updateSeasonById(input: { id: $id, seasonPatch: { isArchived: true } }) {
-    __typename
-  }
+  deleteSeasonById(id: $id)
 }
 
 query ListJellyfinFolders {

@@ -317,7 +317,15 @@ function useColumns() {
           </Typography.Link>,
           <Popconfirm
             key={1}
-            title="确定删除该季度吗？此操作不可恢复"
+            title={
+              <div
+                style={{
+                  width: 260,
+                }}
+              >
+                确定删除“{r.title}”吗？这将删除硬盘上的文件，此操作无法恢复！
+              </div>
+            }
             onConfirm={async () => {
               try {
                 await client.mutate({
