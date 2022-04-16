@@ -8,15 +8,11 @@ import {
   mikanAnimeLink,
   tvdbLinkById,
 } from '@/constants/link';
-import {
-  AllJellyfinFoldersDocument,
-  SyncJellyfinSeriesIdDocument,
-} from '@/generated/types';
+import { SyncJellyfinSeriesIdDocument } from '@/generated/types';
 import { FormValues, useSeasonPageContext } from '@/pages/season/help';
 import Section from '@/pages/season/Section';
-import { extractNode } from '@/utils/graphql';
 import { LinkOutlined, SearchOutlined } from '@ant-design/icons';
-import ProForm, { ProFormSelect, ProFormText } from '@ant-design/pro-form';
+import ProForm, { ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
@@ -31,27 +27,13 @@ import {
 import styles from './Connections.module.less';
 
 export default function Connections() {
-  const { id, reloadConfig, formRef } = useSeasonPageContext();
+  const { id, reloadConfig } = useSeasonPageContext();
   const client = useApolloClient();
   return (
     <Section title="关联设置">
-      <FormDependency<FormValues> name={['jellyfinFolderId']}>
-        {({ jellyfinFolderId }) =>
-          !jellyfinFolderId ? (
-            <Alert
-              message="Jellyfin媒体库未设置，同步元数据、剧集信息、下载将不可用"
-              type="warning"
-              showIcon
-              style={{
-                marginBottom: 16,
-              }}
-            />
-          ) : null
-        }
-      </FormDependency>
-      <FormDependency<FormValues> name={['jellyfinFolderId', 'jellyfinId']}>
-        {({ jellyfinFolderId, jellyfinId }) =>
-          jellyfinFolderId && !jellyfinId ? (
+      <FormDependency<FormValues> name={['jellyfinId']}>
+        {({ jellyfinId }) =>
+          !jellyfinId ? (
             <Alert
               message="Jellyfin季度ID未设置，下载流程中无法获取Jellyfin剧集ID，无法进行推送"
               type="warning"
@@ -223,73 +205,56 @@ export default function Connections() {
               whiteSpace: 'nowrap',
             }}
           >
-            <ProFormSelect
-              name="jellyfinFolderId"
+            <ProFormText
+              disabled={true}
+              name="jellyfinFolderDesc"
               formItemProps={{
                 noStyle: true,
-              }}
-              request={async () => {
-                const { data } = await client.query({
-                  query: AllJellyfinFoldersDocument,
-                });
-                return (extractNode(data.allJellyfinFolders) ?? []).map(
-                  (folder) => ({
-                    value: folder.id,
-                    label: `${folder.name} (${folder.location})`,
-                  }),
-                );
               }}
               width={160}
               placeholder="媒体库"
             />
-            <FormDependency<FormValues> name={['jellyfinFolderId']}>
-              {({ jellyfinFolderId }) => [
-                <Form.Item name="jellyfinId" noStyle key={0}>
-                  <Input
-                    placeholder="32位季度ID"
-                    addonBefore="中的"
-                    style={{
-                      width: 360,
-                    }}
-                    disabled={!jellyfinFolderId}
-                  />
-                </Form.Item>,
-                <AsyncButton
-                  key={1}
-                  icon={<SearchOutlined />}
-                  disabled={!jellyfinFolderId}
-                  onClick={async () => {
-                    try {
-                      const { data } = await client.mutate({
-                        mutation: SyncJellyfinSeriesIdDocument,
-                        variables: {
-                          seasonId: id,
-                        },
-                      });
-                      if (!data?.syncJellyfinSeriesId) {
-                        void message.error('获取Jellyfin季度ID失败');
-                        return;
-                      }
-                      void message.success('获取Jellyfin季度ID成功');
-                      void reloadConfig();
-                    } catch (error) {
-                      console.error(error);
-                      void message.error('获取Jellyfin季度ID失败');
-                    }
-                  }}
-                />,
-                <FormDependency<FormValues> name={['jellyfinId']} key={2}>
-                  {({ jellyfinId }) => (
-                    <Button
-                      icon={<LinkOutlined />}
-                      disabled={!jellyfinId}
-                      href={jellyfinSeasonLink(jellyfinId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  )}
-                </FormDependency>,
-              ]}
+            <Form.Item name="jellyfinId" noStyle>
+              <Input
+                placeholder="32位季度ID"
+                addonBefore="中的"
+                style={{
+                  width: 360,
+                }}
+              />
+            </Form.Item>
+            <AsyncButton
+              icon={<SearchOutlined />}
+              onClick={async () => {
+                try {
+                  const { data } = await client.mutate({
+                    mutation: SyncJellyfinSeriesIdDocument,
+                    variables: {
+                      seasonId: id,
+                    },
+                  });
+                  if (!data?.syncJellyfinSeriesId) {
+                    void message.error('获取Jellyfin季度ID失败');
+                    return;
+                  }
+                  void message.success('获取Jellyfin季度ID成功');
+                  void reloadConfig();
+                } catch (error) {
+                  console.error(error);
+                  void message.error('获取Jellyfin季度ID失败');
+                }
+              }}
+            />
+            <FormDependency<FormValues> name={['jellyfinId']}>
+              {({ jellyfinId }) => (
+                <Button
+                  icon={<LinkOutlined />}
+                  disabled={!jellyfinId}
+                  href={jellyfinSeasonLink(jellyfinId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              )}
             </FormDependency>
           </Input.Group>
         </Form.Item>

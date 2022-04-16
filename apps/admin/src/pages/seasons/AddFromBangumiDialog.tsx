@@ -1,13 +1,12 @@
 import {
   CreateSeasonDocument,
-  ListJellyfinFoldersDocument,
   MetadataSource,
   SearchBangumiDocument,
   SearchBangumiQuery,
   SyncEpisodeDataDocument,
   SyncMetadataDocument,
 } from '@/generated/types';
-import { extractNode } from '@/utils/graphql';
+import { useJellyfinFolders } from '@/pages/seasons/useJellyfinFolders';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useDebounce } from 'ahooks';
@@ -25,7 +24,7 @@ import {
   Typography,
 } from 'antd';
 import clsx from 'clsx';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 
 export default function AddFromBangumiDialog({
@@ -56,26 +55,7 @@ export default function AddFromBangumiDialog({
     }
   }, [visible]);
 
-  const { data: foldersData, loading: foldersLoading } = useQuery(
-    ListJellyfinFoldersDocument,
-  );
-  const [folderId, setFolderId] = useState<number | null>(null);
-  const animeFolderId = useMemo(
-    () =>
-      (extractNode(foldersData?.allJellyfinFolders) ?? []).find(
-        (folder) => folder.location === 'anime',
-      )?.id,
-    [foldersData],
-  );
-  useEffect(() => {
-    if (visible) {
-      if (animeFolderId) {
-        setFolderId(animeFolderId);
-      } else {
-        setFolderId(null);
-      }
-    }
-  }, [visible, animeFolderId]);
+  const { folderId, foldersSelectProps } = useJellyfinFolders(visible);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -89,24 +69,13 @@ export default function AddFromBangumiDialog({
       footer={[
         <Select
           key="folder"
-          loading={foldersLoading}
-          value={folderId}
-          onChange={setFolderId}
+          {...foldersSelectProps}
           style={{
             width: 200,
             marginRight: 16,
             textAlign: 'left',
           }}
-          placeholder="选择媒体库"
-        >
-          {(extractNode(foldersData?.allJellyfinFolders) ?? []).map(
-            (folder) => (
-              <Select.Option key={folder.id} value={folder.id}>
-                {folder.name} ({folder.location})
-              </Select.Option>
-            ),
-          )}
-        </Select>,
+        />,
         <Button key="cancel" onClick={reject}>
           取消
         </Button>,
