@@ -51,7 +51,9 @@
     "dayjs": "~1.10.7",
     "@ant-design/pro-descriptions": "~1.10.60",
     "pretty-bytes": "~6.0.0",
-    "keycloak-js": "15.0.2"
+    "keycloak-js": "15.0.2",
+    "qs": "~6.10.3",
+    "@types/qs": "~6.9.7"
   },
   "files": [
     "/dist",
