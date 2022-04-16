@@ -142,7 +142,7 @@ function useColumns({
             </Typography.Link>
           </Dropdown>,
           <Dropdown
-            key={2}
+            key={3}
             overlay={
               <Menu>
                 <Menu.Item
