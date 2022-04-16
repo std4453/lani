@@ -6,6 +6,7 @@ import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import { ConfigType } from '@/config';
+import { JobService } from '@/download-job/index.service';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { env } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
@@ -20,6 +21,7 @@ export class AdminResolver {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService<ConfigType, true>,
+    private job: JobService,
   ) {}
 
   @Query(() => ID)
@@ -67,6 +69,7 @@ export class AdminResolver {
           })),
       }),
     ]);
+    await this.job.enqueueDownloadJobs();
     return 'ok';
   }
 

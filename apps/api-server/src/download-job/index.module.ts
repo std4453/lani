@@ -22,5 +22,6 @@ import { ConfigModule } from '@nestjs/config';
     RefreshPlayerAtom,
     JobService,
   ],
+  exports: [JobService],
 })
 export class DownloadJobModule {}
