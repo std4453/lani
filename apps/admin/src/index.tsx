@@ -3,6 +3,7 @@ import {
   DatabaseOutlined,
   DownloadOutlined,
   HomeOutlined,
+  NodeExpandOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
@@ -31,6 +32,7 @@ const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
   '/seasons': DatabaseOutlined,
   '/torrents': DownloadOutlined,
+  '/jobs': NodeExpandOutlined,
 };
 
 export interface AuthState {

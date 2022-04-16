@@ -253,7 +253,7 @@ export default function EpisodeDetailsDialog({
   reject,
   visible,
   input,
-}: DialogProps<{ episodeId: number }>) {
+}: DialogProps<{ episodeId: number; jobId?: number }>) {
   const { data, loading } = useQuery(GetEpisodeByIdDocument, {
     skip: !input?.episodeId || !visible,
     variables: {
@@ -322,6 +322,7 @@ export default function EpisodeDetailsDialog({
         </ProDescriptions>
         {jobs.length > 0 ? (
           <Tabs
+            defaultActiveKey={input?.jobId ? `${input.jobId}` : undefined}
             tabBarExtraContent={{
               left: <div style={{ marginRight: 16 }}>下载任务</div>,
               right: (
