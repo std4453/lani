@@ -109,30 +109,30 @@ export class JobService
 
   @Cron('*/1 * * * *') // 每分钟运行一次
   async enqueueDownloadJobs() {
-    this.prisma.episode.findMany({
-      where: {
-        jellyfinEpisodeId: null,
-        season: {
-          isArchived: false,
-          jellyfinFolderId: {
-            not: null,
-          },
-          title: {},
-          downloadSources: {
-            some: {
-              isDisabled: false,
-              isArchived: false,
-            },
-          },
-        },
-        downloadJobs: {
-          none: {},
-        },
-        airTime: {
-          lt: new Date(),
-        },
-      },
-    });
+    // this.prisma.episode.findMany({
+    //   where: {
+    //     jellyfinEpisodeId: null,
+    //     season: {
+    //       isArchived: false,
+    //       jellyfinFolderId: {
+    //         not: null,
+    //       },
+    //       title: {},
+    //       downloadSources: {
+    //         some: {
+    //           isDisabled: false,
+    //           isArchived: false,
+    //         },
+    //       },
+    //     },
+    //     downloadJobs: {
+    //       none: {},
+    //     },
+    //     airTime: {
+    //       lt: new Date(),
+    //     },
+    //   },
+    // });
 
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
@@ -168,10 +168,14 @@ export class JobService
       console.debug('queued', result.length, 'jobs');
     }
     for (const { episode_id, torrent_link } of result) {
-      this.triggerWorkflow({
-        episodeId: episode_id,
-        torrentLink: torrent_link,
-      });
+      try {
+        await this.triggerWorkflow({
+          episodeId: episode_id,
+          torrentLink: torrent_link,
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 
