@@ -2,6 +2,7 @@ import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
 import { DownloadStatusTag } from '@/constants/download-status';
+import { jellyfinEpisodeLink } from '@/constants/link';
 import {
   DownloadBilibiliCcDocument,
   DownloadTorrentForEpisodeDocument,
@@ -70,7 +71,7 @@ function useColumns({
           r.jellyfinEpisodeId ? (
             <Typography.Link
               key={0}
-              href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.jellyfinEpisodeId}`}
+              href={jellyfinEpisodeLink(r.jellyfinEpisodeId)}
               target="_blank"
               rel="noreferer noopener"
             >

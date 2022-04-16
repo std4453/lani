@@ -1,0 +1,38 @@
+fragment listDownloadJobsFields on DownloadJob {
+  id
+  status
+  isFailed
+  jellyfinEpisodeId
+  episodeByEpisodeId {
+    id
+    airTime
+    title
+    index
+    seasonBySeasonId {
+      id
+      title
+    }
+  }
+  createdAt
+  failedReason
+}
+
+query ListDownloadJobs($offset: Int, $first: Int, $filter: DownloadJobFilter) {
+  allDownloadJobs(
+    offset: $offset
+    first: $first
+    filter: $filter
+    orderBy: ID_DESC
+  ) {
+    pageInfo {
+      hasNextPage
+    }
+    totalCount
+    edges {
+      node {
+        ...listDownloadJobsFields
+      }
+      cursor
+    }
+  }
+}

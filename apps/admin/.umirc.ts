@@ -36,6 +36,13 @@ export default defineConfig({
           name: '种子列表',
           wrappers: ['@/wrappers/auth'],
         },
+        {
+          path: '/jobs',
+          exact: true,
+          component: '@/pages/jobs',
+          name: '下载任务',
+          wrappers: ['@/wrappers/auth'],
+        },
         { component: '@/pages/404' },
       ],
     },
