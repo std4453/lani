@@ -209,7 +209,7 @@ function useColumns() {
         title: '最新集',
         tooltip: '季度最新一集的下载状态',
         key: 'latestEpisode',
-        width: 84,
+        width: 96,
         render: (_, r) => {
           if (!r.isMonitoring) {
             return '-';
