@@ -3,15 +3,24 @@ import {
   UpdateSeasonDownloadSourcesInput,
 } from '@/admin/index.model';
 import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
+import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
+import { ConfigType } from '@/config';
+import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { env } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import fs from 'fs/promises';
+import path from 'path';
 
 @Injectable()
 @Resolver()
 export class AdminResolver {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService<ConfigType, true>,
+  ) {}
 
   @Query(() => ID)
   environment() {
@@ -105,5 +114,33 @@ export class AdminResolver {
       },
     });
     return results.map((result) => result.yearAndSemester);
+  }
+
+  @Mutation(() => ID)
+  async deleteSeasonById(@Args('id') id: number) {
+    const { jellyfinFolder, title } = await this.prisma.season.findUnique({
+      where: { id },
+      include: {
+        jellyfinFolder: true,
+      },
+    });
+    if (jellyfinFolder) {
+      const folderPath = path.join(
+        this.config.get('mediaRoot'),
+        jellyfinFolder.location,
+        title,
+      );
+      await fs.rm(folderPath, { recursive: true });
+      await JellyfinHelp.refreshItem({
+        itemId: jellyfinFolder.jellyfinId,
+        metadataRefreshMode: MetadataRefreshMode.DEFAULT,
+      });
+    }
+    await this.prisma.season.delete({
+      where: {
+        id,
+      },
+    });
+    return 'ok';
   }
 }
