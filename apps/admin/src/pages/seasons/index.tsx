@@ -5,6 +5,13 @@ import {
 } from '@/constants/download-status';
 import { IconPath } from '@/constants/icon-path';
 import {
+  bangumiLink,
+  bilibiliSeasonLink,
+  jellyfinSeasonLink,
+  mikanAnimeLink,
+  tvdbLinkById,
+} from '@/constants/link';
+import {
   DeleteSeasonByIdDocument,
   GetMetadataPageOptionsDocument,
   ListSeasonsDocument,
@@ -271,32 +278,32 @@ function useColumns() {
           <Space>
             <LinkIcon
               icon={IconPath.bangumiIcon}
-              href={`https://bangumi.tv/subject/${r.bangumiId}`}
+              href={bangumiLink(r.bangumiId)}
               valid={r.bangumiId}
             />
             <LinkIcon
               icon={IconPath.thetvdbIcon}
-              href={`https://www.thetvdb.com/dereferrer/series/${r.tvdbId}`}
+              href={tvdbLinkById(r.tvdbId)}
               valid={r.tvdbId && typeof r.tvdbSeason === 'number'}
             />
             <LinkIcon
               icon={IconPath.bilibiliIcon}
-              href={`https://www.bilibili.com/bangumi/play/ss${r.bilibiliThmId}`}
+              href={bilibiliSeasonLink(r.bilibiliThmId)}
               valid={r.bilibiliThmId}
             />
             <LinkIcon
               icon={IconPath.bilibiliMainlandIcon}
-              href={`https://www.bilibili.com/bangumi/play/ss${r.bilibiliMainlandId}`}
+              href={bilibiliSeasonLink(r.bilibiliMainlandId)}
               valid={r.bilibiliMainlandId}
             />
             <LinkIcon
               icon={IconPath.mikanAnimeIcon}
-              href={`https://mikanani.me/Home/Bangumi/${r.mikanAnimeId}`}
+              href={mikanAnimeLink(r.mikanAnimeId)}
               valid={r.mikanAnimeId}
             />
             <LinkIcon
               icon={IconPath.jellyfinIcon}
-              href={`https://jellyfin.std4453.com:444/web/index.html#!/details?serverId=510e48488c4e4a6b981894df79711cdc&id=${r.jellyfinId}`}
+              href={jellyfinSeasonLink(r.jellyfinId)}
               valid={r.jellyfinId}
             />
           </Space>
