@@ -20,7 +20,13 @@ export default function SearchTorrentDialog({
   resolve,
   visible,
   submitting,
-}: DialogPropsWithOnResolve<void, TorrentFieldsFragment>) {
+  input,
+}: DialogPropsWithOnResolve<
+  {
+    keyword: string;
+  } | void,
+  TorrentFieldsFragment
+>) {
   const [keywords, setKeywords] = useState('');
   const [selected, setSelected] = useState<TorrentFieldsFragment | undefined>(
     undefined,
@@ -40,10 +46,15 @@ export default function SearchTorrentDialog({
 
   useEffect(() => {
     if (visible) {
-      setKeywords('');
+      if (typeof input === 'object' && 'keyword' in input) {
+        console.log(input.keyword);
+        setKeywords(input.keyword);
+      } else {
+        setKeywords('');
+      }
       setSelected(undefined);
     }
-  }, [visible]);
+  }, [visible, input]);
 
   return (
     <Modal

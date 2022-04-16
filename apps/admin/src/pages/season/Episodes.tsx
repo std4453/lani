@@ -7,16 +7,17 @@ import {
   DownloadBilibiliCcDocument,
   DownloadTorrentForEpisodeDocument,
   MetadataSource,
-  TorrentFieldsFragment,
+  TorrentFieldsFragment
 } from '@/generated/types';
 import {
   Episode,
   formItemProps,
   FormValues,
-  useSeasonPageContext,
+  useSeasonPageContext
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
 import Section from '@/pages/season/Section';
+import { getSeasonKeyword } from '@/utils/season';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProFormSelect } from '@ant-design/pro-form';
@@ -101,7 +102,13 @@ function useColumns({
               <Menu>
                 <Menu.Item
                   onClick={() => {
+                    if (!formRef.current) {
+                      return;
+                    }
                     void openSearchTorrent({
+                      keyword: getSeasonKeyword(
+                        formRef.current.getFieldValue('title'),
+                      ),
                       async onResolve(torrent: TorrentFieldsFragment) {
                         try {
                           await client.mutate({
