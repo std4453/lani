@@ -9,6 +9,7 @@ import {
   useOnFinish,
 } from '@/pages/season/help';
 import Metadata from '@/pages/season/Metadata';
+import Notifications from '@/pages/season/Notifications';
 import ProForm from '@ant-design/pro-form';
 import { Spin } from 'antd';
 import { useMemo, useState } from 'react';
@@ -61,6 +62,7 @@ export default function SeasonPage() {
           <Connections />
           <Metadata />
           <DownloadSources />
+          <Notifications />
           <Episodes />
           <div style={{ height: 80 }} />
         </ProForm>
