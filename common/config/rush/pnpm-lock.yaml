@@ -56,6 +56,7 @@ specifiers:
   '@types/md5': ~2.3.2
   '@types/node': ~17.0.4
   '@types/parse-torrent': ~5.8.4
+  '@types/qs': ~6.9.7
   '@types/react': ~17.0.38
   '@types/react-dom': ^17.0.0
   '@types/supertest': ^2.0.11
@@ -186,6 +187,7 @@ dependencies:
   '@types/md5': 2.3.2
   '@types/node': 17.0.23
   '@types/parse-torrent': 5.8.4
+  '@types/qs': 6.9.7
   '@types/react': 17.0.43
   '@types/react-dom': 17.0.14
   '@types/supertest': 2.0.12
@@ -3077,6 +3079,49 @@ packages:
 
   /@kwsites/promise-deferred/1.1.1:
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+    dev: false
+
+  /@larksuiteoapi/allcore/1.0.14:
+    resolution: {integrity: sha512-vZILIV24X0xXc01CDZVGCzz1rjI5jXfvxpS8fmVRx2nPhbDMBq00eu829C57ofLBsvOBqxHL6/iOzsX+kMGaSg==}
+    engines: {node: '>= 8.9.0', npm: '>= 5.5.1'}
+    dependencies:
+      '@larksuiteoapi/api': 1.0.14
+      '@larksuiteoapi/card': 1.0.14
+      '@larksuiteoapi/core': 1.0.14
+      '@larksuiteoapi/event': 1.0.14
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@larksuiteoapi/api/1.0.14:
+    resolution: {integrity: sha512-ilheGizbpg7GXzqNPQlKs9NGjzSJ8ILeIZ04jZGB5SsWSzOYs0KpS1zq2WZqdrpck0qiLPJWoutI2x3NVf31yw==}
+    engines: {node: '>= 8.9.0', npm: '>= 5.5.1'}
+    dependencies:
+      '@larksuiteoapi/core': 1.0.14
+      form-data: 3.0.1
+      node-fetch: 2.6.7
+      tempy: 0.7.1
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@larksuiteoapi/card/1.0.14:
+    resolution: {integrity: sha512-7K5mUahWXeNh63wOFfSJ9XYEFblrsTIdnEWkMnZjdlbGyp5wVZYH+YTpnt+6F14gJRo2qeYscnEHJfIITVhwew==}
+    engines: {node: '>= 8.9.0', npm: '>= 5.5.1'}
+    dependencies:
+      '@larksuiteoapi/core': 1.0.14
+    dev: false
+
+  /@larksuiteoapi/core/1.0.14:
+    resolution: {integrity: sha512-CFAxuWE23G+sWBqYlDbiT51ZBlgRmbjSpDeuS5GNwD7Jha+YjvzG8MlNQgnznHuCiIYbCbvaPeIIdy1z50gtqg==}
+    engines: {node: '>= 8.9.0', npm: '>= 5.5.1'}
+    dev: false
+
+  /@larksuiteoapi/event/1.0.14:
+    resolution: {integrity: sha512-YgS/fdW3RlVAhYAr2iskH7Y55+MEHTv3QGKWiW6SRFA6Nag0TDSBUCbRVlNvKw9xki0dKSil3tJrk0MZohDasA==}
+    engines: {node: '>= 8.9.0', npm: '>= 5.5.1'}
+    dependencies:
+      '@larksuiteoapi/core': 1.0.14
     dev: false
 
   /@microsoft/tsdoc-config/0.15.2:
@@ -8604,6 +8649,20 @@ packages:
       isobject: 3.0.1
     dev: false
 
+  /del/6.0.0:
+    resolution: {integrity: sha512-1shh9DQ23L16oXSZKB2JxpL7iMy2E0S9d517ptA1P8iw0alkPtQcrKH7ru31rYtKwF499HkTu+DRzq3TCKDFRQ==}
+    engines: {node: '>=10'}
+    dependencies:
+      globby: 11.1.0
+      graceful-fs: 4.2.9
+      is-glob: 4.0.3
+      is-path-cwd: 2.2.0
+      is-path-inside: 3.0.3
+      p-map: 4.0.0
+      rimraf: 3.0.2
+      slash: 3.0.0
+    dev: false
+
   /delayed-stream/1.0.0:
     resolution: {integrity: sha1-3zrhmayt+31ECqrgsp4icrJOxhk=}
     engines: {node: '>=0.4.0'}
@@ -11505,6 +11564,11 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       symbol-observable: 1.2.0
+    dev: false
+
+  /is-path-cwd/2.2.0:
+    resolution: {integrity: sha512-w942bTcih8fdJPJmQHFzkS76NEP8Kzzvmw92cXsazb8intwLqPibPPdXf4ANdKV3rYMuuQYGIWtvz9JilB3NFQ==}
+    engines: {node: '>=6'}
     dev: false
 
   /is-path-inside/3.0.3:
@@ -18640,6 +18704,22 @@ packages:
       yallist: 4.0.0
     dev: false
 
+  /temp-dir/2.0.0:
+    resolution: {integrity: sha512-aoBAniQmmwtcKp/7BzsH8Cxzv8OL736p7v1ihGb5e9DJ9kTwGWHrQrVB5+lfVDzfGrdRzXch+ig7LHaY1JTOrg==}
+    engines: {node: '>=8'}
+    dev: false
+
+  /tempy/0.7.1:
+    resolution: {integrity: sha512-vXPxwOyaNVi9nyczO16mxmHGpl6ASC5/TVhRRHpqeYHvKQm58EaWNvZXxAhR0lYYnBOQFjXjhzeLsaXdjxLjRg==}
+    engines: {node: '>=10'}
+    dependencies:
+      del: 6.0.0
+      is-stream: 2.0.1
+      temp-dir: 2.0.0
+      type-fest: 0.16.0
+      unique-string: 2.0.0
+    dev: false
+
   /terminal-link/2.1.1:
     resolution: {integrity: sha512-un0FmiRUQNr5PJqy9kP7c40F5BOfpGlYTrxonDChEZB7pzZxRNp/bt+ymiy9/npwXya9KH99nJ/GXFIiUkYGFQ==}
     engines: {node: '>=8'}
@@ -19118,6 +19198,11 @@ packages:
   /type-detect/4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
     engines: {node: '>=4'}
+    dev: false
+
+  /type-fest/0.16.0:
+    resolution: {integrity: sha512-eaBzG6MxNzEn9kiwvtre90cXaNLkmadMWa1zQMs3XORCXNbsH/OewwbxC5ia9dCxIxnTAsSxXJaa/p5y8DlvJg==}
+    engines: {node: '>=10'}
     dev: false
 
   /type-fest/0.20.2:
@@ -20340,12 +20425,13 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-OXtRAr1W/5bj50gmd0unhAfDkscydRd8zMKLjX2/8qGsIKzce57Wu7lumruT5oMsDl3v2iKt811vwK9SD3nMvQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-Elvss3I7uhSQG99GyPkc6y+jOGw55Z6O8OaepYvycmRwpjXPIAG6u7puxlj5ozaijpQf8MT2pRctX9cP9FCP8w==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
     dependencies:
       '@apollo/subgraph': 0.3.3_graphql@15.8.0
+      '@larksuiteoapi/allcore': 1.0.14
       '@nestjs/apollo': 10.0.8_ee3df42fdeae765392fd29620e239ccd
       '@nestjs/axios': 0.0.7_7ab401b35f05c13deb013f5cd66f11e3
       '@nestjs/cli': 8.2.4

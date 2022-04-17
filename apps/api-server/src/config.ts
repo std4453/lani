@@ -33,6 +33,13 @@ const config = mergeConfig({
     bucket: 'lani-images-1308701035',
     region: 'ap-shanghai',
   } as COSBucket,
+  larkAppID: 'cli_a12ee15e54785013',
+  larkAppSecret: 'xTBxpBBAFIo4biIwG5XgnbkIjJIW6q8Q',
+  larkEncryptKey: '5EsUt6fMQ6x5LIzXjnY0FbdoYbWTiwnh',
+  larkVerificationToken: 'J0XGD1O5b04ivzHePwAALlMcaeoE3Cou',
+  larkAdminChatID: 'oc_6a5bd039f4e5ce3e655f1aea2389dec9',
+  laniHost: 'https://lani.std4453.com:444',
+  jellyfinHost: 'https://jellyfin.std4453.com:444',
 })({
   dev: {
     postgresURL:

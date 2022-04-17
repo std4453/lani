@@ -54,7 +54,8 @@
     "@ntegral/nestjs-sentry": "~3.0.7",
     "@sentry/node": "~6.19.2",
     "@sentry/types": "~6.19.2",
-    "md5": "~2.3.0"
+    "md5": "~2.3.0",
+    "@larksuiteoapi/allcore": "~1.0.14"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

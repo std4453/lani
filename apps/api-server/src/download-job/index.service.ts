@@ -1,4 +1,5 @@
 import { PrismaService } from '@/common/prisma.service';
+import { DateFormat } from '@/constants/date-format';
 import {
   StepCompletion,
   StepInput,
@@ -12,7 +13,12 @@ import { RefreshPlayerAtom } from '@/download-job/atoms/refresh-player.atom';
 import { SubmitDownloadAtom } from '@/download-job/atoms/submit-download.atom';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { WriteMetadataAtom } from '@/download-job/atoms/write-metadata.atom';
+import {
+  EpisodePublishEvent,
+  EPISODE_PUBLISH_EVENT,
+} from '@/download-job/events';
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { DownloadJob, DownloadStatus } from '@prisma/client';
@@ -26,6 +32,7 @@ export class JobService
 {
   constructor(
     private prisma: PrismaService,
+    private emitter: EventEmitter2,
 
     // atoms
     submitDownload: SubmitDownloadAtom,
@@ -273,14 +280,14 @@ export class JobService
       console.debug('Job', id, 'finished');
     } else {
       console.debug(
-        dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        dayjs().format(DateFormat.DateTime),
         'Running step',
         state.completion,
         'for job',
         id,
       );
     }
-    const newJob = await this.prisma.downloadJob.update({
+    const { episode, ...newJob } = await this.prisma.downloadJob.update({
       where: { id },
       data: {
         status: finished
@@ -307,7 +314,16 @@ export class JobService
             }
           : undefined),
       },
+      include: {
+        episode: true,
+      },
     });
+    if (finished) {
+      this.emitter.emit(
+        EPISODE_PUBLISH_EVENT,
+        new EpisodePublishEvent(episode),
+      );
+    }
     return this.jobToInput(newJob);
   }
 
