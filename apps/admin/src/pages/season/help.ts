@@ -73,6 +73,8 @@ export interface FormValues {
   banner: DisplayImageFieldsFragment | null;
   episodesLastSync: Date | null;
   needDownloadCc: boolean;
+  notifyMissing: boolean;
+  notifyPublish: boolean;
 }
 
 export function queryToFormValues({
@@ -99,6 +101,8 @@ export function queryToFormValues({
   fanart,
   episodesLastSync,
   needDownloadCc,
+  notifyMissing,
+  notifyPublish,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -134,6 +138,8 @@ export function queryToFormValues({
     fanart: fanart ?? null,
     episodesLastSync: episodesLastSync ?? null,
     needDownloadCc,
+    notifyMissing,
+    notifyPublish,
   };
 }
 
@@ -159,6 +165,8 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
       infoSource,
       episodesSource,
       needDownloadCc,
+      notifyMissing,
+      notifyPublish,
     }: // 这种只能同步的字段暂时不允许前端修改
     // tags,
     // description,
@@ -186,6 +194,8 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
               infoSource,
               episodesSource,
               needDownloadCc,
+              notifyMissing,
+              notifyPublish,
             },
           },
         });
