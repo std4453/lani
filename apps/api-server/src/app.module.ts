@@ -7,6 +7,7 @@ import { DownloadJobModule } from '@/download-job/index.module';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
 import { JellyfinSyncModule } from '@/jellyfin-sync/index.module';
 import { MikanSyncModule } from '@/mikan-sync/index.module';
+import { NotificationModule } from '@/notification/NotificationModule';
 import { SeasonSyncModule } from '@/season-sync/index.module';
 import {
   ApolloFederationDriver,
@@ -29,6 +30,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
     AdminModule,
     JellyfinSyncModule,
     BilibiliBangumiCCModule,
+    NotificationModule,
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       autoSchemaFile: true,

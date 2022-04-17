@@ -23,16 +23,17 @@ model DownloadSource {
 }
 
 model Episode {
-  id                Int           @id @default(autoincrement())
-  seasonId          Int           @map("season_id")
-  title             String        @default("")
-  description       String        @default("")
-  index             Int
-  airTime           DateTime?     @map("air_time") @db.Timestamptz(6)
-  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  jellyfinEpisodeId String?       @map("jellyfin_episode_id")
-  season            Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  downloadJobs      DownloadJob[] @relation("download_jobsToepisodes")
+  id                    Int           @id @default(autoincrement())
+  seasonId              Int           @map("season_id")
+  title                 String        @default("")
+  description           String        @default("")
+  index                 Int
+  airTime               DateTime?     @map("air_time") @db.Timestamptz(6)
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
+  lastMissingNotifyTime DateTime?     @map("last_missing_notify_time") @db.Timestamptz(6)
+  season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  downloadJobs          DownloadJob[] @relation("download_jobsToepisodes")
 
   @@unique([seasonId, index])
   @@map("episodes")
@@ -77,6 +78,8 @@ model Season {
   fanartImageId      Int?             @map("fanart_image_id")
   episodesLastSync   DateTime?        @map("episodes_last_sync") @db.Timestamptz(6)
   needDownloadCc     Boolean          @default(false) @map("need_download_cc")
+  notifyMissing      Boolean          @default(true) @map("notify_missing")
+  notifyPublish      Boolean          @default(true) @map("notify_publish")
   bannerImage        Image?           @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
   fanartImage        Image?           @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
   jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
