@@ -4,6 +4,7 @@ fragment torrentFields on Torrent {
   size
   title
   torrentLink
+  episodeIndex
 }
 
 query ListTorrents(

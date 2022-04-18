@@ -6,7 +6,7 @@ import {
   TorrentsOrderBy,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { episodeRegex, matchTorrentEpisode } from '@/utils/matchTorrentTitle';
+import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { Space, Typography } from 'antd';
@@ -26,12 +26,14 @@ function useColumns() {
         title: '种子标题',
         dataIndex: 'title',
         copyable: true,
-        render: (_, r) => <Highlight content={r.title} match={episodeRegex} />,
+        render: (_, r) => (
+          <Highlight content={r.title} match={matchTorrentEpisode} />
+        ),
       },
       {
         title: '集数',
         key: 'episode',
-        render: (_, r) => matchTorrentEpisode(r.title),
+        render: (_, r) => r.episodeIndex,
         width: 72,
       },
       {
