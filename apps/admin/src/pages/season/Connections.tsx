@@ -295,7 +295,6 @@ export default function Connections() {
                 />
               )}
             </FormDependency>
-            ,
           </Input.Group>
         </Form.Item>
       </ProForm.Group>
