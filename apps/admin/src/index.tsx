@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
+import './global.less';
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
@@ -96,7 +97,7 @@ export default function App(props: any) {
         setToken(keycloak.token);
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     } finally {
       setAuth({
         loading: false,
@@ -134,9 +135,6 @@ export default function App(props: any) {
           {...props}
           navTheme="light"
           headerRender={false}
-          style={{
-            height: '100vh',
-          }}
           collapsed={collapsed}
           onCollapse={setCollapsed}
           menuHeaderRender={() => (
@@ -165,8 +163,6 @@ export default function App(props: any) {
           contentStyle={{
             margin: 0,
             backgroundColor: '#FFFFFF',
-            maxHeight: '100vh',
-            overflow: 'auto',
           }}
           className={styles.layout}
           menuFooterRender={() =>

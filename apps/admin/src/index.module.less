@@ -45,6 +45,23 @@
     .ant-pro-sider-collapsed-button {
       border-top: none;
     }
+    .ant-pro-basicLayout-content {
+      height: 100vh;
+      overflow: auto;
+    }
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .layout {
+    :global {
+      .ant-pro-basicLayout-content {
+        height: 100vh;
+        height: -moz-available;
+        height: -webkit-fill-available;
+        height: fill-available;
+      }
+    }
   }
 }
 
