@@ -6,7 +6,7 @@ import {
   useSeasonPageContext,
 } from '@/pages/season/help';
 import Section from '@/pages/season/Section';
-import { episodeRegex } from '@/utils/matchTorrentTitle';
+import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import { getSeasonKeyword } from '@/utils/season';
 import { MinusOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
@@ -144,10 +144,9 @@ export default function DownloadSources() {
                 return;
               }
               const title = result.output.title;
-              const match = title.match(episodeRegex);
-              const index = match?.index;
-              const length = match?.[0]?.length;
-              if (typeof index === 'number' && index >= 0 && length) {
+              const match = matchTorrentEpisode(title);
+              if (match) {
+                const { index, length } = match;
                 ref.current?.add({
                   id: 0,
                   // 匹配到剧集的部分使用\d+代替，其余部分保持不变

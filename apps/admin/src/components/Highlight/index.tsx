@@ -14,7 +14,15 @@ export default function Highlight({
 }: {
   content: string;
   keyword?: string;
-  match?: RegExp;
+  match?:
+    | RegExp
+    | ((content: string) =>
+        | {
+            index: number;
+            length: number;
+          }
+        | undefined
+        | null);
 }) {
   const parts = useMemo((): HighlightPart[] => {
     if (keyword) {
@@ -39,26 +47,49 @@ export default function Highlight({
       }
     }
     if (match) {
-      const result = content.match(match);
-      const index = result?.index;
-      const matchLength = result?.[0]?.length;
-      if (!index || !matchLength) {
-        return [{ text: content, highlight: false }];
+      if (match instanceof Function) {
+        const result = match(content);
+        if (!result) {
+          return [{ text: content, highlight: false }];
+        } else {
+          const { index, length } = result;
+          return [
+            {
+              text: content.substring(0, index),
+              highlight: false,
+            },
+            {
+              text: content.substring(index, index + length),
+              highlight: true,
+            },
+            {
+              text: content.substring(index + length),
+              highlight: false,
+            },
+          ];
+        }
       } else {
-        return [
-          {
-            text: content.substring(0, index),
-            highlight: false,
-          },
-          {
-            text: content.substring(index, index + matchLength),
-            highlight: true,
-          },
-          {
-            text: content.substring(index + matchLength),
-            highlight: false,
-          },
-        ];
+        const result = content.match(match);
+        const index = result?.index;
+        const matchLength = result?.[0]?.length;
+        if (typeof index !== 'number' || !matchLength) {
+          return [{ text: content, highlight: false }];
+        } else {
+          return [
+            {
+              text: content.substring(0, index),
+              highlight: false,
+            },
+            {
+              text: content.substring(index, index + matchLength),
+              highlight: true,
+            },
+            {
+              text: content.substring(index + matchLength),
+              highlight: false,
+            },
+          ];
+        }
       }
     }
     return [{ text: content, highlight: false }];
