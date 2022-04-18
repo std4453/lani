@@ -315,7 +315,16 @@ export class JobService
           : undefined),
       },
       include: {
-        episode: true,
+        episode: {
+          include: {
+            season: {
+              include: {
+                jellyfinFolder: true,
+                posterImage: true,
+              },
+            },
+          },
+        },
       },
     });
     if (finished) {
