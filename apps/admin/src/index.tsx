@@ -76,11 +76,16 @@ export default function App(props: any) {
   const [token, setToken] = useState('');
   useMount(async () => {
     try {
+      // 这里如果设置 login-required 则会多跳一次，我们这里默认后台检查登陆状态，如果没有登录则跳到登录页，
+      // 如果登录了则对用户无感知。虽然登录过程中也会展示加载中，但用户体验会好一点
       await keycloak.init({
         onLoad: 'check-sso',
         silentCheckSsoRedirectUri:
           window.location.origin + '/silent-check-sso.html',
       });
+      if (!keycloak.authenticated) {
+        void keycloak.login();
+      }
       const profile = await keycloak.loadUserProfile();
       setProfile(profile);
       setAuth({
@@ -90,6 +95,8 @@ export default function App(props: any) {
       if (keycloak.token) {
         setToken(keycloak.token);
       }
+    } catch (error) {
+      console.error(error)
     } finally {
       setAuth({
         loading: false,
