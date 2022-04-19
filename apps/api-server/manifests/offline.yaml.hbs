@@ -32,6 +32,8 @@ spec:
         env:
         - name: NODE_ENV
           value: "offline" 
+        - name: TZ
+          value: Asia/Shanghai
         volumeMounts:
           - mountPath: /media
             name: media-root
