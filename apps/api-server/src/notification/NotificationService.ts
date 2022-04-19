@@ -49,7 +49,7 @@ export class NotificationService {
   }
 
   @Mutation(() => Int)
-  @Cron('*/15 * * * *') // 15 分钟
+  @Cron('0 10,16,22 * * *') // 10:00, 16:00, 22:00 通知
   async notifyMissingEpisodes() {
     const episodes = await this.prisma.episode.findMany({
       where: {
@@ -63,18 +63,6 @@ export class NotificationService {
         airTime: {
           lte: dayjs().subtract(12, 'h').toDate(),
         },
-        OR: [
-          {
-            // 从未通知过
-            lastMissingNotifyTime: null,
-          },
-          {
-            lastMissingNotifyTime: {
-              // 距离上次通知超过12小时
-              lte: dayjs().subtract(12, 'h').toDate(),
-            },
-          },
-        ],
       },
       include: {
         season: true,
@@ -97,16 +85,6 @@ export class NotificationService {
 
     if (episodes.length > 0 && this.management) {
       await this.management.onEpisodesMissing(episodes);
-      await this.prisma.episode.updateMany({
-        where: {
-          id: {
-            in: episodes.map((e) => e.id),
-          },
-        },
-        data: {
-          lastMissingNotifyTime: dayjs().toDate(),
-        },
-      });
       return episodes.length;
     } else {
       // 没有配置management时不提醒，也不更新lastMissingNotifyTime
