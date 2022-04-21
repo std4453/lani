@@ -1,6 +1,7 @@
 import { COSService } from '@/common/cos.service';
 import { ConfigType, COSBucket } from '@/config';
 import { DateFormat } from '@/constants/date-format';
+import { env } from '@/env';
 import {
   buildCardMessage,
   buildPostMessage,
@@ -17,7 +18,6 @@ import {
   OnEpisodePublishEpisode,
   UserNotificationProvider,
 } from '@/notification/UserNotificationProvider';
-import { env } from '@lani/framework';
 import * as lark from '@larksuiteoapi/allcore';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
