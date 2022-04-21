@@ -1,0 +1,130 @@
+.logoContainer {
+  height: 44px;
+  width: 100%;
+  position: relative;
+  transition: transform 125ms ease;
+
+  &.collapsed {
+    transform: scale(0.8);
+
+    .logoBlock {
+      width: 40px;
+      left: -2px;
+    }
+  }
+}
+
+.logoBlock {
+  position: absolute;
+  top: 50%;
+  left: 21px;
+  width: 133px;
+  height: 44px;
+  overflow: hidden;
+  transform: translateY(-50%);
+  transition: all 125ms ease;
+}
+
+.logo {
+  && {
+    height: 44px;
+    width: 133px;
+  }
+}
+
+.content {
+  background-color: white;
+  padding: 0px 32px 16px;
+}
+
+.layout {
+  :global {
+    .ant-layout-sider {
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .ant-pro-sider-collapsed-button {
+      border-top: none;
+    }
+    .ant-pro-basicLayout-content {
+      height: 100vh;
+      overflow: auto;
+    }
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .layout {
+    :global {
+      .ant-pro-basicLayout-content {
+        height: 100vh;
+        height: -moz-available;
+        height: -webkit-fill-available;
+        height: fill-available;
+      }
+    }
+  }
+}
+
+.userRow {
+  padding: 0 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 40px;
+  margin-top: 4px;
+  margin-bottom: 16px;
+  justify-content: flex-start;
+  transition: transform 125ms ease;
+  cursor: pointer;
+
+  &.collapsed {
+    transform: translateX(-4px);
+
+    .avatar {
+      transform: scale(0.8);
+    }
+  }
+}
+
+.username {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
+  flex-shrink: 0;
+  margin-right: 8px;
+  transition: transform 125ms ease;
+}
+
+.popover {
+  :global {
+    .ant-popover-inner-content {
+      padding: 0;
+    }
+    .ant-menu {
+      border-right: none;
+    }
+  }
+}
+
+.menu {
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 4px 0;
+  transition: color 0.3s;
+  cursor: pointer;
+
+  &:not(:last-child) {
+    margin-bottom: 8px;
+  }
+
+  &:hover {
+    color: #1890ff;
+  }
+}

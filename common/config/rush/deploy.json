@@ -17,7 +17,12 @@
    * If the main project should include other unrelated Rush projects, add it to the "projectSettings" section,
    * and then specify those projects in the "additionalProjectsToInclude" list.
    */
-  "deploymentProjectNames": ["@lani/bilibili-bangumi-cc"],
+  "deploymentProjectNames": [
+    "@lani/data-server",
+    "@lani/api-server",
+    "@lani/gateway",
+    "@lani/admin"
+  ],
 
   /**
    * When deploying a local Rush project, the package.json "devDependencies" are normally excluded.

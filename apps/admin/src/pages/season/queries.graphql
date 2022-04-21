@@ -1,0 +1,154 @@
+fragment displayImageFields on Image {
+  id
+  downloadPath
+}
+
+fragment seasonEpisodes on Season {
+  episodesBySeasonId(orderBy: INDEX_ASC) {
+    edges {
+      node {
+        airTime
+        id
+        index
+        jellyfinEpisodeId
+        title
+        ...episodeStatusFields
+      }
+    }
+  }
+}
+
+fragment seasonConfigFields on Season {
+  id
+  infoSource
+  isMonitoring
+  jellyfinId
+  mikanAnimeId
+  tags
+  title
+  tvdbId
+  tvdbSeason
+  weekday
+  yearAndSemester
+  airTime
+  bangumiId
+  bilibiliMainlandId
+  bilibiliThmId
+  createdAt
+  description
+  isArchived
+  episodesSource
+  downloadSourcesBySeasonId {
+    edges {
+      node {
+        id
+        pattern
+        offset
+      }
+    }
+  }
+  poster: imageByPosterImageId {
+    ...displayImageFields
+  }
+  banner: imageByBannerImageId {
+    ...displayImageFields
+  }
+  fanart: imageByFanartImageId {
+    ...displayImageFields
+  }
+  episodesLastSync
+  needDownloadCc
+  jellyfinFolder: jellyfinFolderByJellyfinFolderId {
+    name
+    location
+  }
+  notifyMissing
+  notifyPublish
+}
+
+query GetSeasonById(
+  $id: Int!
+  $withConfig: Boolean! = true
+  $withEpisodes: Boolean! = true
+) {
+  __typename
+  seasonById(id: $id) {
+    ...seasonConfigFields @include(if: $withConfig)
+    ...seasonEpisodes @include(if: $withEpisodes)
+  }
+}
+
+query GetSeasonByIdAll($id: Int!) {
+  seasonById(id: $id) {
+    ...seasonConfigFields
+    ...seasonEpisodes
+  }
+}
+
+query GetSeasonByIdConfigOnly($id: Int!) {
+  seasonById(id: $id) {
+    ...seasonConfigFields
+  }
+}
+
+query GetSeasonByIdEpisodesOnly($id: Int!) {
+  seasonById(id: $id) {
+    ...seasonEpisodes
+  }
+}
+
+mutation UpdateSeasonById($id: Int!, $seasonPatch: SeasonPatch!) {
+  updateSeasonById(input: { id: $id, seasonPatch: $seasonPatch }) {
+    __typename
+  }
+}
+
+query GetSeasonByTitle($title: String!) {
+  seasonByTitle(title: $title) {
+    id
+  }
+}
+
+mutation UpdateSeasonDownloadSources(
+  $input: UpdateSeasonDownloadSourcesInput!
+) {
+  updateSeasonDownloadSources(input: $input)
+}
+
+query GetDownloadSourceByPattern($pattern: String!) {
+  downloadSourceByPattern(pattern: $pattern) {
+    id
+  }
+}
+
+mutation SyncMetadata($seasonId: Int!) {
+  syncMetadata(seasonId: $seasonId)
+}
+
+mutation SyncEpisodeData($seasonId: Int!) {
+  syncEpisodeData(seasonId: $seasonId)
+}
+
+mutation DownloadTorrentForEpisode($episodeId: Int!, $torrentLink: String!) {
+  downloadTorrentForEpisode(episodeId: $episodeId, torrentLink: $torrentLink)
+}
+
+query AllJellyfinFolders {
+  allJellyfinFolders {
+    edges {
+      node {
+        id
+        location
+        name
+      }
+    }
+  }
+}
+
+mutation SyncJellyfinSeriesId($seasonId: Int!) {
+  syncJellyfinSeriesId(seasonId: $seasonId)
+}
+
+mutation DownloadBilibiliCC($episodeId: Int!) {
+  downloadBilibiliCC(episodeId: $episodeId)
+}

@@ -9,25 +9,11 @@
   },
   "devDependencies": {
     "typescript": "~4.5.4",
-    "@types/koa": "~2.13.4",
-    "@types/koa-router": "~7.4.4",
-    "@types/koa-bodyparser": "~4.3.5",
-    "@types/koa-logger": "~3.1.2",
     "@lani/cli": "~1.0.0",
     "@types/node": "~17.0.4",
     "typescript-transform-paths": "~3.3.1"
   },
-  "dependencies": {
-    "@lani/api": "~1.0.0",
-    "axios": "~0.24.0",
-    "koa": "~2.13.4",
-    "koa-router": "~10.1.1",
-    "io-ts": "~2.2.16",
-    "fp-ts": "~2.11.5",
-    "cls-rtracer": "~2.6.0",
-    "koa-logger": "~3.2.1",
-    "koa-bodyparser": "~4.3.0"
-  },
+  "dependencies": {},
   "files": [
     "/dist"
   ]

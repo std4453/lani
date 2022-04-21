@@ -1,0 +1,168 @@
+{
+  "date": "2020-03-28",
+  "platform": "WEB",
+  "images": {
+    "small": "https://lain.bgm.tv/pic/cover/s/da/34/304629_5SL53.jpg",
+    "grid": "https://lain.bgm.tv/pic/cover/g/da/34/304629_5SL53.jpg",
+    "large": "https://lain.bgm.tv/pic/cover/l/da/34/304629_5SL53.jpg",
+    "medium": "https://lain.bgm.tv/pic/cover/m/da/34/304629_5SL53.jpg",
+    "common": "https://lain.bgm.tv/pic/cover/c/da/34/304629_5SL53.jpg"
+  },
+  "summary": "ロノー先生の悪魔な神授業異世界一受けたい授業が期間限定で登場！\r\n映像授業を完全アニメ化した新プロジェクト『Animation Class Project』始動！\r\n\r\n魔界――。\r\n\r\n皇位継承権を持つ魔界の皇子に英才教育を施すため、魔界の学匠達を集められた。学匠は皇子の教育担当の座を競い、その座を射止めた学匠には上級学匠＜グランドメイスター＞の栄誉が与えられるという…。\r\n\r\nその競争方法とは、人間界で学問を教えること。\r\n\r\n下等な人間をそれぞれの得意な学問で上手く教育できたものこそ、最も優秀な教育者であり、皇子の教育担当たりえる。\r\n\r\nそして今、学匠たちは、人間に学問を授業するため、人間界に降臨した。",
+  "name": "ロノー先生の悪魔な神授業",
+  "name_cn": "",
+  "tags": [],
+  "infobox": [
+    {
+      "key": "话数",
+      "value": "*"
+    },
+    {
+      "key": "放送开始",
+      "value": "2020年3月28日"
+    },
+    {
+      "key": "放送星期",
+      "value": "星期五"
+    },
+    {
+      "key": "原案",
+      "value": "オノ・ナツメ"
+    },
+    {
+      "key": "人物原案",
+      "value": "オノ・ナツメ"
+    },
+    {
+      "key": "人物设定",
+      "value": "佐古宗一郎"
+    },
+    {
+      "key": "概念艺术",
+      "value": "佐古宗一郎"
+    },
+    {
+      "key": "演出",
+      "value": "飯田祥弘"
+    },
+    {
+      "key": "合成",
+      "value": "清水理央"
+    },
+    {
+      "key": "色彩设计",
+      "value": "山崎朋子"
+    },
+    {
+      "key": "特殊效果",
+      "value": "山田可奈子"
+    },
+    {
+      "key": "美术",
+      "value": "宍戸太一"
+    },
+    {
+      "key": "Live2D 总设计师",
+      "value": "円谷あづさ"
+    },
+    {
+      "key": "Live2D 设计师",
+      "value": "村木紀之、松田範雄、濱中裕"
+    },
+    {
+      "key": "录音演出",
+      "value": "渡辺悠介"
+    },
+    {
+      "key": "音效",
+      "value": "八十正太"
+    },
+    {
+      "key": "混音",
+      "value": "山後茜"
+    },
+    {
+      "key": "音响剪辑",
+      "value": "川﨑千遥、山口桃"
+    },
+    {
+      "key": "音响制作",
+      "value": "HALF H・P STUDIO"
+    },
+    {
+      "key": "录音室",
+      "value": "HALF H・P STUDIO"
+    },
+    {
+      "key": "授课监修",
+      "value": "関正生"
+    },
+    {
+      "key": "制片人",
+      "value": "前田俊博、米内則智"
+    },
+    {
+      "key": "制作管理",
+      "value": "西本健人"
+    },
+    {
+      "key": "网络制作",
+      "value": "加々本裕樹"
+    },
+    {
+      "key": "标志设计",
+      "value": "岡裕希"
+    },
+    {
+      "key": "动画制作",
+      "value": "Lay-duce"
+    },
+    {
+      "key": "官方网站",
+      "value": "https://www.mbs.jp/ronowe/"
+    },
+    {
+      "key": "播放电视台",
+      "value": "毎日放送、スタディサプリ"
+    },
+    {
+      "key": "其他电视台",
+      "value": "YouTube"
+    },
+    {
+      "key": "Copyright",
+      "value": "© ACP All Rights Reserved."
+    }
+  ],
+  "rating": {
+    "rank": 0,
+    "total": 1,
+    "count": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 1,
+      "8": 0,
+      "9": 0,
+      "10": 0
+    },
+    "score": 7
+  },
+  "total_episodes": 0,
+  "collection": {
+    "on_hold": 2,
+    "dropped": 4,
+    "wish": 1,
+    "collect": 3,
+    "doing": 1
+  },
+  "id": 304629,
+  "eps": 0,
+  "volumes": 0,
+  "locked": false,
+  "nsfw": false,
+  "type": 2
+}

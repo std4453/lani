@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DownloadSource {
+  id         Int       @id @default(autoincrement())
+  seasonId   Int       @map("season_id")
+  groupId    String    @default("") @map("group_id")
+  pattern    String    @unique @default("")
+  isArchived Boolean   @default(false) @map("is_archived")
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  isDisabled Boolean   @default(false) @map("is_disabled")
+  offset     Int       @default(0)
+  season     Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@map("download_sources")
+}
+
+model Episode {
+  id                    Int           @id @default(autoincrement())
+  seasonId              Int           @map("season_id")
+  title                 String        @default("")
+  description           String        @default("")
+  index                 Int
+  airTime               DateTime?     @map("air_time") @db.Timestamptz(6)
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
+  lastMissingNotifyTime DateTime?     @map("last_missing_notify_time") @db.Timestamptz(6)
+  season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  downloadJobs          DownloadJob[] @relation("download_jobsToepisodes")
+
+  @@unique([seasonId, index])
+  @@map("episodes")
+}
+
+model Image {
+  id            Int      @id @default(autoincrement())
+  sourceUrl     String   @unique @map("source_url")
+  cosPath       String?  @map("cos_path")
+  bannerSeasons Season[] @relation("imagesToseasons_banner_image_id")
+  fanartSeasons Season[] @relation("imagesToseasons_fanart_image_id")
+  posterSeasons Season[] @relation("imagesToseasons_poster_image_id")
+
+  @@map("images")
+}
+
+model Season {
+  id                 Int              @id @default(autoincrement())
+  title              String           @unique @default("")
+  description        String           @default("")
+  infoSource         MetadataSource   @default(MANUAL) @map("info_source")
+  tags               String[]         @db.VarChar
+  isArchived         Boolean          @default(false) @map("is_archived")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  archivedAt         DateTime?        @map("archived_at") @db.Timestamptz(6)
+  bilibiliThmId      String           @default("") @map("bilibili_thm_id")
+  bilibiliMainlandId String           @default("") @map("bilibili_mainland_id")
+  bangumiId          String           @default("") @map("bangumi_id")
+  mikanAnimeId       String           @default("") @map("mikan_anime_id")
+  isMonitoring       Boolean          @default(true) @map("is_monitoring")
+  yearAndSemester    String           @default("") @map("year_and_semester") @db.VarChar(16)
+  weekday            Int?
+  airTime            String           @default("") @map("air_time") @db.VarChar
+  tvdbId             String           @default("") @map("tvdb_id")
+  tvdbSeason         Int?             @map("tvdb_season")
+  episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
+  seasonRoot         String?          @map("season_root")
+  jellyfinId         String           @default("") @map("jellyfin_id")
+  jellyfinFolderId   Int?             @map("jellyfin_folder_id")
+  posterImageId      Int?             @map("poster_image_id")
+  bannerImageId      Int?             @map("banner_image_id")
+  fanartImageId      Int?             @map("fanart_image_id")
+  episodesLastSync   DateTime?        @map("episodes_last_sync") @db.Timestamptz(6)
+  needDownloadCc     Boolean          @default(false) @map("need_download_cc")
+  notifyMissing      Boolean          @default(true) @map("notify_missing")
+  notifyPublish      Boolean          @default(true) @map("notify_publish")
+  bannerImage        Image?           @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
+  fanartImage        Image?           @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
+  jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  posterImage        Image?           @relation("imagesToseasons_poster_image_id", fields: [posterImageId], references: [id])
+  downloadSources    DownloadSource[]
+  episodes           Episode[]
+
+  @@map("seasons")
+}
+
+model Torrent {
+  id           Int      @id(map: "mikan_items_pkey") @default(autoincrement())
+  title        String
+  torrentLink  String   @map("torrent_link")
+  size         BigInt
+  publishDate  DateTime @map("publish_date") @db.Timestamptz(6)
+  hash         String   @unique
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  episodeIndex Int?     @map("episode_index")
+
+  @@index([title, id, torrentLink], map: "torrent_title_idx")
+  @@map("torrents")
+}
+
+model DownloadJob {
+  id                Int            @id @default(autoincrement())
+  episodeId         Int            @map("episode_id")
+  qbtTorrentHash    String?        @map("qbt_torrent_hash")
+  status            DownloadStatus
+  downloadPath      String?        @map("download_path")
+  filePath          String?        @map("file_path")
+  isCancelled       Boolean        @default(false) @map("is_cancelled")
+  cancelledAt       DateTime?      @map("cancelled_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  isFailed          Boolean        @default(false) @map("is_failed")
+  failedAt          DateTime?      @map("failed_at") @db.Timestamptz(6)
+  failedReason      String         @default("") @map("failed_reason")
+  qbtLastSync       DateTime?      @map("qbt_last_sync") @db.Timestamptz(6)
+  importPath        String?        @map("import_path")
+  torrentLink       String?        @map("torrent_link")
+  nfoPath           String?        @map("nfo_path")
+  jellyfinEpisodeId String?        @map("jellyfin_episode_id")
+  episode           Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
+
+  @@map("download_jobs")
+}
+
+model JellyfinFolder {
+  id         Int      @id @default(autoincrement())
+  name       String
+  jellyfinId String   @unique @map("jellyfin_id")
+  location   String
+  seasons    Season[] @relation("jellyfin_foldersToseasons")
+
+  @@map("jellyfin_folders")
+}
+
+enum DownloadStatus {
+  UNAVAILABLE
+  DOWNLOADING
+  RENAMING
+  WRITING_METADATA
+  PLAYER_WAITING
+  AVAILABLE
+  DOWNLOAD_SUBMITTING
+  IMPORTING
+  DOWNLOAD_COMPLETED
+
+  @@map("download_status")
+}
+
+enum ImageType {
+  POSTER
+  BANNER
+  FANART
+
+  @@map("image_type")
+}
+
+enum MetadataSource {
+  MANUAL
+  BGM_CN
+  SKYHOOK
+  INHERIT
+
+  @@map("metadata_source")
+}
+
+enum SeasonStatus {
+  SCHEDULED
+  AIRING
+  ENDED
+  UNKNOWN
+
+  @@map("season_status")
+}

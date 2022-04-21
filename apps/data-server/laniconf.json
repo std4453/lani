@@ -1,0 +1,13 @@
+{
+  "$schema": "../../tools/cli/src/schema/laniconf.schema.json",
+  "type": "node:ts",
+  "ci": {
+    "image": "data-server",
+    "deployment": {
+      "env": ["offline"]
+    }
+  },
+  "node": {
+    "entry": "src/index.ts"
+  }
+}

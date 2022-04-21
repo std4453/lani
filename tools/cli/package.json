@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "generate-type": "node scripts/generate-type.js",
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "npm run generate-type && shx rm -rf dist && tsc -b",
     "lint": "eslint . --ext .ts --config .eslintrc",
     "postpack": "shx rm -f oclif.manifest.json",
     "prepack": "rushx build && oclif manifest && oclif readme",
@@ -25,7 +25,8 @@
     "tslib": "^2.3.1",
     "@types/node": "~17.0.4",
     "json-schema-to-typescript": "~10.1.5",
-    "@types/lodash": "~4.14.178"
+    "@types/lodash": "~4.14.178",
+    "@types/inquirer": "~8.2.1"
   },
   "dependencies": {
     "typescript": "~4.5.4",
@@ -40,7 +41,9 @@
     "simple-git": "~2.48.0",
     "nodemon": "~2.0.15",
     "inclusion": "~1.0.1",
-    "octokit": "~1.7.1"
+    "octokit": "~1.7.1",
+    "handlebars": "~4.7.7",
+    "inquirer": "~8.2.2"
   },
   "peerDependencies": {
     "typescript-transform-paths": "~3.3.1"

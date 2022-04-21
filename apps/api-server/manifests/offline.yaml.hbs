@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: lani-offline
+  labels:
+    app: api-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-server
+  template:
+    metadata:
+      labels:
+        app: api-server
+    spec:
+      containers:
+      - name: api-server
+        image: {{image}}
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 3000
+        resources:
+          limits:
+            memory: "100Mi"
+            cpu: "500m"
+          requests:
+            memory: "10Mi"
+            cpu: "10m"
+        env:
+        - name: NODE_ENV
+          value: "offline" 
+        - name: TZ
+          value: Asia/Shanghai
+        volumeMounts:
+          - mountPath: /media
+            name: media-root
+      imagePullSecrets:
+      - name: ghcr-io-regcred
+      volumes:
+      - name: media-root
+        persistentVolumeClaim: 
+          claimName: media-root-pvc
+      securityContext:
+        runAsUser: 1000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: api-server
+  namespace: lani-offline
+spec:
+  selector:
+    app: api-server
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 3000

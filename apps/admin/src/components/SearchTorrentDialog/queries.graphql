@@ -1,0 +1,13 @@
+query SearchTorrent($keyword: String!, $first: Int!) {
+  allTorrents(
+    filter: { title: { includesInsensitive: $keyword } }
+    first: $first
+    orderBy: PUBLISH_DATE_DESC
+  ) {
+    edges {
+      node {
+        ...torrentFields
+      }
+    }
+  }
+}

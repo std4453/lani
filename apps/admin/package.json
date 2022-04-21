@@ -1,0 +1,62 @@
+{
+  "name": "@lani/admin",
+  "version": "1.0.0",
+  "private": "true",
+  "scripts": {
+    "dev:codegen": "graphql-codegen --config codegen.yml --watch",
+    "dev:umi": "umi dev",
+    "prebuild": "npm run generate:types",
+    "build": "umi build",
+    "postinstall": "umi generate tmp",
+    "devops": "lani-cli devops",
+    "generate": "graphql-codegen --config codegen.yml",
+    "lint": "eslint src/",
+    "manifest": "lani-cli manifest"
+  },
+  "devDependencies": {
+    "@lani/cli": "~1.0.0",
+    "@types/react": "~17.0.38",
+    "typescript": "~4.5.4",
+    "@graphql-codegen/cli": "~2.4.0",
+    "@graphql-codegen/typescript": "~2.4.2",
+    "@graphql-codegen/typescript-operations": "~2.2.2",
+    "@graphql-codegen/typed-document-node": "~2.2.2",
+    "@types/react-dom": "^17.0.0",
+    "@umijs/preset-react": "1.x",
+    "prettier": "~2.5.1",
+    "@types/lodash": "~4.14.178",
+    "eslint": "^7.32.0",
+    "@rushstack/eslint-config": "~2.5.1",
+    "eslint-plugin-react-hooks": "~4.3.0",
+    "@umijs/plugin-esbuild": "~1.4.1"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^4.7.0",
+    "antd": "~4.19.4",
+    "react": "~17.0.2",
+    "react-dom": "~17.0.2",
+    "clsx": "~1.1.1",
+    "@apollo/client": "~3.5.7",
+    "@ant-design/pro-table": "~2.62.8",
+    "@ant-design/pro-form": "~1.61.0",
+    "@ant-design/pro-layout": "^6.5.0",
+    "umi": "^3.5.20",
+    "@umijs/route-utils": "~2.0.4",
+    "@graphql-typed-document-node/core": "~3.1.1",
+    "ahooks": "~3.1.9",
+    "lodash": "~4.17.21",
+    "@types/history": "2.0.45",
+    "axios": "~0.26.0",
+    "@sentry/react": "~6.17.8",
+    "dayjs": "~1.10.7",
+    "@ant-design/pro-descriptions": "~1.10.60",
+    "pretty-bytes": "~6.0.0",
+    "keycloak-js": "15.0.2",
+    "qs": "~6.10.3",
+    "@types/qs": "~6.9.7"
+  },
+  "files": [
+    "/dist",
+    "/nginx.conf"
+  ]
+}
