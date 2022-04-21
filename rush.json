@@ -449,14 +449,6 @@
     //   "reviewCategory": "tools"
     // }
     {
-      "packageName": "@lani/api",
-      "projectFolder": "interfaces/api"
-    },
-    {
-      "packageName": "@lani/bilibili-bangumi-cc",
-      "projectFolder": "apps/bilibili-bangumi-cc"
-    },
-    {
       "packageName": "@lani/framework",
       "projectFolder": "libs/framework"
     },
@@ -467,6 +459,22 @@
     {
       "packageName": "@lani/kust",
       "projectFolder": "deploy/kust"
+    },
+    {
+      "packageName": "@lani/admin",
+      "projectFolder": "apps/admin"
+    },
+    {
+      "packageName": "@lani/data-server",
+      "projectFolder": "apps/data-server"
+    },
+    {
+      "packageName": "@lani/api-server",
+      "projectFolder": "apps/api-server"
+    },
+    {
+      "packageName": "@lani/gateway",
+      "projectFolder": "apps/gateway"
     }
   ]
 }

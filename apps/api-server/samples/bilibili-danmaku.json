@@ -1,0 +1,29 @@
+{
+  "code": 0,
+  "message": "0",
+  "ttl": 1,
+  "data": {
+    "closed": false,
+    "dm_seg": { "page_size": 360000, "total": 100 },
+    "flag": {
+      "rec_flag": 3,
+      "rec_text": "开启后，全站视频将按等级等优化弹幕",
+      "rec_switch": 1
+    },
+    "subtitle": {
+      "lan": "",
+      "lan_doc": "",
+      "subtitles": [
+        {
+          "id": 875378225063428096,
+          "id_str": "875378225063428096",
+          "lan": "zh-Hant",
+          "lan_doc": "中文（繁体）",
+          "subtitle_url": "http://i0.hdslb.com/bfs/subtitle/76485aa5bff9085eab230e5190eafced12abfeef.json",
+          "type": 0,
+          "ai_type": 0
+        }
+      ]
+    }
+  }
+}

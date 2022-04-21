@@ -1,0 +1,33 @@
+.item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  transition: all 0.3s;
+  border-width: 1px;
+  border-color: rgba(64, 169, 255, 0);
+  border-style: solid;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #1890ff;
+  }
+
+  &.selected {
+    background-color: #e6f7ff;
+    border-color: #1890ff;
+  }
+}
+
+.itemContainer {
+  padding: 8px;
+}
+
+.content {
+  flex-grow: 1;
+  margin-right: 12px;
+}
+
+.image {
+  background-color: #fafafa;
+  flex-shrink: 0;
+}

@@ -4,5 +4,6 @@
         "rush.json": "jsonc",
         "**/common/config/rush/*.json": "jsonc"
     },
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.detectIndentation": false
 }

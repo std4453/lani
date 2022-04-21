@@ -5,18 +5,6 @@
 			"path": "."
 		},
 		{
-			"name": "🚀 @lani/api",
-			"path": "interfaces/api"
-		},
-		{
-			"name": "🚀 @lani/bilibili-bangumi-cc",
-			"path": "apps/bilibili-bangumi-cc"
-		},
-		{
-			"name": "🚀 @lani/anime-metadata-server",
-			"path": "apps/anime-metadata-server"
-		},
-		{
 			"name": "📦 @lani/framework",
 			"path": "libs/framework"
 		},
@@ -27,7 +15,23 @@
 		{
 			"name": "🚚 @lani/kust",
 			"path": "deploy/kust"
-		}
+		},
+		{
+			"name": "🚀 @lani/admin",
+			"path": "apps/admin"
+		},
+    {
+			"name": "🚀 @lani/data-server",
+			"path": "apps/data-server"
+		},
+    {
+			"name": "🚀 @lani/api-server",
+			"path": "apps/api-server"
+		},
+    {
+			"name": "🚀 @lani/gateway",
+			"path": "apps/gateway"
+		},
 	],
 	"settings": {
 		"files.associations": {

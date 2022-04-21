@@ -1,0 +1,2033 @@
+{
+  "body": [
+    { "content": "拂曉的上班族", "from": 11.4, "location": 2, "to": 13.78 },
+    {
+      "content": "今天也是戰鬥的一天",
+      "from": 13.95,
+      "location": 2,
+      "to": 16.66
+    },
+    { "content": "到底是怎麼回事", "from": 16.82, "location": 2, "to": 19.41 },
+    {
+      "content": "這個世界一直在不停旋轉",
+      "from": 19.41,
+      "location": 2,
+      "to": 22.54
+    },
+    {
+      "content": "好好把握唯一的機會",
+      "from": 22.54,
+      "location": 2,
+      "to": 29.67
+    },
+    { "content": "每天無所事事", "from": 30.21, "location": 2, "to": 32.67 },
+    {
+      "content": "卻也有時會厭煩平淡的生活",
+      "from": 33.01,
+      "location": 2,
+      "to": 35.63
+    },
+    { "content": "也不是", "from": 35.76, "location": 2, "to": 38.01 },
+    {
+      "content": "想成為一個特別的人",
+      "from": 38.01,
+      "location": 2,
+      "to": 41.02
+    },
+    { "content": "晴空耀眼", "from": 41.1, "location": 2, "to": 43.77 },
+    { "content": "勇往直前", "from": 43.77, "location": 2, "to": 46.27 },
+    { "content": "在沿途的景色中", "from": 46.35, "location": 2, "to": 48.98 },
+    {
+      "content": "某些事物正在一點點地改變",
+      "from": 48.98,
+      "location": 2,
+      "to": 51.65
+    },
+    {
+      "content": "如果這是一個異世界的話",
+      "from": 51.65,
+      "location": 2,
+      "to": 56.03
+    },
+    {
+      "content": "讓我們試著在這裡活下去吧",
+      "from": 56.91,
+      "location": 2,
+      "to": 61.83
+    },
+    { "content": "冒險向我們詢問", "from": 62.66, "location": 2, "to": 67.04 },
+    {
+      "content": "聲響是如此模糊又新鮮純粹",
+      "from": 67.63,
+      "location": 2,
+      "to": 73.3
+    },
+    { "content": "拂曉的上班族", "from": 73.42, "location": 2, "to": 75.8 },
+    {
+      "content": "今天也是戰鬥的一天",
+      "from": 75.8,
+      "location": 2,
+      "to": 78.64
+    },
+    {
+      "content": "總是在自己波瀾萬丈的幻想中",
+      "from": 78.76,
+      "location": 2,
+      "to": 81.35
+    },
+    { "content": "糾結掙扎", "from": 81.43, "location": 2, "to": 84.27 },
+    {
+      "content": "(但我從始至終相信你)",
+      "from": 84.52,
+      "location": 2,
+      "to": 89.9
+    },
+    {
+      "content": "(一起迷茫煩惱 帶著笑容前行吧)",
+      "from": 89.9,
+      "location": 2,
+      "to": 98.03
+    },
+    {
+      "content": "你覺不覺得這扇門有點眼熟",
+      "from": 101.83,
+      "location": 2,
+      "to": 104.66
+    },
+    {
+      "content": "確實 好像在哪裡見過",
+      "from": 105.2,
+      "location": 2,
+      "to": 107.46
+    },
+    { "content": "還有門牌呢", "from": 108.0, "location": 2, "to": 109.5 },
+    {
+      "content": "太格格不入了吧",
+      "from": 110.04,
+      "location": 2,
+      "to": 111.84
+    },
+    { "content": "(第2集)", "from": 112.21, "location": 2, "to": 112.84 },
+    {
+      "content": "(第2集 大叔與絕世美貌)",
+      "from": 112.84,
+      "location": 2,
+      "to": 117.22
+    },
+    { "content": "果然就是我家", "from": 120.05, "location": 2, "to": 121.55 },
+    {
+      "content": "就連忘記扔的垃圾都特意幫我留著了 那女神搞什麼啊",
+      "from": 121.85,
+      "location": 2,
+      "to": 126.14
+    },
+    {
+      "content": "真不知道她怎麼設定的技能",
+      "from": 126.27,
+      "location": 2,
+      "to": 128.85
+    },
+    {
+      "content": "我現在腦子裡想的只有怎樣才能把你送回家",
+      "from": 132.27,
+      "location": 2,
+      "to": 135.57
+    },
+    {
+      "content": "原來如此 是那時的想法",
+      "from": 136.4,
+      "location": 2,
+      "to": 138.28
+    },
+    {
+      "content": "怎麼說呢 實現願望的方式好隨意",
+      "from": 138.95,
+      "location": 2,
+      "to": 142.7
+    },
+    {
+      "content": "水電也都還能正常用啊",
+      "from": 144.83,
+      "location": 2,
+      "to": 147.2
+    },
+    { "content": "(電視無信號)", "from": 148.04, "location": 2, "to": 149.04 },
+    {
+      "content": "電視就用不了了\n(電視無信號)",
+      "from": 149.04,
+      "location": 2,
+      "to": 150.42
+    },
+    { "content": "(電視無信號)", "from": 150.42, "location": 2, "to": 150.79 },
+    {
+      "content": "窗戶打不開 外面也一片黑",
+      "from": 151.58,
+      "location": 2,
+      "to": 153.92
+    },
+    {
+      "content": "但這能力還挺方便的嘛",
+      "from": 154.8,
+      "location": 2,
+      "to": 157.09
+    },
+    {
+      "content": "吃一口的份量還是照著以前的習慣吧",
+      "from": 160.34,
+      "location": 2,
+      "to": 162.51
+    },
+    {
+      "content": "看起來好像倉鼠",
+      "from": 162.72,
+      "location": 2,
+      "to": 164.39
+    },
+    {
+      "content": "總之 暫時不用擔心住處和食物了",
+      "from": 165.68,
+      "location": 2,
+      "to": 169.23
+    },
+    {
+      "content": "食物還是要擔心的吧",
+      "from": 170.35,
+      "location": 2,
+      "to": 172.15
+    },
+    {
+      "content": "我家裡就這點吃的哦",
+      "from": 173.77,
+      "location": 2,
+      "to": 176.03
+    },
+    { "content": "最後的了？", "from": 177.28, "location": 2, "to": 178.4 },
+    { "content": "最後的了", "from": 178.82, "location": 2, "to": 179.82 },
+    {
+      "content": "就剩這最後一份食物了 為什麼你還能毫不猶豫地現在就把它吃掉",
+      "from": 181.16,
+      "location": 2,
+      "to": 185.28
+    },
+    {
+      "content": "因為我的確餓了啊",
+      "from": 185.95,
+      "location": 2,
+      "to": 188.2
+    },
+    {
+      "content": "連應急食品都沒有",
+      "from": 192.17,
+      "location": 2,
+      "to": 194.5
+    },
+    {
+      "content": "因為我基本不會在家吃飯啊",
+      "from": 194.67,
+      "location": 2,
+      "to": 197.0
+    },
+    {
+      "content": "要是哪天大地震了你怎麼辦",
+      "from": 197.38,
+      "location": 2,
+      "to": 200.26
+    },
+    {
+      "content": "到時你肯定會來救我的嘛",
+      "from": 200.34,
+      "location": 2,
+      "to": 202.55
+    },
+    {
+      "content": "都怪你對我太好了",
+      "from": 206.35,
+      "location": 2,
+      "to": 208.89
+    },
+    {
+      "content": "那你趕緊學會獨立啊 笨蛋",
+      "from": 209.64,
+      "location": 2,
+      "to": 212.6
+    },
+    {
+      "content": "有飲用水的話 撐一個星期應該沒問題",
+      "from": 214.61,
+      "location": 2,
+      "to": 217.57
+    },
+    {
+      "content": "實在不行可以用剛才那頭熊？ 暫時應付一下",
+      "from": 218.07,
+      "location": 2,
+      "to": 221.65
+    },
+    {
+      "content": "我絕對不要吃那種東西",
+      "from": 222.11,
+      "location": 2,
+      "to": 224.28
+    },
+    {
+      "content": "你真的很任性啊",
+      "from": 225.03,
+      "location": 2,
+      "to": 227.16
+    },
+    {
+      "content": "總之 要做的事還是沒有變",
+      "from": 227.62,
+      "location": 2,
+      "to": 230.29
+    },
+    {
+      "content": "收集情報和確保食物來源",
+      "from": 230.7,
+      "location": 2,
+      "to": 232.75
+    },
+    {
+      "content": "趁還能行動的時候快點動起來比較好",
+      "from": 233.17,
+      "location": 2,
+      "to": 234.75
+    },
+    {
+      "content": "就是說 又要爬山？",
+      "from": 235.13,
+      "location": 2,
+      "to": 237.25
+    },
+    {
+      "content": "不 差不多已經不用爬山了",
+      "from": 237.92,
+      "location": 2,
+      "to": 240.46
+    },
+    {
+      "content": "其實剛才被追的時候我有看到炊煙",
+      "from": 240.88,
+      "location": 2,
+      "to": 243.93
+    },
+    {
+      "content": "或許附近有村落",
+      "from": 244.72,
+      "location": 2,
+      "to": 246.76
+    },
+    {
+      "content": "有幻想世界的感覺了",
+      "from": 250.85,
+      "location": 2,
+      "to": 252.89
+    },
+    {
+      "content": "在日本是見不到這種景色的",
+      "from": 252.89,
+      "location": 2,
+      "to": 255.1
+    },
+    { "content": "不過 怎麼說呢", "from": 255.81, "location": 2, "to": 257.48 },
+    {
+      "content": "這身打扮真的沒問題嗎",
+      "from": 258.23,
+      "location": 2,
+      "to": 260.53
+    },
+    {
+      "content": "我也不確定 不過",
+      "from": 262.7,
+      "location": 2,
+      "to": 264.66
+    },
+    { "content": "挺難受的", "from": 265.57, "location": 2, "to": 266.49 },
+    {
+      "content": "我也不想穿成這樣啊",
+      "from": 266.57,
+      "location": 2,
+      "to": 269.2
+    },
+    {
+      "content": "可家裡只有我妹妹來住的時候留下的衣服",
+      "from": 269.37,
+      "location": 2,
+      "to": 272.45
+    },
+    {
+      "content": "說的也是 沒辦法了",
+      "from": 272.75,
+      "location": 2,
+      "to": 274.75
+    },
+    { "content": "我還是覺得", "from": 276.75, "location": 2, "to": 277.88 },
+    {
+      "content": "自從我變成這樣後 你對我的態度好像變冷淡了",
+      "from": 278.04,
+      "location": 2,
+      "to": 280.96
+    },
+    {
+      "content": "和以前沒變化吧",
+      "from": 281.63,
+      "location": 2,
+      "to": 283.13
+    },
+    {
+      "content": "真可愛 真可愛 真可愛",
+      "from": 283.34,
+      "location": 2,
+      "to": 283.92
+    },
+    {
+      "content": "是你變成女人後 自我意識過剩了吧\n真可愛 真可愛 真可愛",
+      "from": 283.92,
+      "location": 2,
+      "to": 286.51
+    },
+    {
+      "content": "真可愛 真可愛 真可愛",
+      "from": 286.51,
+      "location": 2,
+      "to": 286.68
+    },
+    {
+      "content": "是嗎 這樣啊\n真可愛 真可愛 真可愛",
+      "from": 286.68,
+      "location": 2,
+      "to": 289.39
+    },
+    {
+      "content": "真可愛 真可愛 真可愛",
+      "from": 289.39,
+      "location": 2,
+      "to": 290.35
+    },
+    {
+      "content": "不過這身衣服確實挺辣眼睛 最好能趕緊換身衣服",
+      "from": 291.06,
+      "location": 2,
+      "to": 294.06
+    },
+    {
+      "content": "是啊 得趕緊弄件這個世界的衣服",
+      "from": 294.18,
+      "location": 2,
+      "to": 297.52
+    },
+    {
+      "content": "那就照計劃進行吧",
+      "from": 301.19,
+      "location": 2,
+      "to": 302.53
+    },
+    { "content": "好", "from": 302.61, "location": 2, "to": 303.32 },
+    {
+      "content": "我是從邊境來的大小姐 你是我的隨從",
+      "from": 303.61,
+      "location": 2,
+      "to": 307.61
+    },
+    {
+      "content": "流浪的原因保密",
+      "from": 307.74,
+      "location": 2,
+      "to": 309.74
+    },
+    {
+      "content": "所以對這一帶完全不了解",
+      "from": 309.78,
+      "location": 2,
+      "to": 312.16
+    },
+    {
+      "content": "希望你能告訴我們詳情",
+      "from": 312.41,
+      "location": 2,
+      "to": 313.62
+    },
+    { "content": "大致就這樣吧", "from": 314.29, "location": 2, "to": 316.17 },
+    { "content": "你瞧好吧", "from": 318.33, "location": 2, "to": 319.54 },
+    {
+      "content": "這份美貌 再加上我的社交能力 就是天下無敵",
+      "from": 319.63,
+      "location": 2,
+      "to": 322.42
+    },
+    {
+      "content": "現在的我有自信能夠讓任何男人為我傾倒",
+      "from": 322.88,
+      "location": 2,
+      "to": 327.18
+    },
+    {
+      "content": "然而一個女人都追不到",
+      "from": 327.68,
+      "location": 2,
+      "to": 329.47
+    },
+    { "content": "囉嗦", "from": 329.55, "location": 2, "to": 330.55 },
+    { "content": "真是的", "from": 330.85, "location": 2, "to": 332.97 },
+    {
+      "content": "那份外貌 應該對交涉有益",
+      "from": 334.48,
+      "location": 2,
+      "to": 337.85
+    },
+    {
+      "content": "就算語言不通 大概也不會受到傷害吧",
+      "from": 338.56,
+      "location": 2,
+      "to": 341.44
+    },
+    {
+      "content": "而且她的社交能力也確實很強",
+      "from": 342.27,
+      "location": 2,
+      "to": 344.28
+    },
+    {
+      "content": "(新情報公開絕世的美貌 對異性交涉檢定數值大幅增加 容易獲得好感)",
+      "from": 345.53,
+      "location": 2,
+      "to": 347.61
+    },
+    {
+      "content": "以這個村落的規模來說 這“炊煙”未免太多了吧",
+      "from": 348.66,
+      "location": 2,
+      "to": 351.28
+    },
+    { "content": "而且一股焦味", "from": 352.16, "location": 2, "to": 353.41 },
+    { "content": "山賊來了", "from": 353.54, "location": 2, "to": 355.45 },
+    { "content": "快讓開", "from": 358.33, "location": 2, "to": 359.42 },
+    {
+      "content": "(新情報公開 麻煩製造者 容易被捲入事件)",
+      "from": 362.04,
+      "location": 2,
+      "to": 364.3
+    },
+    { "content": "橘", "from": 364.71, "location": 2, "to": 366.92 },
+    {
+      "content": "怎麼這麼吵 在舉辦慶典嗎",
+      "from": 369.84,
+      "location": 2,
+      "to": 372.68
+    },
+    { "content": "讓開", "from": 372.76, "location": 2, "to": 373.72 },
+    { "content": "疼疼疼", "from": 376.43, "location": 2, "to": 377.81 },
+    { "content": "衣服都髒了", "from": 378.39, "location": 2, "to": 380.48 },
+    {
+      "content": "沒受傷吧 這位小姐",
+      "from": 383.61,
+      "location": 2,
+      "to": 386.19
+    },
+    {
+      "content": "打擾到你們工作真不好意思 我有點迷路了",
+      "from": 388.7,
+      "location": 2,
+      "to": 392.66
+    },
+    {
+      "content": "咦 難道語言不通",
+      "from": 396.16,
+      "location": 2,
+      "to": 398.87
+    },
+    { "content": "你好 打擾一下", "from": 399.04, "location": 2, "to": 401.71 },
+    { "content": "這 這就是", "from": 402.17, "location": 2, "to": 403.84 },
+    {
+      "content": "這就是戀愛的感覺嗎",
+      "from": 404.84,
+      "location": 2,
+      "to": 407.26
+    },
+    { "content": "-不要 -看劍", "from": 409.13, "location": 2, "to": 411.64 },
+    {
+      "content": "莫非情況不太妙",
+      "from": 411.84,
+      "location": 2,
+      "to": 414.05
+    },
+    {
+      "content": "難道說大哥哥你不是樵夫嗎？",
+      "from": 414.35,
+      "location": 2,
+      "to": 416.27
+    },
+    { "content": "我們結婚吧", "from": 417.43, "location": 2, "to": 418.52 },
+    { "content": "什麼", "from": 419.39, "location": 2, "to": 420.31 },
+    {
+      "content": "為了你 我可以金盆洗手 重新做人",
+      "from": 420.48,
+      "location": 2,
+      "to": 424.48
+    },
+    {
+      "content": "往後我們就靠種菜維持生計吧",
+      "from": 424.69,
+      "location": 2,
+      "to": 426.78
+    },
+    { "content": "再生兩個孩子", "from": 427.11, "location": 2, "to": 428.57 },
+    { "content": "你突然怎麼了", "from": 428.69, "location": 2, "to": 430.28 },
+    {
+      "content": "既然都決定好了 我們先去徵求首領的同意 然後一起回老家吧",
+      "from": 431.2,
+      "location": 2,
+      "to": 434.95
+    },
+    { "content": "慢著", "from": 435.16, "location": 2, "to": 437.45 },
+    {
+      "content": "喂 你在搞什麼呢",
+      "from": 437.49,
+      "location": 2,
+      "to": 439.12
+    },
+    {
+      "content": "大哥 你看 我找到老婆了",
+      "from": 439.5,
+      "location": 2,
+      "to": 442.33
+    },
+    {
+      "content": "老婆？你說什麼胡話…",
+      "from": 442.54,
+      "location": 2,
+      "to": 445.29
+    },
+    { "content": "我們結婚吧", "from": 445.54, "location": 2, "to": 446.55 },
+    { "content": "為什麼啊", "from": 446.88, "location": 2, "to": 447.8 },
+    {
+      "content": "為了你 我可以金盆洗手 重新做人",
+      "from": 448.38,
+      "location": 2,
+      "to": 452.13
+    },
+    {
+      "content": "往後我們就靠做壺維持生計吧",
+      "from": 452.26,
+      "location": 2,
+      "to": 454.09
+    },
+    {
+      "content": "孩子我想要八個",
+      "from": 454.34,
+      "location": 2,
+      "to": 455.89
+    },
+    {
+      "content": "這傢伙想要我生多少個啊",
+      "from": 456.01,
+      "location": 2,
+      "to": 458.14
+    },
+    {
+      "content": "原來這個情報是這個意思",
+      "from": 458.22,
+      "location": 2,
+      "to": 458.35
+    },
+    {
+      "content": "(新情報公開 絕世的美貌 因那難以言喻的美貌 所有人都會被迷得神魂顛倒)\n原來這個情報是這個意思",
+      "from": 458.35,
+      "location": 2,
+      "to": 460.68
+    },
+    {
+      "content": "(新情報公開 絕世的美貌 因那難以言喻的美貌 所有人都會被迷得神魂顛倒)",
+      "from": 460.68,
+      "location": 2,
+      "to": 460.77
+    },
+    {
+      "content": "是這麼回事嗎\n(新情報公開 絕世的美貌 因那難以言喻的美貌 所有人都會被迷得神魂顛倒)",
+      "from": 460.77,
+      "location": 2,
+      "to": 462.44
+    },
+    {
+      "content": "(新情報公開 絕世的美貌 因那難以言喻的美貌 所有人都會被迷得神魂顛倒)",
+      "from": 462.44,
+      "location": 2,
+      "to": 462.9
+    },
+    {
+      "content": "我美得如此誇張嗎",
+      "from": 463.1,
+      "location": 2,
+      "to": 465.69
+    },
+    {
+      "content": "就算你是我大哥也不能搶別人老婆啊 不可原諒",
+      "from": 466.48,
+      "location": 2,
+      "to": 469.57
+    },
+    {
+      "content": "不 她要和我在一起 決鬥吧",
+      "from": 469.65,
+      "location": 2,
+      "to": 472.32
+    },
+    {
+      "content": "我們結婚吧 為了你 我可以金盆洗手",
+      "from": 472.61,
+      "location": 2,
+      "to": 475.53
+    },
+    { "content": "別在那偷跑", "from": 475.53, "location": 2, "to": 477.28 },
+    { "content": "你這混蛋幹嘛", "from": 478.33, "location": 2, "to": 479.58 },
+    { "content": "要幹架嗎", "from": 479.79, "location": 2, "to": 481.12 },
+    {
+      "content": "是因為我嗎 都是因為我嗎",
+      "from": 488.09,
+      "location": 2,
+      "to": 490.76
+    },
+    {
+      "content": "不要再做這種無意義的爭鬥了",
+      "from": 491.3,
+      "location": 2,
+      "to": 493.88
+    },
+    { "content": "你沒事吧 橘", "from": 494.38, "location": 2, "to": 496.35 },
+    { "content": "不要為了我", "from": 496.85, "location": 2, "to": 498.14 },
+    {
+      "content": "你們不要為了我而爭鬥啊",
+      "from": 498.68,
+      "location": 2,
+      "to": 504.77
+    },
+    {
+      "content": "這全是你幹的嗎？",
+      "from": 506.61,
+      "location": 2,
+      "to": 509.11
+    },
+    {
+      "content": "我什麼都沒做 只是站在那裡罷了",
+      "from": 509.53,
+      "location": 2,
+      "to": 512.9
+    },
+    {
+      "content": "可是 可是由於我實在過於美麗 才引發了這樣的慘劇",
+      "from": 513.32,
+      "location": 2,
+      "to": 518.74
+    },
+    { "content": "我說橘啊", "from": 518.74, "location": 2, "to": 519.91 },
+    {
+      "content": "你是不是內心有在暗爽",
+      "from": 520.66,
+      "location": 2,
+      "to": 522.83
+    },
+    {
+      "content": "感謝您的大恩大德 感謝您的大恩大德",
+      "from": 525.04,
+      "location": 2,
+      "to": 530.13
+    },
+    {
+      "content": "然後又被當成了神明一樣被膜拜",
+      "from": 530.13,
+      "location": 2,
+      "to": 533.09
+    },
+    {
+      "content": "總比剛才那樣被爭搶要好",
+      "from": 533.38,
+      "location": 2,
+      "to": 536.8
+    },
+    {
+      "content": "我還真的變成了美得超乎想像的美少女了啊",
+      "from": 537.47,
+      "location": 2,
+      "to": 541.47
+    },
+    {
+      "content": "我還以為 只是稍微有點受歡迎而已呢",
+      "from": 542.43,
+      "location": 2,
+      "to": 545.35
+    },
+    { "content": "我也小瞧你了", "from": 545.69, "location": 2, "to": 546.98 },
+    {
+      "content": "我有點能理解你為什麼會討厭女人了",
+      "from": 547.48,
+      "location": 2,
+      "to": 551.23
+    },
+    { "content": "啊 這個 呃 嗯", "from": 551.44, "location": 2, "to": 554.44 },
+    {
+      "content": "不過要是每到一處都這樣 那有點太…",
+      "from": 554.95,
+      "location": 2,
+      "to": 558.74
+    },
+    {
+      "content": "要不我把臉遮起來試試？",
+      "from": 559.28,
+      "location": 2,
+      "to": 560.45
+    },
+    { "content": "像這樣", "from": 560.78, "location": 2, "to": 561.74 },
+    { "content": "你省省吧", "from": 562.24, "location": 2, "to": 562.7 },
+    {
+      "content": "(可愛)\n你省省吧",
+      "from": 562.7,
+      "location": 2,
+      "to": 563.16
+    },
+    { "content": "(可愛)", "from": 563.16, "location": 2, "to": 563.87 },
+    {
+      "content": "不過 還是得想想辦法\n(可愛)",
+      "from": 563.87,
+      "location": 2,
+      "to": 565.25
+    },
+    {
+      "content": "不過 還是得想想辦法",
+      "from": 565.25,
+      "location": 2,
+      "to": 566.58
+    },
+    {
+      "content": "話說 為什麼你就沒事呢",
+      "from": 567.12,
+      "location": 2,
+      "to": 569.88
+    },
+    {
+      "content": "即使我看到你的臉也沒事的原因嗎",
+      "from": 570.92,
+      "location": 2,
+      "to": 573.71
+    },
+    {
+      "content": "嗯 可能因為我們認識很久了吧",
+      "from": 574.46,
+      "location": 2,
+      "to": 577.22
+    },
+    { "content": "原來如此", "from": 577.93, "location": 2, "to": 579.09 },
+    {
+      "content": "我一定要守護我們的友情",
+      "from": 579.14,
+      "location": 2,
+      "to": 581.6
+    },
+    {
+      "content": "可能和能力值裡的“智力”有關",
+      "from": 582.01,
+      "location": 2,
+      "to": 582.31
+    },
+    {
+      "content": "(橘勇者性別：女等級：1)\n可能和能力值裡的“智力”有關",
+      "from": 582.31,
+      "location": 2,
+      "to": 584.81
+    },
+    {
+      "content": "(橘勇者性別：女等級：1)",
+      "from": 584.81,
+      "location": 2,
+      "to": 585.23
+    },
+    {
+      "content": "感覺會影響精神狀態\n(橘勇者性別：女等級：1)",
+      "from": 585.23,
+      "location": 2,
+      "to": 587.81
+    },
+    {
+      "content": "(橘勇者性別：女等級：1)",
+      "from": 587.81,
+      "location": 2,
+      "to": 588.06
+    },
+    { "content": "可惡 大意了", "from": 588.27, "location": 2, "to": 590.02 },
+    {
+      "content": "居然被一個女的迷得全軍覆滅了",
+      "from": 590.52,
+      "location": 2,
+      "to": 593.44
+    },
+    {
+      "content": "不過你們就等死吧 我們只是先遣隊",
+      "from": 595.24,
+      "location": 2,
+      "to": 598.36
+    },
+    { "content": "再過一會", "from": 598.61, "location": 2, "to": 600.16 },
+    {
+      "content": "察覺到異常的大部隊就會做好準備趕過來",
+      "from": 600.24,
+      "location": 2,
+      "to": 603.95
+    },
+    {
+      "content": "我們什麼都沒問 他就自己洩露情報了",
+      "from": 604.58,
+      "location": 2,
+      "to": 607.79
+    },
+    {
+      "content": "真期待看到等下村子被毀的美妙景象啊",
+      "from": 608.5,
+      "location": 2,
+      "to": 612.46
+    },
+    {
+      "content": "能馬上察覺到異常 也就是說他們的老巢就在附近",
+      "from": 614.09,
+      "location": 2,
+      "to": 617.84
+    },
+    {
+      "content": "這幫傢伙不是吧",
+      "from": 621.97,
+      "location": 2,
+      "to": 623.47
+    },
+    { "content": "老巢在哪裡", "from": 623.97, "location": 2, "to": 624.85 },
+    {
+      "content": "怎麼可能告訴你 你傻啊",
+      "from": 625.14,
+      "location": 2,
+      "to": 626.81
+    },
+    { "content": "橘", "from": 627.39, "location": 2, "to": 628.31 },
+    { "content": "真拿你沒辦法", "from": 628.81, "location": 2, "to": 630.98 },
+    {
+      "content": "可不可以告訴人家呢",
+      "from": 634.65,
+      "location": 2,
+      "to": 636.69
+    },
+    { "content": "莫非我", "from": 642.2, "location": 2, "to": 643.45 },
+    { "content": "天下無敵？", "from": 644.16, "location": 2, "to": 645.83 },
+    {
+      "content": "怎麼了 趕緊走吧",
+      "from": 646.12,
+      "location": 2,
+      "to": 647.87
+    },
+    {
+      "content": "(正在加載中) (真可愛)\n(與變成了異世界美少女的好友一起冒險)",
+      "from": 647.95,
+      "location": 2,
+      "to": 649.16
+    },
+    {
+      "content": "真可愛\n(正在加載中) (真可愛)\n(與變成了異世界美少女的好友一起冒險)",
+      "from": 649.16,
+      "location": 2,
+      "to": 650.25
+    },
+    {
+      "content": "(正在加載中) (真可愛)\n(與變成了異世界美少女的好友一起冒險)",
+      "from": 650.25,
+      "location": 2,
+      "to": 652.96
+    },
+    {
+      "content": "果然還是有人會把風的啊",
+      "from": 655.63,
+      "location": 2,
+      "to": 657.92
+    },
+    { "content": "看來敵人也不蠢", "from": 658.3, "location": 2, "to": 659.93 },
+    {
+      "content": "(盜賊性別：男等級：5狀態力量：20敏捷：8智力：11運氣：2技能)\n(盜賊性別：男等級：9狀態力量：10敏捷：11智力：15運氣：3技能)",
+      "from": 660.18,
+      "location": 2,
+      "to": 660.72
+    },
+    {
+      "content": "能事先判斷實力 這點不錯\n(盜賊性別：男等級：5狀態力量：20敏捷：8智力：11運氣：2技能)\n(盜賊性別：男等級：9狀態力量：10敏捷：11智力：15運氣：3技能)",
+      "from": 660.72,
+      "location": 2,
+      "to": 662.97
+    },
+    {
+      "content": "(盜賊性別：男等級：5狀態力量：20敏捷：8智力：11運氣：2技能)\n(盜賊性別：男等級：9狀態力量：10敏捷：11智力：15運氣：3技能)",
+      "from": 662.97,
+      "location": 2,
+      "to": 663.97
+    },
+    {
+      "content": "你還能看別人的面板嗎\n(盜賊性別：男等級：5狀態力量：20敏捷：8智力：11運氣：2技能)\n(盜賊性別：男等級：9狀態力量：10敏捷：11智力：15運氣：3技能)",
+      "from": 663.97,
+      "location": 2,
+      "to": 665.85
+    },
+    {
+      "content": "(盜賊性別：男等級：5狀態力量：20敏捷：8智力：11運氣：2技能)\n(盜賊性別：男等級：9狀態力量：10敏捷：11智力：15運氣：3技能)",
+      "from": 665.85,
+      "location": 2,
+      "to": 665.93
+    },
+    {
+      "content": "(等級：9狀態力量：10敏捷：11智力：15運氣：3)\n(等級：5狀態力量：20敏捷：8智力：11運氣：2)",
+      "from": 665.93,
+      "location": 2,
+      "to": 666.85
+    },
+    {
+      "content": "和你相比 數值真低\n(等級：9狀態力量：10敏捷：11智力：15運氣：3)\n(等級：5狀態力量：20敏捷：8智力：11運氣：2)",
+      "from": 666.85,
+      "location": 2,
+      "to": 669.02
+    },
+    {
+      "content": "(等級：9狀態力量：10敏捷：11智力：15運氣：3)\n(等級：5狀態力量：20敏捷：8智力：11運氣：2)",
+      "from": 669.02,
+      "location": 2,
+      "to": 669.31
+    },
+    {
+      "content": "但還不知道這數值有多大的可信度\n(等級：9狀態力量：10敏捷：11智力：15運氣：3)\n(等級：5狀態力量：20敏捷：8智力：11運氣：2)",
+      "from": 669.31,
+      "location": 2,
+      "to": 672.02
+    },
+    {
+      "content": "(等級：9狀態力量：10敏捷：11智力：15運氣：3)\n(等級：5狀態力量：20敏捷：8智力：11運氣：2)",
+      "from": 672.02,
+      "location": 2,
+      "to": 672.44
+    },
+    {
+      "content": "也不知道裡面有多少人",
+      "from": 672.65,
+      "location": 2,
+      "to": 674.48
+    },
+    {
+      "content": "我們慎重行事吧",
+      "from": 675.15,
+      "location": 2,
+      "to": 676.32
+    },
+    { "content": "慎重啊", "from": 676.61, "location": 2, "to": 678.11 },
+    {
+      "content": "太麻煩了 你過去大鬧一場搞定吧",
+      "from": 678.44,
+      "location": 2,
+      "to": 681.95
+    },
+    {
+      "content": "連能發射光波的熊 你都能一拳解決 沒問題的",
+      "from": 682.78,
+      "location": 2,
+      "to": 685.78
+    },
+    {
+      "content": "你說的倒是輕鬆",
+      "from": 686.24,
+      "location": 2,
+      "to": 687.95
+    },
+    {
+      "content": "你當學生會長時 不是搗滅過不良少年的老窩嗎",
+      "from": 688.2,
+      "location": 2,
+      "to": 692.12
+    },
+    {
+      "content": "這次不也差不多嘛",
+      "from": 692.17,
+      "location": 2,
+      "to": 693.29
+    },
+    {
+      "content": "危險程度明顯不是一個等級的",
+      "from": 693.63,
+      "location": 2,
+      "to": 695.5
+    },
+    {
+      "content": "還有 那不叫搗滅 那叫勸人從良",
+      "from": 696.46,
+      "location": 2,
+      "to": 699.38
+    },
+    { "content": "那是勸人從良", "from": 699.55, "location": 2, "to": 701.09 },
+    { "content": "那我去吧", "from": 701.76, "location": 2, "to": 703.14 },
+    { "content": "你去？", "from": 703.43, "location": 2, "to": 704.55 },
+    {
+      "content": "憑你那雜魚面板 能做什麼",
+      "from": 705.1,
+      "location": 2,
+      "to": 707.56
+    },
+    {
+      "content": "別以為雜魚就什麼都做不到 精英先生",
+      "from": 707.81,
+      "location": 2,
+      "to": 711.39
+    },
+    { "content": "砰", "from": 711.81, "location": 2, "to": 712.39 },
+    {
+      "content": "看我分分鐘讓他們自取滅亡",
+      "from": 712.81,
+      "location": 2,
+      "to": 716.06
+    },
+    {
+      "content": "你是集團破壞女嗎",
+      "from": 716.27,
+      "location": 2,
+      "to": 717.86
+    },
+    {
+      "content": "這麼快就忘記剛才差點被綁走？",
+      "from": 718.44,
+      "location": 2,
+      "to": 721.15
+    },
+    {
+      "content": "運氣好的話被帶走結婚 壞的話就是被抓走當奴隸了",
+      "from": 721.45,
+      "location": 2,
+      "to": 723.82
+    },
+    { "content": "說得真恐怖", "from": 724.11, "location": 2, "to": 725.82 },
+    {
+      "content": "這裡交給我 你先回房間吧",
+      "from": 726.95,
+      "location": 2,
+      "to": 730.12
+    },
+    { "content": "可是", "from": 731.58, "location": 2, "to": 733.04 },
+    {
+      "content": "就算你很強 總不能危險全都交給你一人承擔吧",
+      "from": 733.29,
+      "location": 2,
+      "to": 737.42
+    },
+    { "content": "橘", "from": 738.21, "location": 2, "to": 739.17 },
+    {
+      "content": "你這人就是這樣",
+      "from": 740.05,
+      "location": 2,
+      "to": 743.26
+    },
+    {
+      "content": "怎麼說呢 就是個老好人",
+      "from": 743.8,
+      "location": 2,
+      "to": 746.8
+    },
+    {
+      "content": "(中學時代)\n明明交給我就好 我一個人也能解決",
+      "from": 750.18,
+      "location": 2,
+      "to": 755.69
+    },
+    { "content": "(中學時代)", "from": 755.69, "location": 2, "to": 756.1 },
+    {
+      "content": "犧牲自己幫助他人",
+      "from": 756.65,
+      "location": 2,
+      "to": 760.86
+    },
+    {
+      "content": "我一直以來都是被這樣教育的 從未有過質疑",
+      "from": 761.44,
+      "location": 2,
+      "to": 765.28
+    },
+    { "content": "可是", "from": 765.49, "location": 2, "to": 766.36 },
+    {
+      "content": "又讓你做文件啊",
+      "from": 767.66,
+      "location": 2,
+      "to": 769.83
+    },
+    { "content": "橘", "from": 770.54, "location": 2, "to": 771.45 },
+    {
+      "content": "負責人不是有兩個嗎 另一個人呢",
+      "from": 771.66,
+      "location": 2,
+      "to": 775.0
+    },
+    {
+      "content": "說是有社團活動",
+      "from": 775.46,
+      "location": 2,
+      "to": 776.71
+    },
+    {
+      "content": "跑了啊 你被當成苦力了啊",
+      "from": 776.79,
+      "location": 2,
+      "to": 780.25
+    },
+    { "content": "來 我幫你", "from": 780.3, "location": 2, "to": 781.63 },
+    {
+      "content": "反正我沒加入社團 回家也沒事做",
+      "from": 782.63,
+      "location": 2,
+      "to": 785.8
+    },
+    {
+      "content": "你應該也覺得做這種事很麻煩吧",
+      "from": 786.3,
+      "location": 2,
+      "to": 789.47
+    },
+    {
+      "content": "不好意思啊 讓你做這種雜務",
+      "from": 790.56,
+      "location": 2,
+      "to": 793.06
+    },
+    {
+      "content": "神宮寺同學看起來很成熟 總是不由得想依靠你呢",
+      "from": 793.68,
+      "location": 2,
+      "to": 797.02
+    },
+    {
+      "content": "抱歉 我得去社團 大賽將近了 所以不好意思啦",
+      "from": 798.23,
+      "location": 2,
+      "to": 802.73
+    },
+    {
+      "content": "說得也是 我現在正在統計志願調查表",
+      "from": 806.32,
+      "location": 2,
+      "to": 809.87
+    },
+    {
+      "content": "統計這種事還是別交給我吧",
+      "from": 810.62,
+      "location": 2,
+      "to": 813.37
+    },
+    {
+      "content": "那你幫我裝訂文件吧",
+      "from": 813.75,
+      "location": 2,
+      "to": 815.16
+    },
+    {
+      "content": "行 這種事就交給我吧",
+      "from": 815.46,
+      "location": 2,
+      "to": 817.62
+    },
+    {
+      "content": "明明知道儘是些麻煩事 但就是無法置之不理",
+      "from": 818.88,
+      "location": 2,
+      "to": 822.25
+    },
+    {
+      "content": "關鍵時刻能為他人而行動的人",
+      "from": 823.05,
+      "location": 2,
+      "to": 825.88
+    },
+    {
+      "content": "而不像我這樣 只會聽從指示做事",
+      "from": 826.63,
+      "location": 2,
+      "to": 829.89
+    },
+    {
+      "content": "真是的 這傢伙總是這樣",
+      "from": 832.97,
+      "location": 2,
+      "to": 835.56
+    },
+    {
+      "content": "真可愛 好喜歡 想和她結婚",
+      "from": 836.23,
+      "location": 2,
+      "to": 839.27
+    },
+    {
+      "content": "等等 剛才的感想是怎麼回事",
+      "from": 841.11,
+      "location": 2,
+      "to": 843.48
+    },
+    {
+      "content": "覺得可愛？這個承認也無妨",
+      "from": 844.03,
+      "location": 2,
+      "to": 846.53
+    },
+    { "content": "可是 結婚？", "from": 846.86, "location": 2, "to": 848.32 },
+    {
+      "content": "我是不是傻啊 結婚還太早了吧 都還沒交往呢",
+      "from": 848.99,
+      "location": 2,
+      "to": 854.41
+    },
+    { "content": "我不對勁", "from": 856.56, "location": 2, "to": 858.52 },
+    {
+      "content": "你怎麼了 神宮寺",
+      "from": 858.6,
+      "location": 2,
+      "to": 860.56
+    },
+    {
+      "content": "為什麼 狀態肉眼可見地惡化了 腦子裡全是橘的身影",
+      "from": 871.53,
+      "location": 2,
+      "to": 876.08
+    },
+    {
+      "content": "這也是詛咒的影響嗎",
+      "from": 876.16,
+      "location": 2,
+      "to": 877.54
+    },
+    { "content": "喂 你沒事吧", "from": 877.66, "location": 2, "to": 880.0 },
+    { "content": "橘", "from": 880.58, "location": 2, "to": 882.33 },
+    {
+      "content": "現在 只要看她一眼 我就會…",
+      "from": 883.34,
+      "location": 2,
+      "to": 887.01
+    },
+    {
+      "content": "看起來好痛的樣子 額頭流了好多血",
+      "from": 888.84,
+      "location": 2,
+      "to": 893.97
+    },
+    { "content": "橘", "from": 894.6, "location": 2, "to": 895.68 },
+    { "content": "我", "from": 896.39, "location": 2, "to": 897.39 },
+    { "content": "我 我", "from": 898.79, "location": 2, "to": 900.83 },
+    { "content": "我", "from": 901.92, "location": 2, "to": 902.71 },
+    { "content": "我", "from": 903.42, "location": 2, "to": 906.0 },
+    { "content": "敵襲", "from": 911.86, "location": 2, "to": 913.19 },
+    { "content": "要懂得", "from": 914.11, "location": 2, "to": 915.15 },
+    { "content": "要懂得", "from": 915.74, "location": 2, "to": 916.78 },
+    { "content": "珍愛自己啊你", "from": 916.99, "location": 2, "to": 919.07 },
+    { "content": "你突然怎麼了", "from": 919.24, "location": 2, "to": 921.03 },
+    {
+      "content": "為什麼衣服開得那麼大 著涼了怎麼辦",
+      "from": 923.29,
+      "location": 2,
+      "to": 927.21
+    },
+    { "content": "多穿點", "from": 927.29, "location": 2, "to": 928.92 },
+    {
+      "content": "我也不是自己想穿成這樣的啊",
+      "from": 933.3,
+      "location": 2,
+      "to": 937.09
+    },
+    {
+      "content": "怎麼了 內訌了嗎",
+      "from": 937.09,
+      "location": 2,
+      "to": 939.09
+    },
+    {
+      "content": "只有兩個人啊 而且其中一個還是女的",
+      "from": 940.43,
+      "location": 2,
+      "to": 943.93
+    },
+    {
+      "content": "根本用不著我們全都出來",
+      "from": 944.1,
+      "location": 2,
+      "to": 946.89
+    },
+    {
+      "content": "你們看 那女的長得好漂亮",
+      "from": 947.48,
+      "location": 2,
+      "to": 950.65
+    },
+    {
+      "content": "還白白淨淨的 可以期待一下",
+      "from": 950.73,
+      "location": 2,
+      "to": 953.36
+    },
+    {
+      "content": "女的活捉 男的殺掉",
+      "from": 953.61,
+      "location": 2,
+      "to": 956.82
+    },
+    { "content": "你小子", "from": 958.7, "location": 2, "to": 959.7 },
+    { "content": "竟敢把我兄弟", "from": 960.82, "location": 2, "to": 962.33 },
+    {
+      "content": "人像莊稼一樣被插在地上",
+      "from": 963.7,
+      "location": 2,
+      "to": 965.95
+    },
+    { "content": "女神大人", "from": 966.25, "location": 2, "to": 967.54 },
+    {
+      "content": "我說服村民 一起來幫你們了",
+      "from": 968.5,
+      "location": 2,
+      "to": 971.5
+    },
+    { "content": "村長", "from": 971.67, "location": 2, "to": 972.88 },
+    { "content": "村長", "from": 974.8, "location": 2, "to": 976.21 },
+    { "content": "不准靠近橘", "from": 976.92, "location": 2, "to": 978.55 },
+    { "content": "神宮寺", "from": 979.05, "location": 2, "to": 980.09 },
+    {
+      "content": "你從剛才起就有點不對勁",
+      "from": 980.26,
+      "location": 2,
+      "to": 982.05
+    },
+    { "content": "你沒事吧", "from": 982.6, "location": 2, "to": 983.64 },
+    {
+      "content": "不對勁？沒錯 確實有些不對勁",
+      "from": 984.22,
+      "location": 2,
+      "to": 988.39
+    },
+    { "content": "(魅惑)", "from": 988.64, "location": 2, "to": 989.27 },
+    {
+      "content": "從剛才起 那個畫面就在我的腦海中揮之不去\n(魅惑)",
+      "from": 989.27,
+      "location": 2,
+      "to": 991.73
+    },
+    { "content": "(魅惑)", "from": 991.73, "location": 2, "to": 992.4 },
+    {
+      "content": "到底怎麼了\n(魅惑)",
+      "from": 992.4,
+      "location": 2,
+      "to": 993.61
+    },
+    { "content": "(魅惑)", "from": 993.61, "location": 2, "to": 994.77 },
+    { "content": "你的", "from": 995.32, "location": 2, "to": 996.44 },
+    { "content": "我的", "from": 996.82, "location": 2, "to": 997.69 },
+    { "content": "我的什麼", "from": 998.57, "location": 2, "to": 999.7 },
+    { "content": "不 這個", "from": 999.99, "location": 2, "to": 1001.78 },
+    { "content": "(魅惑)", "from": 1002.57, "location": 2, "to": 1005.08 },
+    {
+      "content": "我說不出口\n(魅惑)",
+      "from": 1005.08,
+      "location": 2,
+      "to": 1006.33
+    },
+    { "content": "(魅惑)", "from": 1006.33, "location": 2, "to": 1008.66 },
+    { "content": "這都怪我", "from": 1011.42, "location": 2, "to": 1013.67 },
+    {
+      "content": "承認吧 神宮寺",
+      "from": 1017.42,
+      "location": 2,
+      "to": 1018.84
+    },
+    {
+      "content": "老實說 你就是覺得我超可愛的對吧",
+      "from": 1019.47,
+      "location": 2,
+      "to": 1023.34
+    },
+    { "content": "(魅惑)", "from": 1024.3, "location": 2, "to": 1025.64 },
+    {
+      "content": "沒有啊 一點也不覺得可愛\n(魅惑)",
+      "from": 1025.64,
+      "location": 2,
+      "to": 1027.18
+    },
+    { "content": "(魅惑)", "from": 1027.18, "location": 2, "to": 1027.27 },
+    { "content": "毫無說服力", "from": 1027.47, "location": 2, "to": 1028.64 },
+    {
+      "content": "(魅惑)\n毫無說服力",
+      "from": 1028.64,
+      "location": 2,
+      "to": 1028.81
+    },
+    { "content": "(魅惑)", "from": 1028.81, "location": 2, "to": 1029.1 },
+    {
+      "content": "神宮寺 看你頭頂\n(魅惑)",
+      "from": 1029.1,
+      "location": 2,
+      "to": 1030.81
+    },
+    { "content": "(魅惑)", "from": 1030.81, "location": 2, "to": 1030.89 },
+    {
+      "content": "頭頂？\n(魅惑)",
+      "from": 1030.89,
+      "location": 2,
+      "to": 1031.81
+    },
+    { "content": "(魅惑)", "from": 1031.81, "location": 2, "to": 1032.56 },
+    {
+      "content": "這是什麼\n(魅惑)",
+      "from": 1032.56,
+      "location": 2,
+      "to": 1033.52
+    },
+    { "content": "(魅惑)", "from": 1033.52, "location": 2, "to": 1033.81 },
+    {
+      "content": "魅惑？\n(魅惑)",
+      "from": 1033.81,
+      "location": 2,
+      "to": 1034.77
+    },
+    { "content": "(魅惑)", "from": 1034.77, "location": 2, "to": 1035.65 },
+    {
+      "content": "魅惑\n(魅惑)",
+      "from": 1035.65,
+      "location": 2,
+      "to": 1036.61
+    },
+    { "content": "(魅惑)", "from": 1036.61, "location": 2, "to": 1039.28 },
+    {
+      "content": "那個 雖然聽起來像在狡辯 但還請聽我解釋",
+      "from": 1039.99,
+      "location": 2,
+      "to": 1044.03
+    },
+    {
+      "content": "我對少女完全沒興趣 真的在我喜歡的範圍以外",
+      "from": 1044.37,
+      "location": 2,
+      "to": 1044.41
+    },
+    {
+      "content": "(魅惑)\n我對少女完全沒興趣 真的在我喜歡的範圍以外",
+      "from": 1044.41,
+      "location": 2,
+      "to": 1049.29
+    },
+    { "content": "(魅惑)", "from": 1049.29, "location": 2, "to": 1049.33 },
+    {
+      "content": "金髮該怎麼說呢",
+      "from": 1049.41,
+      "location": 2,
+      "to": 1051.87
+    },
+    {
+      "content": "如絲般順滑 又有著明亮的光澤",
+      "from": 1052.04,
+      "location": 2,
+      "to": 1056.0
+    },
+    {
+      "content": "在這暗淡的夜色下照亮了你的容顏",
+      "from": 1056.0,
+      "location": 2,
+      "to": 1058.71
+    },
+    { "content": "(魅惑)", "from": 1059.42, "location": 2, "to": 1059.76 },
+    {
+      "content": "你彷彿就是我的太陽\n(魅惑)",
+      "from": 1059.76,
+      "location": 2,
+      "to": 1062.51
+    },
+    { "content": "(魅惑)", "from": 1062.51, "location": 2, "to": 1063.13 },
+    { "content": "好 好可怕", "from": 1074.52, "location": 2, "to": 1075.77 },
+    {
+      "content": "人的喜好和思考都變得不受控制",
+      "from": 1075.94,
+      "location": 2,
+      "to": 1078.69
+    },
+    {
+      "content": "這就是魅惑的效果",
+      "from": 1078.82,
+      "location": 2,
+      "to": 1080.61
+    },
+    {
+      "content": "外表的力量真是可怕",
+      "from": 1080.9,
+      "location": 2,
+      "to": 1083.15
+    },
+    {
+      "content": "這下可麻煩了 必須在出大問題之前做點什麼",
+      "from": 1083.49,
+      "location": 2,
+      "to": 1088.2
+    },
+    { "content": "橘", "from": 1088.33, "location": 2, "to": 1089.29 },
+    {
+      "content": "抱歉 神宮寺 一時慌張 用力過猛了",
+      "from": 1093.16,
+      "location": 2,
+      "to": 1097.42
+    },
+    {
+      "content": "不 我自己也有錯",
+      "from": 1097.75,
+      "location": 2,
+      "to": 1100.34
+    },
+    { "content": "話說", "from": 1100.8, "location": 2, "to": 1101.67 },
+    { "content": "(魅惑)", "from": 1101.71, "location": 2, "to": 1102.97 },
+    { "content": "咦 恢復了", "from": 1103.59, "location": 2, "to": 1105.51 },
+    { "content": "恢復了呢", "from": 1106.39, "location": 2, "to": 1107.47 },
+    { "content": "別這麼沮喪嘛", "from": 1114.1, "location": 2, "to": 1115.94 },
+    {
+      "content": "我從來沒這麼丟臉過",
+      "from": 1116.27,
+      "location": 2,
+      "to": 1120.57
+    },
+    { "content": "給你 水", "from": 1120.57, "location": 2, "to": 1121.82 },
+    {
+      "content": "但既然如此 必須想個辦法 我可不想再吃巴掌了",
+      "from": 1123.95,
+      "location": 2,
+      "to": 1128.41
+    },
+    {
+      "content": "敲一敲就能好 就跟壞掉的電視一樣",
+      "from": 1128.7,
+      "location": 2,
+      "to": 1132.66
+    },
+    { "content": "你好煩", "from": 1133.16, "location": 2, "to": 1134.04 },
+    {
+      "content": "好了好了 過去的事再多想也沒用",
+      "from": 1137.96,
+      "location": 2,
+      "to": 1141.0
+    },
+    {
+      "content": "轉換一下心情吧",
+      "from": 1141.3,
+      "location": 2,
+      "to": 1142.51
+    },
+    { "content": "現在", "from": 1143.05, "location": 2, "to": 1144.01 },
+    {
+      "content": "就沉醉在勝利的美酒中吧",
+      "from": 1145.76,
+      "location": 2,
+      "to": 1148.22
+    },
+    {
+      "content": "你看 好厲害 這就是這世界的貨幣嗎",
+      "from": 1150.22,
+      "location": 2,
+      "to": 1154.52
+    },
+    {
+      "content": "他們存了好多啊",
+      "from": 1154.89,
+      "location": 2,
+      "to": 1156.52
+    },
+    {
+      "content": "這麼多東西要怎麼辦呢",
+      "from": 1156.89,
+      "location": 2,
+      "to": 1159.19
+    },
+    {
+      "content": "請帶走吧 我們非常樂意將這裡的東西全部獻給您",
+      "from": 1159.52,
+      "location": 2,
+      "to": 1164.57
+    },
+    {
+      "content": "不行不行 哪用得了這麼多",
+      "from": 1164.57,
+      "location": 2,
+      "to": 1167.15
+    },
+    {
+      "content": "說得對 雖說我們不是沒期待過報酬",
+      "from": 1167.74,
+      "location": 2,
+      "to": 1171.03
+    },
+    {
+      "content": "但這些東西應該都是他們從附近掠奪來的",
+      "from": 1171.37,
+      "location": 2,
+      "to": 1174.83
+    },
+    {
+      "content": "可你們是村子的恩人 請務必讓我們報答一下兩位的恩情",
+      "from": 1175.12,
+      "location": 2,
+      "to": 1179.79
+    },
+    {
+      "content": "你要這麼說 我也不知該怎麼推脫了",
+      "from": 1180.79,
+      "location": 2,
+      "to": 1182.84
+    },
+    { "content": "那麼 那麼", "from": 1183.34, "location": 2, "to": 1184.51 },
+    {
+      "content": "我有個想要的東西",
+      "from": 1184.63,
+      "location": 2,
+      "to": 1186.38
+    },
+    {
+      "content": "怎麼樣 既沒有露太多 尺碼也正好",
+      "from": 1196.02,
+      "location": 2,
+      "to": 1199.73
+    },
+    {
+      "content": "衣服嗎 原來如此",
+      "from": 1200.19,
+      "location": 2,
+      "to": 1201.9
+    },
+    { "content": "不也挺好嗎", "from": 1202.11, "location": 2, "to": 1203.15 },
+    {
+      "content": "神宮寺 你這是在掩飾害羞吧",
+      "from": 1206.07,
+      "location": 2,
+      "to": 1209.2
+    },
+    {
+      "content": "也就是說你會被我魅惑對吧",
+      "from": 1209.61,
+      "location": 2,
+      "to": 1212.91
+    },
+    {
+      "content": "這傢伙別看嘴上這麼說",
+      "from": 1214.2,
+      "location": 2,
+      "to": 1216.33
+    },
+    {
+      "content": "其實心裡覺得我可愛得不得了吧 嘻嘻嘻",
+      "from": 1216.33,
+      "location": 2,
+      "to": 1221.21
+    },
+    {
+      "content": "太棒了 這感覺真讓人心情愉悅啊",
+      "from": 1221.38,
+      "location": 2,
+      "to": 1224.34
+    },
+    {
+      "content": "長得可愛原來是這麼無所不能嗎",
+      "from": 1224.59,
+      "location": 2,
+      "to": 1228.67
+    },
+    {
+      "content": "我打我打我打",
+      "from": 1229.47,
+      "location": 2,
+      "to": 1232.14
+    },
+    {
+      "content": "好痛好痛 我投降 我投降",
+      "from": 1233.39,
+      "location": 2,
+      "to": 1236.56
+    },
+    {
+      "content": "你突然幹什麼啊",
+      "from": 1237.1,
+      "location": 2,
+      "to": 1238.39
+    },
+    {
+      "content": "雖然你的弱點被我抓住了 可能覺得不爽",
+      "from": 1241.15,
+      "location": 2,
+      "to": 1244.44
+    },
+    {
+      "content": "但還好這把柄是握在我手上啊",
+      "from": 1245.23,
+      "location": 2,
+      "to": 1247.82
+    },
+    {
+      "content": "你不覺得有股奇怪的味道嗎",
+      "from": 1252.49,
+      "location": 2,
+      "to": 1254.2
+    },
+    { "content": "起起起", "from": 1259.5, "location": 2, "to": 1262.04 },
+    { "content": "起火了", "from": 1262.29, "location": 2, "to": 1264.96 },
+    {
+      "content": "神宮寺 出大事了 起火了",
+      "from": 1265.34,
+      "location": 2,
+      "to": 1268.51
+    },
+    { "content": "喂 神宮寺", "from": 1268.67, "location": 2, "to": 1270.01 },
+    {
+      "content": "這樣啊 我被抓住了弱點啊",
+      "from": 1270.47,
+      "location": 2,
+      "to": 1273.43
+    },
+    {
+      "content": "這種事還是頭一回",
+      "from": 1275.43,
+      "location": 2,
+      "to": 1277.43
+    },
+    {
+      "content": "現在是沉浸其中的時候嗎",
+      "from": 1279.6,
+      "location": 2,
+      "to": 1284.11
+    },
+    { "content": "早上了啊", "from": 1293.82, "location": 2, "to": 1294.95 },
+    {
+      "content": "薩提娜 你在嗎",
+      "from": 1296.53,
+      "location": 2,
+      "to": 1298.08
+    },
+    { "content": "我在", "from": 1298.54, "location": 2, "to": 1299.41 },
+    {
+      "content": "今天的我也好美啊",
+      "from": 1306.21,
+      "location": 2,
+      "to": 1308.84
+    },
+    { "content": "頭領 那個", "from": 1308.96, "location": 2, "to": 1310.67 },
+    {
+      "content": "我知道我知道 你是想說我今天也很美吧",
+      "from": 1310.67,
+      "location": 2,
+      "to": 1314.3
+    },
+    { "content": "我都聽膩了", "from": 1314.3, "location": 2, "to": 1315.55 },
+    { "content": "不是", "from": 1316.39, "location": 2, "to": 1317.3 },
+    {
+      "content": "好了 今天也要努力工作了哦",
+      "from": 1317.47,
+      "location": 2,
+      "to": 1320.02
+    },
+    { "content": "頭領", "from": 1320.35, "location": 2, "to": 1321.23 },
+    {
+      "content": "為了這片美麗的精靈森林",
+      "from": 1321.23,
+      "location": 2,
+      "to": 1323.56
+    },
+    { "content": "燒", "from": 1328.9, "location": 2, "to": 1329.82 },
+    { "content": "燒光了", "from": 1330.11, "location": 2, "to": 1333.86 },
+    {
+      "content": "與幻想！與你！與你！（呼）",
+      "from": 1341.29,
+      "location": 2,
+      "to": 1343.58
+    },
+    {
+      "content": "咚 神之列表（絕對絕對！）",
+      "from": 1343.58,
+      "location": 2,
+      "to": 1346.67
+    },
+    {
+      "content": "樂園之門開啟吧（開門開門！）",
+      "from": 1346.67,
+      "location": 2,
+      "to": 1349.63
+    },
+    {
+      "content": "是那邊？（不對不對）",
+      "from": 1349.63,
+      "location": 2,
+      "to": 1351.8
+    },
+    {
+      "content": "一定是這邊（哦~）",
+      "from": 1351.8,
+      "location": 2,
+      "to": 1354.13
+    },
+    {
+      "content": "冒險開始啦————!!!!!!",
+      "from": 1354.13,
+      "location": 2,
+      "to": 1356.64
+    },
+    {
+      "content": "（呼）（出發!）（呼）（與幻想！耶！）",
+      "from": 1357.09,
+      "location": 2,
+      "to": 1365.64
+    },
+    { "content": "美妙×美好", "from": 1365.77, "location": 2, "to": 1367.23 },
+    {
+      "content": "突如其來 想入非非（沒錯沒錯！）",
+      "from": 1367.23,
+      "location": 2,
+      "to": 1371.11
+    },
+    { "content": "幸福×快樂", "from": 1371.11, "location": 2, "to": 1372.69 },
+    {
+      "content": "危急時刻 不想卻怦然心動",
+      "from": 1372.69,
+      "location": 2,
+      "to": 1376.24
+    },
+    {
+      "content": "這幻想是對？（飄飄然在夢中）",
+      "from": 1376.24,
+      "location": 2,
+      "to": 1379.08
+    },
+    {
+      "content": "但可能性是錯？（光華閃現於我眼）",
+      "from": 1379.08,
+      "location": 2,
+      "to": 1381.66
+    },
+    {
+      "content": "會不會失敗（加油加油！）",
+      "from": 1381.66,
+      "location": 2,
+      "to": 1383.66
+    },
+    {
+      "content": "主動與（被動）",
+      "from": 1383.66,
+      "location": 2,
+      "to": 1384.58
+    },
+    {
+      "content": "用上喜歡的技能（哦~耶！）",
+      "from": 1384.58,
+      "location": 2,
+      "to": 1388.79
+    },
+    {
+      "content": "(你是誰？與！與罪！與罰！（呼）)",
+      "from": 1388.79,
+      "location": 2,
+      "to": 1391.71
+    },
+    {
+      "content": "(咻 集合啦最終列表（好多好多！）)",
+      "from": 1391.71,
+      "location": 2,
+      "to": 1394.13
+    },
+    {
+      "content": "似愛非愛（非也非也！）",
+      "from": 1394.13,
+      "location": 2,
+      "to": 1396.88
+    },
+    {
+      "content": "就不能坦誠一點嗎（好的好的！）",
+      "from": 1396.88,
+      "location": 2,
+      "to": 1399.64
+    },
+    {
+      "content": "與幻想！與你！與你！（呼）",
+      "from": 1399.64,
+      "location": 2,
+      "to": 1401.97
+    },
+    {
+      "content": "咚 神之列表（絕對絕對！）",
+      "from": 1401.97,
+      "location": 2,
+      "to": 1404.81
+    },
+    {
+      "content": "樂園之門開啟吧（開門開門！）",
+      "from": 1404.81,
+      "location": 2,
+      "to": 1407.69
+    },
+    {
+      "content": "是那邊？（不對不對）一定是這邊（哦~）",
+      "from": 1407.69,
+      "location": 2,
+      "to": 1412.02
+    },
+    {
+      "content": "糟糕啦————!!!!!!!",
+      "from": 1412.02,
+      "location": 2,
+      "to": 1413.4
+    },
+    {
+      "content": "不是做不到 也不是做得到",
+      "from": 1413.4,
+      "location": 2,
+      "to": 1415.82
+    },
+    {
+      "content": "不喜歡 也不討厭",
+      "from": 1415.82,
+      "location": 2,
+      "to": 1418.57
+    },
+    {
+      "content": "沒有愛得死去活來 也沒有不愛",
+      "from": 1418.57,
+      "location": 2,
+      "to": 1421.28
+    },
+    {
+      "content": "與幻想！與你！與你！",
+      "from": 1421.28,
+      "location": 2,
+      "to": 1423.58
+    },
+    { "content": "怎麼了 橘", "from": 1427.29, "location": 2, "to": 1428.0 },
+    {
+      "content": "出現了 房間裡出現了“蟑”字開頭的那東西",
+      "from": 1428.0,
+      "location": 2,
+      "to": 1430.38
+    },
+    {
+      "content": "橘 鎮定 把門敞開 把薄荷油一噴 你看它就跑了",
+      "from": 1430.38,
+      "location": 2,
+      "to": 1433.99
+    },
+    {
+      "content": "(第3集 大叔與憤怒的精靈)\n橘 鎮定 把門敞開 把薄荷油一噴 你看它就跑了",
+      "from": 1433.99,
+      "location": 2,
+      "to": 1434.34
+    },
+    {
+      "content": "要說有什麼問題的話 就是把它放到沒有昆蟲的這個世界裡是否妥當\n(第3集 大叔與憤怒的精靈)",
+      "from": 1434.34,
+      "location": 2,
+      "to": 1438.18
+    },
+    {
+      "content": "絕對不能破壞生態系統\n(第3集 大叔與憤怒的精靈)",
+      "from": 1438.18,
+      "location": 2,
+      "to": 1440.8
+    },
+    {
+      "content": "(第3集 大叔與憤怒的精靈)",
+      "from": 1440.8,
+      "location": 2,
+      "to": 1440.91
+    }
+  ]
+}

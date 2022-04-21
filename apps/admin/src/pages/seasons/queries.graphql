@@ -1,0 +1,117 @@
+fragment listSeasonsFields on Season {
+  bangumiId
+  airTime
+  weekday
+  mikanAnimeId
+  isMonitoring
+  jellyfinFolderByJellyfinFolderId {
+    name
+  }
+  title
+  id
+  yearAndSemester
+  tvdbId
+  tvdbSeason
+  bilibiliThmId
+  bilibiliMainlandId
+  jellyfinId
+  allEpisodes: episodesBySeasonId {
+    totalCount
+  }
+  airedEpisodes: episodesBySeasonId(
+    filter: { airTime: { lessThanOrEqualTo: $now } }
+  ) {
+    totalCount
+  }
+  availableEpisodes: episodesBySeasonId(
+    filter: { jellyfinEpisodeId: { isNull: false } }
+  ) {
+    totalCount
+  }
+  latestEpisode: episodesBySeasonId(
+    first: 1
+    orderBy: INDEX_DESC
+    filter: { airTime: { lessThanOrEqualTo: $now } }
+  ) {
+    edges {
+      node {
+        ...episodeStatusFields
+      }
+    }
+  }
+}
+
+query ListSeasons(
+  $offset: Int
+  $first: Int
+  $orderBy: [SeasonsOrderBy!] = []
+  $filter: SeasonFilter
+  $now: Datetime!
+) {
+  allSeasons(
+    offset: $offset
+    first: $first
+    orderBy: $orderBy
+    filter: $filter
+  ) {
+    pageInfo {
+      hasNextPage
+    }
+    totalCount
+    edges {
+      node {
+        ...listSeasonsFields
+      }
+      cursor
+    }
+  }
+}
+
+mutation CreateSeason($season: SeasonInput!) {
+  createSeason(input: { season: $season }) {
+    season {
+      id
+    }
+  }
+}
+
+query SearchBangumi($keywords: String!) {
+  searchBangumi(keywords: $keywords) {
+    added
+    airDate
+    id
+    image
+    name
+  }
+}
+
+fragment jellyfinFolderFields on JellyfinFolder {
+  id
+  name
+  location
+}
+
+query GetMetadataPageOptions {
+  getAvailableSemesters
+  allJellyfinFolders {
+    edges {
+      node {
+        ...jellyfinFolderFields
+      }
+    }
+  }
+}
+
+mutation DeleteSeasonById($id: Int!) {
+  deleteSeasonById(id: $id)
+}
+
+query ListJellyfinFolders {
+  allJellyfinFolders {
+    edges {
+      node {
+        ...jellyfinFolderFields
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@
     "type": {
       "description": "Type of project",
       "enum": [
+        "raw",
         "node:ts",
         "react:ts:spa",
         "lib:ts",
@@ -20,29 +21,17 @@
         "mp:taro:react:ts"
       ]
     },
-    "abilities": {
-      "description": "Abilities to use with this project",
-      "type": "array",
-      "items": {
-        "anyOf": [
-          {
-            "enum": ["tracing"]
-          },
-          {
-            "type": "array",
-            "items": [
-              {
-                "enum": ["tracing"]
-              },
-              {
-                "type": "object"
-              }
-            ],
-            "minItems": 2,
-            "maxItems": 2
-          }
-        ]
-      }
+    "node": {
+      "description": "Node.JS app-related settings",
+      "type": "object",
+      "properties": {
+        "entry": {
+          "description": "App entrypoint",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["entry"]
     },
     "ci": {
       "description": "CI-related settings",
@@ -60,13 +49,17 @@
           "description": "Deployment-related settings",
           "type": "object",
           "properties": {
-            "name": {
-              "description": "k8s deploy name",
-              "type": "string"
+            "env": {
+              "description": "Enabled environments",
+              "type": "array",
+              "items": {
+                "description": "Environment type",
+                "enum": ["offline", "prerelease", "production"]
+              }
             }
           },
           "additionalProperties": false,
-          "required": ["name"]
+          "required": ["env"]
         }
       },
       "additionalProperties": false,
@@ -74,5 +67,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["type", "abilities"]
+  "required": ["type"]
 }

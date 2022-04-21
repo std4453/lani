@@ -13,19 +13,24 @@ export interface LaniConfig {
   /**
    * Type of project
    */
-  type: "node:ts" | "react:ts:spa" | "lib:ts" | "lib:js" | "qiankun:react:ts" | "qiankun:raw" | "mp:taro:react:ts";
+  type:
+    | "raw"
+    | "node:ts"
+    | "react:ts:spa"
+    | "lib:ts"
+    | "lib:js"
+    | "qiankun:react:ts"
+    | "qiankun:raw"
+    | "mp:taro:react:ts";
   /**
-   * Abilities to use with this project
+   * Node.JS app-related settings
    */
-  abilities: (
-    | "tracing"
-    | [
-        "tracing",
-        {
-          [k: string]: unknown;
-        }
-      ]
-  )[];
+  node?: {
+    /**
+     * App entrypoint
+     */
+    entry: string;
+  };
   /**
    * CI-related settings
    */
@@ -43,9 +48,9 @@ export interface LaniConfig {
      */
     deployment?: {
       /**
-       * k8s deploy name
+       * Enabled environments
        */
-      name: string;
+      env: ("offline" | "prerelease" | "production")[];
     };
   };
 }
