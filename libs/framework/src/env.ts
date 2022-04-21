@@ -8,7 +8,6 @@ function getEnv(): Env {
   } else if (process.env.NODE_ENV === "staging") {
     return "pre";
   } else {
-    // TODO: more env
     return "prod";
   }
 }
