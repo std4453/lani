@@ -18,7 +18,7 @@ spec:
       containers:
       - name: api-server
         image: {{image}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - name: http
           containerPort: 3000
