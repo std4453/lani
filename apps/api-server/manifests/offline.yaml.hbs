@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: api-server
+      annotations:
+        telepresence.getambassador.io/inject-traffic-agent: enabled
     spec:
       containers:
       - name: api-server
