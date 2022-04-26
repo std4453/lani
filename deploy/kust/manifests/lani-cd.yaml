@@ -22,6 +22,8 @@ rules:
 - apiGroups: [""]
   resources:
   - services
+  - configmaps
+  - secrets
   verbs:
   - create
   - get
