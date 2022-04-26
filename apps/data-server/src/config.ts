@@ -1,58 +1,27 @@
-import PgSimplifyInflectorPlugin from "@graphile-contrib/pg-simplify-inflector";
-import { mergeConfig } from "@lani/framework";
+import { loadConfigSync } from "@lani/framework";
+import Joi from "joi";
 import { PostGraphileOptions } from "postgraphile";
 
-export default mergeConfig({
-  postgresUrl:
-    "postgres://postgraphile:3KS0n*TXW4!VYYC!%24gFc25mM@data-postgresql.postgres:5432/lani",
+const { postgresUrl, postgraphile } = loadConfigSync<{
+  postgresUrl: string;
+  postgraphile?: PostGraphileOptions;
+}>({
+  schema: Joi.object({
+    postgresUrl: Joi.string().required(),
+    postgraphile: Joi.object<PostGraphileOptions>({}).pattern(
+      Joi.string(),
+      Joi.any()
+    ),
+  }),
+});
+
+export default {
+  postgresUrl,
   postgraphile: {
     subscriptions: true,
-    retryOnInitFail: true,
     dynamicJson: true,
-    setofFunctionsContainNulls: false,
-    ignoreRBAC: false,
-    extendedErrors: ["errcode"],
-    appendPlugins: [PgSimplifyInflectorPlugin],
-    graphiql: false,
     enableQueryBatching: true,
-    disableQueryLog: true,
     legacyRelations: "omit",
+    ...postgraphile,
   } as PostGraphileOptions,
-})({
-  dev: {
-    postgresUrl:
-      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani-offline",
-    postgraphile: {
-      subscriptions: true,
-      dynamicJson: true,
-      setofFunctionsContainNulls: true,
-      ignoreRBAC: true,
-      showErrorStack: "json",
-      extendedErrors: ["hint", "detail", "errcode"],
-      graphiql: true,
-      enhanceGraphiql: true,
-      allowExplain: true,
-      enableQueryBatching: true,
-      legacyRelations: "omit",
-      watchPg: true,
-      exportGqlSchemaPath: "./generated/schema.graphql",
-    } as PostGraphileOptions,
-  },
-  offline: {
-    postgresUrl:
-      "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani-offline",
-    postgraphile: {
-      subscriptions: true,
-      dynamicJson: true,
-      setofFunctionsContainNulls: true,
-      ignoreRBAC: true,
-      showErrorStack: "json",
-      extendedErrors: ["hint", "detail", "errcode"],
-      graphiql: false,
-      allowExplain: false,
-      enableQueryBatching: true,
-      legacyRelations: "omit",
-      watchPg: true,
-    } as PostGraphileOptions,
-  },
-});
+};

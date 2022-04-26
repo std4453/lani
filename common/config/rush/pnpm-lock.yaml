@@ -17,6 +17,7 @@ specifiers:
   '@graphql-codegen/typescript': ~2.4.2
   '@graphql-codegen/typescript-operations': ~2.2.2
   '@graphql-typed-document-node/core': ~3.1.1
+  '@larksuiteoapi/allcore': ~1.0.14
   '@nestjs/apollo': ~10.0.7
   '@nestjs/axios': ~0.0.7
   '@nestjs/cli': ^8.0.0
@@ -51,6 +52,7 @@ specifiers:
   '@types/history': 2.0.45
   '@types/inquirer': ~8.2.1
   '@types/jest': 27.4.1
+  '@types/js-yaml': ~4.0.5
   '@types/koa': ~2.13.4
   '@types/lodash': ~4.14.178
   '@types/md5': ~2.3.2
@@ -92,7 +94,9 @@ specifiers:
   inclusion: ~1.0.1
   inquirer: ~8.2.2
   jest: ^27.2.5
+  joi: ~17.6.0
   jose: ~4.6.0
+  js-yaml: ~4.1.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
   keycloak-js: 15.0.2
@@ -148,6 +152,7 @@ dependencies:
   '@graphql-codegen/typescript': 2.4.8_graphql@15.8.0
   '@graphql-codegen/typescript-operations': 2.2.4_graphql@15.8.0
   '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+  '@larksuiteoapi/allcore': 1.0.14
   '@nestjs/apollo': 10.0.8_ee3df42fdeae765392fd29620e239ccd
   '@nestjs/axios': 0.0.7_7ab401b35f05c13deb013f5cd66f11e3
   '@nestjs/cli': 8.2.4
@@ -182,6 +187,7 @@ dependencies:
   '@types/history': 2.0.45
   '@types/inquirer': 8.2.1
   '@types/jest': 27.4.1
+  '@types/js-yaml': 4.0.5
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.181
   '@types/md5': 2.3.2
@@ -223,7 +229,9 @@ dependencies:
   inclusion: 1.0.1
   inquirer: 8.2.2
   jest: 27.5.1_ts-node@10.7.0
+  joi: 17.6.0
   jose: 4.6.0
+  js-yaml: 4.1.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
   keycloak-js: 15.0.2
@@ -2532,6 +2540,16 @@ packages:
       graphql: 15.8.0
     dev: false
 
+  /@hapi/hoek/9.2.1:
+    resolution: {integrity: sha512-gfta+H8aziZsm8pZa0vj04KO6biEiisppNgA1kbJvFrrWu9Vm7eaUEy76DIxsuTaWvti5fkJVhllWc6ZTE+Mdw==}
+    dev: false
+
+  /@hapi/topo/5.1.0:
+    resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+    dev: false
+
   /@humanwhocodes/config-array/0.5.0:
     resolution: {integrity: sha512-FagtKFz74XrTl7y6HCzQpwDfXP0yhxe9lHLD1UZxjvZIcbyRz8zTFF/yYNfSfzU414eDwZ1SrO0Qvtyf+wFMQg==}
     engines: {node: '>=10.10.0'}
@@ -4366,6 +4384,20 @@ packages:
     dependencies:
       '@sentry/types': 6.19.3
       tslib: 1.14.1
+    dev: false
+
+  /@sideway/address/4.1.4:
+    resolution: {integrity: sha512-7vwq+rOHVWjyXxVlR76Agnvhy8I9rpzjosTESvmhNeXOXdZZB15Fl+TI9x1SiHZH5Jv2wTGduSxFDIaq0m3DUw==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+    dev: false
+
+  /@sideway/formula/3.0.0:
+    resolution: {integrity: sha512-vHe7wZ4NOXVfkoRb8T5otiENVlT7a3IAiw7H5M2+GO+9CDgcVUUsX1zalAztCmwyOr2RUTGJdgB+ZvSVqmdHmg==}
+    dev: false
+
+  /@sideway/pinpoint/2.0.0:
+    resolution: {integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==}
     dev: false
 
   /@sindresorhus/is/0.14.0:
@@ -12899,6 +12931,16 @@ packages:
     engines: {node: '>= 0.6.0'}
     dev: false
 
+  /joi/17.6.0:
+    resolution: {integrity: sha512-OX5dG6DTbcr/kbMFj0KGYxuew69HPcAE3K/sZpEV2nP6e/j/C0HV+HNiBPCASxdx5T7DMoa0s8UeHWMnb6n2zw==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+      '@hapi/topo': 5.1.0
+      '@sideway/address': 4.1.4
+      '@sideway/formula': 3.0.0
+      '@sideway/pinpoint': 2.0.0
+    dev: false
+
   /jose/4.6.0:
     resolution: {integrity: sha512-0hNAkhMBNi4soKSAX4zYOFV+aqJlEz/4j4fregvasJzEVtjDChvWqRjPvHwLqr5hx28Ayr6bsOs1Kuj87V0O8w==}
     dev: false
@@ -20562,7 +20604,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.23:
-    resolution: {integrity: sha512-Pp81voXYRfwWdOdUBCX2W3zkJreQRaBcfPM6DhJwqM5CbHktTyRurqCL89S/ae8XEAfI7shnPAXhHkBduV/svw==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-N2Uy9MxpH7dN30nnpE4Ti/+3bJlXQhQgP/a4xyqmJCJ20lV23HFWTYVa8CuNjGfvdRdFoytE5DZ09fIIF4rI/Q==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -20573,6 +20615,8 @@ packages:
       '@types/koa': 2.13.4
       graphile-build: 4.12.2_graphql@15.8.0
       graphql: 15.8.0
+      joi: 17.6.0
+      js-yaml: 4.1.0
       koa: 2.13.4
       postgraphile: 4.12.9
       postgraphile-plugin-connection-filter: 2.2.2
@@ -20591,11 +20635,12 @@ packages:
     dev: false
 
   file:projects/framework.tgz:
-    resolution: {integrity: sha512-FSmBqKpplQ9Q9CAIKO0ZjFawN8KyhLPNdDommTalq1wbzCAeJQyaGbGEndhTrfm1p9V4AuKm4vl2JpF9BQMhCw==, tarball: file:projects/framework.tgz}
+    resolution: {integrity: sha512-zDqFTDQNH8Bv47CnJQSudvbkyIe1KcKGKuR9DlBCtWC/kjdx9AZZTFUfxy5jbTULkGmaGFcV1luDjzLGVcDhbQ==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
     version: 0.0.0
     dependencies:
       '@koa/cors': 3.1.0
+      '@types/js-yaml': 4.0.5
       '@types/koa': 2.13.4
       '@types/koa__cors': 3.1.1
       '@types/koa-bodyparser': 4.3.7
@@ -20606,6 +20651,8 @@ packages:
       cls-rtracer: 2.6.0
       fp-ts: 2.11.9
       io-ts: 2.2.16_fp-ts@2.11.9
+      joi: 17.6.0
+      js-yaml: 4.1.0
       koa: 2.13.4
       koa-bodyparser: 4.3.0
       koa-logger: 3.2.1
