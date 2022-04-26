@@ -6,7 +6,8 @@
     "start": "node dist/index.js",
     "build": "lani-cli build",
     "devops": "lani-cli devops",
-    "dev": "CONFIG_FILENAME=dev.config.yaml lani-cli dev",
+    "dev": "lani-cli dev",
+    "dev:tp": "telepresence intercept -n lani-offline data-server -p 8080:http --mount=mount -- env CONFIG_FILENAME=mount/config/config.yaml rushx dev",
     "generate:schema": "ts-node src/scripts/generate-schema.ts",
     "manifest": "lani-cli manifest"
   },

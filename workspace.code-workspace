@@ -36,7 +36,8 @@
 	"settings": {
 		"files.associations": {
 			"rush.json": "jsonc",
-			"**/common/config/rush/*.json": "jsonc"
+			"**/common/config/rush/*.json": "jsonc",
+      "**/manifests/**/*.yaml.hbs": "yaml"
 		},
 		"json.schemas": [
 			{
