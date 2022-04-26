@@ -122,4 +122,4 @@ jobs:
         env:
           KUBE_CONFIG: ${{ env.KUBE_CONFIG }}
         with:
-          args: apply -f ./${{ github.event.inputs.project_path }}/manifests/${{ github.event.inputs.deploy_env }}.yaml
+          args: apply -k ./${{ github.event.inputs.project_path }}/manifests/${{ github.event.inputs.deploy_env }}/

@@ -69,6 +69,3 @@ common/autoinstallers/*/.npmrc
 
 # build files
 **/dist
-
-# generated manifest files
-**/manifests/*.yaml
