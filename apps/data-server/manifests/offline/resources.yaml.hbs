@@ -32,8 +32,18 @@ spec:
         env:
         - name: NODE_ENV
           value: "offline"  
+        - name: CONFIG_FILENAME
+          value: /config/config.yaml
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
       imagePullSecrets:
       - name: ghcr-io-regcred
+      volumes:
+      - name: config
+        configMap:
+          name: data-server-config
 ---
 kind: Service
 apiVersion: v1
@@ -47,24 +57,3 @@ spec:
   - name: http
     port: 8080
     targetPort: 8080
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: data-server-config
-  namespace: lani-offline
-data:
-  config.yaml: >
-    postgresUrl: "postgres://postgres:a*qLweVSC!4yRvBNP%405VGfyR@data-postgresql.postgres:5432/lani-offline"
-    postgraphile:
-      setofFunctionsContainNulls: true
-      ignoreRBAC: true
-      showErrorStack: json
-      extendedErrors:
-        - hint
-        - detail
-        - errcode
-      graphiql: false
-      enhanceGraphiql: false
-      allowExplain: false
-      watchPg: true
