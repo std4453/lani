@@ -69,3 +69,6 @@ common/autoinstallers/*/.npmrc
 
 # build files
 **/dist
+
+# Files mounted via telepresence
+**/mount
