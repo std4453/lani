@@ -8,6 +8,5 @@ postgraphile:
     - detail
     - errcode
   graphiql: false
-  enhanceGraphiql: false
   allowExplain: false
   watchPg: true
