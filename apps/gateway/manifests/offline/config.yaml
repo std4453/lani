@@ -1,0 +1,11 @@
+subgraphs:
+  - name: data
+    url: http://data-server.lani-offline:8080/graphql
+  - name: api
+    url: http://api-server.lani-offline:8080/graphql
+pollIntervalInMs: 3000
+auth:
+  enabled: true
+  issuer: https://accounts.std4453.com:444/auth/realms/apps
+  audience: lani
+  role: lani-admin

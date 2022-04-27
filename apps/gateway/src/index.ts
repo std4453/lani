@@ -1,5 +1,6 @@
 import config from "@/config";
 import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
+import { getPort } from "@lani/framework";
 import { ApolloServer, AuthenticationError } from "apollo-server";
 import { getIntrospectionQuery, parse, print } from "graphql";
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -9,21 +10,25 @@ import { Issuer } from "openid-client";
   const gateway = new ApolloGateway({
     supergraphSdl: new IntrospectAndCompose({
       subgraphs: config.subgraphs,
-      pollIntervalInMs: 3000,
+      pollIntervalInMs: config.pollIntervalInMs,
     }),
   });
 
-  const issuer = await Issuer.discover(config.issuer);
-  if (!issuer.metadata.jwks_uri) {
-    throw new Error("jwk_uri not found in issuer metadata");
-  }
-  const JWKS = createRemoteJWKSet(new URL(issuer.metadata.jwks_uri));
+  let context: ConstructorParameters<typeof ApolloServer>[0]["context"] =
+    undefined;
 
-  const introspectionQuery = print(parse(getIntrospectionQuery()));
+  if (config.auth.enabled) {
+    const { audience, issuer: issuerUrl, role } = config.auth;
 
-  const server = new ApolloServer({
-    gateway,
-    context: async ({ req }) => {
+    const issuer = await Issuer.discover(issuerUrl);
+    if (!issuer.metadata.jwks_uri) {
+      throw new Error("jwk_uri not found in issuer metadata");
+    }
+    const JWKS = createRemoteJWKSet(new URL(issuer.metadata.jwks_uri));
+
+    const introspectionQuery = print(parse(getIntrospectionQuery()));
+
+    context = async ({ req }) => {
       const auth = (req.headers.authorization ?? "").replace("Bearer ", "");
       try {
         const query = print(parse(req.body.query));
@@ -33,7 +38,7 @@ import { Issuer } from "openid-client";
 
         const { payload } = await jwtVerify(auth, JWKS, {
           issuer: issuer.metadata.issuer,
-          audience: config.audience,
+          audience,
         });
         const roles =
           (
@@ -41,16 +46,21 @@ import { Issuer } from "openid-client";
               roles: string[];
             }
           )?.roles ?? [];
-        if (!roles.includes(config.role)) {
+        if (!roles.includes(role)) {
           throw new AuthenticationError("Not Authorized");
         }
       } catch (error) {
         throw new AuthenticationError("Not Authenticated");
       }
-    },
+    };
+  }
+
+  const server = new ApolloServer({
+    gateway,
+    context,
   });
 
-  server.listen(8080).then(({ url }) => {
-    console.log(`🚀 Server ready at ${url}`);
-  });
+  const { url } = await server.listen(getPort(8080));
+
+  console.log(`🚀 Server ready at ${url}`);
 })();

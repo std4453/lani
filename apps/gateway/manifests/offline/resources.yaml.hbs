@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: gateway
+      annotations:
+        telepresence.getambassador.io/inject-traffic-agent: enabled
     spec:
       containers:
       - name: gateway
@@ -32,8 +34,18 @@ spec:
         env:
         - name: NODE_ENV
           value: "offline"
+        - name: CONFIG_FILENAME
+          value: /config/config.yaml
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
       imagePullSecrets:
       - name: ghcr-io-regcred
+      volumes:
+      - name: config
+        configMap:
+          name: gateway-config
 ---
 kind: Service
 apiVersion: v1

@@ -8,6 +8,7 @@
     "build": "lani-cli build",
     "devops": "lani-cli devops",
     "dev": "lani-cli dev",
+    "dev:tp": "telepresence intercept -n lani-offline gateway -p 8080:http --mount=mount -- lani-cli dev",
     "manifest": "lani-cli manifest"
   },
   "devDependencies": {
@@ -22,7 +23,8 @@
     "apollo-server": "~3.6.4",
     "@apollo/gateway": "^0.46.0",
     "openid-client": "~5.1.4",
-    "jose": "~4.6.0"
+    "jose": "~4.6.0",
+    "joi": "~17.6.0"
   },
   "files": [
     "/dist"
