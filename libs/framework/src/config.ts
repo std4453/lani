@@ -69,3 +69,16 @@ export async function loadConfig<T = any>(
   });
   return validateConfig(doc, options);
 }
+
+export function getPort(defaultPort: number) {
+  const port = process.env.PORT;
+  if (port) {
+    try {
+      return parseInt(port);
+    } catch (e) {
+      // 格式错误
+    }
+  }
+  // 格式错误或未设置
+  return defaultPort;
+}
