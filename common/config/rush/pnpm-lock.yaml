@@ -20662,7 +20662,7 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-Uy+jrWxR5sxBZ650Arlw5WScfuXwR23SicRKFz5VSQCNugvvDmym75/qufYsGOcJuKwJKfFoI4GYgiySmfvjMg==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-MzvFUUtznDD2m8nFxMAckX5RiZgecf72lTSBZHqC+4Dd3KreVd8mV4RjAbZxwFoWEK4Aph8XM1QtFyT+KJUPFg==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
@@ -20671,6 +20671,7 @@ packages:
       apollo-server: 3.6.7_graphql@15.8.0
       axios: 0.26.1
       graphql: 15.8.0
+      joi: 17.6.0
       jose: 4.6.0
       jsonwebtoken: 8.5.1
       openid-client: 5.1.4
