@@ -33,10 +33,10 @@ spec:
         - name: NODE_ENV
           value: "offline"  
         - name: CONFIG_FILENAME
-          value: /config/config.yaml
+          value: config/config.yaml
         volumeMounts:
         - name: config
-          mountPath: "/config"
+          mountPath: /deploy/apps/data-server/config
           readOnly: true
       imagePullSecrets:
       - name: ghcr-io-regcred
