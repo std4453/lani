@@ -1,14 +1,13 @@
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import COS from 'cos-nodejs-sdk-v5';
 
 @Injectable()
 export class COSService extends COS {
-  constructor(config: ConfigService<ConfigType, true>) {
+  constructor() {
     super({
-      SecretId: config.get('cosSecretId'),
-      SecretKey: config.get('cosSecretKey'),
+      SecretId: config.cos.secretId,
+      SecretKey: config.cos.secretKey,
     });
   }
 }

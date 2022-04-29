@@ -2,10 +2,9 @@ import { MetadataRefreshMode } from '@/api/jellyfin';
 import { BilibiliBangumiCCService } from '@/bilibili-bangumi-cc/index.service';
 import { BilibiliProxyRegion } from '@/bilibili-bangumi-cc/types';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { ConflictException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 import { DownloadStatus } from '@prisma/client';
 import fs from 'fs/promises';
@@ -16,7 +15,6 @@ export class BilibiliBangumiCCResolver {
   constructor(
     private service: BilibiliBangumiCCService,
     private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
   ) {}
 
   @Mutation(() => ID)
@@ -58,7 +56,7 @@ export class BilibiliBangumiCCResolver {
       throw new ConflictException('last job does not have filePath');
     }
     const srtPath = filePath.replace(path.extname(filePath), '').concat('.srt');
-    const actualSrtPath = path.join(this.config.get('mediaRoot'), srtPath);
+    const actualSrtPath = path.join(config.lani.mediaRoot, srtPath);
     const srtText = await this.service.downloadSRT(
       bilibiliThmId,
       index,

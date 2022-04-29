@@ -1,0 +1,55 @@
+network:
+  proxy:
+    enabled: true
+    hk: http://hk1.v2ray:8889
+    global: http://v2ray.v2ray:8889
+  timeout:
+    local: 5000
+    global: 30000
+    default: 15000
+
+postgresUrl: postgresql://lani-api-server:DSyqrDALfxrBplO162VTAfkNsUqZXHgo@data-postgresql.postgres:5432/lani-offline?schema=public
+
+cos:
+  secretId: AKIDXtzoNfgPs88qIVQ4RYOxFH3YmiOnwpSo
+  secretKey: 6vTkkTv72g5E6hBPN3SaS3NQChvsXx6y
+  imagesBucket:
+    bucket: lani-images-1308701035
+    region: ap-shanghai
+
+downloadClient:
+  kind: qbittorrent
+  qbittorrent:
+    apiEndpoint: http://qbittorrent.media:80
+    username: std4453
+    password: dyQB2QT&8kFqRBe#
+  pathMapping:
+  - from: /downloads
+    to: /media/downloads
+
+jellyfin:
+  apiEndpoint: http://jellyfin-server-prod.media:80
+  apiToken: 231e55e0d1c240cd9e58cc47f61f521b
+  dummyUserId: 786d13a822ed4f6ba27b28f5cf374133
+  pathMapping:
+  - from: /media
+    to: /media/media
+  publicHost: https://jellyfin.std4453.com:444
+
+lani:
+  mediaRoot: /media/media
+  publicHost: https://lani.std4453.com:444
+
+notifications:
+  management:
+    enabled: true
+    kind: lark
+  user:
+    enabled: true
+    kind: lark
+  lark:
+    appId: cli_a12ee15e54785013
+    appSecret: xTBxpBBAFIo4biIwG5XgnbkIjJIW6q8Q
+    encryptKey: 5EsUt6fMQ6x5LIzXjnY0FbdoYbWTiwnh
+    verificationToken: J0XGD1O5b04ivzHePwAALlMcaeoE3Cou
+    adminChatId: oc_6a5bd039f4e5ce3e655f1aea2389dec9

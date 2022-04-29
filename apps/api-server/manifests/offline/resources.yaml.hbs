@@ -36,15 +36,23 @@ spec:
           value: "offline" 
         - name: TZ
           value: Asia/Shanghai
+        - name: CONFIG_FILENAME
+          value: /config/config.yaml
         volumeMounts:
-          - mountPath: /media
-            name: media-root
+        - name: config
+          mountPath: /config
+          readOnly: true
+        - mountPath: /media
+          name: media-root
       imagePullSecrets:
       - name: ghcr-io-regcred
       volumes:
       - name: media-root
         persistentVolumeClaim: 
           claimName: media-root-pvc
+      - name: config
+        configMap:
+          name: api-server-config
       securityContext:
         runAsUser: 1000
 ---

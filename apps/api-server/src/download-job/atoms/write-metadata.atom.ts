@@ -1,11 +1,10 @@
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { DateFormat } from '@/constants/date-format';
 import { AsyncAtom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
@@ -17,11 +16,7 @@ export class WriteMetadataAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
   'writeMetadata'
 > {
-  constructor(
-    emitter: EventEmitter2,
-    private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
-  ) {
+  constructor(emitter: EventEmitter2, private prisma: PrismaService) {
     super(emitter, 'writeMetadata');
   }
 
@@ -43,7 +38,7 @@ export class WriteMetadataAtom extends AsyncAtom<
       importFile: { filePath },
     } = steps;
     const nfoPath = filePath.replace(path.extname(filePath), '').concat('.nfo');
-    const actualNfoPath = path.join(this.config.get('mediaRoot'), nfoPath);
+    const actualNfoPath = path.join(config.lani.mediaRoot, nfoPath);
     // xml2js 对象结构没有类型，只能用 any
     let xmlObj: any = {};
     try {

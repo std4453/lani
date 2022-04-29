@@ -1,11 +1,10 @@
 import { MetadataRefreshMode, TvShowsService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { Atom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Int, Mutation } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -21,11 +20,7 @@ export class RefreshPlayerAtom extends Atom<
   DownloadWorkflowDefinition,
   'refreshPlayer'
 > {
-  constructor(
-    emitter: EventEmitter2,
-    private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
-  ) {
+  constructor(emitter: EventEmitter2, private prisma: PrismaService) {
     super(emitter, 'refreshPlayer');
   }
 
@@ -85,7 +80,7 @@ export class RefreshPlayerAtom extends Atom<
   private async getJellyfinEpisode(index: number, jellyfinSeriesId: string) {
     const { Items: episodes } = await TvShowsService.getEpisodes(
       jellyfinSeriesId,
-      this.config.get('jellyfinUserId'),
+      config.jellyfin.dummyUserId,
     );
     const jellyfinEpisodeId = (episodes ?? []).find(
       (episode) =>

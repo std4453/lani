@@ -20467,7 +20467,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-Elvss3I7uhSQG99GyPkc6y+jOGw55Z6O8OaepYvycmRwpjXPIAG6u7puxlj5ozaijpQf8MT2pRctX9cP9FCP8w==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-1w0AkY/q5RRcJtztocjj5Q7Dw3fDwq7KQlGnrMpbsoU5ldRbyGWsxydrbF9De1i1u2z1YfRBhgoMy3kapZd+dg==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -20516,6 +20516,7 @@ packages:
       https-proxy-agent: 5.0.0
       io-ts: 2.2.16_fp-ts@2.11.9
       jest: 27.5.1_ts-node@10.7.0
+      joi: 17.6.0
       md5: 2.3.0
       openapi-typescript-codegen: 0.20.1
       parse-torrent: 9.1.5

@@ -1,10 +1,9 @@
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { AsyncAtom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
-import { mapPath, PathMapping } from '@/utils/path';
+import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import fs from 'fs/promises';
 import path from 'path';
@@ -14,11 +13,7 @@ export class ImportFileAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
   'importFile'
 > {
-  constructor(
-    emitter: EventEmitter2,
-    private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
-  ) {
+  constructor(emitter: EventEmitter2, private prisma: PrismaService) {
     super(emitter, 'importFile');
   }
 
@@ -47,7 +42,7 @@ export class ImportFileAtom extends AsyncAtom<
       throw new Error('jellyfinFolder not set');
     }
     const mappedImportPath = mapPath(
-      this.config.get<PathMapping>('qbtPathMapping'),
+      config.downloadClient.pathMapping,
       steps.findVideoFile.importPath,
     );
     const filePath = path.join(
@@ -59,7 +54,7 @@ export class ImportFileAtom extends AsyncAtom<
         steps.findVideoFile.importPath,
       )}`,
     );
-    const absoluteFilePath = path.join(this.config.get('mediaRoot'), filePath);
+    const absoluteFilePath = path.join(config.lani.mediaRoot, filePath);
     await fs.mkdir(path.dirname(absoluteFilePath), { recursive: true });
     // 如果源文件不存在，这里直接报错
     const { ino: sourceIno } = await fs.stat(mappedImportPath);
