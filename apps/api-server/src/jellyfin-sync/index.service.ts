@@ -1,29 +1,19 @@
 import { CollectionTypeOptions, LibraryStructureService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
-import { mapPath, PathMapping } from '@/utils/path';
+import config from '@/config';
+import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
 import path from 'path';
 
 @Injectable()
 @Resolver()
 export class JellyfinSyncService {
-  constructor(
-    private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   private getMappedFolderLocation(location: string) {
-    const mappedLocation = mapPath(
-      this.config.get<PathMapping>('jellyfinPathMapping'),
-      location,
-    );
-    const relative = path.relative(
-      this.config.get('mediaRoot'),
-      mappedLocation,
-    );
+    const mappedLocation = mapPath(config.jellyfin.pathMapping, location);
+    const relative = path.relative(config.lani.mediaRoot, mappedLocation);
     return relative;
   }
 

@@ -2,7 +2,7 @@ import { MetadataRefreshMode } from '@/api/jellyfin';
 import { ChinaAxiosService } from '@/common/axios.service';
 import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType, COSBucket } from '@/config';
+import config from '@/config';
 import { DateFormat } from '@/constants/date-format';
 import { BangumiSeasonService } from '@/season-sync/bangumi/index.service';
 import { PartialSeason } from '@/season-sync/index.model';
@@ -10,12 +10,11 @@ import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { ConflictException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { Image, JellyfinFolder, MetadataSource, Season } from '@prisma/client';
 import dayjs from 'dayjs';
-import fsPromises from 'fs/promises';
+import fs from 'fs/promises';
 import md5 from 'md5';
 import path from 'path';
 import xml2js from 'xml2js';
@@ -27,7 +26,6 @@ export class SyncMetadataResolver {
     private bangumi: BangumiSeasonService,
     private china: ChinaAxiosService,
     private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
     private cos: COSService,
   ) {}
 
@@ -178,7 +176,7 @@ export class SyncMetadataResolver {
       maxContentLength: 10 * 1024 * 1024,
     });
     const hash = md5(data);
-    const bucket = this.config.get<COSBucket>('imagesBucket');
+    const bucket = config.cos.imagesBucket;
     const key = `${hash}${ext}`;
     await this.cos.putObject({
       Bucket: bucket.bucket,
@@ -219,18 +217,18 @@ export class SyncMetadataResolver {
     }
     console.log(`writing metadata for season '${title}'`);
     const nfoPath = path.join(
-      this.config.get('mediaRoot'),
+      config.lani.mediaRoot,
       seasonRoot,
       title,
       'tvshow.nfo',
     );
     let xmlObj: any = {};
-    await fsPromises.mkdir(path.dirname(nfoPath), { recursive: true });
+    await fs.mkdir(path.dirname(nfoPath), { recursive: true });
     let modified = false;
     let currentContent = '';
     try {
-      await fsPromises.stat(nfoPath);
-      currentContent = await fsPromises.readFile(nfoPath, 'utf8');
+      await fs.stat(nfoPath);
+      currentContent = await fs.readFile(nfoPath, 'utf8');
       xmlObj = await this.parser.parseStringPromise(currentContent);
     } catch (error) {
       // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
@@ -276,7 +274,7 @@ export class SyncMetadataResolver {
     );
     const nfoContent = this.builder.buildObject(xmlObj);
     if (currentContent !== nfoContent) {
-      await fsPromises.writeFile(nfoPath, nfoContent, 'utf-8');
+      await fs.writeFile(nfoPath, nfoContent, 'utf-8');
       modified = true;
     }
     await Promise.all(
@@ -292,7 +290,7 @@ export class SyncMetadataResolver {
         if (!cosPath) {
           throw new Error('cosPath not set');
         }
-        const bucket = this.config.get<COSBucket>('imagesBucket');
+        const bucket = config.cos.imagesBucket;
         const ext = cosPath.substring(cosPath.lastIndexOf('.'));
         const { Body: content } = await this.cos.getObject({
           Bucket: bucket.bucket,
@@ -301,20 +299,20 @@ export class SyncMetadataResolver {
         });
         const newFileHash = md5(content);
         const filePath = path.join(
-          this.config.get('mediaRoot'),
+          config.lani.mediaRoot,
           seasonRoot,
           title,
           `${type}${ext}`,
         );
         let currentFileHash = '';
         try {
-          const currentFileContent = await fsPromises.readFile(filePath);
+          const currentFileContent = await fs.readFile(filePath);
           currentFileHash = md5(currentFileContent);
         } catch (error) {
           // 无论文件有没有问题，我们这里只是为了判断hash，因此忽略错误
         }
         if (currentFileHash !== newFileHash) {
-          await fsPromises.writeFile(filePath, content);
+          await fs.writeFile(filePath, content);
           modified = true;
         }
       }),
@@ -521,7 +519,7 @@ export class SyncMetadataResolver {
       return false;
     }
     const items = await JellyfinHelp.getItemsByUserId({
-      userId: this.config.get('jellyfinUserId'),
+      userId: config.jellyfin.dummyUserId,
       searchTerm: title,
       limit: 10,
       parentId: jellyfinFolder.jellyfinId,

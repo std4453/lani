@@ -1,6 +1,5 @@
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientOptions } from '@prisma/client/runtime';
 
@@ -16,9 +15,9 @@ export class PrismaService
   }>
   implements OnModuleInit
 {
-  constructor(configService: ConfigService<ConfigType, true>) {
+  constructor() {
     super({
-      datasources: { db: { url: configService.get('postgresURL') } },
+      datasources: { db: { url: config.postgresUrl } },
       rejectOnNotFound: {
         findUnique: true,
       },

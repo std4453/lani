@@ -1,6 +1,5 @@
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios, {
   Axios,
   AxiosInstance,
@@ -8,6 +7,27 @@ import axios, {
   AxiosResponse,
 } from 'axios';
 import createHttpsProxyAgent from 'https-proxy-agent';
+
+function getAxiosConfig(
+  key: keyof typeof config.network.timeout,
+): AxiosRequestConfig {
+  // 本地不使用 proxy
+  const proxy =
+    key === 'local'
+      ? undefined
+      : config.network.proxy.enabled
+      ? config.network.proxy[key]
+      : undefined;
+  const timeout =
+    typeof config.network.timeout[key] === 'number' &&
+    config.network.timeout[key] > 0
+      ? config.network.timeout[key]
+      : undefined;
+  return {
+    httpsAgent: proxy ? createHttpsProxyAgent(proxy) : undefined,
+    timeout,
+  };
+}
 
 // extends Axios 这里只是个幌子，因为 Axios.constructor 制造的 instance 比
 // axios.create() 制造的少很多默认值，导致了问题，因此实际上我们的 request
@@ -38,38 +58,28 @@ export class AxiosService extends Axios {
 
 @Injectable()
 export class GlobalAxiosService extends AxiosService {
-  constructor(config: ConfigService<ConfigType, true>) {
-    super({
-      httpsAgent: createHttpsProxyAgent(config.get<string>('globalProxy')),
-      timeout: config.get<number>('timeoutGlobal'),
-    });
+  constructor() {
+    super(getAxiosConfig('global'));
   }
 }
 
 @Injectable()
 export class HKAxiosService extends AxiosService {
-  constructor(config: ConfigService<ConfigType, true>) {
-    super({
-      httpsAgent: createHttpsProxyAgent(config.get<string>('hk1Proxy')),
-      timeout: config.get<number>('timeoutGlobal'),
-    });
+  constructor() {
+    super(getAxiosConfig('hk'));
   }
 }
 
 @Injectable()
 export class ChinaAxiosService extends AxiosService {
-  constructor(config: ConfigService<ConfigType>) {
-    super({
-      timeout: config.get<number>('timeoutChina'),
-    });
+  constructor() {
+    super(getAxiosConfig('default'));
   }
 }
 
 @Injectable()
 export class LocalAxiosService extends AxiosService {
-  constructor(config: ConfigService<ConfigType>) {
-    super({
-      timeout: config.get<number>('timeoutLocal'),
-    });
+  constructor() {
+    super(getAxiosConfig('local'));
   }
 }

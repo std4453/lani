@@ -8,6 +8,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "NODE_ENV=development nest start --watch",
+    "start:tp": "telepresence intercept -n lani-offline api-server -p 3000:http --mount=mount -- rushx start:dev",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -55,7 +56,8 @@
     "@sentry/node": "~6.19.2",
     "@sentry/types": "~6.19.2",
     "md5": "~2.3.0",
-    "@larksuiteoapi/allcore": "~1.0.14"
+    "@larksuiteoapi/allcore": "~1.0.14",
+    "joi": "~17.6.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

@@ -1,8 +1,8 @@
 import { AxiosService } from '@/common/axios.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
+import { QBittorrentConfig } from '@/config/types';
 import { QBTFiles, QBTTorrent, QBTTorrents } from '@/download-job/types';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
@@ -33,18 +33,27 @@ export interface ListTorrentsParams {
   hashes?: string[];
 }
 
+function getQBittorrentConfig() {
+  const {
+    downloadClient: { qbittorrent },
+  } = config;
+  if (!qbittorrent) throw new Error('qbittorrent not configured!');
+  return qbittorrent;
+}
+
 @Injectable()
 export class QBittorrentService extends AxiosService {
   private SID = '';
   private loginTime = 0;
   private authPromise: Promise<void> | null = null;
+  private qbtConfig: QBittorrentConfig;
 
-  constructor(private config: ConfigService<ConfigType, true>) {
+  constructor() {
     super({
-      baseURL: config.get('qbtEndpoint'),
-      timeout: config.get<number>('timeoutLocal'),
+      baseURL: `${getQBittorrentConfig().apiEndpoint}/api/v2`,
+      timeout: config.network.timeout.local,
     });
-
+    this.qbtConfig = getQBittorrentConfig();
     this.interceptors.request.use((config) => {
       return {
         ...config,
@@ -62,8 +71,8 @@ export class QBittorrentService extends AxiosService {
   private async doLogin() {
     console.debug('logging in to qBittorrent...');
     const params = new URLSearchParams();
-    params.append('username', this.config.get('qbtUsername'));
-    params.append('password', this.config.get('qbtPassword'));
+    params.append('username', this.qbtConfig.username);
+    params.append('password', this.qbtConfig.password);
     // 使用 super.request，因为这次接口调用不需要拦截
     const { headers } = await super.request({
       method: 'post',

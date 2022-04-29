@@ -1,8 +1,7 @@
 import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType, COSBucket } from '@/config';
+import config from '@/config';
 import { getIdFromNodeId } from '@/utils/graphile';
-import { ConfigService } from '@nestjs/config';
 import {
   Directive,
   Field,
@@ -27,11 +26,7 @@ export class Image {
 
 @Resolver(() => Image)
 export class ImageResolver {
-  constructor(
-    private cos: COSService,
-    private config: ConfigService<ConfigType, true>,
-    private prisma: PrismaService,
-  ) {}
+  constructor(private cos: COSService, private prisma: PrismaService) {}
 
   @ResolveField(() => String)
   async downloadPath(@Parent() { nodeId }: { nodeId: string }) {
@@ -42,7 +37,7 @@ export class ImageResolver {
     if (!cosPath) {
       return undefined;
     }
-    const bucket = this.config.get<COSBucket>('imagesBucket');
+    const bucket = config.cos.imagesBucket;
     const url = this.cos.getObjectUrl(
       {
         Bucket: bucket.bucket,
