@@ -9,6 +9,7 @@ import { PartialSeason } from '@/season-sync/index.model';
 import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
+import { resolveChroot } from '@lani/framework';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -216,11 +217,8 @@ export class SyncMetadataResolver {
       throw new ConflictException('seasonRoot not set');
     }
     console.log(`writing metadata for season '${title}'`);
-    const nfoPath = path.join(
-      config.lani.mediaRoot,
-      seasonRoot,
-      title,
-      'tvshow.nfo',
+    const nfoPath = resolveChroot(
+      path.join(config.lani.mediaRoot, seasonRoot, title, 'tvshow.nfo'),
     );
     let xmlObj: any = {};
     await fs.mkdir(path.dirname(nfoPath), { recursive: true });
@@ -298,11 +296,8 @@ export class SyncMetadataResolver {
           Key: cosPath,
         });
         const newFileHash = md5(content);
-        const filePath = path.join(
-          config.lani.mediaRoot,
-          seasonRoot,
-          title,
-          `${type}${ext}`,
+        const filePath = resolveChroot(
+          path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
         );
         let currentFileHash = '';
         try {

@@ -3,6 +3,7 @@ import config from '@/config';
 import { AsyncAtom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { mapPath } from '@/utils/path';
+import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import fs from 'fs/promises';
@@ -41,9 +42,11 @@ export class ImportFileAtom extends AsyncAtom<
     if (!seasonRoot) {
       throw new Error('jellyfinFolder not set');
     }
-    const mappedImportPath = mapPath(
-      config.downloadClient.pathMapping,
-      steps.findVideoFile.importPath,
+    const mappedImportPath = resolveChroot(
+      mapPath(
+        config.downloadClient.pathMapping,
+        steps.findVideoFile.importPath,
+      ),
     );
     const filePath = path.join(
       seasonRoot,
@@ -54,7 +57,9 @@ export class ImportFileAtom extends AsyncAtom<
         steps.findVideoFile.importPath,
       )}`,
     );
-    const absoluteFilePath = path.join(config.lani.mediaRoot, filePath);
+    const absoluteFilePath = resolveChroot(
+      path.join(config.lani.mediaRoot, filePath),
+    );
     await fs.mkdir(path.dirname(absoluteFilePath), { recursive: true });
     // 如果源文件不存在，这里直接报错
     const { ino: sourceIno } = await fs.stat(mappedImportPath);

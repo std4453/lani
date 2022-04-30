@@ -1,8 +1,7 @@
-import { env, Env } from "@/env";
+import { env, Env, resolveChroot } from "@/env";
 import fs from "fs";
 import Joi from "joi";
 import * as yaml from "js-yaml";
-import path from "path";
 
 export interface WithBaseConfig<BaseConfig> {
   <EnvConfig>(envConfig?: Partial<Record<Env, EnvConfig>>): BaseConfig &
@@ -45,13 +44,10 @@ function loadConfigFilename<T>({
   if (envOverrideFilename) {
     const filenameFromEnv = process.env.CONFIG_FILENAME;
     if (filenameFromEnv) {
-      if (env === "dev" && process.env.TELEPRESENCE_ROOT) {
-        return path.join(process.env.TELEPRESENCE_ROOT, filenameFromEnv);
-      }
-      return filenameFromEnv;
+      return resolveChroot(filenameFromEnv);
     }
   }
-  return filename;
+  return resolveChroot(filename);
 }
 
 export function loadConfigSync<T = any>(options: LoadConfigOptions<T> = {}): T {

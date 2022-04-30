@@ -9,6 +9,7 @@ import config from '@/config';
 import { JobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
+import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import fs from 'fs/promises';
@@ -123,10 +124,8 @@ export class AdminResolver {
       },
     });
     if (jellyfinFolder) {
-      const folderPath = path.join(
-        config.lani.mediaRoot,
-        jellyfinFolder.location,
-        title,
+      const folderPath = resolveChroot(
+        path.join(config.lani.mediaRoot, jellyfinFolder.location, title),
       );
       await fs.rm(folderPath, { recursive: true });
       await JellyfinHelp.refreshItem({
