@@ -1,3 +1,4 @@
+import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { QBittorrentClient } from '@/download-job/client/QBittorrentClient';
@@ -10,13 +11,18 @@ function getModuleMetadata(): ModuleMetadata {
   } = config;
   const IDownloadClientProvider: Provider = {
     provide: IDownloadClient,
-    useClass: QBittorrentClient,
+    useExisting: QBittorrentClient,
   };
   switch (kind) {
     case 'qbittorrent':
       return {
-        providers: [QBittorrentService, IDownloadClientProvider],
-        exports: [IDownloadClientProvider],
+        imports: [CommonModule],
+        providers: [
+          QBittorrentService,
+          QBittorrentClient,
+          IDownloadClientProvider,
+        ],
+        exports: [IDownloadClient],
       };
   }
 }

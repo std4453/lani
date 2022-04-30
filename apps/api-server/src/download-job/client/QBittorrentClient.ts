@@ -5,9 +5,11 @@ import {
 } from '@/download-job/client/IDownloadClient';
 import { QBittorrentService } from '@/download-job/client/QBittorrentService';
 import { QBTTorrentState } from '@/download-job/types';
+import { Injectable } from '@nestjs/common';
 import FormData from 'form-data';
 import parseTorrent from 'parse-torrent';
 
+@Injectable()
 export class QBittorrentClient implements IDownloadClient {
   constructor(
     private qbt: QBittorrentService,
