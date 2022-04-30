@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - resources.yaml
 configMapGenerator:
-  - name: gateway-config
+  - name: api-server-config
     namespace: lani-offline
     files:
       - config.yaml=./config.yaml
