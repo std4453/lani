@@ -1,0 +1,102 @@
+# 在本地开发时，复制本文件到 config.yaml，在 config.yaml 中填充内容
+# 配置文档：待补充
+
+# 网络相关配置
+network:
+  # 代理配置
+  proxy:
+    # 或 enabled: false，无需其他配置
+    enabled: true
+    # B站港澳台资源需要港澳台IP才能访问，不设置代理则无法获取港澳台资源
+    hk: http://proxy:1080
+    # 部分国际服务（如 mikan anime 和 skyhook）使用代理访问更稳定，速度更快，不设置则不开启代理
+    global: http://proxy:1080
+
+  # 超时设置，单位毫秒
+  timeout:
+    # 本地服务（jellyfin 和下载器）请求的超时时间，默认使用 default 的值
+    local: 5000
+    # 港澳台请求（范围见「代理配置」）的超时时间，默认使用 global 的值
+    # hk: 15000
+    # 国际请求（范围见「代理配置」）的超时时间，默认使用 default 的值
+    global: 30000
+    # 其他服务（如飞书）使用的超时，默认为 0，即不设置超时
+    default: 15000
+
+# postgres 地址
+postgresUrl: postgresql://user:password@postgres-server:5432/db?schema=public
+
+# 腾讯云 COS 配置，暂不支持其他服务商
+cos:
+  # 腾讯云子用户的 secretId 和 secretKey
+  secretId: my-secret-id
+  secretKey: my-secret-key
+
+  # 目前使用图片服务器存储季度图片，需要指定图片存储的 bucket 和 region
+  imagesBucket:
+    bucket: bucket-id
+    region: ap-my-region
+
+# 下载器配置
+downloadClient:
+  # 下载器类型，目前只支持 qbittorrent
+  kind: qbittorrent
+
+  # qbittorrent 配置
+  qbittorrent:
+    apiEndpoint: http://my-qbt-server
+    username: qbt-user-name
+    password: qbt-password
+
+  # 下载器目录映射，容器环境下下载器的目录结构可能与 api-server 不同，需要进行映射，如果目录结构一致的话可以省略
+  pathMapping:
+  - from: /path-in-download-client
+    to: /path-in-api-server
+
+# jellyfin 配置
+jellyfin:
+  apiEndpoint: http://jellyfin-api-server
+  # jellyfin API token，需要在后台创建之后填入
+  apiToken: jellyfin-api-token
+  # 部分 jellyfin API 必须要提供有效 userID，是一个 BUG，在解决之前要求填入一个 userID，可以直接使用 root 用户
+  # 或者创建一个普通用户，注意该用户必须具有所需的全部媒体库访问权限，此用户的具体身份不会影响运行
+  dummyUserId: jellyfin-user-id
+  # jellyfin 目录映射，如果目录结构与 api-server 一致的话可以省略
+  pathMapping:
+  - from: /media
+    to: /media/media
+  # 更新通知和后台会生成跳转到 jellyfin 的链接，在前后端分离时该地址可能与 apiEndpoint 不同，省略的话则直接使用 apiEndpoint 的值
+  publicHost: http://jellyfin-web-server
+
+# lani 整体配置
+lani:
+  # TODO: 媒体导入根目录，该属性会在近期移除
+  mediaRoot: /media-root
+  # lani 控制台前端地址，用于缺集告警时生成跳转到后端的链接
+  publicHost: http://lani-server
+
+# 通知配置
+notifications:
+  # 管理通知（缺集告警）
+  management:
+    # 禁用的话使用 enabled: false，无需填写其他字段
+    enabled: true
+    # 通知类别，目前只支持 lark（飞书）
+    kind: lark
+  # 用户通知（更新通知）
+  user:
+    # 禁用的话使用 enabled: false，无需填写其他字段
+    enabled: true
+    # 通知类别，目前只支持 lark（飞书）
+    kind: lark
+
+  # 飞书通知配置，具体操作步骤请参考配置文档
+  lark:
+    # 企业自建应用的 appId 和 appSecret
+    appId: cli_lark_app
+    appSecret: lark_app_secret
+    # 企业自建应用后台的 encryptKey 和 verificationToken，用于实时接收消息，目前没有使用，可以不填
+    encryptKey: lark_encrypt_key
+    verificationToken: lark_verification_token
+    # 管理通知的群聊 ID，获取方式参考配置文档
+    adminChatId: oc_admin_chat_id
