@@ -1,13 +1,25 @@
-import { store } from "@/store";
-import { selectConfig } from "@/store/config";
+import { store } from '@/store';
+import { selectConfig } from '@/store/config';
 
 export function jellyfinEpisodeLink(jellyfinEpisodeId: string) {
-  const { jellyfin: { host, serverId } } = selectConfig(store.getState())
+  const config = selectConfig(store.getState());
+  if (!config) {
+    return '';
+  }
+  const {
+    jellyfin: { host, serverId },
+  } = config;
   return `${host}/web/index.html#!/details?serverId=${serverId}&id=${jellyfinEpisodeId}`;
 }
 
 export function jellyfinSeasonLink(jellyfinSeasonId: string) {
-  const { jellyfin: { host, serverId } } = selectConfig(store.getState())
+  const config = selectConfig(store.getState());
+  if (!config) {
+    return '';
+  }
+  const {
+    jellyfin: { host, serverId },
+  } = config;
   return `${host}/web/index.html#!/details?serverId=${serverId}&id=${jellyfinSeasonId}`;
 }
 
