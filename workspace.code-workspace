@@ -13,10 +13,6 @@
 			"path": "tools/cli"
 		},
 		{
-			"name": "🚚 @lani/kust",
-			"path": "deploy/kust"
-		},
-		{
 			"name": "🚀 @lani/admin",
 			"path": "apps/admin"
 		},

@@ -42,7 +42,6 @@ specifiers:
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
-  '@rush-temp/kust': file:./projects/kust.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
   '@sentry/react': ~6.17.8
@@ -181,7 +180,6 @@ dependencies:
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.23
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
-  '@rush-temp/kust': file:projects/kust.tgz
   '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.3
   '@sentry/react': 6.17.9_react@17.0.2
@@ -20787,10 +20785,4 @@ packages:
       - debug
       - encoding
       - supports-color
-    dev: false
-
-  file:projects/kust.tgz:
-    resolution: {integrity: sha512-AjZy88TwMbI1CQgyj+F+AAO30zZpR1yzXAArrInmtktmfy3uOkiUMQzfKTT3KYFEev9dSpVW2cLpFGtJl188ZQ==, tarball: file:projects/kust.tgz}
-    name: '@rush-temp/kust'
-    version: 0.0.0
     dev: false

@@ -457,10 +457,6 @@
       "projectFolder": "tools/cli"
     },
     {
-      "packageName": "@lani/kust",
-      "projectFolder": "deploy/kust"
-    },
-    {
       "packageName": "@lani/admin",
       "projectFolder": "apps/admin"
     },
