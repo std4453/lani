@@ -1,5 +1,6 @@
 import laniText from '@/assets/lani-text.svg';
 import { logout, selectProfile, toAccountPage } from '@/store/auth';
+import { selectConfig } from '@/store/config';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   DatabaseOutlined,
@@ -22,12 +23,68 @@ const pathToIcon: { [x: string]: ElementType } = {
   '/jobs': NodeExpandOutlined,
 };
 
+function UserProfile({ collapsed }: { collapsed: boolean }) {
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector(selectProfile);
+
+  return profile ? (
+    <Popover
+      placement="rightBottom"
+      overlayClassName={styles.popover}
+      content={
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            className={styles.menu}
+            onClick={() => {
+              dispatch(toAccountPage);
+            }}
+          >
+            账户设置
+          </div>
+          <div
+            className={styles.menu}
+            onClick={() => {
+              dispatch(logout);
+            }}
+          >
+            登出
+          </div>
+        </div>
+      }
+    >
+      <div
+        className={clsx(styles.userRow, {
+          [styles.collapsed]: collapsed,
+        })}
+      >
+        <Avatar icon={<UserOutlined />} className={styles.avatar} />
+        <Typography.Text className={styles.username}>
+          {profile.username}
+        </Typography.Text>
+      </div>
+    </Popover>
+  ) : (
+    <div
+      className={clsx(styles.userRow, {
+        [styles.collapsed]: collapsed,
+      })}
+    >
+      <Avatar icon={<UserOutlined />} className={styles.avatar} />
+      <Typography.Text className={styles.username}>未登录</Typography.Text>
+    </div>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function Layout(props: any) {
   const [collapsed, setCollapsed] = useState(false);
 
-  const dispatch = useAppDispatch();
-  const profile = useAppSelector(selectProfile);
+  const config = useAppSelector(selectConfig);
 
   return (
     <ProLayout
@@ -65,59 +122,7 @@ export default function Layout(props: any) {
       }}
       className={styles.layout}
       menuFooterRender={() =>
-        profile ? (
-          <Popover
-            placement="rightBottom"
-            overlayClassName={styles.popover}
-            content={
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <div
-                  className={styles.menu}
-                  onClick={() => {
-                    dispatch(toAccountPage);
-                  }}
-                >
-                  账户设置
-                </div>
-                <div
-                  className={styles.menu}
-                  onClick={() => {
-                    dispatch(logout);
-                  }}
-                >
-                  登出
-                </div>
-              </div>
-            }
-          >
-            <div
-              className={clsx(styles.userRow, {
-                [styles.collapsed]: collapsed,
-              })}
-            >
-              <Avatar icon={<UserOutlined />} className={styles.avatar} />
-              <Typography.Text className={styles.username}>
-                {profile.username}
-              </Typography.Text>
-            </div>
-          </Popover>
-        ) : (
-          <div
-            className={clsx(styles.userRow, {
-              [styles.collapsed]: collapsed,
-            })}
-          >
-            <Avatar icon={<UserOutlined />} className={styles.avatar} />
-            <Typography.Text className={styles.username}>
-              未登录
-            </Typography.Text>
-          </div>
-        )
+        config?.auth?.enabled ? <UserProfile collapsed={collapsed} /> : null
       }
     />
   );

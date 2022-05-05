@@ -21,3 +21,6 @@
 
 # module less definition
 **/*.module.less.d.ts
+
+#
+/public/config.json
