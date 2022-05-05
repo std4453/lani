@@ -1,13 +1,7 @@
-import { AppDispatch, RootState } from '@/store';
+import { AppDispatch, AppGetState, RootState } from '@/store';
+import { selectConfig } from '@/store/config';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import Keycloak, { KeycloakInstance, KeycloakProfile } from 'keycloak-js';
-
-const authConfig = {
-  url: 'https://accounts.std4453.com:444/auth',
-  realm: 'apps',
-  clientId: 'lani',
-  role: 'lani-admin',
-} as const;
 
 export interface AuthState {
   keycloak: KeycloakInstance | undefined;
@@ -31,18 +25,23 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    setKeycloak: (
+      state,
+      { payload: { keycloak } }: PayloadAction<{ keycloak: KeycloakInstance }>,
+    ) => {
+      state.keycloak = keycloak;
+    },
+
     loginSuccess: (
       state,
       {
-        payload: { keycloak, authorized, profile, token },
+        payload: { authorized, profile, token },
       }: PayloadAction<{
-        keycloak: KeycloakInstance;
         profile: KeycloakProfile;
         authorized: boolean;
         token: string | undefined;
       }>,
     ) => {
-      state.keycloak = keycloak;
       state.profile = profile;
       state.authroized = authorized;
       state.authenticated = true;
@@ -52,27 +51,43 @@ export const authSlice = createSlice({
     loginError: (state) => {
       state.loading = false;
     },
-
-    logout: (state) => {
-      void state.keycloak?.logout();
-    },
-
-    toAccountPage: (state) => {
-      void state.keycloak?.accountManagement();
-    },
   },
 });
 
-export const { loginError, loginSuccess, logout, toAccountPage } =
-  authSlice.actions;
+const { setKeycloak } = authSlice.actions;
+export const { loginError, loginSuccess } = authSlice.actions;
 
-export async function login(dispatch: AppDispatch) {
+export async function logout(_dispatch: AppDispatch, getState: AppGetState) {
+  const keycloak = getState().auth.keycloak;
+  await keycloak?.logout();
+}
+
+export async function toAccountPage(
+  _dispatch: AppDispatch,
+  getState: AppGetState,
+) {
+  const keycloak = getState().auth.keycloak;
+  await keycloak?.accountManagement();
+}
+
+export async function login(dispatch: AppDispatch, getState: AppGetState) {
   try {
+    const config = selectConfig(getState());
+    if (
+      !config ||
+      !config.auth.enabled ||
+      config.auth.provider !== 'keycloak'
+    ) {
+      throw new Error('Invalid auth config');
+    }
+    const authConfig = config.auth.keycloak;
+
     const keycloak = Keycloak({
       url: authConfig.url,
       realm: authConfig.realm,
       clientId: authConfig.clientId,
     });
+    dispatch(setKeycloak({ keycloak }));
     // 这里如果设置 login-required 则会多跳一次，我们这里默认后台检查登陆状态，如果没有登录则跳到登录页，
     // 如果登录了则对用户无感知。虽然登录过程中也会展示加载中，但用户体验会好一点
     await keycloak.init({
@@ -86,7 +101,6 @@ export async function login(dispatch: AppDispatch) {
     const profile = await keycloak.loadUserProfile();
     dispatch(
       loginSuccess({
-        keycloak,
         authorized: keycloak.hasRealmRole(authConfig.role),
         profile: profile,
         token: keycloak.token,
@@ -95,6 +109,19 @@ export async function login(dispatch: AppDispatch) {
   } catch (error) {
     console.error(error);
     dispatch(loginError);
+  }
+}
+
+export async function initAuth(dispatch: AppDispatch, getState: AppGetState) {
+  const config = getState().config;
+  if (!config?.data?.auth?.enabled) {
+    return;
+  }
+  const provider = config.data.auth.provider;
+  if (provider === 'keycloak') {
+    await dispatch(login);
+  } else {
+    throw new Error(`Unsupported provider ${provider}`);
   }
 }
 

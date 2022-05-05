@@ -1,0 +1,12 @@
+{
+  "auth": {
+    "enabled": true,
+    "provider": "keycloak",
+    "keycloak": {
+      "url": "https://accounts.std4453.com:444/auth",
+      "realm": "apps",
+      "clientId": "lani",
+      "role": "lani-admin"
+    }
+  }
+}

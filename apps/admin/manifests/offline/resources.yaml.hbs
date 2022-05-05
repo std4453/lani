@@ -31,9 +31,17 @@ spec:
             cpu: "10m"
         env:
         - name: NODE_ENV
-          value: "offline" 
+          value: "offline"
+        volumeMounts:
+          - name: config
+            mountPath: /usr/share/nginx/html/config.json
+            subPath: config.json
       imagePullSecrets:
       - name: ghcr-io-regcred
+      volumes:
+      - name: config
+        configMap:
+          name: admin-config
 ---
 kind: Service
 apiVersion: v1

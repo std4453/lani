@@ -1,7 +1,8 @@
 import useAppClient from '@/client/hooks';
 import Layout from '@/components/Layout';
 import { store } from '@/store';
-import { login } from '@/store/auth';
+import { initAuth } from '@/store/auth';
+import { loadConfig } from '@/store/config';
 import { useAppDispatch } from '@/store/hooks';
 import { ApolloProvider } from '@apollo/client';
 import { useMount } from 'ahooks';
@@ -20,7 +21,10 @@ export default function App(props: any) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AppInner(props: any) {
   const dispatch = useAppDispatch();
-  useMount(() => void dispatch(login));
+  useMount(async () => {
+    await dispatch(loadConfig);
+    await dispatch(initAuth);
+  });
 
   const client = useAppClient();
 
