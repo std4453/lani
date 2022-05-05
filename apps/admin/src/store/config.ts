@@ -19,8 +19,14 @@ type AuthConfig = WithEnabled<{
   };
 }>;
 
+interface JellyfinConfig {
+  host: string
+  serverId: string
+}
+
 interface ConfigType {
   auth: AuthConfig;
+  jellyfin: JellyfinConfig
 }
 
 export interface ConfigState {
