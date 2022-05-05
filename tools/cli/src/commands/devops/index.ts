@@ -1,9 +1,11 @@
 import { Command, Flags } from "@oclif/core";
+import fs from "fs/promises";
 import * as inquirer from "inquirer";
+import * as yaml from "js-yaml";
 import kleur from "kleur";
 import { Octokit } from "octokit";
+import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
-import globalConfig from "../../config";
 import { loadLaniConfig } from "../../utils/laniconfig";
 import { resolveProjectConfig } from "../../utils/project";
 
@@ -107,7 +109,21 @@ export default class Devops extends Command {
       console.log(kleur.green("All up-to-date, good to go!"));
     }
 
-    const octokit = new Octokit({ auth: globalConfig.githubPAT });
+    const ghHostsPath = path.join(
+      process.env.HOME ?? "",
+      ".config/gh/hosts.yml"
+    );
+    const ghHostsContent = await fs.readFile(ghHostsPath, "utf-8");
+    const ghHostsDoc = yaml.load(ghHostsContent, {
+      filename: ghHostsPath,
+    }) as {
+      [key in string]: {
+        oauth_token: string;
+      };
+    };
+    const ghToken = ghHostsDoc["github.com"].oauth_token;
+
+    const octokit = new Octokit({ auth: ghToken });
 
     const inputs: {
       [x: string]: string;
@@ -155,7 +171,7 @@ export default class Devops extends Command {
         },
       } = await octokit.rest.actions.listWorkflowRuns({
         owner: "std4453",
-        repo: 'lani-deploy',
+        repo: "lani-deploy",
         workflow_id: "cd.yaml",
         event: "workflow_dispatch",
       });
