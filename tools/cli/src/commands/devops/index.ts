@@ -2,13 +2,10 @@ import { Command, Flags } from "@oclif/core";
 import * as inquirer from "inquirer";
 import kleur from "kleur";
 import { Octokit } from "octokit";
-import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
 import globalConfig from "../../config";
 import { loadLaniConfig } from "../../utils/laniconfig";
 import { resolveProjectConfig } from "../../utils/project";
-
-const DEFAULT_WORKFLOW = "node_default.yaml";
 
 export default class Devops extends Command {
   static description = "Trigger CI workflow";
@@ -41,8 +38,6 @@ export default class Devops extends Command {
     console.log(
       kleur.gray(`Command \"devops\" requires \"git\" to be in $PATH`)
     );
-
-    const { image, workflow = DEFAULT_WORKFLOW } = config.ci;
 
     const git: SimpleGit = simpleGit({
       baseDir: project.monorepoRoot,
@@ -118,8 +113,6 @@ export default class Devops extends Command {
       [x: string]: string;
     } = {
       ref,
-      image_name: image,
-      project_path: path.relative(project.monorepoRoot, project.path),
       project_name: project.packageName,
     };
 
@@ -146,10 +139,10 @@ export default class Devops extends Command {
 
     const createTime = new Date().getTime();
     await octokit.rest.actions.createWorkflowDispatch({
-      owner: globalConfig.owner,
-      repo: globalConfig.repo,
-      workflow_id: workflow,
-      ref,
+      owner: "std4453",
+      repo: "lani-deploy",
+      workflow_id: "cd.yaml",
+      ref: "main",
       inputs,
     });
 
@@ -161,9 +154,9 @@ export default class Devops extends Command {
           workflow_runs: [run],
         },
       } = await octokit.rest.actions.listWorkflowRuns({
-        owner: globalConfig.owner,
-        repo: globalConfig.repo,
-        workflow_id: workflow,
+        owner: "std4453",
+        repo: 'lani-deploy',
+        workflow_id: "cd.yaml",
         event: "workflow_dispatch",
       });
 
@@ -181,7 +174,7 @@ export default class Devops extends Command {
     if (!found) {
       console.log(
         `Unable to find workflow run, visit ${kleur.cyan(
-          `https://github.com/std4453/lani/actions/workflows/${workflow}`
+          `https://github.com/std4453/lani-deploy/actions/workflows/cd.yaml`
         )} to view details`
       );
       process.exit(1);
