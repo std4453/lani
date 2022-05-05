@@ -11,10 +11,7 @@ import {
   GlobalAxiosService,
   HKAxiosService,
 } from '@/common/axios.service';
-import { COSService } from '@/common/cos.service';
-import { ConfigType } from '@/config';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Axios } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
@@ -25,8 +22,6 @@ export class BilibiliBangumiCCService {
     private global: GlobalAxiosService,
     private hk: HKAxiosService,
     private china: ChinaAxiosService,
-    private config: ConfigService<ConfigType, true>,
-    private cos: COSService,
   ) {}
 
   private regionToAxios: Record<BilibiliProxyRegion, Axios> = {

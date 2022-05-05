@@ -1,4 +1,7 @@
-import { env, Env } from "@/env";
+import { env, Env, resolveChroot } from "@/env";
+import fs from "fs";
+import Joi from "joi";
+import * as yaml from "js-yaml";
 
 export interface WithBaseConfig<BaseConfig> {
   <EnvConfig>(envConfig?: Partial<Record<Env, EnvConfig>>): BaseConfig &
@@ -9,4 +12,73 @@ export function mergeConfig<BaseConfig>(
   baseConfig: BaseConfig
 ): WithBaseConfig<BaseConfig> {
   return (envConfig) => ({ ...baseConfig, ...envConfig?.[env] });
+}
+
+export interface LoadConfigOptions<T = any> {
+  filename?: string;
+  schema?: Joi.AnySchema<T>;
+  envOverrideFilename?: boolean;
+}
+
+function validateConfig<T = any>(
+  doc: unknown,
+  { schema }: LoadConfigOptions<T>
+): T {
+  if (schema) {
+    const result = schema.validate(doc);
+    if (result.error) {
+      throw result.error;
+    } else {
+      return result.value;
+    }
+  } else {
+    // 没有检查
+    return doc as T;
+  }
+}
+
+function loadConfigFilename<T>({
+  filename = "config.yaml",
+  envOverrideFilename = true,
+}: LoadConfigOptions<T>) {
+  if (envOverrideFilename) {
+    const filenameFromEnv = process.env.CONFIG_FILENAME;
+    if (filenameFromEnv) {
+      return resolveChroot(filenameFromEnv);
+    }
+  }
+  return resolveChroot(filename);
+}
+
+export function loadConfigSync<T = any>(options: LoadConfigOptions<T> = {}): T {
+  const filename = loadConfigFilename(options);
+  const content = fs.readFileSync(filename, "utf-8");
+  const doc = yaml.load(content, {
+    filename,
+  });
+  return validateConfig(doc, options);
+}
+
+export async function loadConfig<T = any>(
+  options: LoadConfigOptions<T> = {}
+): Promise<T> {
+  const filename = loadConfigFilename(options);
+  const content = await fs.promises.readFile(filename, "utf-8");
+  const doc = yaml.load(content, {
+    filename,
+  });
+  return validateConfig(doc, options);
+}
+
+export function getPort(defaultPort: number) {
+  const port = process.env.PORT;
+  if (port) {
+    try {
+      return parseInt(port);
+    } catch (e) {
+      // 格式错误
+    }
+  }
+  // 格式错误或未设置
+  return defaultPort;
 }

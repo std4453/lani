@@ -7,22 +7,25 @@ on:
         description: "Ref to trigger workflow"
         required: false
         default: "master"
-      image_name:
-        description: "Image name"
-        required: true
-      image_owner:
-        description: "Image owner"
-        required: false
-        default: "std4453"
       project_name:
         description: "Project package name"
         required: true
-      project_path:
-        description: "Project path"
-        required: true
-      deploy_env:
-        description: "Deploy environment type"
+        
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        description: "Ref to trigger workflow"
         required: false
+        default: "master"
+      project_name:
+        type: string
+        description: "Project package name"
+        required: true
+    outputs:
+      image_ref:
+        description: "Image ref"
+        value: ${{ jobs.build.outputs.image_ref }}
 
 jobs:
   build:
@@ -82,12 +85,27 @@ jobs:
           node common/scripts/install-run-rush.js deploy -p ${{ github.event.inputs.project_name }}
 
       # https://github.community/t/syntax-for-replacing-characters-in-string/17240
-      - name: Escape Ref
-        id: escape_ref
+      # install-run-rush.js outputs unnecessary information, use tail to remove it
+      # https://github.com/microsoft/rushstack/issues/2607
+      - name: Build Info
+        id: build_info
         run: |
+          project_path=$(node common/scripts/install-run-rush.js list -o ${{ github.event.inputs.project_name }} -p --json | tail -n +6 | jq -r .projects[0].path)
+          echo "Project path: $project_path"
+
+          dockerfile_path="$project_path/Dockerfile"
+          echo "Dockerfile path: $dockerfile_path"
+          echo "::set-output name=dockerfile_path::$dockerfile_path"
+
+          image_name="${project_name##*/}"
+          echo "Image name: $image_name"
+          echo "::set-output name=image_name::$image_name"
+
           ref_escaped="${ref_raw////-}"
+          echo "Escaped ref: $ref_escaped"
           echo "::set-output name=ref_escaped::$ref_escaped"
         env:
+          project_name: ${{ github.event.inputs.project_name }}
           ref_raw: ${{ github.event.inputs.ref }}
 
       - name: Build and push
@@ -96,30 +114,19 @@ jobs:
         with:
           context: .
           push: true
-          file: ./${{ github.event.inputs.project_path }}/Dockerfile
+          file: ${{ steps.build_info.outputs.dockerfile_path }}
           tags: >
-            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:latest,
-            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:1.0.${{ github.run_number }},
-            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ github.sha }},
-            ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:${{ steps.escape_ref.outputs.ref_escaped }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:latest,
+            ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:1.0.${{ github.run_number }},
+            ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:${{ github.sha }},
+            ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:${{ steps.build_info.outputs.ref_escaped }}
 
-      - name: Generate Manifests
-        if: github.event.inputs.deploy_env != null
-        run: >
-          node common/scripts/install-run-rush.js manifest
-          -o ${{ github.event.inputs.project_name }}
-          --image ghcr.io/${{ github.event.inputs.image_owner }}/${{ github.event.inputs.image_name }}:1.0.${{ github.run_number }}
-          --env ${{ github.event.inputs.deploy_env }}
-
-      - name: Prepare kubeconfig
-        if: github.event.inputs.deploy_env != null
+      - name: Output Image Ref
+        id: image_ref
         run: |
-          echo "KUBE_CONFIG=$(cat deploy/kust/lani-cd.kubeconfig | base64 -w 0)" >> $GITHUB_ENV
-
-      - uses: actions-hub/kubectl@master
-        if: github.event.inputs.deploy_env != null
-        name: Apply manifest
+          echo "::set-output name=image_ref::$image_ref"
         env:
-          KUBE_CONFIG: ${{ env.KUBE_CONFIG }}
-        with:
-          args: apply -f ./${{ github.event.inputs.project_path }}/manifests/${{ github.event.inputs.deploy_env }}.yaml
+          image_name: ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:1.0.${{ github.run_number }}
+    
+    outputs:
+      image_ref: ${{ steps.image_ref.outputs.image_ref }}

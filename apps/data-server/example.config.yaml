@@ -1,0 +1,13 @@
+# 在本地开发时，复制本文件到 config.yaml，在 config.yaml 中填充内容
+
+# 填入 postgres 服务器地址
+postgresUrl: "postgres://user:pass@host/db"
+# postgraphile 配置，参考：
+# https://www.graphile.org/postgraphile/usage-library/#recommended-options
+# 并非所有字段均可配置，部分字段会被覆盖
+# 这里仅为展示格式，不要用于生产环境！
+postgraphile:
+  graphiql: true
+  enhanceGraphiql: true
+  allowExplain: true
+

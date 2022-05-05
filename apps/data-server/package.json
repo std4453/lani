@@ -7,6 +7,7 @@
     "build": "lani-cli build",
     "devops": "lani-cli devops",
     "dev": "lani-cli dev",
+    "dev:tp": "telepresence intercept -n lani-offline data-server -p 8080:http --mount=mount -- rushx dev",
     "generate:schema": "ts-node src/scripts/generate-schema.ts",
     "manifest": "lani-cli manifest"
   },
@@ -18,7 +19,8 @@
     "postgraphile-plugin-connection-filter": "~2.2.2",
     "@graphile-contrib/pg-omit-archived": "~2.1.0",
     "@graphile/federation": "~0.1.0",
-    "koa": "~2.13.4"
+    "koa": "~2.13.4",
+    "joi": "~17.6.0"
   },
   "devDependencies": {
     "typescript": "~4.5.4",

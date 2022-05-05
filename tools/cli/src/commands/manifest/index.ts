@@ -21,22 +21,41 @@ export default class Manifest extends Command {
     }),
   };
 
+  async traverse(
+    root: string,
+    variables: Record<string, string>
+  ): Promise<void> {
+    const entries = await fs.readdir(path.join("manifests", root), {
+      withFileTypes: true,
+    });
+    for (const entry of entries) {
+      const fullPath = path.join("manifests", root, entry.name);
+      if (entry.isDirectory()) {
+        await this.traverse(fullPath, variables);
+      } else {
+        const hbsRegex = /^(.*)\.hbs$/;
+        const result = entry.name.match(hbsRegex);
+        if (result) {
+          const filename = result[1];
+          const content = await fs.readFile(fullPath, "utf-8");
+          const render = Handlebars.compile(content);
+          const yaml = render(variables);
+          const writePath = path.join("manifests", root, filename);
+          await fs.writeFile(writePath, yaml);
+          console.log(`${kleur.cyan(fullPath)} -> ${kleur.yellow(writePath)}`);
+        } else {
+          // 忽略文件
+        }
+      }
+    }
+  }
+
   async run(): Promise<void> {
     const {
       flags: { image, env },
     } = await this.parse(Manifest);
 
-    const content = await fs.readFile(
-      path.join("manifests", `${env}.yaml.hbs`),
-      "utf-8"
-    );
-    const render = Handlebars.compile(content);
-    const yaml = render({ image });
-    await fs.writeFile(path.join("manifests", `${env}.yaml`), yaml);
-    console.log(
-      `Written manifest for env "${kleur.white(env)}" to ${kleur.yellow(
-        `manifests/${env}.yaml}`
-      )}`
-    );
+    await this.traverse(env, { image });
+    console.log(`Generated manifest for env "${kleur.white(env)}"`);
   }
 }

@@ -20,7 +20,7 @@ export type OpenAPIConfig = {
 };
 
 export const OpenAPI: OpenAPIConfig = {
-  BASE: config.jellyfinEndpoint,
+  BASE: config.jellyfin.apiEndpoint,
   VERSION: '10.7.7',
   WITH_CREDENTIALS: false,
   CREDENTIALS: 'include',
@@ -28,7 +28,7 @@ export const OpenAPI: OpenAPIConfig = {
   USERNAME: undefined,
   PASSWORD: undefined,
   HEADERS: {
-    'X-Emby-Token': config.jellyfinToken,
+    'X-Emby-Token': config.jellyfin.apiToken,
   },
   ENCODE_PATH: undefined,
 };

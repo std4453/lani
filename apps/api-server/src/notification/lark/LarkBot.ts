@@ -1,6 +1,8 @@
 import { COSService } from '@/common/cos.service';
-import { ConfigType, COSBucket } from '@/config';
+import config from '@/config';
+import { LarkConfig } from '@/config/types';
 import { DateFormat } from '@/constants/date-format';
+import { env } from '@/env';
 import {
   buildCardMessage,
   buildPostMessage,
@@ -17,10 +19,8 @@ import {
   OnEpisodePublishEpisode,
   UserNotificationProvider,
 } from '@/notification/UserNotificationProvider';
-import { env } from '@lani/framework';
 import * as lark from '@larksuiteoapi/allcore';
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
 import { DownloadJob, DownloadStatus } from '@prisma/client';
 import dayjs from 'dayjs';
@@ -30,17 +30,22 @@ import dayjs from 'dayjs';
 export class LarkBot
   implements ManagementNotificationProvider, UserNotificationProvider
 {
+  private larkConfig: LarkConfig;
   private conf: lark.core.Config;
 
-  constructor(
-    private config: ConfigService<ConfigType, true>,
-    private cos: COSService,
-  ) {
+  constructor(private cos: COSService) {
+    const {
+      notifications: { lark: larkConfig },
+    } = config;
+    if (!larkConfig) {
+      throw new Error('lark is not configured!');
+    }
+    this.larkConfig = larkConfig;
     const appSettings = lark.newInternalAppSettings({
-      appID: config.get('larkAppID'),
-      appSecret: config.get('larkAppSecret'),
-      encryptKey: config.get('larkEncryptKey'),
-      verificationToken: config.get('larkVerificationToken'),
+      appID: this.larkConfig.appId,
+      appSecret: this.larkConfig.appSecret,
+      encryptKey: this.larkConfig.encryptKey,
+      verificationToken: this.larkConfig.verificationToken,
     });
     this.conf = lark.newConfig(lark.Domain.FeiShu, appSettings, {
       loggerLevel: lark.LoggerLevel.INFO,
@@ -52,7 +57,7 @@ export class LarkBot
 
     const posterImage = episode.season.posterImage;
     if (posterImage?.cosPath) {
-      const bucket = this.config.get<COSBucket>('imagesBucket');
+      const bucket = config.cos.imagesBucket;
       try {
         const { Body: image } = await this.cos.getObject({
           Bucket: bucket.bucket,
@@ -84,7 +89,7 @@ export class LarkBot
     // TODO: 发给用户
     await this.sendMessage(
       'chat_id',
-      this.config.get('larkAdminChatID'),
+      this.larkConfig.adminChatId,
       buildCardMessage({
         config: {
           wide_screen_mode: true,
@@ -108,9 +113,7 @@ export class LarkBot
                   tag: 'plain_text',
                 },
                 type: 'primary',
-                url: `${this.config.get(
-                  'jellyfinHost',
-                )}/web/index.html#!/details?id=${episode.jellyfinEpisodeId}`,
+                url: `${config.jellyfin.publicHost}/web/index.html#!/details?id=${episode.jellyfinEpisodeId}`,
               },
               episode.season.jellyfinFolder?.jellyfinId && {
                 tag: 'button',
@@ -119,11 +122,7 @@ export class LarkBot
                   tag: 'plain_text',
                 },
                 type: 'default',
-                url: `${this.config.get(
-                  'jellyfinHost',
-                )}/web/index.html#!/tv.html?topParentId=${
-                  episode.season.jellyfinFolder.jellyfinId
-                }`,
+                url: `${config.jellyfin.publicHost}/web/index.html#!/tv.html?topParentId=${episode.season.jellyfinFolder.jellyfinId}`,
               },
             ].filter(Boolean),
             tag: 'action',
@@ -172,7 +171,7 @@ export class LarkBot
     const now = dayjs().format(DateFormat.DateTime);
     await this.sendMessage(
       'chat_id',
-      this.config.get('larkAdminChatID'),
+      this.larkConfig.adminChatId,
       buildPostMessage({
         title: `缺集告警（共 ${episodes.length} 集）`,
         content: [
@@ -184,9 +183,7 @@ export class LarkBot
             {
               tag: 'a',
               text: episode.season.title,
-              href: `${this.config.get('laniHost')}/season/${
-                episode.season.id
-              }`,
+              href: `${config.lani.publicHost}/season/${episode.season.id}`,
             },
             {
               tag: 'text',
@@ -214,9 +211,7 @@ export class LarkBot
             },
             {
               tag: 'a',
-              href: `${this.config.get(
-                'laniHost',
-              )}/seasons?f_episodes=lack&f_isMonitoring=true`,
+              href: `${config.lani.publicHost}/seasons?f_episodes=lack&f_isMonitoring=true`,
               text: '缺集季度',
             },
             {
@@ -225,7 +220,7 @@ export class LarkBot
             },
             {
               tag: 'a',
-              href: `${this.config.get('laniHost')}/jobs`,
+              href: `${config.lani.publicHost}/jobs`,
               text: '下载任务',
             },
           ],
@@ -262,7 +257,7 @@ export class LarkBot
     }
     this.sendMessage(
       'chat_id',
-      this.config.get('larkAdminChatID'),
+      this.larkConfig.adminChatId,
       buildTextMessage('测试消息'),
     );
     return 'ok';

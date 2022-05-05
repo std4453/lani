@@ -5,12 +5,12 @@ import {
 import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
-import { ConfigType } from '@/config';
+import config from '@/config';
 import { JobService } from '@/download-job/index.service';
+import { env } from '@/env';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
-import { env } from '@lani/framework';
+import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import fs from 'fs/promises';
 import path from 'path';
@@ -18,11 +18,7 @@ import path from 'path';
 @Injectable()
 @Resolver()
 export class AdminResolver {
-  constructor(
-    private prisma: PrismaService,
-    private config: ConfigService<ConfigType, true>,
-    private job: JobService,
-  ) {}
+  constructor(private prisma: PrismaService, private job: JobService) {}
 
   @Query(() => ID)
   environment() {
@@ -128,10 +124,8 @@ export class AdminResolver {
       },
     });
     if (jellyfinFolder) {
-      const folderPath = path.join(
-        this.config.get('mediaRoot'),
-        jellyfinFolder.location,
-        title,
+      const folderPath = resolveChroot(
+        path.join(config.lani.mediaRoot, jellyfinFolder.location, title),
       );
       await fs.rm(folderPath, { recursive: true });
       await JellyfinHelp.refreshItem({

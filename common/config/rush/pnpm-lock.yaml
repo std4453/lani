@@ -17,6 +17,7 @@ specifiers:
   '@graphql-codegen/typescript': ~2.4.2
   '@graphql-codegen/typescript-operations': ~2.2.2
   '@graphql-typed-document-node/core': ~3.1.1
+  '@larksuiteoapi/allcore': ~1.0.14
   '@nestjs/apollo': ~10.0.7
   '@nestjs/axios': ~0.0.7
   '@nestjs/cli': ^8.0.0
@@ -34,6 +35,7 @@ specifiers:
   '@oclif/plugin-help': ^5
   '@oclif/plugin-plugins': ^2.0.1
   '@prisma/client': ~3.11.0
+  '@reduxjs/toolkit': ~1.8.1
   '@rush-temp/admin': file:./projects/admin.tgz
   '@rush-temp/api-server': file:./projects/api-server.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
@@ -51,6 +53,7 @@ specifiers:
   '@types/history': 2.0.45
   '@types/inquirer': ~8.2.1
   '@types/jest': 27.4.1
+  '@types/js-yaml': ~4.0.5
   '@types/koa': ~2.13.4
   '@types/lodash': ~4.14.178
   '@types/md5': ~2.3.2
@@ -92,7 +95,9 @@ specifiers:
   inclusion: ~1.0.1
   inquirer: ~8.2.2
   jest: ^27.2.5
+  joi: ~17.6.0
   jose: ~4.6.0
+  js-yaml: ~4.1.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
   keycloak-js: 15.0.2
@@ -114,6 +119,9 @@ specifiers:
   qs: ~6.10.3
   react: ~17.0.2
   react-dom: ~17.0.2
+  react-redux: ~8.0.1
+  redux: ~4.2.0
+  redux-thunk: ~2.4.1
   reflect-metadata: ^0.1.13
   rimraf: ^3.0.2
   shx: ^0.3.3
@@ -148,6 +156,7 @@ dependencies:
   '@graphql-codegen/typescript': 2.4.8_graphql@15.8.0
   '@graphql-codegen/typescript-operations': 2.2.4_graphql@15.8.0
   '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+  '@larksuiteoapi/allcore': 1.0.14
   '@nestjs/apollo': 10.0.8_ee3df42fdeae765392fd29620e239ccd
   '@nestjs/axios': 0.0.7_7ab401b35f05c13deb013f5cd66f11e3
   '@nestjs/cli': 8.2.4
@@ -165,6 +174,7 @@ dependencies:
   '@oclif/plugin-help': 5.1.12
   '@oclif/plugin-plugins': 2.1.0
   '@prisma/client': 3.11.1_prisma@3.11.1
+  '@reduxjs/toolkit': 1.8.1_react-redux@8.0.1+react@17.0.2
   '@rush-temp/admin': file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a
   '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.46.0
   '@rush-temp/cli': file:projects/cli.tgz
@@ -182,6 +192,7 @@ dependencies:
   '@types/history': 2.0.45
   '@types/inquirer': 8.2.1
   '@types/jest': 27.4.1
+  '@types/js-yaml': 4.0.5
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.181
   '@types/md5': 2.3.2
@@ -223,7 +234,9 @@ dependencies:
   inclusion: 1.0.1
   inquirer: 8.2.2
   jest: 27.5.1_ts-node@10.7.0
+  joi: 17.6.0
   jose: 4.6.0
+  js-yaml: 4.1.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
   keycloak-js: 15.0.2
@@ -245,6 +258,9 @@ dependencies:
   qs: 6.10.3
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
+  react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+  redux: 4.2.0
+  redux-thunk: 2.4.1_redux@4.2.0
   reflect-metadata: 0.1.13
   rimraf: 3.0.2
   shx: 0.3.4
@@ -2532,6 +2548,16 @@ packages:
       graphql: 15.8.0
     dev: false
 
+  /@hapi/hoek/9.2.1:
+    resolution: {integrity: sha512-gfta+H8aziZsm8pZa0vj04KO6biEiisppNgA1kbJvFrrWu9Vm7eaUEy76DIxsuTaWvti5fkJVhllWc6ZTE+Mdw==}
+    dev: false
+
+  /@hapi/topo/5.1.0:
+    resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+    dev: false
+
   /@humanwhocodes/config-array/0.5.0:
     resolution: {integrity: sha512-FagtKFz74XrTl7y6HCzQpwDfXP0yhxe9lHLD1UZxjvZIcbyRz8zTFF/yYNfSfzU414eDwZ1SrO0Qvtyf+wFMQg==}
     engines: {node: '>=10.10.0'}
@@ -4157,6 +4183,25 @@ packages:
     resolution: {integrity: sha512-2jIiLiVZB1jnY7IIRQKtoV8Gnr7XIhk4mC88ONGunZE3hYt5IHUG4BE/6+JiTBjjEWQLBeWnZB8hGpppkufiVw==}
     dev: false
 
+  /@reduxjs/toolkit/1.8.1_react-redux@8.0.1+react@17.0.2:
+    resolution: {integrity: sha512-Q6mzbTpO9nOYRnkwpDlFOAbQnd3g7zj7CtHAZWz5SzE5lcV97Tf8f3SzOO8BoPOMYBFgfZaqTUZqgGu+a0+Fng==}
+    peerDependencies:
+      react: ^16.9.0 || ^17.0.0 || ^18
+      react-redux: ^7.2.1 || ^8.0.0-beta
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-redux:
+        optional: true
+    dependencies:
+      immer: 9.0.12
+      react: 17.0.2
+      react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+      redux: 4.2.0
+      redux-thunk: 2.4.1_redux@4.2.0
+      reselect: 4.1.5
+    dev: false
+
   /@rushstack/eslint-config/2.5.2_eslint@7.32.0+typescript@4.5.5:
     resolution: {integrity: sha512-sihc5OQ8g92jTDLqrKXt0burUNqI1ukoISFxQCdRzSKWbzyIwBnBwvvWryggjqCR+T7fKnCe5SBZt4Y/1VpJMg==}
     peerDependencies:
@@ -4366,6 +4411,20 @@ packages:
     dependencies:
       '@sentry/types': 6.19.3
       tslib: 1.14.1
+    dev: false
+
+  /@sideway/address/4.1.4:
+    resolution: {integrity: sha512-7vwq+rOHVWjyXxVlR76Agnvhy8I9rpzjosTESvmhNeXOXdZZB15Fl+TI9x1SiHZH5Jv2wTGduSxFDIaq0m3DUw==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+    dev: false
+
+  /@sideway/formula/3.0.0:
+    resolution: {integrity: sha512-vHe7wZ4NOXVfkoRb8T5otiENVlT7a3IAiw7H5M2+GO+9CDgcVUUsX1zalAztCmwyOr2RUTGJdgB+ZvSVqmdHmg==}
+    dev: false
+
+  /@sideway/pinpoint/2.0.0:
+    resolution: {integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==}
     dev: false
 
   /@sindresorhus/is/0.14.0:
@@ -4932,6 +4991,10 @@ packages:
     resolution: {integrity: sha512-FvnCJljyxhPM3gkRgWmxmDZyAQSiBQQWLI0A0VFL0K7W1oRUrPJSqNO0NvTnLkBcotdlp3lKvaT0JrnyRDkzOg==}
     dependencies:
       '@types/node': 17.0.23
+    dev: false
+
+  /@types/use-sync-external-store/0.0.3:
+    resolution: {integrity: sha512-EwmlvuaxPNej9+T4v5AuBPJa2x2UOJVdjCtDHgcDqitUeOtjnJKJ+apYjVcAoBEMjKW1VVFGZLUb5+qqa09XFA==}
     dev: false
 
   /@types/vinyl/2.0.6:
@@ -11064,6 +11127,10 @@ packages:
     resolution: {integrity: sha512-yM7jo9+hvYgvdCQdqvhCNRRio0SCXc8xDPzA25SvKWa7b1WVPjLwQs1VYU5JPXjcJPTqAa5NP5dqpORGYBQ2AA==}
     dev: false
 
+  /immer/9.0.12:
+    resolution: {integrity: sha512-lk7UNmSbAukB5B6dh9fnh5D0bJTOFKxVg2cyJWTYrWRfhLrLMBquONcUs3aFq507hNoIZEDDh8lb8UtOizSMhA==}
+    dev: false
+
   /immutable/3.7.6:
     resolution: {integrity: sha1-E7TTyxK++hVIKib+Gy665kAHHks=}
     engines: {node: '>=0.8.0'}
@@ -12897,6 +12964,16 @@ packages:
   /jmespath/0.16.0:
     resolution: {integrity: sha512-9FzQjJ7MATs1tSpnco1K6ayiYE3figslrXA72G2HQ/n76RzvYlofyi5QM+iX4YRs/pu3yzxlVQSST23+dMDknw==}
     engines: {node: '>= 0.6.0'}
+    dev: false
+
+  /joi/17.6.0:
+    resolution: {integrity: sha512-OX5dG6DTbcr/kbMFj0KGYxuew69HPcAE3K/sZpEV2nP6e/j/C0HV+HNiBPCASxdx5T7DMoa0s8UeHWMnb6n2zw==}
+    dependencies:
+      '@hapi/hoek': 9.2.1
+      '@hapi/topo': 5.1.0
+      '@sideway/address': 4.1.4
+      '@sideway/formula': 3.0.0
+      '@sideway/pinpoint': 2.0.0
     dev: false
 
   /jose/4.6.0:
@@ -16870,6 +16947,10 @@ packages:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
     dev: false
 
+  /react-is/18.1.0:
+    resolution: {integrity: sha512-Fl7FuabXsJnV5Q1qIOQwx/sagGF18kogb4gpfcG4gjLBWO0WDiiz1ko/ExayuxE7InyQkBLkxRFG5oxY6Uu3Kg==}
+    dev: false
+
   /react-lifecycles-compat/3.0.4:
     resolution: {integrity: sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==}
     dev: false
@@ -16903,6 +16984,40 @@ packages:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       react-is: 17.0.2
+    dev: false
+
+  /react-redux/8.0.1_6a0293f181125ad5b6b10717abc58c68:
+    resolution: {integrity: sha512-LMZMsPY4DYdZfLJgd7i79n5Kps5N9XVLCJJeWAaPYTV+Eah2zTuBjTxKtNEbjiyitbq80/eIkm55CYSLqAub3w==}
+    peerDependencies:
+      '@types/react': ^16.8 || ^17.0 || ^18.0
+      '@types/react-dom': ^16.8 || ^17.0 || ^18.0
+      react: ^16.8 || ^17.0 || ^18.0
+      react-dom: ^16.8 || ^17.0 || ^18.0
+      react-native: '>=0.59'
+      redux: ^4
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+      redux:
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.17.8
+      '@types/hoist-non-react-statics': 3.3.1
+      '@types/react': 17.0.43
+      '@types/react-dom': 17.0.14
+      '@types/use-sync-external-store': 0.0.3
+      hoist-non-react-statics: 3.3.2
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+      react-is: 18.1.0
+      redux: 4.2.0
+      use-sync-external-store: 1.1.0_react@17.0.2
     dev: false
 
   /react-refresh/0.10.0:
@@ -17173,8 +17288,22 @@ packages:
     resolution: {integrity: sha512-iIjKnRThI5sKPEASpUvySemjzwqwI13e3qP7oLub+FycCRDysLSAOwt958niZW6LhxfmS6Qm1BzbU70w/Koc4w==}
     dev: false
 
+  /redux-thunk/2.4.1_redux@4.2.0:
+    resolution: {integrity: sha512-OOYGNY5Jy2TWvTL1KgAlVy6dcx3siPJ1wTq741EPyUKfn6W6nChdICjZwCd0p8AZBs5kWpZlbkXW2nE/zjUa+Q==}
+    peerDependencies:
+      redux: ^4
+    dependencies:
+      redux: 4.2.0
+    dev: false
+
   /redux/4.1.2:
     resolution: {integrity: sha512-SH8PglcebESbd/shgf6mii6EIoRM0zrQyjcuQ+ojmfxjTtE0z9Y8pa62iA/OJ58qjP6j27uyW4kUF4jl/jd6sw==}
+    dependencies:
+      '@babel/runtime': 7.17.8
+    dev: false
+
+  /redux/4.2.0:
+    resolution: {integrity: sha512-oSBmcKKIuIR4ME29/AeNUnl5L+hvBq7OaJWzaptTQJAntaPvxIJqfnjbaEiCzzaIz+XmVILfqAM3Ob0aXLPfjA==}
     dependencies:
       '@babel/runtime': 7.17.8
     dev: false
@@ -17368,6 +17497,10 @@ packages:
 
   /require-main-filename/2.0.0:
     resolution: {integrity: sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==}
+    dev: false
+
+  /reselect/4.1.5:
+    resolution: {integrity: sha512-uVdlz8J7OO+ASpBYoz1Zypgx0KasCY20H+N8JD13oUMtPvSHQuscrHop4KbXrbsBcdB9Ds7lVK7eRkBIfO43vQ==}
     dev: false
 
   /resize-observer-polyfill/1.5.1:
@@ -19525,6 +19658,14 @@ packages:
       react: 16.14.0
     dev: false
 
+  /use-sync-external-store/1.1.0_react@17.0.2:
+    resolution: {integrity: sha512-SEnieB2FPKEVne66NpXPd1Np4R1lTNKfjuy3XdIoPQKYBAFdzbzSZlSn1KJZUiihQLQC5Znot4SBz1EOTBwQAQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 17.0.2
+    dev: false
+
   /use/3.1.1:
     resolution: {integrity: sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==}
     engines: {node: '>=0.10.0'}
@@ -20354,7 +20495,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-cHo9rXpHAAnmKthBcJt/17Vmk290ToNqOm2XFJWtTl5c06wshpKrzUvkw9/yjGXpaFQkvUiqxM+a3YDizO81uQ==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-BCX4fpxWa7lPhke+qjR97jYMWSiD96VxtdvZfGwsPDy6F/qouviODaDAsTFr81vX6GuKRdqaq8Hq/S5WCSpg3Q==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20373,6 +20514,7 @@ packages:
       '@graphql-codegen/typescript-operations': 2.2.4_graphql@15.8.0
       '@graphql-codegen/typescript-react-apollo': 3.2.11_graphql@15.8.0
       '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      '@reduxjs/toolkit': 1.8.1_react-redux@8.0.1+react@17.0.2
       '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
       '@sentry/react': 6.17.9_react@17.0.2
       '@types/history': 2.0.45
@@ -20399,6 +20541,9 @@ packages:
       qs: 6.10.3
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
+      react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+      redux: 4.2.0
+      redux-thunk: 2.4.1_redux@4.2.0
       sass: 1.49.11
       typescript: 4.5.5
       umi: 3.5.21
@@ -20425,7 +20570,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-Elvss3I7uhSQG99GyPkc6y+jOGw55Z6O8OaepYvycmRwpjXPIAG6u7puxlj5ozaijpQf8MT2pRctX9cP9FCP8w==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-1w0AkY/q5RRcJtztocjj5Q7Dw3fDwq7KQlGnrMpbsoU5ldRbyGWsxydrbF9De1i1u2z1YfRBhgoMy3kapZd+dg==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -20474,6 +20619,7 @@ packages:
       https-proxy-agent: 5.0.0
       io-ts: 2.2.16_fp-ts@2.11.9
       jest: 27.5.1_ts-node@10.7.0
+      joi: 17.6.0
       md5: 2.3.0
       openapi-typescript-codegen: 0.20.1
       parse-torrent: 9.1.5
@@ -20522,7 +20668,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz:
-    resolution: {integrity: sha512-zticuhVSmlvKJ7wyG5KguHg1bqW+7kPTQAMVWFun0G9Ua5A31sxWy2ylzmXDZqhfqofbNVW6I1fHsfk+Ht9IPQ==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-sYP2Tdaido7HKIJ/c3isyGS0Z3egd/8CXVuY6tRmVq8Osjt0H99RVciPYLCw9wXf8bMrGh6hH720KLYRF13E/g==, tarball: file:projects/cli.tgz}
     name: '@rush-temp/cli'
     version: 0.0.0
     dependencies:
@@ -20530,6 +20676,7 @@ packages:
       '@oclif/plugin-help': 5.1.12
       '@oclif/plugin-plugins': 2.1.0
       '@types/inquirer': 8.2.1
+      '@types/js-yaml': 4.0.5
       '@types/lodash': 4.14.181
       '@types/node': 17.0.23
       eslint: 7.32.0
@@ -20540,6 +20687,7 @@ packages:
       handlebars: 4.7.7
       inclusion: 1.0.1
       inquirer: 8.2.2
+      js-yaml: 4.1.0
       json-schema-to-typescript: 10.1.5
       jsonschema: 1.4.0
       kleur: 4.1.4
@@ -20562,7 +20710,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.23:
-    resolution: {integrity: sha512-Pp81voXYRfwWdOdUBCX2W3zkJreQRaBcfPM6DhJwqM5CbHktTyRurqCL89S/ae8XEAfI7shnPAXhHkBduV/svw==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-N2Uy9MxpH7dN30nnpE4Ti/+3bJlXQhQgP/a4xyqmJCJ20lV23HFWTYVa8CuNjGfvdRdFoytE5DZ09fIIF4rI/Q==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -20573,6 +20721,8 @@ packages:
       '@types/koa': 2.13.4
       graphile-build: 4.12.2_graphql@15.8.0
       graphql: 15.8.0
+      joi: 17.6.0
+      js-yaml: 4.1.0
       koa: 2.13.4
       postgraphile: 4.12.9
       postgraphile-plugin-connection-filter: 2.2.2
@@ -20591,11 +20741,12 @@ packages:
     dev: false
 
   file:projects/framework.tgz:
-    resolution: {integrity: sha512-FSmBqKpplQ9Q9CAIKO0ZjFawN8KyhLPNdDommTalq1wbzCAeJQyaGbGEndhTrfm1p9V4AuKm4vl2JpF9BQMhCw==, tarball: file:projects/framework.tgz}
+    resolution: {integrity: sha512-zDqFTDQNH8Bv47CnJQSudvbkyIe1KcKGKuR9DlBCtWC/kjdx9AZZTFUfxy5jbTULkGmaGFcV1luDjzLGVcDhbQ==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
     version: 0.0.0
     dependencies:
       '@koa/cors': 3.1.0
+      '@types/js-yaml': 4.0.5
       '@types/koa': 2.13.4
       '@types/koa__cors': 3.1.1
       '@types/koa-bodyparser': 4.3.7
@@ -20606,6 +20757,8 @@ packages:
       cls-rtracer: 2.6.0
       fp-ts: 2.11.9
       io-ts: 2.2.16_fp-ts@2.11.9
+      joi: 17.6.0
+      js-yaml: 4.1.0
       koa: 2.13.4
       koa-bodyparser: 4.3.0
       koa-logger: 3.2.1
@@ -20615,7 +20768,7 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-Uy+jrWxR5sxBZ650Arlw5WScfuXwR23SicRKFz5VSQCNugvvDmym75/qufYsGOcJuKwJKfFoI4GYgiySmfvjMg==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-MzvFUUtznDD2m8nFxMAckX5RiZgecf72lTSBZHqC+4Dd3KreVd8mV4RjAbZxwFoWEK4Aph8XM1QtFyT+KJUPFg==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
@@ -20624,6 +20777,7 @@ packages:
       apollo-server: 3.6.7_graphql@15.8.0
       axios: 0.26.1
       graphql: 15.8.0
+      joi: 17.6.0
       jose: 4.6.0
       jsonwebtoken: 8.5.1
       openid-client: 5.1.4

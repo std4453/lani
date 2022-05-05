@@ -3,7 +3,7 @@
     "source.fixAll": true
   },
   "yaml.schemas": {
-    "https://www.graphql-code-generator.com/config.schema.json": "file:///home/std4453/lani/apps/admin/codegen.yml"
+    "https://www.graphql-code-generator.com/config.schema.json": "/codegen.yml"
   },
   "editor.tabSize": 2
 }
