@@ -35,6 +35,7 @@ specifiers:
   '@oclif/plugin-help': ^5
   '@oclif/plugin-plugins': ^2.0.1
   '@prisma/client': ~3.11.0
+  '@reduxjs/toolkit': ~1.8.1
   '@rush-temp/admin': file:./projects/admin.tgz
   '@rush-temp/api-server': file:./projects/api-server.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
@@ -118,6 +119,8 @@ specifiers:
   qs: ~6.10.3
   react: ~17.0.2
   react-dom: ~17.0.2
+  react-redux: ~8.0.1
+  redux: ~4.2.0
   reflect-metadata: ^0.1.13
   rimraf: ^3.0.2
   shx: ^0.3.3
@@ -170,6 +173,7 @@ dependencies:
   '@oclif/plugin-help': 5.1.12
   '@oclif/plugin-plugins': 2.1.0
   '@prisma/client': 3.11.1_prisma@3.11.1
+  '@reduxjs/toolkit': 1.8.1_react-redux@8.0.1+react@17.0.2
   '@rush-temp/admin': file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a
   '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.46.0
   '@rush-temp/cli': file:projects/cli.tgz
@@ -253,6 +257,8 @@ dependencies:
   qs: 6.10.3
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
+  react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+  redux: 4.2.0
   reflect-metadata: 0.1.13
   rimraf: 3.0.2
   shx: 0.3.4
@@ -4175,6 +4181,25 @@ packages:
     resolution: {integrity: sha512-2jIiLiVZB1jnY7IIRQKtoV8Gnr7XIhk4mC88ONGunZE3hYt5IHUG4BE/6+JiTBjjEWQLBeWnZB8hGpppkufiVw==}
     dev: false
 
+  /@reduxjs/toolkit/1.8.1_react-redux@8.0.1+react@17.0.2:
+    resolution: {integrity: sha512-Q6mzbTpO9nOYRnkwpDlFOAbQnd3g7zj7CtHAZWz5SzE5lcV97Tf8f3SzOO8BoPOMYBFgfZaqTUZqgGu+a0+Fng==}
+    peerDependencies:
+      react: ^16.9.0 || ^17.0.0 || ^18
+      react-redux: ^7.2.1 || ^8.0.0-beta
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-redux:
+        optional: true
+    dependencies:
+      immer: 9.0.12
+      react: 17.0.2
+      react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+      redux: 4.2.0
+      redux-thunk: 2.4.1_redux@4.2.0
+      reselect: 4.1.5
+    dev: false
+
   /@rushstack/eslint-config/2.5.2_eslint@7.32.0+typescript@4.5.5:
     resolution: {integrity: sha512-sihc5OQ8g92jTDLqrKXt0burUNqI1ukoISFxQCdRzSKWbzyIwBnBwvvWryggjqCR+T7fKnCe5SBZt4Y/1VpJMg==}
     peerDependencies:
@@ -4964,6 +4989,10 @@ packages:
     resolution: {integrity: sha512-FvnCJljyxhPM3gkRgWmxmDZyAQSiBQQWLI0A0VFL0K7W1oRUrPJSqNO0NvTnLkBcotdlp3lKvaT0JrnyRDkzOg==}
     dependencies:
       '@types/node': 17.0.23
+    dev: false
+
+  /@types/use-sync-external-store/0.0.3:
+    resolution: {integrity: sha512-EwmlvuaxPNej9+T4v5AuBPJa2x2UOJVdjCtDHgcDqitUeOtjnJKJ+apYjVcAoBEMjKW1VVFGZLUb5+qqa09XFA==}
     dev: false
 
   /@types/vinyl/2.0.6:
@@ -11096,6 +11125,10 @@ packages:
     resolution: {integrity: sha512-yM7jo9+hvYgvdCQdqvhCNRRio0SCXc8xDPzA25SvKWa7b1WVPjLwQs1VYU5JPXjcJPTqAa5NP5dqpORGYBQ2AA==}
     dev: false
 
+  /immer/9.0.12:
+    resolution: {integrity: sha512-lk7UNmSbAukB5B6dh9fnh5D0bJTOFKxVg2cyJWTYrWRfhLrLMBquONcUs3aFq507hNoIZEDDh8lb8UtOizSMhA==}
+    dev: false
+
   /immutable/3.7.6:
     resolution: {integrity: sha1-E7TTyxK++hVIKib+Gy665kAHHks=}
     engines: {node: '>=0.8.0'}
@@ -16912,6 +16945,10 @@ packages:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
     dev: false
 
+  /react-is/18.1.0:
+    resolution: {integrity: sha512-Fl7FuabXsJnV5Q1qIOQwx/sagGF18kogb4gpfcG4gjLBWO0WDiiz1ko/ExayuxE7InyQkBLkxRFG5oxY6Uu3Kg==}
+    dev: false
+
   /react-lifecycles-compat/3.0.4:
     resolution: {integrity: sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==}
     dev: false
@@ -16945,6 +16982,40 @@ packages:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       react-is: 17.0.2
+    dev: false
+
+  /react-redux/8.0.1_6a0293f181125ad5b6b10717abc58c68:
+    resolution: {integrity: sha512-LMZMsPY4DYdZfLJgd7i79n5Kps5N9XVLCJJeWAaPYTV+Eah2zTuBjTxKtNEbjiyitbq80/eIkm55CYSLqAub3w==}
+    peerDependencies:
+      '@types/react': ^16.8 || ^17.0 || ^18.0
+      '@types/react-dom': ^16.8 || ^17.0 || ^18.0
+      react: ^16.8 || ^17.0 || ^18.0
+      react-dom: ^16.8 || ^17.0 || ^18.0
+      react-native: '>=0.59'
+      redux: ^4
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+      redux:
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.17.8
+      '@types/hoist-non-react-statics': 3.3.1
+      '@types/react': 17.0.43
+      '@types/react-dom': 17.0.14
+      '@types/use-sync-external-store': 0.0.3
+      hoist-non-react-statics: 3.3.2
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+      react-is: 18.1.0
+      redux: 4.2.0
+      use-sync-external-store: 1.1.0_react@17.0.2
     dev: false
 
   /react-refresh/0.10.0:
@@ -17215,8 +17286,22 @@ packages:
     resolution: {integrity: sha512-iIjKnRThI5sKPEASpUvySemjzwqwI13e3qP7oLub+FycCRDysLSAOwt958niZW6LhxfmS6Qm1BzbU70w/Koc4w==}
     dev: false
 
+  /redux-thunk/2.4.1_redux@4.2.0:
+    resolution: {integrity: sha512-OOYGNY5Jy2TWvTL1KgAlVy6dcx3siPJ1wTq741EPyUKfn6W6nChdICjZwCd0p8AZBs5kWpZlbkXW2nE/zjUa+Q==}
+    peerDependencies:
+      redux: ^4
+    dependencies:
+      redux: 4.2.0
+    dev: false
+
   /redux/4.1.2:
     resolution: {integrity: sha512-SH8PglcebESbd/shgf6mii6EIoRM0zrQyjcuQ+ojmfxjTtE0z9Y8pa62iA/OJ58qjP6j27uyW4kUF4jl/jd6sw==}
+    dependencies:
+      '@babel/runtime': 7.17.8
+    dev: false
+
+  /redux/4.2.0:
+    resolution: {integrity: sha512-oSBmcKKIuIR4ME29/AeNUnl5L+hvBq7OaJWzaptTQJAntaPvxIJqfnjbaEiCzzaIz+XmVILfqAM3Ob0aXLPfjA==}
     dependencies:
       '@babel/runtime': 7.17.8
     dev: false
@@ -17410,6 +17495,10 @@ packages:
 
   /require-main-filename/2.0.0:
     resolution: {integrity: sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==}
+    dev: false
+
+  /reselect/4.1.5:
+    resolution: {integrity: sha512-uVdlz8J7OO+ASpBYoz1Zypgx0KasCY20H+N8JD13oUMtPvSHQuscrHop4KbXrbsBcdB9Ds7lVK7eRkBIfO43vQ==}
     dev: false
 
   /resize-observer-polyfill/1.5.1:
@@ -19567,6 +19656,14 @@ packages:
       react: 16.14.0
     dev: false
 
+  /use-sync-external-store/1.1.0_react@17.0.2:
+    resolution: {integrity: sha512-SEnieB2FPKEVne66NpXPd1Np4R1lTNKfjuy3XdIoPQKYBAFdzbzSZlSn1KJZUiihQLQC5Znot4SBz1EOTBwQAQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 17.0.2
+    dev: false
+
   /use/3.1.1:
     resolution: {integrity: sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==}
     engines: {node: '>=0.10.0'}
@@ -20396,7 +20493,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-cHo9rXpHAAnmKthBcJt/17Vmk290ToNqOm2XFJWtTl5c06wshpKrzUvkw9/yjGXpaFQkvUiqxM+a3YDizO81uQ==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-BCX4fpxWa7lPhke+qjR97jYMWSiD96VxtdvZfGwsPDy6F/qouviODaDAsTFr81vX6GuKRdqaq8Hq/S5WCSpg3Q==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -20415,6 +20512,7 @@ packages:
       '@graphql-codegen/typescript-operations': 2.2.4_graphql@15.8.0
       '@graphql-codegen/typescript-react-apollo': 3.2.11_graphql@15.8.0
       '@graphql-typed-document-node/core': 3.1.1_graphql@15.8.0
+      '@reduxjs/toolkit': 1.8.1_react-redux@8.0.1+react@17.0.2
       '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
       '@sentry/react': 6.17.9_react@17.0.2
       '@types/history': 2.0.45
@@ -20441,6 +20539,9 @@ packages:
       qs: 6.10.3
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
+      react-redux: 8.0.1_6a0293f181125ad5b6b10717abc58c68
+      redux: 4.2.0
+      redux-thunk: 2.4.1_redux@4.2.0
       sass: 1.49.11
       typescript: 4.5.5
       umi: 3.5.21
