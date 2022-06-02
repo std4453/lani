@@ -1,2 +1,35 @@
+name: "CI/CD Pipeline"
+
+# TODO: 根据更改自动运行对应的CI和CD
+
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ref to trigger workflow"
+        required: false
+        default: "master"
+      project_name:
+        description: "Project package name"
+        required: true
+      environment:
+        type: string
+        description: "Deploy environment type"
+        required: true
+  
+jobs:
+  build:
+    uses: ./.github/workflows/ci_node_default.yaml
+    with:
+      ref: ${{ inputs.ref }}
+      project_name: ${{ inputs.project_name }}
+    secrets: inherit
+  
+  deploy:
+    needs: build
+    uses: ./.github/workflows/cd_k8s.yaml
+    with:
+      image_ref: ${{ needs.build.outputs.image_ref }}
+      project_name: ${{ inputs.project_name }}
+      environment: ${{ inputs.environment }}
+    secrets: inherit
