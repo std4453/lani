@@ -62,7 +62,6 @@ function useColumns() {
             >
               种子链接
             </Typography.Link>
-            <Typography.Link>手动下载</Typography.Link>
           </Space>
         ),
         width: 200,
