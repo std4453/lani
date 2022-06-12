@@ -1,4 +1,4 @@
-import { COSService } from '@/common/cos.service';
+import { S3Service } from '@/common/s3.service';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { getIdFromNodeId } from '@/utils/graphile';
@@ -26,7 +26,7 @@ export class Image {
 
 @Resolver(() => Image)
 export class ImageResolver {
-  constructor(private cos: COSService, private prisma: PrismaService) {}
+  constructor(private s3: S3Service, private prisma: PrismaService) {}
 
   @ResolveField(() => String)
   async downloadPath(@Parent() { nodeId }: { nodeId: string }) {
@@ -37,17 +37,11 @@ export class ImageResolver {
     if (!cosPath) {
       return undefined;
     }
-    const bucket = config.cos.imagesBucket;
-    const url = this.cos.getObjectUrl(
-      {
-        Bucket: bucket.bucket,
-        Region: bucket.region,
-        Key: cosPath,
-      },
-      // COS的Node.js SDK类型标注有问题，非得要第二个参数，但其实是同步调用
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      () => {},
-    );
+    const url = this.s3.getSignedUrl('getObject', {
+      Bucket: config.s3.bucket,
+      Key: cosPath,
+    });
+    console.log(url);
     return url;
   }
 }

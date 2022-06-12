@@ -1,6 +1,4 @@
 import {
-  COSBucket,
-  COSConfig,
   DownloadClientConfig,
   downloadClientKinds,
   Enabled,
@@ -13,6 +11,7 @@ import {
   ProxyConfig,
   QBittorrentConfig,
   RootConfig,
+  S3Config,
   TimeoutConfig,
   userNotificationKinds,
 } from '@/config/types';
@@ -61,19 +60,10 @@ function laniConfigSchema(): Joi.ObjectSchema<LaniConfig> {
   });
 }
 
-function cosBucketSchema(): Joi.ObjectSchema<COSBucket> {
+function s3ConfigSchema(): Joi.ObjectSchema<S3Config> {
   return Joi.object({
     bucket: Joi.string().required(),
-    region: Joi.string().required(),
-  });
-}
-
-function cosConfigSchema(): Joi.ObjectSchema<COSConfig> {
-  return Joi.object({
-    secretId: Joi.string().required(),
-    secretKey: Joi.string().required(),
-    imagesBucket: cosBucketSchema().required(),
-  });
+  }).pattern(Joi.string(), Joi.any());
 }
 
 function larkConfigSchema(): Joi.ObjectSchema<LarkConfig> {
@@ -158,7 +148,7 @@ export function rootConfigSchema(): Joi.ObjectSchema<RootConfig> {
   return Joi.object({
     network: networkConfigSchema().required(),
     postgresUrl: Joi.string().required(),
-    cos: cosConfigSchema().required(),
+    s3: s3ConfigSchema().required(),
     downloadClient: downloadClientConfigSchema().required(),
     jellyfin: jellyfinConfigSchema().required(),
     notifications: notificationsConfigSchema().required(),

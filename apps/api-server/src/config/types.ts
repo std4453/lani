@@ -28,15 +28,8 @@ export interface LaniConfig {
   publicHost: string;
 }
 
-export interface COSBucket {
+export interface S3Config extends AWS.S3.Types.ClientConfiguration {
   bucket: string;
-  region: string;
-}
-
-export interface COSConfig {
-  secretId: string;
-  secretKey: string;
-  imagesBucket: COSBucket;
 }
 
 export interface LarkConfig {
@@ -82,7 +75,7 @@ export interface NetworkConfig {
 export interface RootConfig {
   network: NetworkConfig;
   postgresUrl: string;
-  cos: COSConfig;
+  s3: S3Config;
   downloadClient: DownloadClientConfig;
   jellyfin: JellyfinConfig;
   notifications: NotificationsConfig;

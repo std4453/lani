@@ -26,16 +26,23 @@ network:
 # postgres 地址
 postgresUrl: postgresql://user:password@postgres-server:5432/db?schema=public
 
-# 腾讯云 COS 配置，暂不支持其他服务商
-cos:
-  # 腾讯云子用户的 secretId 和 secretKey
-  secretId: my-secret-id
-  secretKey: my-secret-key
+# 对象存储配置，需要兼容 S3
+s3:
+  # 鉴权配置
+  credentials: 
+    accessKeyId: my-secret-id
+    secretAccessKey: my-secret-key
 
-  # 目前使用图片服务器存储季度图片，需要指定图片存储的 bucket 和 region
-  imagesBucket:
-    bucket: bucket-id
-    region: ap-my-region
+  # 地区配置
+  region: my-region
+  # 存储桶名称
+  bucket: bucket-id
+
+  # 其他配置将全部作为初始化参数透传给 AWS.S3 构造函数，根据实际需要配置
+  # 完整文档见 https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#constructor-property
+  # 如配置 API 端点，常用于其他对象存储服务商
+  # endpoint: https://cos.ap-guangzhou.myqcloud.com
+
 
 # 下载器配置
 downloadClient:
