@@ -1,6 +1,6 @@
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { ChinaAxiosService } from '@/common/axios.service';
-import { COSService } from '@/common/cos.service';
+import { S3Service } from '@/common/s3.service';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { DateFormat } from '@/constants/date-format';
@@ -9,11 +9,11 @@ import { PartialSeason } from '@/season-sync/index.model';
 import { SkyhookSeasonService } from '@/season-sync/skyhook/index.service';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
+import { Image, JellyfinFolder, MetadataSource, Season } from '@lani/db';
 import { resolveChroot } from '@lani/framework';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
-import { Image, JellyfinFolder, MetadataSource, Season } from '@lani/db';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import md5 from 'md5';
@@ -27,7 +27,7 @@ export class SyncMetadataResolver {
     private bangumi: BangumiSeasonService,
     private china: ChinaAxiosService,
     private prisma: PrismaService,
-    private cos: COSService,
+    private s3: S3Service,
   ) {}
 
   private readonly builder = new xml2js.Builder();
@@ -177,14 +177,14 @@ export class SyncMetadataResolver {
       maxContentLength: 10 * 1024 * 1024,
     });
     const hash = md5(data);
-    const bucket = config.cos.imagesBucket;
     const key = `${hash}${ext}`;
-    await this.cos.putObject({
-      Bucket: bucket.bucket,
-      Region: bucket.region,
-      Key: key,
-      Body: data,
-    });
+    await this.s3
+      .putObject({
+        Bucket: config.s3.bucket,
+        Key: key,
+        Body: data,
+      })
+      .promise();
     return await this.prisma.image.update({
       where: { id: image.id },
       data: {
@@ -288,14 +288,18 @@ export class SyncMetadataResolver {
         if (!cosPath) {
           throw new Error('cosPath not set');
         }
-        const bucket = config.cos.imagesBucket;
         const ext = cosPath.substring(cosPath.lastIndexOf('.'));
-        const { Body: content } = await this.cos.getObject({
-          Bucket: bucket.bucket,
-          Region: bucket.region,
-          Key: cosPath,
-        });
-        const newFileHash = md5(content);
+        const { Body: content } = await this.s3
+          .getObject({
+            Bucket: config.s3.bucket,
+            Key: cosPath,
+          })
+          .promise();
+        if (!content) {
+          throw new Error('GetObject returns empty content');
+        }
+        const contentStr = content?.toString('utf-8');
+        const newFileHash = md5(contentStr);
         const filePath = resolveChroot(
           path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
         );
@@ -307,7 +311,7 @@ export class SyncMetadataResolver {
           // 无论文件有没有问题，我们这里只是为了判断hash，因此忽略错误
         }
         if (currentFileHash !== newFileHash) {
-          await fs.writeFile(filePath, content);
+          await fs.writeFile(filePath, contentStr);
           modified = true;
         }
       }),

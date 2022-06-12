@@ -1,4 +1,4 @@
-import { COSService } from '@/common/cos.service';
+import { S3Service } from '@/common/s3.service';
 import config from '@/config';
 import { LarkConfig } from '@/config/types';
 import { DateFormat } from '@/constants/date-format';
@@ -19,10 +19,10 @@ import {
   OnEpisodePublishEpisode,
   UserNotificationProvider,
 } from '@/notification/UserNotificationProvider';
+import { DownloadJob, DownloadStatus } from '@lani/db';
 import * as lark from '@larksuiteoapi/allcore';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
-import { DownloadJob, DownloadStatus } from '@lani/db';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -33,7 +33,7 @@ export class LarkBot
   private larkConfig: LarkConfig;
   private conf: lark.core.Config;
 
-  constructor(private cos: COSService) {
+  constructor(private s3: S3Service) {
     const {
       notifications: { lark: larkConfig },
     } = config;
@@ -57,13 +57,13 @@ export class LarkBot
 
     const posterImage = episode.season.posterImage;
     if (posterImage?.cosPath) {
-      const bucket = config.cos.imagesBucket;
       try {
-        const { Body: image } = await this.cos.getObject({
-          Bucket: bucket.bucket,
-          Region: bucket.region,
-          Key: posterImage.cosPath,
-        });
+        const { Body: image } = await this.s3
+          .getObject({
+            Bucket: config.s3.bucket,
+            Key: posterImage.cosPath,
+          })
+          .promise();
         const formData = new lark.api.FormData();
         formData.addField('image_type', 'message');
         formData.addFile('image', new lark.api.File().setContent(image));

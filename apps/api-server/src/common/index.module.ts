@@ -5,8 +5,8 @@ import {
   LocalAxiosService,
 } from '@/common/axios.service';
 import { BigIntScalar } from '@/common/bigint.scalar';
-import { COSService } from '@/common/cos.service';
 import { PrismaService } from '@/common/prisma.service';
+import { S3ServiceProvider } from '@/common/s3.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -19,7 +19,7 @@ import { ConfigModule } from '@nestjs/config';
     LocalAxiosService,
     BigIntScalar,
     PrismaService,
-    COSService,
+    S3ServiceProvider,
   ],
   exports: [
     GlobalAxiosService,
@@ -28,7 +28,7 @@ import { ConfigModule } from '@nestjs/config';
     LocalAxiosService,
     BigIntScalar,
     PrismaService,
-    COSService,
+    S3ServiceProvider,
   ],
 })
 export class CommonModule {}
