@@ -40,6 +40,7 @@ specifiers:
   '@rush-temp/api-server': file:./projects/api-server.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-server': file:./projects/data-server.tgz
+  '@rush-temp/db': file:./projects/db.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
   '@rushstack/eslint-config': ~2.5.1
@@ -178,6 +179,7 @@ dependencies:
   '@rush-temp/api-server': file:projects/api-server.tgz_@apollo+gateway@0.46.0
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.23
+  '@rush-temp/db': file:projects/db.tgz
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
   '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
@@ -20736,6 +20738,18 @@ packages:
       - pg-native
       - supports-color
       - utf-8-validate
+    dev: false
+
+  file:projects/db.tgz:
+    resolution: {integrity: sha512-AQVAXk19oSIAlnXFT4wc3GRzgwZSxBn5zvSv5oDOSPLdNOG1hxB3defKNjvgTavVBj+8F7RAF7o0OlUY/HxDHw==, tarball: file:projects/db.tgz}
+    name: '@rush-temp/db'
+    version: 0.0.0
+    dependencies:
+      '@prisma/client': 3.11.1_prisma@3.11.1
+      '@types/node': 17.0.23
+      prisma: 3.11.1
+      typescript: 4.5.5
+      typescript-transform-paths: 3.3.1_typescript@4.5.5
     dev: false
 
   file:projects/framework.tgz:

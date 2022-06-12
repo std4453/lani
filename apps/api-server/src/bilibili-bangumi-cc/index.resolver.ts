@@ -7,7 +7,7 @@ import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { resolveChroot } from '@lani/framework';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
-import { DownloadStatus } from '@prisma/client';
+import { DownloadStatus } from '@lani/db';
 import fs from 'fs/promises';
 import path from 'path';
 

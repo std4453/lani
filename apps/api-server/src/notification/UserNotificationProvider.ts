@@ -1,4 +1,4 @@
-import { Episode, Image, JellyfinFolder, Season } from '@prisma/client';
+import { Episode, Image, JellyfinFolder, Season } from '@lani/db';
 
 export type OnEpisodePublishEpisode = Episode & {
   season: Season & {

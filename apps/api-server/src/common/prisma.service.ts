@@ -1,7 +1,7 @@
 import config from '@/config';
 import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaClientOptions } from '@prisma/client/runtime';
+import { PrismaClient } from '@lani/db';
+import { PrismaClientOptions } from '@lani/db/dist/runtime';
 
 const rejectOnNotFound = {
   findUnique: true,

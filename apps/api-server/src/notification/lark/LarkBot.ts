@@ -22,7 +22,7 @@ import {
 import * as lark from '@larksuiteoapi/allcore';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
-import { DownloadJob, DownloadStatus } from '@prisma/client';
+import { DownloadJob, DownloadStatus } from '@lani/db';
 import dayjs from 'dayjs';
 
 @Injectable()

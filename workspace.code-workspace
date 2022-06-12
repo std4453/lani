@@ -8,7 +8,11 @@
 			"name": "📦 @lani/framework",
 			"path": "libs/framework"
 		},
-		{
+    {
+      "name": "💾 @lani/db",
+      "path": "libs/db"
+    },
+    {
 			"name": "⚙️ @lani/cli",
 			"path": "tools/cli"
 		},

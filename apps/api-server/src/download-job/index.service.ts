@@ -21,7 +21,7 @@ import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
-import { DownloadJob, DownloadStatus } from '@prisma/client';
+import { DownloadJob, DownloadStatus } from '@lani/db';
 import dayjs from 'dayjs';
 
 @Injectable()

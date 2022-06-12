@@ -475,6 +475,10 @@
       "packageName": "@lani/gateway",
       "projectFolder": "apps/gateway",
       "shouldPublish": true
+    },
+    {
+      "packageName": "@lani/db",
+      "projectFolder": "libs/db"
     }
   ]
 }

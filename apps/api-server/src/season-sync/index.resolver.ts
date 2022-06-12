@@ -13,7 +13,7 @@ import { resolveChroot } from '@lani/framework';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
-import { Image, JellyfinFolder, MetadataSource, Season } from '@prisma/client';
+import { Image, JellyfinFolder, MetadataSource, Season } from '@lani/db';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import md5 from 'md5';

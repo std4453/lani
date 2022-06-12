@@ -1,4 +1,4 @@
-import { DownloadJob, Episode, Season } from '@prisma/client';
+import { DownloadJob, Episode, Season } from '@lani/db';
 
 export type OnEpisodesMissingEpisode = Episode & {
   season: Season;
