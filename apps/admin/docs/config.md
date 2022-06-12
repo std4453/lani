@@ -12,11 +12,11 @@
       "realm": "my-realm",
       "clientId": "my-client-id",
       "role": "my-role"
-    },
-    "jellyfin": {
-      "host": "https://my-jellyfin-host",
-      "serverId": "my-jellyfin-server-id"
     }
+  },
+  "jellyfin": {
+    "host": "https://my-jellyfin-host",
+    "serverId": "my-jellyfin-server-id"
   }
 }
 ```
