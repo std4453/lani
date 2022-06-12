@@ -458,19 +458,23 @@
     },
     {
       "packageName": "@lani/admin",
-      "projectFolder": "apps/admin"
+      "projectFolder": "apps/admin",
+      "shouldPublish": true
     },
     {
       "packageName": "@lani/data-server",
-      "projectFolder": "apps/data-server"
+      "projectFolder": "apps/data-server",
+      "shouldPublish": true
     },
     {
       "packageName": "@lani/api-server",
-      "projectFolder": "apps/api-server"
+      "projectFolder": "apps/api-server",
+      "shouldPublish": true
     },
     {
       "packageName": "@lani/gateway",
-      "projectFolder": "apps/gateway"
+      "projectFolder": "apps/gateway",
+      "shouldPublish": true
     }
   ]
 }
