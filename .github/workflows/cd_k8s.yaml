@@ -1,0 +1,88 @@
+name: "Kubernetes CD"
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        type: string
+        description: "Name and tag of image to deploy"
+        required: true
+
+      project_name:
+        type: string
+        description: "Project package name"
+        required: true
+
+      environment:
+        type: string
+        description: "Deploy environment type"
+        required: true
+
+  workflow_call:
+    inputs:
+      image_ref:
+        type: string
+        description: "Name and tag of image to deploy"
+        required: true
+
+      project_name:
+        type: string
+        description: "Project package name"
+        required: true
+
+      environment:
+        type: string
+        description: "Deploy environment type"
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.project_name }} to ${{ inputs.environment }} environment 
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout deploy repo
+        with:
+          repository: std4453/lani-deploy
+          ref: main
+          token: ${{ secrets.DEPLOY_PAT }}
+
+      - uses: actions/setup-node@v2
+        name: Setup Node
+        with:
+          node-version: 14
+          cache: yarn
+
+      - name: Install Dependencies
+        run: |
+          yarn install --frozen-lockfile
+      
+      - name: Build Script
+        run: |
+          yarn build
+
+      - name: App Name
+        id: app_name
+        run: |
+          app_name="${project_name##*/}"
+          echo "::set-output name=app_name::$app_name"
+        env:
+          project_name: ${{ inputs.project_name }}
+
+      - name: Generate Manifests
+        run: >
+          yarn start ${{ steps.app_name.outputs.app_name }} ${{ inputs.image_ref }} ${{ inputs.environment }}
+
+      - name: Prepare kubeconfig
+        run: |
+          echo "KUBE_CONFIG=$(cat lani-cd.kubeconfig | base64 -w 0)" >> $GITHUB_ENV
+
+      - uses: actions-hub/kubectl@master
+        name: Apply manifest
+        env:
+          KUBE_CONFIG: ${{ env.KUBE_CONFIG }}
+        with:
+          args: apply -k ./generated/${{ steps.app_name.outputs.app_name }}/${{ inputs.environment }}
+
+    
