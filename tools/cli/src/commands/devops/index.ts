@@ -150,15 +150,15 @@ export default class Devops extends Command {
         ]);
         env = result.env as "offline" | "prerelease" | "production";
       }
-      inputs.deploy_env = env;
+      inputs.environment = env;
     }
 
     const createTime = new Date().getTime();
     await octokit.rest.actions.createWorkflowDispatch({
       owner: "std4453",
-      repo: "lani-deploy",
-      workflow_id: "cd.yaml",
-      ref: "main",
+      repo: "lani",
+      workflow_id: "pipeline.yaml",
+      ref: "master",
       inputs,
     });
 
