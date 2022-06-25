@@ -85,7 +85,12 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
               return;
             }
           }
-          history.goBack();
+          // 无历史记录时回到季度列表页
+          if (history.length <= 1) {
+            history.replace('/seasons');
+          } else {
+            history.goBack();
+          }
         }}
         extra={
           <div className={styles.extra}>

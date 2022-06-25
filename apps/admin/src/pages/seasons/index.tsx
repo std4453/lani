@@ -1,3 +1,4 @@
+import { Hamburger } from '@/components/Layout';
 import { seasonToText, weekdayToText } from '@/constants';
 import {
   calcEpisodeStatus,
@@ -587,7 +588,12 @@ export default function MetadataPage() {
           defaultPageSize: state.pageSize ?? 30,
           defaultCurrent: state.current ?? 1,
         }}
-        headerTitle="元数据"
+        headerTitle={
+          <>
+            <Hamburger inTable />
+            元数据
+          </>
+        }
         actionRef={ref}
         toolBarRender={() => [
           <Button

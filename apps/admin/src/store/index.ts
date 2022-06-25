@@ -1,3 +1,4 @@
+import appReducer from '@/store/app';
 import authReducer from '@/store/auth';
 import configReducer from '@/store/config';
 import { applyMiddleware, configureStore } from '@reduxjs/toolkit';
@@ -7,6 +8,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     config: configReducer,
+    app: appReducer,
   },
   enhancers: [applyMiddleware(thunkMiddleware)],
   middleware: (getDefaultMiddleware) =>

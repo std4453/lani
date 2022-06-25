@@ -1,4 +1,5 @@
 import Highlight from '@/components/Highlight';
+import { Hamburger } from '@/components/Layout';
 import {
   ListTorrentsDocument,
   TorrentFieldsFragment,
@@ -150,7 +151,12 @@ export default function Torrents() {
           defaultPageSize: 100,
         }}
         defaultSize="middle"
-        headerTitle="种子列表"
+        headerTitle={
+          <>
+            <Hamburger inTable />
+            种子列表
+          </>
+        }
         actionRef={ref}
         search={false}
         options={{

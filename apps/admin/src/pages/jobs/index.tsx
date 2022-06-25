@@ -1,4 +1,5 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { Hamburger } from '@/components/Layout';
 import { DownloadStatusTag } from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
@@ -200,7 +201,12 @@ export default function JobsPage() {
           pageSizeOptions: [30, 50, 100],
           defaultPageSize: 30,
         }}
-        headerTitle="下载任务"
+        headerTitle={
+          <>
+            <Hamburger inTable />
+            下载任务
+          </>
+        }
         actionRef={actionRef}
         search={false}
         defaultSize="middle"
