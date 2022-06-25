@@ -28,6 +28,7 @@ import {
   encodeAntdSearch,
   useAntdTableState,
 } from '@/utils/search';
+import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
@@ -146,21 +147,22 @@ function useColumns(state: AntdTableState) {
         copyable: true,
         ellipsis: false,
         sorter: true,
+        width: 300,
         defaultSortOrder: state.sort.title,
         sortOrder: state.sort.title,
       },
       {
         title: '季度',
         dataIndex: 'yearAndSemester',
-        width: 120,
+        width: 180,
         search: false,
         render: (_, r) =>
           r.yearAndSemester ? (
-            <>
+            <div>
               {r.yearAndSemester.substring(0, 4)}
               <span className={styles.slash}>/</span>
               {seasonToText[parseInt(r.yearAndSemester.substring(4, 6))]}
-            </>
+            </div>
           ) : (
             '-'
           ),
@@ -568,6 +570,7 @@ export default function MetadataPage() {
     useAddFromBangumiDialog();
   const history = useHistory();
   const [keyword, setKeyword] = useState(state.keyword);
+  const mobile = useMobile();
 
   return (
     <>
@@ -634,7 +637,9 @@ export default function MetadataPage() {
             onChange: (e) => setKeyword(e.target.value),
           },
         }}
-        defaultSize="large"
+        defaultSize={mobile ? 'middle' : 'large'}
+        scroll={{ x: 1200 }}
+        className={styles.root}
       />
       {createSeasonDialog}
       {addFromBangumiDialog}
