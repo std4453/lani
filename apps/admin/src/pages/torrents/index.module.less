@@ -1,0 +1,21 @@
+@import "~@/styles/index.less";
+
+.root {
+  @media @mobile {
+    :global {
+      .ant-table-wrapper {
+        margin: 0 -24px;
+        max-width: calc(100% + 48px);
+      }
+      .ant-pro-table-list-toolbar-left {
+        margin-bottom: -36px;
+        z-index: 10;
+        pointer-events: none;
+      }
+    }
+  }
+}
+
+.title {
+  word-break: break-all;
+}

@@ -8,11 +8,13 @@ import {
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
+import useMobile from '@/utils/useMobile';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { Space, Typography } from 'antd';
 import prettyBytes from 'pretty-bytes';
 import { useMemo, useRef } from 'react';
+import styles from './index.module.less';
 
 function useColumns() {
   return useMemo(
@@ -27,8 +29,11 @@ function useColumns() {
         title: '种子标题',
         dataIndex: 'title',
         copyable: true,
+        width: 450,
         render: (_, r) => (
-          <Highlight content={r.title} match={matchTorrentEpisode} />
+          <div className={styles.title}>
+            <Highlight content={r.title} match={matchTorrentEpisode} />
+          </div>
         ),
       },
       {
@@ -65,7 +70,7 @@ function useColumns() {
             </Typography.Link>
           </Space>
         ),
-        width: 200,
+        width: 120,
       },
     ],
     [],
@@ -138,6 +143,7 @@ export default function Torrents() {
   const columns = useColumns();
   const ref = useRef<ActionType>();
   const client = useApolloClient();
+  const mobile = useMobile();
   return (
     <>
       <ProTable<TorrentFieldsFragment>
@@ -149,6 +155,7 @@ export default function Torrents() {
         pagination={{
           pageSizeOptions: [50, 100, 200],
           defaultPageSize: 100,
+          showLessItems: mobile,
         }}
         defaultSize="middle"
         headerTitle={
@@ -161,6 +168,10 @@ export default function Torrents() {
         search={false}
         options={{
           search: true,
+        }}
+        className={styles.root}
+        scroll={{
+          x: 1000,
         }}
       />
     </>
