@@ -190,7 +190,7 @@ export default class Devops extends Command {
     if (!found) {
       console.log(
         `Unable to find workflow run, visit ${kleur.cyan(
-          `https://github.com/std4453/lani-deploy/actions/workflows/cd.yaml`
+          `https://github.com/std4453/lani/actions/workflows/pipeline.yaml`
         )} to view details`
       );
       process.exit(1);
