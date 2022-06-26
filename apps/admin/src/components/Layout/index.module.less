@@ -63,7 +63,8 @@
 // 没有办法从 ProLayout 给 Drawer 传参数，只能用 CSS 方法强行隐藏掉
 // 这会造成全局污染，其他地方不能使用 .ant-drawer-header-close-only
 :global {
-  .ant-drawer-header-close-only {
+  // 增加specificity
+  .ant-drawer-header-close-only.ant-drawer-header-close-only {
     display: none;
   }
 }
