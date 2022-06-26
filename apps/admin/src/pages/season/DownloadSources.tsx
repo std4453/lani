@@ -8,14 +8,19 @@ import {
 import Section from '@/pages/season/Section';
 import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import { getSeasonKeyword } from '@/utils/season';
-import { MinusOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  MinusOutlined,
+  PlusOutlined,
+  QuestionCircleOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
 import {
   ProFormDigit,
   ProFormList,
   ProFormSwitch,
   ProFormTextArea,
 } from '@ant-design/pro-form';
-import { Alert, Button, Form, Typography } from 'antd';
+import { Alert, Button, Form, Tooltip, Typography } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
 import clsx from 'clsx';
 import { useRef } from 'react';
@@ -89,23 +94,36 @@ export default function DownloadSources() {
                   className: styles.item,
                 }}
               />
-              <Typography.Text className={styles.offsetText}>
-                （标题中第
-              </Typography.Text>
-              <ProFormDigit
-                name="offset"
-                min={1}
-                max={100}
-                width="xs"
-                formItemProps={{
-                  noStyle: true,
-                }}
-              />
-              <Typography.Text
-                className={clsx(styles.offsetText, styles.after)}
-              >
-                集对应季度第1集）
-              </Typography.Text>
+              <div className={styles.offset}>
+                <Typography.Text className={styles.offsetText}>
+                  偏移&nbsp;
+                  <Tooltip
+                    title={
+                      <>
+                        偏移3集表示该标题匹配到的第3集
+                        <br />
+                        对应系统中第1集
+                      </>
+                    }
+                  >
+                    <QuestionCircleOutlined />
+                  </Tooltip>
+                </Typography.Text>
+                <ProFormDigit
+                  name="offset"
+                  min={0}
+                  max={100}
+                  width="xs"
+                  formItemProps={{
+                    noStyle: true,
+                  }}
+                />
+                <Typography.Text
+                  className={clsx(styles.offsetText, styles.after)}
+                >
+                  集
+                </Typography.Text>
+              </div>
             </div>
           )}
         </ProFormList>

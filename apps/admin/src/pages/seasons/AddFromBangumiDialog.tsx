@@ -8,6 +8,7 @@ import {
 } from '@/generated/types';
 import { useJellyfinFolders } from '@/pages/seasons/useJellyfinFolders';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
+import useMobile from '@/utils/useMobile';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useDebounce } from 'ahooks';
 import {
@@ -61,83 +62,84 @@ export default function AddFromBangumiDialog({
 
   const disabled = !selected || selected.added || !folderId;
 
+  const mobile = useMobile();
+
   return (
     <Modal
       title="从Bangumi添加季度"
       visible={visible}
       onCancel={reject}
       footer={[
-        <Select
-          key="folder"
-          {...foldersSelectProps}
-          style={{
-            width: 200,
-            marginRight: 16,
-            textAlign: 'left',
-          }}
-        />,
-        <Button key="cancel" onClick={reject}>
-          取消
-        </Button>,
-        <Button
-          key="ok"
-          disabled={disabled}
-          loading={submitting}
-          type="primary"
-          onClick={async () => {
-            if (disabled) {
-              return;
-            }
-            try {
-              setSubmitting(true);
-              const { data } = await client.mutate({
-                mutation: CreateSeasonDocument,
-                variables: {
-                  season: {
-                    title: selected.name,
-                    bangumiId: selected.id,
-                    infoSource: MetadataSource.BgmCn,
-                    episodesSource: MetadataSource.BgmCn,
-                    jellyfinFolderId: folderId,
-                  },
-                },
-              });
-              const id = data?.createSeason?.season?.id;
-              if (!id) {
-                throw new Error('no id');
-              }
-              const hide = message.loading('新建成功，同步元数据中……', 0);
-              try {
-                await client.mutate({
-                  mutation: SyncMetadataDocument,
-                  variables: {
-                    seasonId: id,
-                  },
-                });
-                await client.mutate({
-                  mutation: SyncEpisodeDataDocument,
-                  variables: {
-                    seasonId: id,
-                  },
-                });
-                void message.success('同步元数据成功');
-                void resolve({ id });
-              } catch (e) {
-                console.error(e);
-                void message.error('同步元数据失败');
-              } finally {
-                hide();
-              }
-            } catch (e) {
-              console.error(e);
-              void message.error('新建失败');
-            } finally {
-              setSubmitting(false);
-            }
-          }}
-        >
-          添加
-        </Button>,
+        <Space direction="horizontal" size={8} key="actions" wrap>
+          <Select
+            {...foldersSelectProps}
+            style={{
+              width: 200,
+              textAlign: 'left',
+            }}
+          />
+          <Space direction="horizontal" size={8}>
+            <Button onClick={reject}>取消</Button>
+            <Button
+              disabled={disabled}
+              loading={submitting}
+              type="primary"
+              onClick={async () => {
+                if (disabled) {
+                  return;
+                }
+                try {
+                  setSubmitting(true);
+                  const { data } = await client.mutate({
+                    mutation: CreateSeasonDocument,
+                    variables: {
+                      season: {
+                        title: selected.name,
+                        bangumiId: selected.id,
+                        infoSource: MetadataSource.BgmCn,
+                        episodesSource: MetadataSource.BgmCn,
+                        jellyfinFolderId: folderId,
+                      },
+                    },
+                  });
+                  const id = data?.createSeason?.season?.id;
+                  if (!id) {
+                    throw new Error('no id');
+                  }
+                  const hide = message.loading('新建成功，同步元数据中……', 0);
+                  try {
+                    await client.mutate({
+                      mutation: SyncMetadataDocument,
+                      variables: {
+                        seasonId: id,
+                      },
+                    });
+                    await client.mutate({
+                      mutation: SyncEpisodeDataDocument,
+                      variables: {
+                        seasonId: id,
+                      },
+                    });
+                    void message.success('同步元数据成功');
+                    void resolve({ id });
+                  } catch (e) {
+                    console.error(e);
+                    void message.error('同步元数据失败');
+                  } finally {
+                    hide();
+                  }
+                } catch (e) {
+                  console.error(e);
+                  void message.error('新建失败');
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              添加
+            </Button>
+          </Space>
+        </Space>,
       ]}
       width={900}
     >
@@ -155,7 +157,7 @@ export default function AddFromBangumiDialog({
         <Spin spinning={loading}>
           <div
             style={{
-              height: 600,
+              height: mobile ? 400 : 600,
               overflow: 'auto',
               marginLeft: -8,
               marginRight: -8,
@@ -166,6 +168,8 @@ export default function AddFromBangumiDialog({
               rowKey="id"
               grid={{
                 column: 2,
+                xs: 1,
+                sm: 1,
               }}
               renderItem={(item) => (
                 <div key={item.id} className={styles.itemContainer}>
@@ -194,6 +198,7 @@ export default function AddFromBangumiDialog({
                       height={106}
                       preview={false}
                       className={styles.image}
+                      wrapperClassName={styles.imageWrapper}
                     />
                   </div>
                 </div>

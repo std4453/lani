@@ -1,9 +1,8 @@
+@import "~@/styles/index.less";
+
 .submitter {
   display: inline-block;
-}
 
-.extra {
-  margin: 24px 0;
   :global {
     .ant-btn {
       margin-left: 12px;
@@ -11,9 +10,30 @@
   }
 }
 
+.extra {
+  margin: 24px 0;
+  @media @mobile {
+    margin: 0;
+    margin-bottom: 12px;
+  }
+  
+  @media @pc {
+    :global {
+      .ant-btn {
+        margin-left: 12px;
+      }
+    }
+  }
+}
+
 .space {
   font-size: 14px;
   font-weight: normal;
+
+  @media @mobile {
+    margin-top: -12px;
+    margin-bottom: -12px;
+  }
 }
 
 .root {

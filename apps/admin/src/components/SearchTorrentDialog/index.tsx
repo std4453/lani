@@ -47,7 +47,6 @@ export default function SearchTorrentDialog({
   useEffect(() => {
     if (visible) {
       if (typeof input === 'object' && 'keyword' in input) {
-        console.log(input.keyword);
         setKeywords(input.keyword);
       } else {
         setKeywords('');

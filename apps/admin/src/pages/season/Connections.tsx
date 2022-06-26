@@ -30,7 +30,7 @@ export default function Connections() {
   const { id, reloadConfig } = useSeasonPageContext();
   const client = useApolloClient();
   return (
-    <Section title="关联设置">
+    <Section title="关联设置" className={styles.root}>
       <FormDependency<FormValues> name={['jellyfinId']}>
         {({ jellyfinId }) =>
           !jellyfinId ? (
@@ -96,7 +96,7 @@ export default function Connections() {
           >
             <ProFormText
               name="bilibiliThmId"
-              width={216}
+              width="sm"
               formItemProps={{
                 noStyle: true,
               }}
@@ -139,7 +139,7 @@ export default function Connections() {
               fieldProps={{
                 addonBefore: 'ss',
               }}
-              width={216}
+              width="sm"
               formItemProps={{
                 noStyle: true,
               }}
@@ -203,6 +203,7 @@ export default function Connections() {
             compact
             style={{
               whiteSpace: 'nowrap',
+              flexWrap: 'nowrap',
             }}
           >
             <ProFormText
@@ -213,6 +214,9 @@ export default function Connections() {
               }}
               width={160}
               placeholder="媒体库"
+              fieldProps={{
+                className: styles.jellyfinFolder,
+              }}
             />
             <Form.Item name="jellyfinId" noStyle>
               <Input
@@ -221,6 +225,7 @@ export default function Connections() {
                 style={{
                   width: 360,
                 }}
+                className={styles.jellyfinInput}
               />
             </Form.Item>
             <AsyncButton
@@ -244,6 +249,7 @@ export default function Connections() {
                   void message.error('获取Jellyfin季度ID失败');
                 }
               }}
+              className={styles.button}
             />
             <FormDependency<FormValues> name={['jellyfinId']}>
               {({ jellyfinId }) => (
@@ -253,6 +259,7 @@ export default function Connections() {
                   href={jellyfinSeasonLink(jellyfinId)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={styles.button}
                 />
               )}
             </FormDependency>

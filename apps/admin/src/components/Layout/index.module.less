@@ -1,3 +1,5 @@
+@import '~@/styles/index.less';
+
 .logoContainer {
   height: 44px;
   width: 100%;
@@ -5,11 +7,13 @@
   transition: transform 125ms ease;
 
   &.collapsed {
-    transform: scale(0.8);
+    @media @pc {
+      transform: scale(0.8);
 
-    .logoBlock {
-      width: 40px;
-      left: -2px;
+      .logoBlock {
+        width: 40px;
+        left: -2px;
+      }
     }
   }
 }
@@ -23,6 +27,10 @@
   overflow: hidden;
   transform: translateY(-50%);
   transition: all 125ms ease;
+
+  @media @mobile {
+    left: 0;
+  }
 }
 
 .logo {
@@ -49,6 +57,15 @@
       height: 100vh;
       overflow: auto;
     }
+  }
+}
+
+// 没有办法从 ProLayout 给 Drawer 传参数，只能用 CSS 方法强行隐藏掉
+// 这会造成全局污染，其他地方不能使用 .ant-drawer-header-close-only
+:global {
+  // 增加specificity
+  .ant-drawer-header-close-only.ant-drawer-header-close-only {
+    display: none;
   }
 }
 
@@ -83,6 +100,10 @@
     .avatar {
       transform: scale(0.8);
     }
+  }
+
+  @media @mobile {
+    margin-bottom: 4px;
   }
 }
 
@@ -126,5 +147,40 @@
 
   &:hover {
     color: #1890ff;
+  }
+}
+
+.mobileActions {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-bottom: 16px;
+}
+
+.mobileAction {
+  flex-grow: 1;
+  flex-basis: 0;
+  flex-shrink: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:not(:last-child) {
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  }
+}
+
+.hamburger {
+  @media @pc {
+    display: none;
+  }
+
+  padding: 12px;
+  pointer-events: all;
+
+  &.inTable {
+    padding-left: 0;
   }
 }

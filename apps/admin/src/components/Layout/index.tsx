@@ -1,18 +1,21 @@
 import laniText from '@/assets/lani-text.svg';
+import { selectCollapsed, setCollapsed } from '@/store/app';
 import { logout, selectProfile, toAccountPage } from '@/store/auth';
 import { selectConfig } from '@/store/config';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import useMobile from '@/utils/useMobile';
 import {
   DatabaseOutlined,
   DownloadOutlined,
   HomeOutlined,
+  MenuOutlined,
   NodeExpandOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
 import { Avatar, Popover, Typography } from 'antd';
 import clsx from 'clsx';
-import { ElementType, useState } from 'react';
+import { ElementType } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
 
@@ -27,64 +30,103 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectProfile);
 
-  return profile ? (
-    <Popover
-      placement="rightBottom"
-      overlayClassName={styles.popover}
-      content={
+  const mobile = useMobile();
+
+  if (profile) {
+    return mobile ? (
+      <>
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className={clsx(styles.userRow, {
+            [styles.collapsed]: collapsed,
+          })}
         >
-          <div
-            className={styles.menu}
+          <Avatar icon={<UserOutlined />} className={styles.avatar} />
+          <Typography.Text className={styles.username}>
+            {profile.username}
+          </Typography.Text>
+        </div>
+        <div className={styles.mobileActions}>
+          <Typography.Text
+            className={styles.mobileAction}
             onClick={() => {
               dispatch(toAccountPage);
             }}
           >
             账户设置
-          </div>
-          <div
-            className={styles.menu}
+          </Typography.Text>
+          <Typography.Text
+            className={styles.mobileAction}
             onClick={() => {
               dispatch(logout);
             }}
           >
-            登出
-          </div>
+            退出登录
+          </Typography.Text>
         </div>
-      }
-    >
+      </>
+    ) : (
+      <Popover
+        placement="rightBottom"
+        overlayClassName={styles.popover}
+        content={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              className={styles.menu}
+              onClick={() => {
+                dispatch(toAccountPage);
+              }}
+            >
+              账户设置
+            </div>
+            <div
+              className={styles.menu}
+              onClick={() => {
+                dispatch(logout);
+              }}
+            >
+              登出
+            </div>
+          </div>
+        }
+      >
+        <div
+          className={clsx(styles.userRow, {
+            [styles.collapsed]: collapsed,
+          })}
+        >
+          <Avatar icon={<UserOutlined />} className={styles.avatar} />
+          <Typography.Text className={styles.username}>
+            {profile.username}
+          </Typography.Text>
+        </div>
+      </Popover>
+    );
+  } else {
+    return (
       <div
         className={clsx(styles.userRow, {
           [styles.collapsed]: collapsed,
         })}
       >
         <Avatar icon={<UserOutlined />} className={styles.avatar} />
-        <Typography.Text className={styles.username}>
-          {profile.username}
-        </Typography.Text>
+        <Typography.Text className={styles.username}>未登录</Typography.Text>
       </div>
-    </Popover>
-  ) : (
-    <div
-      className={clsx(styles.userRow, {
-        [styles.collapsed]: collapsed,
-      })}
-    >
-      <Avatar icon={<UserOutlined />} className={styles.avatar} />
-      <Typography.Text className={styles.username}>未登录</Typography.Text>
-    </div>
-  );
+    );
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function Layout(props: any) {
-  const [collapsed, setCollapsed] = useState(false);
-
+  const collapsed = useAppSelector(selectCollapsed);
   const config = useAppSelector(selectConfig);
+  const dispatch = useAppDispatch();
+
+  const mobile = useMobile();
 
   return (
     <ProLayout
@@ -92,9 +134,13 @@ export default function Layout(props: any) {
       navTheme="light"
       headerRender={false}
       collapsed={collapsed}
-      onCollapse={setCollapsed}
+      onCollapse={(collapsed: boolean) => {
+        dispatch(setCollapsed({ collapsed }));
+      }}
       menuHeaderRender={() => (
-        <Link to="/">
+        <Link to="/" onClick={() => {
+          dispatch(setCollapsed({ collapsed: true }));
+        }}>
           <div
             className={clsx(styles.logoContainer, {
               [styles.collapsed]: collapsed,
@@ -110,7 +156,15 @@ export default function Layout(props: any) {
         const Icon = item.path ? pathToIcon[item.path] : undefined;
         const icon = Icon ? <Icon /> : null;
         return (
-          <Link to={item.path ?? '/'}>
+          <Link
+            to={item.path ?? '/'}
+            onClick={() => {
+              // 移动端点击时关闭菜单
+              if (mobile) {
+                dispatch(setCollapsed({ collapsed: true }));
+              }
+            }}
+          >
             {icon}
             {dom}
           </Link>
@@ -124,6 +178,31 @@ export default function Layout(props: any) {
       menuFooterRender={() =>
         config?.auth?.enabled ? <UserProfile collapsed={collapsed} /> : null
       }
+    />
+  );
+}
+
+export interface HamburgerProps {
+  inTable?: boolean;
+  className?: string;
+}
+
+export function Hamburger({ inTable, className }: HamburgerProps) {
+  const collapsed = useAppSelector(selectCollapsed);
+  const dispatch = useAppDispatch();
+
+  return (
+    <MenuOutlined
+      className={clsx(
+        styles.hamburger,
+        {
+          [styles.inTable]: inTable,
+        },
+        className,
+      )}
+      onClick={() => {
+        dispatch(setCollapsed({ collapsed: !collapsed }));
+      }}
     />
   );
 }
