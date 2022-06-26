@@ -8,11 +8,13 @@ import {
   ListDownloadJobsFieldsFragment,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
+import useMobile from '@/utils/useMobile';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { Typography } from 'antd';
 import { useMemo, useRef } from 'react';
 import { Link } from 'umi';
+import styles from './index.module.less';
 
 function useColumns({
   openEpisodeDetails,
@@ -30,6 +32,7 @@ function useColumns({
       {
         title: '剧集',
         key: 'episode',
+        width: 450,
         render: (_, r) => {
           const episode = r.episodeByEpisodeId;
           if (!episode) {
@@ -40,11 +43,7 @@ function useColumns({
             return '-';
           }
           return (
-            <div
-              style={{
-                display: 'flex',
-              }}
-            >
+            <div>
               <Link to={`/season/${season.id}`}>{season.title}</Link>
               &nbsp;/&nbsp;#{episode.index}
             </div>
@@ -55,7 +54,7 @@ function useColumns({
         title: '创建于',
         dataIndex: 'createdAt',
         valueType: 'dateTime',
-        width: 180,
+        width: 220,
       },
       {
         title: '步骤',
@@ -188,6 +187,7 @@ export default function JobsPage() {
     useEpisodeDetailsDialog();
   const columns = useColumns({ openEpisodeDetails });
   const actionRef = useRef<ActionType>();
+  const mobile = useMobile();
 
   return (
     <>
@@ -200,6 +200,12 @@ export default function JobsPage() {
         pagination={{
           pageSizeOptions: [30, 50, 100],
           defaultPageSize: 30,
+          className: styles.pagination,
+          ...(mobile
+            ? {
+                showTotal: () => null,
+              }
+            : {}),
         }}
         headerTitle={
           <>
@@ -210,6 +216,10 @@ export default function JobsPage() {
         actionRef={actionRef}
         search={false}
         defaultSize="middle"
+        className={styles.root}
+        scroll={{
+          x: 1000,
+        }}
       />
       {episodeDetailsDiglog}
     </>

@@ -155,7 +155,12 @@ export default function Torrents() {
         pagination={{
           pageSizeOptions: [50, 100, 200],
           defaultPageSize: 100,
-          showLessItems: mobile,
+          className: styles.pagination,
+          ...(mobile
+            ? {
+                showTotal: () => null,
+              }
+            : {}),
         }}
         defaultSize="middle"
         headerTitle={

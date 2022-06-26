@@ -590,6 +590,12 @@ export default function MetadataPage() {
           pageSizeOptions: [10, 30, 50],
           defaultPageSize: state.pageSize ?? 30,
           defaultCurrent: state.current ?? 1,
+          className: styles.pagination,
+          ...(mobile
+            ? {
+                showTotal: () => null,
+              }
+            : {}),
         }}
         headerTitle={
           <>
