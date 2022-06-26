@@ -1,3 +1,5 @@
+@import "~@/styles/index.less";
+
 .row {
   padding: 8px 24px;
   cursor: pointer;
@@ -29,4 +31,8 @@
   height: 600px;
   overflow: auto;
   margin: 16px -24px -24px;
+
+  @media @mobile {
+    height: 400px;
+  }
 }

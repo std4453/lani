@@ -128,7 +128,7 @@ export function queryToFormValues({
     downloadSources: (extractNode(downloadSourcesBySeasonId) ?? []).map(
       ({ offset, ...source }) => ({
         ...source,
-        offset: offset + 1,
+        offset,
       }),
     ),
     infoSource,
@@ -206,7 +206,7 @@ export function useOnFinish(id: number, reloadConfig: () => Promise<void>) {
               seasonId: id,
               sources: downloadSources.map(({ offset, ...source }) => ({
                 ...source,
-                offset: offset - 1,
+                offset,
               })),
             },
           },

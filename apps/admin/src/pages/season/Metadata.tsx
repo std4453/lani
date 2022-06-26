@@ -130,7 +130,7 @@ export default function Metadata() {
         }}
       </Form.Item>
       <Form.Item label="放送日程" {...formItemProps}>
-        <Space>
+        <Space className={styles.schedule}>
           从
           <ProFormDigit
             name="year"

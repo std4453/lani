@@ -2,6 +2,7 @@ import { GetSeasonByTitleDocument } from '@/generated/types';
 import { useSeasonPageContext } from '@/pages/season/help';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { useDialog } from '@/utils/useDialog';
+import useMobile from '@/utils/useMobile';
 import { ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { Button, message, Modal, PageHeader, Space } from 'antd';
@@ -39,13 +40,15 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
     await syncMetadataAndEpisodes();
   });
 
+  const mobile = useMobile();
+
   return (
     <>
       <PageHeader
         title={
           <Space direction="horizontal" className={styles.space}>
             <ProFormText
-              width="lg"
+              width={mobile ? 'sm' : 'lg'}
               name="title"
               rules={[
                 {

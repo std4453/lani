@@ -1,4 +1,62 @@
+@import '~@/styles/index.less';
+
 .icon {
   width: 24px;
   height: 24px;
+}
+
+// 这部分移动端适配的逻辑全靠试错，antd实在是不适合干这个
+
+.root {
+  @media @mobile {
+    :global {
+      .ant-pro-form-group-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .ant-input-group {
+        display: flex;
+        flex-wrap: nowrap;
+      }
+      .ant-input-group-wrapper {
+        flex-grow: 1;
+        display: flex;
+      }
+      .ant-input-group-addon {
+        flex-basis: content;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .ant-input-affix-wrapper {
+        flex-grow: 1;
+        flex-basis: content;
+      }
+    }
+  }
+}
+
+.button {
+  @media @mobile {
+    flex-basis: auto;
+    flex-shrink: 0;
+  }
+}
+
+.jellyfinFolder {
+  @media @mobile {
+    &&& {
+      flex-basis: 0;
+    }
+  }
+}
+
+.jellyfinInput {
+  @media @mobile {
+    &&& {
+      flex-basis: 0;
+      flex-grow: 2;
+    }
+  }
 }

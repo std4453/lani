@@ -1,3 +1,5 @@
+@import "~@/styles/index.less";
+
 .button {
   margin-right: 16px;
   margin-top: 8px;
@@ -30,6 +32,10 @@
   display: flex;
   align-items: flex-start;
   flex-grow: 1;
+
+  @media @mobile {
+    flex-wrap: wrap;
+  }
 }
 
 .create {
@@ -43,5 +49,14 @@
 
   &.after {
     margin-right: 0;
+  }
+}
+
+.offset {
+  display: flex;
+
+  @media @mobile {
+    padding-left: 20px;
+    margin-bottom: 12px;
   }
 }

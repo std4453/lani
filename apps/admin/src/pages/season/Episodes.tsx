@@ -7,13 +7,13 @@ import {
   DownloadBilibiliCcDocument,
   DownloadTorrentForEpisodeDocument,
   MetadataSource,
-  TorrentFieldsFragment
+  TorrentFieldsFragment,
 } from '@/generated/types';
 import {
   Episode,
   formItemProps,
   FormValues,
-  useSeasonPageContext
+  useSeasonPageContext,
 } from '@/pages/season/help';
 import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
 import Section from '@/pages/season/Section';
@@ -26,6 +26,7 @@ import { useApolloClient } from '@apollo/client';
 import { Alert, Button, Dropdown, Menu, message, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
+import styles from './Episodes.module.less';
 
 function useColumns({
   openDownloadMagnet,
@@ -264,6 +265,7 @@ export default function Episodes() {
           刷新
         </Button>,
       ]}
+      extraClassName={styles.extra}
     >
       <FormDependency<FormValues> name={['episodesSource']}>
         {({ episodesSource }) =>
@@ -339,6 +341,7 @@ export default function Episodes() {
         search={false}
         defaultSize="middle"
         actionRef={ref}
+        className={styles.table}
       />
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
