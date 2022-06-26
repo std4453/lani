@@ -6,12 +6,14 @@ import {
 } from '@/generated/types';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
+import useMobile from '@/utils/useMobile';
 import { ReloadOutlined } from '@ant-design/icons';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { Modal, Space, Spin, Steps, Tabs, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { ReactNode, useMemo } from 'react';
+import styles from './index.module.less';
 
 type Episode = NonNullable<GetEpisodeByIdQuery['episodeById']>;
 type Job = NonNullable<ExtractNode<Episode['downloadJobsByEpisodeId']>>;
@@ -41,12 +43,12 @@ function JobStepDescription({
 }) {
   if (current > step) {
     return (
-      <>
+      <div className={styles.description}>
         {label}：
         <Typography.Text copyable={Boolean(content)}>
           {content || '-'}
         </Typography.Text>
-      </>
+      </div>
     );
   } else if (current === step && job.isFailed) {
     return (
@@ -121,24 +123,15 @@ function EpisodeJob({ job }: { job: Job }) {
         title="任务信息"
         description={
           <div>
-            <div>
+            <div className={styles.description}>
               创建时间：
               <Typography.Text>
                 {dayjs(job.createdAt).format('YYYY-MM-DD HH:mm:ss')}
               </Typography.Text>
             </div>
-            <div
-              style={{
-                display: 'flex',
-              }}
-            >
-              <div style={{ whiteSpace: 'nowrap' }}>种子地址：</div>
-              <Typography.Text
-                copyable
-                style={{
-                  wordBreak: 'break-all',
-                }}
-              >
+            <div className={styles.description}>
+              种子地址：
+              <Typography.Text copyable>
                 {job.torrentLink || '-'}
               </Typography.Text>
             </div>
@@ -239,7 +232,7 @@ function EpisodeJob({ job }: { job: Job }) {
             step={6}
             current={current}
             job={job}
-            label="Jellyfin剧集ID："
+            label="Jellyfin剧集ID"
             content={job.jellyfinEpisodeId}
           />
         }
@@ -265,6 +258,7 @@ export default function EpisodeDetailsDialog({
     () => extractNode(data?.episodeById?.downloadJobsByEpisodeId) ?? [],
     [data],
   );
+  const mobile = useMobile();
 
   return (
     <Modal
@@ -283,7 +277,7 @@ export default function EpisodeDetailsDialog({
         <ProDescriptions<Episode>
           dataSource={data?.episodeById ?? undefined}
           colon={false}
-          column={2}
+          column={mobile ? 1 : 2}
         >
           <ProDescriptions.Item dataIndex={['id']} label="全局ID" copyable />
           <ProDescriptions.Item
