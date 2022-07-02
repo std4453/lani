@@ -1,6 +1,11 @@
 import laniText from '@/assets/lani-text.svg';
 import { selectCollapsed, setCollapsed } from '@/store/app';
-import { logout, selectProfile, toAccountPage } from '@/store/auth';
+import {
+  logout,
+  selectHasAccountPage,
+  selectProfile,
+  toAccountPage,
+} from '@/store/auth';
 import { selectConfig } from '@/store/config';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import useMobile from '@/utils/useMobile';
@@ -29,6 +34,7 @@ const pathToIcon: { [x: string]: ElementType } = {
 function UserProfile({ collapsed }: { collapsed: boolean }) {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectProfile);
+  const hasAccountPage = useAppSelector(selectHasAccountPage);
 
   const mobile = useMobile();
 
@@ -40,20 +46,26 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
             [styles.collapsed]: collapsed,
           })}
         >
-          <Avatar icon={<UserOutlined />} className={styles.avatar} />
+          <Avatar
+            icon={<UserOutlined />}
+            className={styles.avatar}
+            src={profile?.picture}
+          />
           <Typography.Text className={styles.username}>
-            {profile.username}
+            {profile?.preferred_username ?? '用户'}
           </Typography.Text>
         </div>
         <div className={styles.mobileActions}>
-          <Typography.Text
-            className={styles.mobileAction}
-            onClick={() => {
-              dispatch(toAccountPage);
-            }}
-          >
-            账户设置
-          </Typography.Text>
+          {hasAccountPage && (
+            <Typography.Text
+              className={styles.mobileAction}
+              onClick={() => {
+                dispatch(toAccountPage);
+              }}
+            >
+              账户设置
+            </Typography.Text>
+          )}
           <Typography.Text
             className={styles.mobileAction}
             onClick={() => {
@@ -75,14 +87,16 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
               flexDirection: 'column',
             }}
           >
-            <div
-              className={styles.menu}
-              onClick={() => {
-                dispatch(toAccountPage);
-              }}
-            >
-              账户设置
-            </div>
+            {hasAccountPage && (
+              <div
+                className={styles.menu}
+                onClick={() => {
+                  dispatch(toAccountPage);
+                }}
+              >
+                账户设置
+              </div>
+            )}
             <div
               className={styles.menu}
               onClick={() => {
@@ -101,7 +115,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
         >
           <Avatar icon={<UserOutlined />} className={styles.avatar} />
           <Typography.Text className={styles.username}>
-            {profile.username}
+            {profile?.preferred_username ?? '用户'}
           </Typography.Text>
         </div>
       </Popover>
@@ -138,9 +152,12 @@ export default function Layout(props: any) {
         dispatch(setCollapsed({ collapsed }));
       }}
       menuHeaderRender={() => (
-        <Link to="/" onClick={() => {
-          dispatch(setCollapsed({ collapsed: true }));
-        }}>
+        <Link
+          to="/"
+          onClick={() => {
+            dispatch(setCollapsed({ collapsed: true }));
+          }}
+        >
           <div
             className={clsx(styles.logoContainer, {
               [styles.collapsed]: collapsed,

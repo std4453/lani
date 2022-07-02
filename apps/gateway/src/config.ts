@@ -2,23 +2,45 @@ import { ServiceEndpointDefinition } from "@apollo/gateway";
 import { loadConfigSync, mergeConfig } from "@lani/framework";
 import Joi from "joi";
 
-export interface GatewayAuthConfig {
-  issuer: string;
-  audience: string;
+type WithEnabled<T> =
+  | {
+      enabled: false;
+    }
+  | ({
+      enabled: true;
+    } & T);
+
+interface GroupAuthorization {
+  type: "group";
+  group: string;
+}
+
+interface RoleAuthorization {
+  type: "role";
   role: string;
 }
 
-export default loadConfigSync<{
+interface AudienceAuthorization {
+  type: "audience";
+  audience: string;
+}
+
+type AuthorizationConfig =
+  | GroupAuthorization
+  | RoleAuthorization
+  | AudienceAuthorization;
+
+type AuthConfig = {
+  issuer: string;
+} & AuthorizationConfig;
+
+export interface ConfigType {
   subgraphs: ServiceEndpointDefinition[];
   pollIntervalInMs?: number;
-  auth:
-    | {
-        enabled: false;
-      }
-    | ({
-        enabled: true;
-      } & GatewayAuthConfig);
-}>({
+  auth: WithEnabled<AuthConfig>;
+}
+
+export default loadConfigSync<ConfigType>({
   schema: Joi.object({
     subgraphs: Joi.array()
       .items(
@@ -37,8 +59,20 @@ export default loadConfigSync<{
         Joi.object({
           enabled: Joi.boolean().truthy().required(),
           issuer: Joi.string().required(),
-          audience: Joi.string().required(),
+          type: Joi.string().valid("group").required(),
+          group: Joi.string().required(),
+        }),
+        Joi.object({
+          enabled: Joi.boolean().truthy().required(),
+          issuer: Joi.string().required(),
+          type: Joi.string().valid("role").required(),
           role: Joi.string().required(),
+        }),
+        Joi.object({
+          enabled: Joi.boolean().truthy().required(),
+          issuer: Joi.string().required(),
+          type: Joi.string().valid("audience").required(),
+          audience: Joi.string().required(),
         })
       )
       .required(),
