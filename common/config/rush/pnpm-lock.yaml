@@ -9,8 +9,6 @@ specifiers:
   '@apollo/client': ~3.5.7
   '@apollo/gateway': ^0.46.0
   '@apollo/subgraph': ~0.3.3
-  '@aws-sdk/client-s3': ~3.107.0
-  '@aws-sdk/s3-request-presigner': ~3.107.0
   '@graphile-contrib/pg-omit-archived': ~2.1.0
   '@graphile-contrib/pg-simplify-inflector': ~6.1.0
   '@graphile/federation': ~0.1.0
@@ -74,12 +72,12 @@ specifiers:
   ahooks: ~3.1.9
   antd: ~4.19.4
   apollo-server: ~3.6.4
+  aws-sdk: ~2.1152.0
   axios: ~0.26.0
   class-transformer: ~0.5.1
   class-validator: ~0.13.2
   clsx: ~1.1.1
   cookie: ~0.4.2
-  cos-nodejs-sdk-v5: ~2.11.6
   dayjs: ~1.10.7
   eslint: ^7.32.0
   eslint-config-oclif: ^4
@@ -110,6 +108,7 @@ specifiers:
   nodemon: ~2.0.15
   oclif: ^2.0.0-main.10
   octokit: ~1.7.1
+  oidc-react: ~1.5.1
   openapi-typescript-codegen: ~0.20.1
   openid-client: ~5.1.4
   parse-torrent: ~9.1.4
@@ -150,8 +149,6 @@ dependencies:
   '@apollo/client': 3.5.10_graphql@15.8.0+react@17.0.2
   '@apollo/gateway': 0.46.0_graphql@15.8.0
   '@apollo/subgraph': 0.3.3_graphql@15.8.0
-  '@aws-sdk/client-s3': 3.107.0
-  '@aws-sdk/s3-request-presigner': 3.107.0
   '@graphile-contrib/pg-omit-archived': 2.1.0_250e71098788239b4a4dfe2a50d4f5b5
   '@graphile-contrib/pg-simplify-inflector': 6.1.0
   '@graphile/federation': 0.1.0_6130c89331ecac3323ebe7f3a64be2b5
@@ -215,12 +212,12 @@ dependencies:
   ahooks: 3.1.14_react@17.0.2
   antd: 4.19.5_react-dom@17.0.2+react@17.0.2
   apollo-server: 3.6.7_graphql@15.8.0
+  aws-sdk: 2.1152.0
   axios: 0.26.1
   class-transformer: 0.5.1
   class-validator: 0.13.2
   clsx: 1.1.1
   cookie: 0.4.2
-  cos-nodejs-sdk-v5: 2.11.6
   dayjs: 1.10.8
   eslint: 7.32.0
   eslint-config-oclif: 4.0.0_eslint@7.32.0
@@ -251,6 +248,7 @@ dependencies:
   nodemon: 2.0.15
   oclif: 2.6.3
   octokit: 1.7.1
+  oidc-react: 1.5.1_react-dom@17.0.2+react@17.0.2
   openapi-typescript-codegen: 0.20.1
   openid-client: 5.1.4
   parse-torrent: 9.1.5
@@ -9160,6 +9158,11 @@ packages:
     requiresBuild: true
     dev: false
 
+  /core-js/3.23.3:
+    resolution: {integrity: sha512-oAKwkj9xcWNBAvGbT//WiCdOMpb9XQG92/Fe3ABFM/R16BsHgePG00mFOgKf7IsCtfj8tA1kHtf/VwErhriz5Q==}
+    requiresBuild: true
+    dev: false
+
   /core-js/3.6.5:
     resolution: {integrity: sha512-vZVEEwZoIsI+vPEuoF9Iqf5H7/M3eeQqWlQnYa8FSKKePuYTf5MWnxb5SDAzCa60b3JBRS5g9b+Dq7b1y/RCrA==}
     requiresBuild: true
@@ -9328,6 +9331,10 @@ packages:
       public-encrypt: 4.0.3
       randombytes: 2.1.0
       randomfill: 1.0.4
+    dev: false
+
+  /crypto-js/4.1.1:
+    resolution: {integrity: sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==}
     dev: false
 
   /crypto-random-string/2.0.0:
@@ -14218,6 +14225,10 @@ packages:
       safe-buffer: 5.2.1
     dev: false
 
+  /jwt-decode/3.1.2:
+    resolution: {integrity: sha512-UfpWE/VZn0iP50d8cz9NrZLM9lSWhcJ+0Gt/nm4by88UL+J1SiKN8/5dkjMmbEzwL2CAe+67GsegCbIKtbp75A==}
+    dev: false
+
   /keycloak-js/15.0.2:
     resolution: {integrity: sha512-dv2a4NcPSH3AzGWG3ZtB+VrHpuQLdFBYXtQBj/+oBzm6XNwnVAMdL6LIC0OzCLQpn3rKTQJtNSATAGhbKJgewQ==}
     dependencies:
@@ -15791,6 +15802,35 @@ packages:
       '@octokit/types': 6.34.0
     transitivePeerDependencies:
       - encoding
+    dev: false
+
+  /oidc-client-ts/2.0.5:
+    resolution: {integrity: sha512-OXIuuLU2iSEtLblM+xR6+SE0GWjyUMVH6HtKpvZnV2AQt0irWZ+yAXGVB8EgNBu0lAQ/UN40EIme+uC0p7WwKw==}
+    engines: {node: '>=12.13.0'}
+    dependencies:
+      crypto-js: 4.1.1
+      jwt-decode: 3.1.2
+    dev: false
+
+  /oidc-client/1.11.5:
+    resolution: {integrity: sha512-LcKrKC8Av0m/KD/4EFmo9Sg8fSQ+WFJWBrmtWd+tZkNn3WT/sQG3REmPANE9tzzhbjW6VkTNy4xhAXCfPApAOg==}
+    dependencies:
+      acorn: 7.4.1
+      base64-js: 1.5.1
+      core-js: 3.23.3
+      crypto-js: 4.1.1
+      serialize-javascript: 4.0.0
+    dev: false
+
+  /oidc-react/1.5.1_react-dom@17.0.2+react@17.0.2:
+    resolution: {integrity: sha512-rbNfWUBRiqolht9J5tRu5HktDs8yXii1KfOBXtM9uwQNaiY0UgvIzl2h7NNOYA04TFxKtGlXkwrs9cPn28JwEg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0
+      react-dom: ^16.8.0 || ^17.0.0
+    dependencies:
+      oidc-client: 1.11.5
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
     dev: false
 
   /oidc-token-hash/5.0.1:
@@ -18921,6 +18961,12 @@ packages:
       upper-case-first: 2.0.2
     dev: false
 
+  /serialize-javascript/4.0.0:
+    resolution: {integrity: sha512-GaNA54380uFefWghODBWEGisLZFj00nS5ACs6yHa9nLqlLpVLO8ChDGeKRjZnV4Nh4n0Qi7nhYZD/9fCPzEqkw==}
+    dependencies:
+      randombytes: 2.1.0
+    dev: false
+
   /serialize-javascript/6.0.0:
     resolution: {integrity: sha512-Qr3TosvguFt8ePWqsvRfrKyQXIiW+nGbYpy8XK24NQHE83caxWt+mIymTT19DGFbNWNLfEwsrkSmN64lVWB9ag==}
     dependencies:
@@ -21432,7 +21478,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-BCX4fpxWa7lPhke+qjR97jYMWSiD96VxtdvZfGwsPDy6F/qouviODaDAsTFr81vX6GuKRdqaq8Hq/S5WCSpg3Q==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-YrOq+J7QpbCIDKvjIv/gxttNzUldmJbmxEZmrMsT0IMX3RoYxABMMJZ43XO0FH/sBeC4FEBPvILdw+/3x2sspQ==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -21473,6 +21519,8 @@ packages:
       keycloak-js: 15.0.2
       lodash: 4.17.21
       npm-run-all: 4.1.5
+      oidc-client-ts: 2.0.5
+      oidc-react: 1.5.1_react-dom@17.0.2+react@17.0.2
       prettier: 2.5.1
       pretty-bytes: 6.0.0
       qs: 6.10.3
@@ -21507,7 +21555,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-e/hgShwEWsi37N+8VMcPnrE9hSafDd3R+x0H0FnYsX5tAnu+IohdYxbqI1fyfTbwaMJadPkk3f7GWHzx11okfQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-ra8snp65TeSi7BtWFS5EazsmJYvXwzcbJkAgAlTG8+hLZLtp5k4TVTRSVDp0BOjR03ZaK2kWqVXWaoYFXGKBLQ==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -21579,7 +21627,6 @@ packages:
     transitivePeerDependencies:
       - '@apollo/federation'
       - '@apollo/gateway'
-      - '@aws-sdk/signature-v4-crt'
       - '@babel/core'
       - '@nestjs/microservices'
       - '@nestjs/websockets'

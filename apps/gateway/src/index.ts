@@ -18,7 +18,7 @@ import { Issuer } from "openid-client";
     undefined;
 
   if (config.auth.enabled) {
-    const { audience, issuer: issuerUrl, role } = config.auth;
+    const { issuer: issuerUrl } = config.auth;
 
     const issuer = await Issuer.discover(issuerUrl);
     if (!issuer.metadata.jwks_uri) {
@@ -38,16 +38,29 @@ import { Issuer } from "openid-client";
 
         const { payload } = await jwtVerify(auth, JWKS, {
           issuer: issuer.metadata.issuer,
-          audience,
+          audience:
+            config.auth.enabled && config.auth.type === "audience"
+              ? config.auth.audience
+              : undefined,
         });
-        const roles =
-          (
-            payload.realm_access as {
-              roles: string[];
+        if (config.auth.enabled) {
+          const { type } = config.auth;
+          if (type === "role") {
+            const roles =
+              (
+                payload.realm_access as {
+                  roles: string[];
+                }
+              )?.roles ?? [];
+            if (!roles.includes(config.auth.role)) {
+              throw new AuthenticationError("Not Authorized");
             }
-          )?.roles ?? [];
-        if (!roles.includes(role)) {
-          throw new AuthenticationError("Not Authorized");
+          } else if (type === "group") {
+            const groups = payload.groups as string[];
+            if (!groups.includes(config.auth.group)) {
+              throw new AuthenticationError("Not Authorized");
+            }
+          }
         }
       } catch (error) {
         throw new AuthenticationError("Not Authenticated");

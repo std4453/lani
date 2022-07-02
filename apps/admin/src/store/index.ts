@@ -14,8 +14,8 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['auth/setKeycloak'],
-        ignoredPaths: ['auth.keycloak'],
+        ignoredActions: ['auth/setUserManager'],
+        ignoredPaths: ['auth.userManager'],
       },
     }),
 });

@@ -580,7 +580,11 @@ export default function MetadataPage() {
           const search = { ...params, keyword };
           history.replace({
             pathname: history.location.pathname,
-            hash: history.location.hash,
+            // SSO 回跳的时候会用 fragment 模式，会添加 hash，然后在处理之后替换成空
+            // 由于 react 机制，这里拿到的 history.hash 是替换之前的，因此又会跳回有
+            // hash 的状态，不符合预期
+            // 由于这个页面并非通用，也没有用到 hash 的地方，简单置空就行
+            hash: '',
             query: encodeAntdSearch(search, sort, filter),
           });
           return querySeasons(client, search, sort, filter);

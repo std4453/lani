@@ -51,13 +51,14 @@
     "dayjs": "~1.10.7",
     "@ant-design/pro-descriptions": "~1.10.60",
     "pretty-bytes": "~6.0.0",
-    "keycloak-js": "15.0.2",
     "qs": "~6.10.3",
     "@types/qs": "~6.9.7",
     "@reduxjs/toolkit": "~1.8.1",
     "redux": "~4.2.0",
     "react-redux": "~8.0.1",
-    "redux-thunk": "~2.4.1"
+    "redux-thunk": "~2.4.1",
+    "oidc-react": "~1.5.1",
+    "oidc-client-ts": "~2.0.5"
   },
   "files": [
     "/dist",

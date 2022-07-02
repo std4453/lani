@@ -1,5 +1,6 @@
 import { AppDispatch, RootState } from '@/store';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { UserManagerSettings } from 'oidc-client-ts';
 
 type WithEnabled<T> =
   | {
@@ -9,24 +10,28 @@ type WithEnabled<T> =
       enabled: true;
     } & T);
 
-type AuthConfig = WithEnabled<{
-  provider: 'keycloak';
-  keycloak: {
-    url: string;
-    realm: string;
-    clientId: string;
-    role: string;
-  };
-}>;
+interface GroupAuthorization {
+  type: 'group';
+  group: string;
+}
+
+type AuthorizationConfig = GroupAuthorization;
+
+export interface AuthConfig {
+  config: Omit<UserManagerSettings, 'redirect_uri' | 'response_mode'>;
+  authorization?: WithEnabled<AuthorizationConfig>;
+}
+
+type AuthConfigConditional = WithEnabled<AuthConfig>;
 
 interface JellyfinConfig {
-  host: string
-  serverId: string
+  host: string;
+  serverId: string;
 }
 
 interface ConfigType {
-  auth: AuthConfig;
-  jellyfin: JellyfinConfig
+  auth: AuthConfigConditional;
+  jellyfin: JellyfinConfig;
 }
 
 export interface ConfigState {
