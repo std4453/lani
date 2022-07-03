@@ -152,7 +152,7 @@ export default function AddFromBangumiDialog({
         <Input
           value={keywords}
           onChange={(e) => setKeywords(e.target.value)}
-          placeholder="输入关键词"
+          placeholder={'输入关键词，或「bgmid: 100000」精确查找'}
         />
         <Spin spinning={loading}>
           <div
