@@ -8,7 +8,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "NODE_ENV=development nest start --watch",
-    "start:dev:tp": "telepresence intercept -n lani-offline api-server -p 3000:http --mount=mount -- rushx start:dev",
+    "start:dev:tp": "(umount mount || true) && telepresence intercept -n lani-offline api-server -p 3000:http --mount=mount -- rushx start:dev",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
