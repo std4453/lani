@@ -114,6 +114,7 @@ export class JobService
     return 'ok';
   }
 
+  @Mutation(() => Int)
   @Cron('*/1 * * * *') // 每分钟运行一次
   async enqueueDownloadJobs() {
     // this.prisma.episode.findMany({
@@ -184,6 +185,7 @@ export class JobService
         console.error(error);
       }
     }
+    return result.length;
   }
 
   private completionToStatus(
