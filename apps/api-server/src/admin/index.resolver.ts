@@ -73,6 +73,34 @@ export class AdminResolver {
   async searchBangumi(
     @Args('keywords') keywords: string,
   ): Promise<SearchBangumiSeason[]> {
+    const match = keywords.match(
+      /^(bgmid|bangumiid|bangumi_id):(\s)*(?<bgmid>(\d)+)$/,
+    );
+    if (match?.groups?.bgmid) {
+      const bgmid = parseInt(match.groups.bgmid);
+      const item = await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(
+        bgmid,
+      );
+      if (item.type !== SubjectType._2) {
+        return [];
+      }
+      const added =
+        (await this.prisma.season.findFirst({
+          where: {
+            bangumiId: `${item.id}`,
+          },
+        })) !== null;
+      return [
+        {
+          id: `${item.id}`,
+          name: item.name_cn || item.name || '未命名',
+          airDate: item.date,
+          image: item.images?.small,
+          added,
+        },
+      ];
+    }
+
     const results = await BangumiAPIService.getSearchSubject(
       keywords,
       SubjectType._2,
