@@ -1,4 +1,4 @@
-import parseTorrentTitle from "@/index";
+import parseTorrentTitle from "@/parseTorrentTitle";
 import { ParseTorrentTitleResult } from "@/types";
 
 type ResultForTesting = Omit<

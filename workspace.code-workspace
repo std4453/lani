@@ -1,42 +1,42 @@
 {
 	"folders": [
-		{
-			"name": "✨ root",
-			"path": "."
-		},
-		{
-			"name": "📦 @lani/framework",
-			"path": "libs/framework"
-		},
     {
-      "name": "💾 @lani/db",
-      "path": "libs/db"
+      "name": "✨ root",
+      "path": "."
+    },
+    {
+      "name": "📦 @lani/framework",
+      "path": "libs/framework"
     },
     {
       "name": "📦 @lani/parse-torrent-title",
       "path": "libs/parse-torrent-title"
     },
     {
-			"name": "⚙️ @lani/cli",
-			"path": "tools/cli"
-		},
-		{
-			"name": "🚀 @lani/admin",
-			"path": "apps/admin"
-		},
+      "name": "💾 @lani/db",
+      "path": "libs/db"
+    },
     {
-			"name": "🚀 @lani/data-server",
-			"path": "apps/data-server"
-		},
+      "name": "⚙️ @lani/cli",
+      "path": "tools/cli"
+    },
     {
-			"name": "🚀 @lani/api-server",
-			"path": "apps/api-server"
-		},
+      "name": "🚀 @lani/admin",
+      "path": "apps/admin"
+    },
     {
-			"name": "🚀 @lani/gateway",
-			"path": "apps/gateway"
-		},
-	],
+      "name": "🚀 @lani/data-server",
+      "path": "apps/data-server"
+    },
+    {
+      "name": "🚀 @lani/api-server",
+      "path": "apps/api-server"
+    },
+    {
+      "name": "🚀 @lani/gateway",
+      "path": "apps/gateway"
+    }
+  ],
 	"settings": {
 		"files.associations": {
 			"rush.json": "jsonc",

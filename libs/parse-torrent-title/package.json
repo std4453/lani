@@ -20,8 +20,7 @@
   },
   "dependencies": {
     "js-yaml": "~4.1.0",
-    "joi": "~17.6.0",
-    "escape-string-regexp": "~5.0.0"
+    "joi": "~17.6.0"
   },
   "files": [
     "/dist"
