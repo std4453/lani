@@ -136,7 +136,7 @@ export default function DownloadSources() {
               ref.current?.add({
                 id: 0,
                 pattern: '',
-                offset: 1,
+                offset: 0,
               });
             }}
           >
@@ -171,13 +171,13 @@ export default function DownloadSources() {
                   pattern: `${title.substring(0, index)}%${title.substring(
                     index + length,
                   )}`,
-                  offset: 1,
+                  offset: 0,
                 });
               } else {
                 ref.current?.add({
                   id: 0,
                   pattern: title,
-                  offset: 1,
+                  offset: 0,
                 });
               }
             }}
