@@ -2,7 +2,12 @@ import {
   SearchBangumiSeason,
   UpdateSeasonDownloadSourcesInput,
 } from '@/admin/index.model';
-import { BangumiAPIService, ResponseGroup, SubjectType } from '@/api/bangumi';
+import {
+  ApiError,
+  BangumiAPIService,
+  ResponseGroup,
+  SubjectType,
+} from '@/api/bangumi';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
@@ -78,27 +83,35 @@ export class AdminResolver {
     );
     if (match?.groups?.bgmid) {
       const bgmid = parseInt(match.groups.bgmid);
-      const item = await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(
-        bgmid,
-      );
-      if (item.type !== SubjectType._2) {
-        return [];
-      }
-      const added =
-        (await this.prisma.season.findFirst({
-          where: {
-            bangumiId: `${item.id}`,
+      try {
+        const item =
+          await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(bgmid);
+        if (item.type !== SubjectType._2) {
+          return [];
+        }
+        const added =
+          (await this.prisma.season.findFirst({
+            where: {
+              bangumiId: `${item.id}`,
+            },
+          })) !== null;
+        return [
+          {
+            id: `${item.id}`,
+            name: item.name_cn || item.name || '未命名',
+            airDate: item.date,
+            image: item.images?.small,
+            added,
           },
-        })) !== null;
-      return [
-        {
-          id: `${item.id}`,
-          name: item.name_cn || item.name || '未命名',
-          airDate: item.date,
-          image: item.images?.small,
-          added,
-        },
-      ];
+        ];
+      } catch (error: unknown) {
+        if (error instanceof ApiError) {
+          if (error.status === 404) {
+            return [];
+          }
+        }
+        throw error;
+      }
     }
 
     const results = await BangumiAPIService.getSearchSubject(
