@@ -479,6 +479,10 @@
     {
       "packageName": "@lani/db",
       "projectFolder": "libs/db"
+    },
+    {
+      "packageName": "@lani/parse-torrent-title",
+      "projectFolder": "libs/parse-torrent-title"
     }
   ]
 }

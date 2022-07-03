@@ -1,0 +1,29 @@
+{
+  "name": "@lani/parse-torrent-title",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "lani-cli build",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "typescript": "~4.5.4",
+    "@lani/cli": "~1.0.0",
+    "@types/node": "~17.0.4",
+    "typescript-transform-paths": "~3.3.1",
+    "@types/js-yaml": "~4.0.5",
+    "jest": "^27.2.5",
+    "ts-jest": "^27.0.3",
+    "@types/jest": "27.4.1"
+  },
+  "dependencies": {
+    "js-yaml": "~4.1.0",
+    "joi": "~17.6.0",
+    "escape-string-regexp": "~5.0.0"
+  },
+  "files": [
+    "/dist"
+  ]
+}

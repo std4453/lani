@@ -13,6 +13,10 @@
       "path": "libs/db"
     },
     {
+      "name": "📦 @lani/parse-torrent-title",
+      "path": "libs/parse-torrent-title"
+    },
+    {
 			"name": "⚙️ @lani/cli",
 			"path": "tools/cli"
 		},

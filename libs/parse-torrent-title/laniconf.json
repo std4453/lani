@@ -1,0 +1,7 @@
+{
+  "$schema": "../../tools/cli/src/schema/laniconf.schema.json",
+  "type": "lib:ts",
+  "lib:ts": {
+    "buildTsConfig": "./build.tsconfig.json"
+  }
+}
