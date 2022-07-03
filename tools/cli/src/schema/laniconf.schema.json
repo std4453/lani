@@ -21,6 +21,17 @@
         "mp:taro:react:ts"
       ]
     },
+    "lib:ts": {
+      "description": "Typescript Library related settings",
+      "type": "object",
+      "properties": {
+        "buildTsConfig": {
+          "description": "Path to tsconfig.json when building",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "node": {
       "description": "Node.JS app-related settings",
       "type": "object",

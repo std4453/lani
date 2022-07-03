@@ -23,6 +23,15 @@ export interface LaniConfig {
     | "qiankun:raw"
     | "mp:taro:react:ts";
   /**
+   * Typescript Library related settings
+   */
+  "lib:ts"?: {
+    /**
+     * Path to tsconfig.json when building
+     */
+    buildTsConfig?: string;
+  };
+  /**
    * Node.JS app-related settings
    */
   node?: {
