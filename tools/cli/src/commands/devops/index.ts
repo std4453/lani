@@ -171,8 +171,8 @@ export default class Devops extends Command {
         },
       } = await octokit.rest.actions.listWorkflowRuns({
         owner: "std4453",
-        repo: "lani-deploy",
-        workflow_id: "cd.yaml",
+        repo: "lani",
+        workflow_id: "pipeline.yaml",
         event: "workflow_dispatch",
       });
 
