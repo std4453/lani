@@ -11,7 +11,8 @@ import { useHistory } from 'umi';
 import styles from './Header.module.less';
 
 const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
-  const { formRef, id, syncMetadataAndEpisodes } = useSeasonPageContext();
+  const { formRef, id, syncMetadataAndEpisodes, modified } =
+    useSeasonPageContext();
 
   const client = useApolloClient();
   const history = useHistory();
@@ -33,7 +34,7 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
     if (!formRef.current) {
       return;
     }
-    if (formRef.current.isFieldsTouched(false)) {
+    if (modified) {
       void message.info('有未保存的修改，请先保存再同步');
       return;
     }
@@ -82,7 +83,7 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
           </Space>
         }
         onBack={async () => {
-          if (formRef.current?.isFieldsTouched(false)) {
+          if (modified) {
             const { type } = await openDiscard();
             if (type !== 'success') {
               return;

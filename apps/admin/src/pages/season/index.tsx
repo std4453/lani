@@ -11,6 +11,7 @@ import {
 import Metadata from '@/pages/season/Metadata';
 import Notifications from '@/pages/season/Notifications';
 import ProForm from '@ant-design/pro-form';
+import { useMemoizedFn } from 'ahooks';
 import { Spin } from 'antd';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -31,10 +32,16 @@ export default function SeasonPage() {
     loading,
     formRef,
     values,
-    values: { reloadConfig },
+    values: { reloadConfig, modified },
+    updateTouched,
   } = useLoadData(id);
 
   const onFinish = useOnFinish(id, reloadConfig);
+
+  const handleReset = useMemoizedFn(() => {
+    formRef.current?.resetFields();
+    updateTouched();
+  });
 
   return (
     <SeasonPageContext.Provider value={values}>
@@ -48,6 +55,13 @@ export default function SeasonPage() {
             searchConfig: {
               submitText: '保存',
             },
+            submitButtonProps: {
+              disabled: !modified,
+            },
+            resetButtonProps: {
+              disabled: !modified,
+              onClick: handleReset,
+            },
             render: (_props, dom) =>
               headerExtraEl && createPortal(dom, headerExtraEl),
           }}
@@ -57,6 +71,7 @@ export default function SeasonPage() {
             maxHeight: '100vh',
             overflow: 'auto',
           }}
+          onValuesChange={updateTouched}
         >
           <Header ref={setHeaderExtraEl} />
           <Connections />

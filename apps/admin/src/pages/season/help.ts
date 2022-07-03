@@ -249,6 +249,7 @@ export interface SeasonPageContextValues {
   syncMetadataAndEpisodes: () => Promise<void>;
   syncEpisodes: () => Promise<void>;
   formRef: FormRef;
+  modified: boolean;
 }
 
 export const SeasonPageContext = createContext<SeasonPageContextValues>({
@@ -261,6 +262,7 @@ export const SeasonPageContext = createContext<SeasonPageContextValues>({
   formRef: {
     current: undefined,
   },
+  modified: false,
 });
 
 export function useSeasonPageContext() {
@@ -394,6 +396,14 @@ export function useLoad(id: number) {
     }
   });
 
+  const [touched, setTouched] = useState(false);
+
+  const updateTouched = useMemoizedFn(() => {
+    if (formRef.current) {
+      setTouched(formRef.current.isFieldsTouched(false));
+    }
+  });
+
   const values: SeasonPageContextValues = useMemo(
     () => ({
       id,
@@ -403,6 +413,7 @@ export function useLoad(id: number) {
       syncMetadataAndEpisodes,
       syncEpisodes,
       formRef,
+      modified: touched,
     }),
     [
       id,
@@ -411,6 +422,7 @@ export function useLoad(id: number) {
       reloadEpisodes,
       syncMetadataAndEpisodes,
       syncEpisodes,
+      touched,
     ],
   );
 
@@ -419,5 +431,6 @@ export function useLoad(id: number) {
     loading,
     formRef,
     values,
+    updateTouched,
   };
 }
