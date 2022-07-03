@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "prisma generate",
-    "prisma:pull": "prisma db pull"
+    "prisma:pull": "prisma db pull",
+    "prisma:push": "prisma db push"
   },
   "devDependencies": {
     "typescript": "~4.5.4",
