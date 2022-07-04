@@ -54,7 +54,8 @@
     "md5": "~2.3.0",
     "@larksuiteoapi/allcore": "~1.0.14",
     "joi": "~17.6.0",
-    "aws-sdk": "~2.1152.0"
+    "aws-sdk": "~2.1152.0",
+    "@lani/parse-torrent-title": "~1.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

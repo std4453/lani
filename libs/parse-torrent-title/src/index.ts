@@ -1,2 +1,3 @@
 export * from "@/types";
-export * from "@/escapeStringRegexp";
+import parseTorrentTitle from "@/parseTorrentTitle";
+export default parseTorrentTitle;
