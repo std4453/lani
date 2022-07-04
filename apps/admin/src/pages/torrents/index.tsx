@@ -4,6 +4,7 @@ import {
   ListTorrentsDocument,
   TorrentFieldsFragment,
   TorrentFilter,
+  TorrentParseFieldsFragment,
   TorrentsOrderBy,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
@@ -11,14 +12,33 @@ import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import useMobile from '@/utils/useMobile';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Space, Typography } from 'antd';
+import { Space, Tag, Typography } from 'antd';
 import prettyBytes from 'pretty-bytes';
 import { useMemo, useRef } from 'react';
 import styles from './index.module.less';
+import md5 from 'md5';
+
+const colors = [
+  'magenta',
+  'red',
+  'volcano',
+  'orange',
+  'gold',
+  'lime',
+  'green',
+  'cyan',
+  'blue',
+  'geekblue',
+  'purple',
+];
+function chooseColor(text: string) {
+  const hash = md5(text);
+  return colors[parseInt(hash.substring(0, 8), 16) % colors.length];
+}
 
 function useColumns() {
   return useMemo(
-    (): ProColumns<TorrentFieldsFragment>[] => [
+    (): ProColumns<TorrentFieldsFragment & TorrentParseFieldsFragment>[] => [
       {
         title: 'ID',
         dataIndex: 'id',
@@ -37,10 +57,66 @@ function useColumns() {
         ),
       },
       {
+        title: '制作组',
+        key: 'organizations',
+        copyable: false,
+        width: 200,
+        render: (_, r) => {
+          const parts = r.organizationParts ?? [];
+          if (!parts.length) {
+            return '-';
+          }
+          return (
+            <>
+              {parts.map((part) => (
+                <Tag color={part ? chooseColor(part) : 'default'}>{part}</Tag>
+              ))}
+            </>
+          );
+        },
+      },
+      {
+        title: '剧集名称',
+        key: 'aliases',
+        copyable: false,
+        width: 450,
+        render: (_, r) => {
+          const aliases = r.seasonTitleAliases ?? [];
+          if (!aliases.length) {
+            return '-';
+          }
+          return (
+            <>
+              {aliases.map((alias) => (
+                <Tag color={alias ? chooseColor(alias) : 'default'}>
+                  {alias}
+                </Tag>
+              ))}
+            </>
+          );
+        },
+      },
+      {
         title: '集数',
         key: 'episode',
-        render: (_, r) => r.episodeIndex,
+        render: (_, r) =>
+          typeof r.index === 'number'
+            ? `${r.index}`
+            : typeof r.indexFrom === 'number' && typeof r.indexTo === 'number'
+            ? `${r.indexFrom}-${r.indexTo}`
+            : '-',
         width: 72,
+      },
+      {
+        title: '字幕',
+        key: 'subtitles',
+        width: 100,
+        render: (_, r) =>
+          r.subtitleHasChs || r.subtitleHasCht || r.subtitleHasJp
+            ? `${r.subtitleHasChs ? '简' : ''}${r.subtitleHasCht ? '繁' : ''}${
+                r.subtitleHasJp ? '日' : ''
+              }${r.subtitleType || ''}`
+            : '-',
       },
       {
         title: '发布时间',
@@ -146,7 +222,7 @@ export default function Torrents() {
   const mobile = useMobile();
   return (
     <>
-      <ProTable<TorrentFieldsFragment>
+      <ProTable<TorrentFieldsFragment & TorrentParseFieldsFragment>
         request={(params, sort, filter) =>
           queryTorrents(client, params, sort, filter)
         }

@@ -28,7 +28,8 @@
     "eslint": "^7.32.0",
     "@rushstack/eslint-config": "~2.5.1",
     "eslint-plugin-react-hooks": "~4.3.0",
-    "@umijs/plugin-esbuild": "~1.4.1"
+    "@umijs/plugin-esbuild": "~1.4.1",
+    "@types/md5": "~2.3.2"
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
@@ -58,7 +59,8 @@
     "react-redux": "~8.0.1",
     "redux-thunk": "~2.4.1",
     "oidc-react": "~1.5.1",
-    "oidc-client-ts": "~2.0.5"
+    "oidc-client-ts": "~2.0.5",
+    "md5": "~2.3.0"
   },
   "files": [
     "/dist",
