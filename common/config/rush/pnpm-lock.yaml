@@ -11875,6 +11875,10 @@ packages:
       lru-cache: 6.0.0
     dev: false
 
+  /hsluv/0.1.0:
+    resolution: {integrity: sha512-ERcanKLAszD2XN3Vh5r5Szkrv9q0oSTudmP0rkiKAGM/3NMc9FLmMZBB7TSqTaXJfSDBOreYTfjezCOYbRKqlw==}
+    dev: false
+
   /html-encoding-sniffer/1.0.2:
     resolution: {integrity: sha512-71lZziiDnsuabfdYiUeWdCVyKuqwWi23L8YeIgV9jSSZHCtb6wB1BKWooH7L3tn4/FuZJMVWyNaIDr4RGmaSYw==}
     dependencies:
@@ -21485,7 +21489,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-p51XxNaZ6TQ6i6hwOJdN06qyinPCyKnx8NjMuoqiZ/Y+yUWvWz+4hmcG94aQB69MZAQ75TDfwWt6V35rGJVL/A==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-Cqf8qT8+BbJaxepyhHVQexz3ixTdKO8ZBzxCwLMVL8lpaGpLwSXewEmP08j1lDtu2wT6BeEC1xtQL9hYqfshAg==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -21524,6 +21528,7 @@ packages:
       dayjs: 1.10.8
       eslint: 7.32.0
       eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
+      hsluv: 0.1.0
       keycloak-js: 15.0.2
       lodash: 4.17.21
       md5: 2.3.0

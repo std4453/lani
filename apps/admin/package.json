@@ -60,7 +60,8 @@
     "redux-thunk": "~2.4.1",
     "oidc-react": "~1.5.1",
     "oidc-client-ts": "~2.0.5",
-    "md5": "~2.3.0"
+    "md5": "~2.3.0",
+    "hsluv": "~0.1.0"
   },
   "files": [
     "/dist",

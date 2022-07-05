@@ -1,4 +1,3 @@
-import Highlight from '@/components/Highlight';
 import { Hamburger } from '@/components/Layout';
 import {
   ListTorrentsDocument,
@@ -8,32 +7,37 @@ import {
   TorrentsOrderBy,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import useMobile from '@/utils/useMobile';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Space, Tag, Typography } from 'antd';
+import { Space, Tag, Tooltip, Typography } from 'antd';
+import { hsluvToHex } from 'hsluv';
+import md5 from 'md5';
 import prettyBytes from 'pretty-bytes';
 import { useMemo, useRef } from 'react';
 import styles from './index.module.less';
-import md5 from 'md5';
 
-const colors = [
-  'magenta',
-  'red',
-  'volcano',
-  'orange',
-  'gold',
-  'lime',
-  'green',
-  'cyan',
-  'blue',
-  'geekblue',
-  'purple',
-];
 function chooseColor(text: string) {
   const hash = md5(text);
-  return colors[parseInt(hash.substring(0, 8), 16) % colors.length];
+  return (parseInt(hash.substring(0, 4), 16) / 65536) * 360;
+}
+
+function ColoredTag({ text }: { text: string }) {
+  const hue = useMemo(() => chooseColor(text), [text]);
+  return (
+    <Tooltip title={text}>
+      <Tag
+        className={styles.tag}
+        style={{
+          borderColor: hsluvToHex([hue, 80, 80]),
+          color: hsluvToHex([hue, 65, 50]),
+          backgroundColor: hsluvToHex([hue, 65, 96]),
+        }}
+      >
+        {text}
+      </Tag>
+    </Tooltip>
+  );
 }
 
 function useColumns() {
@@ -50,11 +54,7 @@ function useColumns() {
         dataIndex: 'title',
         copyable: true,
         width: 450,
-        render: (_, r) => (
-          <div className={styles.title}>
-            <Highlight content={r.title} match={matchTorrentEpisode} />
-          </div>
-        ),
+        render: (_, r) => <div className={styles.title}>{r.title}</div>,
       },
       {
         title: '制作组',
@@ -68,9 +68,9 @@ function useColumns() {
           }
           return (
             <>
-              {parts.map((part) => (
-                <Tag color={part ? chooseColor(part) : 'default'}>{part}</Tag>
-              ))}
+              {parts.map((part, i) =>
+                part ? <ColoredTag key={i} text={part} /> : null,
+              )}
             </>
           );
         },
@@ -79,7 +79,7 @@ function useColumns() {
         title: '剧集名称',
         key: 'aliases',
         copyable: false,
-        width: 450,
+        width: 300,
         render: (_, r) => {
           const aliases = r.seasonTitleAliases ?? [];
           if (!aliases.length) {
@@ -87,11 +87,9 @@ function useColumns() {
           }
           return (
             <>
-              {aliases.map((alias) => (
-                <Tag color={alias ? chooseColor(alias) : 'default'}>
-                  {alias}
-                </Tag>
-              ))}
+              {aliases.map((alias, i) =>
+                alias ? <ColoredTag key={i} text={alias} /> : null,
+              )}
             </>
           );
         },
@@ -252,7 +250,7 @@ export default function Torrents() {
         }}
         className={styles.root}
         scroll={{
-          x: 1000,
+          x: 1300,
         }}
       />
     </>
