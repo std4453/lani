@@ -19,12 +19,14 @@ import { PathMapping } from '@/utils/path';
 import Joi from 'joi';
 
 function pathMappingSchema(): Joi.AnySchema<PathMapping> {
-  return Joi.array().items(
-    Joi.object({
-      from: Joi.string().required(),
-      to: Joi.string().required(),
-    }).default([]),
-  );
+  return Joi.array()
+    .items(
+      Joi.object({
+        from: Joi.string().required(),
+        to: Joi.string().required(),
+      }),
+    )
+    .default([]);
 }
 
 function qbittorrentConfigSchema(): Joi.ObjectSchema<QBittorrentConfig> {

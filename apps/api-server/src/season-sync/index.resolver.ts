@@ -298,8 +298,10 @@ export class SyncMetadataResolver {
         if (!content) {
           throw new Error('GetObject returns empty content');
         }
-        const contentStr = content?.toString('utf-8');
-        const newFileHash = md5(contentStr);
+        if (!Buffer.isBuffer(content)) {
+          throw new Error('GetObject returns non-buffer result');
+        }
+        const newFileHash = md5(content);
         const filePath = resolveChroot(
           path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
         );
@@ -310,8 +312,9 @@ export class SyncMetadataResolver {
         } catch (error) {
           // 无论文件有没有问题，我们这里只是为了判断hash，因此忽略错误
         }
+        console.log(currentFileHash, newFileHash);
         if (currentFileHash !== newFileHash) {
-          await fs.writeFile(filePath, contentStr);
+          await fs.writeFile(filePath, content);
           modified = true;
         }
       }),
