@@ -41,6 +41,8 @@ function ColoredTag({ text }: { text: string }) {
 }
 
 function useColumns() {
+  const mobile = useMobile();
+
   return useMemo(
     (): ProColumns<TorrentFieldsFragment & TorrentParseFieldsFragment>[] => [
       {
@@ -54,7 +56,11 @@ function useColumns() {
         dataIndex: 'title',
         copyable: true,
         width: 450,
-        render: (_, r) => <div className={styles.title}>{r.title}</div>,
+        render: (_, r) => (
+          <Typography.Text className={styles.title} copyable>
+            {r.title}
+          </Typography.Text>
+        ),
       },
       {
         title: '制作组',
@@ -67,11 +73,11 @@ function useColumns() {
             return '-';
           }
           return (
-            <>
+            <div className={styles.tagContainer}>
               {parts.map((part, i) =>
                 part ? <ColoredTag key={i} text={part} /> : null,
               )}
-            </>
+            </div>
           );
         },
       },
@@ -79,18 +85,18 @@ function useColumns() {
         title: '剧集名称',
         key: 'aliases',
         copyable: false,
-        width: 300,
+        width: mobile ? 200 : 300,
         render: (_, r) => {
           const aliases = r.seasonTitleAliases ?? [];
           if (!aliases.length) {
             return '-';
           }
           return (
-            <>
+            <div className={styles.tagContainer}>
               {aliases.map((alias, i) =>
                 alias ? <ColoredTag key={i} text={alias} /> : null,
               )}
-            </>
+            </div>
           );
         },
       },
@@ -147,7 +153,7 @@ function useColumns() {
         width: 120,
       },
     ],
-    [],
+    [mobile],
   );
 }
 

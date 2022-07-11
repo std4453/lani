@@ -237,7 +237,11 @@ function useColumns(state: AntdTableState) {
             return '-';
           }
           const status = calcEpisodeStatus(episode);
-          return <DownloadStatusTag status={status} />;
+          return (
+            <div>
+              <DownloadStatusTag status={status} />
+            </div>
+          );
         },
       },
       {
