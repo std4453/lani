@@ -134,7 +134,7 @@ async function queryDownloadJobs(
   // search
   {
     pageSize = 10,
-    current = 0,
+    current = 1,
   }: {
     pageSize?: number;
     current?: number;

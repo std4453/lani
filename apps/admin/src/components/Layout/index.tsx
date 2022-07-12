@@ -20,7 +20,7 @@ import {
 import ProLayout from '@ant-design/pro-layout';
 import { Avatar, Popover, Typography } from 'antd';
 import clsx from 'clsx';
-import { ElementType } from 'react';
+import { ElementType, ReactNode } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
 
@@ -60,7 +60,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
             <Typography.Text
               className={styles.mobileAction}
               onClick={() => {
-                dispatch(toAccountPage);
+                void dispatch(toAccountPage);
               }}
             >
               账户设置
@@ -69,7 +69,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
           <Typography.Text
             className={styles.mobileAction}
             onClick={() => {
-              dispatch(logout);
+              void dispatch(logout);
             }}
           >
             退出登录
@@ -91,7 +91,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
               <div
                 className={styles.menu}
                 onClick={() => {
-                  dispatch(toAccountPage);
+                  void dispatch(toAccountPage);
                 }}
               >
                 账户设置
@@ -100,7 +100,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
             <div
               className={styles.menu}
               onClick={() => {
-                dispatch(logout);
+                void dispatch(logout);
               }}
             >
               登出
@@ -221,5 +221,14 @@ export function Hamburger({ inTable, className }: HamburgerProps) {
         dispatch(setCollapsed({ collapsed: !collapsed }));
       }}
     />
+  );
+}
+
+export function TableTitle({ children }: { children?: ReactNode }) {
+  return (
+    <>
+      <Hamburger inTable />
+      {children}
+    </>
   );
 }
