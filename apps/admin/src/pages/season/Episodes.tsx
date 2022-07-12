@@ -64,7 +64,11 @@ function useColumns({
         title: '下载状态',
         dataIndex: 'jobStatus',
         width: 120,
-        render: (_, r) => <DownloadStatusTag status={r.jobStatus} />,
+        render: (_, r) => (
+          <div>
+            <DownloadStatusTag status={r.jobStatus} />
+          </div>
+        ),
       },
       {
         title: 'Jellyfin',

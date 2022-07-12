@@ -1,32 +1,31 @@
-import qs from 'qs';
-import { useMemo } from 'react';
-import { useHistory } from 'umi';
-
-export function encodeArray<T>(array: T[]) {
+function encodeArray<T>(array: T[]) {
   return array.join('|');
 }
 
-export function decodeArray<T extends string = string>(value: string): T[] {
+function decodeArray<T extends string = string>(value: string): T[] {
   return value.split('|') as T[];
 }
 
-interface ProFormSearchBase {
+export interface ProFormSearchBase {
   pageSize?: number;
   current?: number;
 }
 
-type ProFormSort = {
+export type ProFormSort = {
   [key in string]?: 'ascend' | 'descend' | null;
 };
 
-type ProFormFilter = {
+export type ProFormFilter = {
   [key in string]?: (string | number)[] | null;
 };
 
-export function encodeAntdSearch<Search extends ProFormSearchBase>(
-  search: Search,
+export type CustomSearch = Record<string, string>;
+
+export function encodeAntdSearch<Search extends Record<string, any>>(
+  search: Search & ProFormSearchBase,
   sort: ProFormSort,
   filter: ProFormFilter,
+  custom: CustomSearch,
 ) {
   const query: Record<string, string> = {};
   // eslint-disable-next-line guard-for-in
@@ -44,6 +43,8 @@ export function encodeAntdSearch<Search extends ProFormSearchBase>(
       if (typeof value === 'string' && value) {
         query.q = value;
       }
+    } else if (key === '_revision') {
+      // ignore
     } else if (typeof value === 'string' || typeof value === 'number') {
       query[`s_${key}`] = `${value}`;
     }
@@ -51,15 +52,26 @@ export function encodeAntdSearch<Search extends ProFormSearchBase>(
   // eslint-disable-next-line guard-for-in
   for (const key in sort) {
     const value = sort[key];
-    if (typeof value === 'string' || typeof value === 'number') {
+    if ((typeof value === 'string' && value) || typeof value === 'number') {
       query[`o_${key}`] = `${value}`;
     }
   }
   // eslint-disable-next-line guard-for-in
   for (const key in filter) {
     const value = filter[key];
-    if (value instanceof Array) {
+    if (
+      value instanceof Array &&
+      value.length &&
+      !value.includes('_custom_filtered')
+    ) {
       query[`f_${key}`] = encodeArray(value);
+    }
+  }
+  // eslint-disable-next-line guard-for-in
+  for (const key in custom) {
+    const value = custom[key];
+    if (value) {
+      query[`c_${key}`] = `${value}`;
     }
   }
   return query;
@@ -69,6 +81,7 @@ export function decodeAntdSearch(query: Record<string, string>) {
   const search: Record<string, string> = {};
   const sort: Record<string, 'ascend' | 'descend'> = {};
   const filter: Record<string, (string | number)[]> = {};
+  const custom: Record<string, string> = {};
   let pageSize: number | undefined = undefined;
   let current: number | undefined = undefined;
   let keyword: string = '';
@@ -90,6 +103,8 @@ export function decodeAntdSearch(query: Record<string, string>) {
       }
     } else if (key.startsWith('f_')) {
       filter[key.substring(2)] = decodeArray(value);
+    } else if (key.startsWith('c_')) {
+      custom[key.substring(2)] = value;
     }
   }
 
@@ -100,20 +115,8 @@ export function decodeAntdSearch(query: Record<string, string>) {
     pageSize,
     current,
     keyword,
+    custom,
   };
 }
 
-export function useAntdTableState() {
-  const history = useHistory();
-  return useMemo(() => {
-    const result = decodeAntdSearch(
-      qs.parse(history.location.search, { ignoreQueryPrefix: true }) as Record<
-        string,
-        string
-      >,
-    );
-    return result;
-  }, [history.location.search]);
-}
-
-export type AntdTableState = ReturnType<typeof useAntdTableState>;
+export type AntdTableState = ReturnType<typeof decodeAntdSearch>;

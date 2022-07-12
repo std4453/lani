@@ -43,6 +43,7 @@ specifiers:
   '@rush-temp/db': file:./projects/db.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
+  '@rush-temp/parse-torrent-title': file:./projects/parse-torrent-title.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
   '@sentry/react': ~6.17.8
@@ -100,7 +101,6 @@ specifiers:
   js-yaml: ~4.1.0
   json-schema-to-typescript: ~10.1.5
   jsonschema: ~1.4.0
-  keycloak-js: 15.0.2
   kleur: ~4.1.4
   koa: ~2.13.4
   lodash: ~4.17.21
@@ -108,6 +108,7 @@ specifiers:
   nodemon: ~2.0.15
   oclif: ^2.0.0-main.10
   octokit: ~1.7.1
+  oidc-client-ts: ~2.0.5
   oidc-react: ~1.5.1
   openapi-typescript-codegen: ~0.20.1
   openid-client: ~5.1.4
@@ -183,6 +184,7 @@ dependencies:
   '@rush-temp/db': file:projects/db.tgz
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
+  '@rush-temp/parse-torrent-title': file:projects/parse-torrent-title.tgz_ts-node@10.7.0
   '@rushstack/eslint-config': 2.5.2_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.3
   '@sentry/react': 6.17.9_react@17.0.2
@@ -240,7 +242,6 @@ dependencies:
   js-yaml: 4.1.0
   json-schema-to-typescript: 10.1.5
   jsonschema: 1.4.0
-  keycloak-js: 15.0.2
   kleur: 4.1.4
   koa: 2.13.4
   lodash: 4.17.21
@@ -248,6 +249,7 @@ dependencies:
   nodemon: 2.0.15
   oclif: 2.6.3
   octokit: 1.7.1
+  oidc-client-ts: 2.0.5
   oidc-react: 1.5.1_react-dom@17.0.2+react@17.0.2
   openapi-typescript-codegen: 0.20.1
   openid-client: 5.1.4
@@ -10172,6 +10174,11 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
+  /escape-string-regexp/5.0.0:
+    resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
+    engines: {node: '>=12'}
+    dev: false
+
   /escodegen/1.14.3:
     resolution: {integrity: sha512-qFcX0XJkdg+PB3xjZZG/wKSuT1PnQWx57+TVSjIMmILd2yC/6ByYElPwJnslDsuWuSAp4AwJGumarAAmJch5Kw==}
     engines: {node: '>=4.0'}
@@ -11866,6 +11873,10 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       lru-cache: 6.0.0
+    dev: false
+
+  /hsluv/0.1.0:
+    resolution: {integrity: sha512-ERcanKLAszD2XN3Vh5r5Szkrv9q0oSTudmP0rkiKAGM/3NMc9FLmMZBB7TSqTaXJfSDBOreYTfjezCOYbRKqlw==}
     dev: false
 
   /html-encoding-sniffer/1.0.2:
@@ -21478,7 +21489,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-YrOq+J7QpbCIDKvjIv/gxttNzUldmJbmxEZmrMsT0IMX3RoYxABMMJZ43XO0FH/sBeC4FEBPvILdw+/3x2sspQ==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-Cqf8qT8+BbJaxepyhHVQexz3ixTdKO8ZBzxCwLMVL8lpaGpLwSXewEmP08j1lDtu2wT6BeEC1xtQL9hYqfshAg==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -21502,6 +21513,7 @@ packages:
       '@sentry/react': 6.17.9_react@17.0.2
       '@types/history': 2.0.45
       '@types/lodash': 4.14.181
+      '@types/md5': 2.3.2
       '@types/qs': 6.9.7
       '@types/react': 17.0.43
       '@types/react-dom': 17.0.14
@@ -21516,8 +21528,10 @@ packages:
       dayjs: 1.10.8
       eslint: 7.32.0
       eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
+      hsluv: 0.1.0
       keycloak-js: 15.0.2
       lodash: 4.17.21
+      md5: 2.3.0
       npm-run-all: 4.1.5
       oidc-client-ts: 2.0.5
       oidc-react: 1.5.1_react-dom@17.0.2+react@17.0.2
@@ -21555,7 +21569,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_@apollo+gateway@0.46.0:
-    resolution: {integrity: sha512-ra8snp65TeSi7BtWFS5EazsmJYvXwzcbJkAgAlTG8+hLZLtp5k4TVTRSVDp0BOjR03ZaK2kWqVXWaoYFXGKBLQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-cT9HbxxoCxCJXyI/FNjhTahaufTMr54cpBi44z1GhO0pTiIYqE9l1Gk4vsB3zCh2nERo7KhsRzcohbChgoF6jw==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -21787,4 +21801,32 @@ packages:
       - debug
       - encoding
       - supports-color
+    dev: false
+
+  file:projects/parse-torrent-title.tgz_ts-node@10.7.0:
+    resolution: {integrity: sha512-OLl3lfSHxZtWWNd5eCn5KB68kXukQC5WAWPcU4YoHALdvy+UPKWnB0fWmzkXmukeie1zUvW1CAs5wZNtqFqUPA==, tarball: file:projects/parse-torrent-title.tgz}
+    id: file:projects/parse-torrent-title.tgz
+    name: '@rush-temp/parse-torrent-title'
+    version: 0.0.0
+    dependencies:
+      '@types/jest': 27.4.1
+      '@types/js-yaml': 4.0.5
+      '@types/node': 17.0.23
+      escape-string-regexp: 5.0.0
+      jest: 27.5.1_ts-node@10.7.0
+      joi: 17.6.0
+      js-yaml: 4.1.0
+      ts-jest: 27.1.4_8fa130d172bf7d71653f05507c50c5a3
+      typescript: 4.5.5
+      typescript-transform-paths: 3.3.1_typescript@4.5.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-jest
+      - bufferutil
+      - canvas
+      - esbuild
+      - node-notifier
+      - supports-color
+      - ts-node
+      - utf-8-validate
     dev: false

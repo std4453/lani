@@ -101,6 +101,25 @@ model Torrent {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   episodeIndex Int?     @map("episode_index")
 
+  organizationRaw     String?            @map("organization_raw")
+  organizationParts   String[]           @map("organization_parts")
+  seasonTitleRaw      String?            @map("season_title_raw")
+  seasonTitleAliases  String[]           @map("season_title_aliases")
+  index               Int?
+  indexFrom           Int?               @map("index_from")
+  indexTo             Int?               @map("index_to")
+  sourceType          TorrentSourceType? @map("source_type")
+  sourcePlatform      TorrentPlatform?   @map("source_platform")
+  formatResolution    String?            @map("format_resolution")
+  formatVideoEncoding String?            @map("format_video_encoding")
+  formatAudioEncoding String?            @map("format_audio_encoding")
+  formatContainer     String?            @map("format_container")
+  formatColorDepth    String?            @map("format_color_depth")
+  subtitleHasCHS      Boolean            @default(false) @map("subtitle_has_chs")
+  subtitleHasCHT      Boolean            @default(false) @map("subtitle_has_cht")
+  subtitleHasJP       Boolean            @default(false) @map("subtitle_has_jp")
+  subtitleType        String?            @map("subtitle_type")
+
   @@index([title, id, torrentLink], map: "torrent_title_idx")
   @@map("torrents")
 }
@@ -176,4 +195,24 @@ enum SeasonStatus {
   UNKNOWN
 
   @@map("season_status")
+}
+
+enum TorrentSourceType {
+  WEBDL
+  WEBRIP
+  BDRIP
+  DONGHUA
+  BD
+
+  @@map("torrent_source_type")
+}
+
+enum TorrentPlatform {
+  BAHA
+  B_GLOBAL
+  B_THM
+  BILIBILI
+  VIUTV
+
+  @@map("torrent_platform")
 }

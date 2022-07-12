@@ -59,7 +59,11 @@ function useColumns({
       {
         title: '步骤',
         dataIndex: 'status',
-        render: (_, r) => <DownloadStatusTag status={r.status} />,
+        render: (_, r) => (
+          <div>
+            <DownloadStatusTag status={r.status} />
+          </div>
+        ),
         width: 84,
       },
       {
@@ -130,7 +134,7 @@ async function queryDownloadJobs(
   // search
   {
     pageSize = 10,
-    current = 0,
+    current = 1,
   }: {
     pageSize?: number;
     current?: number;
