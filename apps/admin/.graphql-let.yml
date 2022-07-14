@@ -1,0 +1,10 @@
+overwrite: true
+schema: https://lani.std4453.com:444/api/gateway/graphql
+documents: "src/**/*.graphql"
+plugins:
+  - typescript-operations
+  - typed-document-node
+config:
+ scalars:
+   DateTime: "string"
+   JSON: "{ [key: string]: any }"

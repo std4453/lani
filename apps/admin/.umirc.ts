@@ -61,4 +61,11 @@ export default defineConfig({
   esbuild: {},
   antd: {},
   title: 'Lani管理后台',
+  chainWebpack(memo) {
+    const babel = memo.module.rules.get('js').uses.get('babel-loader');
+    const rule = memo.module.rule('graphql').test(/\.graphql$/);
+    rule.uses.set('babel-loader', babel);
+    rule.use('babel-loader');
+    rule.use('graphql-let').loader('graphql-let/loader');
+  },
 });

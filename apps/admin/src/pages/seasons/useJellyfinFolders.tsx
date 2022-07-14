@@ -1,4 +1,4 @@
-import { ListJellyfinFoldersDocument } from '@/generated/types';
+import { ListJellyfinFoldersDocument } from './queries.graphql';
 import { extractNode } from '@/utils/graphql';
 import { useQuery } from '@apollo/client';
 import { Select, SelectProps } from 'antd';

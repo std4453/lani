@@ -1,10 +1,7 @@
 import { TableTitle } from '@/components/Layout';
 import {
   BigIntFilter,
-  ListTorrentsDocument,
-  TorrentFieldsFragment,
   TorrentFilter,
-  TorrentParseFieldsFragment,
   TorrentsOrderBy,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
@@ -25,6 +22,11 @@ import md5 from 'md5';
 import prettyBytes from 'pretty-bytes';
 import { useMemo, useRef } from 'react';
 import styles from './index.module.less';
+import {
+  ListTorrentsDocument,
+  TorrentFieldsFragment,
+  TorrentParseFieldsFragment,
+} from './queries.graphql';
 
 function chooseColor(text: string) {
   const hash = md5(text);

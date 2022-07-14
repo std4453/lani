@@ -29,7 +29,9 @@
     "@rushstack/eslint-config": "~2.5.1",
     "eslint-plugin-react-hooks": "~4.3.0",
     "@umijs/plugin-esbuild": "~1.4.1",
-    "@types/md5": "~2.3.2"
+    "@types/md5": "~2.3.2",
+    "@graphql-codegen/import-types-preset": "~2.2.1",
+    "graphql-let": "~0.18.6"
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",

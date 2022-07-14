@@ -1,3 +1,4 @@
+# import episodeStatusFields from '../../constants/download-status.graphql'
 fragment listSeasonsFields on Season {
   bangumiId
   airTime
