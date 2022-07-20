@@ -40,19 +40,22 @@ export class BangumiSeasonService {
         100,
         0,
       );
-    result.episodes = episodes.map((episode) => ({
-      // 因为过滤了本篇，应当总有此字段
-      index: episode.ep ?? 0,
-      // 兜底文案
-      title:
-        episode.name_cn ||
-        episode.name ||
-        (episode.ep ? `第${episode.ep}话` : '未定'),
-      description: episode.desc,
-      airDate: dayjs(episode.airdate, DateFormat.BarDay).format(
-        DateFormat.NothingDay,
-      ),
-    }));
+    result.episodes = episodes
+      // 因为过滤了本篇，应当总有ep字段，为了避免类似 https://github.com/bangumi/api/issues/146
+      // 这样的事故造成的数据错误，且episode的逻辑是只增不删，因此进行额外的检查保证不录入错误数据
+      .filter((episode) => typeof episode.ep === 'number' && episode.airdate)
+      .map((episode) => ({
+        index: episode.ep ?? 0,
+        // 兜底文案
+        title:
+          episode.name_cn ||
+          episode.name ||
+          (typeof episode.ep === 'number' ? `第${episode.ep}话` : '未定'),
+        description: episode.desc,
+        airDate: dayjs(episode.airdate, DateFormat.BarDay).format(
+          DateFormat.NothingDay,
+        ),
+      }));
   }
 
   private async fetchCharacters(result: PartialSeason, bangumiId: number) {
