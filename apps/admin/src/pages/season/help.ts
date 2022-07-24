@@ -250,6 +250,8 @@ export interface SeasonPageContextValues {
   syncEpisodes: () => Promise<void>;
   formRef: FormRef;
   modified: boolean;
+  submit: (values: FormValues) => Promise<boolean>;
+  reset: () => void;
 }
 
 export const SeasonPageContext = createContext<SeasonPageContextValues>({
@@ -263,6 +265,10 @@ export const SeasonPageContext = createContext<SeasonPageContextValues>({
     current: undefined,
   },
   modified: false,
+  async submit() {
+    return false;
+  },
+  reset() {},
 });
 
 export function useSeasonPageContext() {
@@ -273,7 +279,7 @@ export function useSeasonId() {
   return useSeasonPageContext().id;
 }
 
-export function useLoad(id: number) {
+export function useSeasonPage(id: number) {
   const client = useApolloClient();
 
   const formRef = useRef<ProFormInstance<FormValues>>();
@@ -283,6 +289,19 @@ export function useLoad(id: number) {
   );
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [touched, setTouched] = useState(false);
+
+  const updateTouched = useMemoizedFn(() => {
+    if (formRef.current) {
+      setTouched(formRef.current.isFieldsTouched(false));
+    }
+  });
+
+  const reset = useMemoizedFn(() => {
+    formRef.current?.resetFields();
+    updateTouched();
+  });
 
   const reload = useMemoizedFn(
     async ({
@@ -305,7 +324,7 @@ export function useLoad(id: number) {
       }
       if (data.seasonById.id) {
         setInitialValues(queryToFormValues(data.seasonById));
-        formRef.current?.resetFields();
+        reset();
       }
       if (data.seasonById.episodesBySeasonId) {
         setEpisodes(
@@ -396,13 +415,7 @@ export function useLoad(id: number) {
     }
   });
 
-  const [touched, setTouched] = useState(false);
-
-  const updateTouched = useMemoizedFn(() => {
-    if (formRef.current) {
-      setTouched(formRef.current.isFieldsTouched(false));
-    }
-  });
+  const submit = useOnFinish(id, reloadConfig);
 
   const values: SeasonPageContextValues = useMemo(
     () => ({
@@ -412,6 +425,8 @@ export function useLoad(id: number) {
       reloadEpisodes,
       syncMetadataAndEpisodes,
       syncEpisodes,
+      submit,
+      reset,
       formRef,
       modified: touched,
     }),
@@ -423,6 +438,8 @@ export function useLoad(id: number) {
       syncMetadataAndEpisodes,
       syncEpisodes,
       touched,
+      submit,
+      reset,
     ],
   );
 

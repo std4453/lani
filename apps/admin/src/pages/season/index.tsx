@@ -5,13 +5,11 @@ import Header from '@/pages/season/Header';
 import {
   FormValues,
   SeasonPageContext,
-  useLoad as useLoadData,
-  useOnFinish,
+  useSeasonPage,
 } from '@/pages/season/help';
 import Metadata from '@/pages/season/Metadata';
 import Notifications from '@/pages/season/Notifications';
 import ProForm from '@ant-design/pro-form';
-import { useMemoizedFn } from 'ahooks';
 import { Spin } from 'antd';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -32,23 +30,16 @@ export default function SeasonPage() {
     loading,
     formRef,
     values,
-    values: { reloadConfig, modified },
+    values: { modified, submit, reset },
     updateTouched,
-  } = useLoadData(id);
-
-  const onFinish = useOnFinish(id, reloadConfig);
-
-  const handleReset = useMemoizedFn(() => {
-    formRef.current?.resetFields();
-    updateTouched();
-  });
+  } = useSeasonPage(id);
 
   return (
     <SeasonPageContext.Provider value={values}>
       <Spin spinning={loading}>
         <ProForm<FormValues>
           formRef={formRef}
-          onFinish={onFinish}
+          onFinish={submit}
           params={{ id }}
           initialValues={initialValues}
           submitter={{
@@ -60,7 +51,7 @@ export default function SeasonPage() {
             },
             resetButtonProps: {
               disabled: !modified,
-              onClick: handleReset,
+              onClick: reset,
             },
             render: (_props, dom) =>
               headerExtraEl && createPortal(dom, headerExtraEl),
