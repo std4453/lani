@@ -146,7 +146,7 @@ function useColumns() {
           copyable: true,
           ellipsis: false,
           sorter: true,
-          width: 300,
+          width: 400,
           stateKey: {
             sort: 'title',
           },
@@ -200,7 +200,7 @@ function useColumns() {
               status: 'Default',
             },
           },
-          width: 120,
+          width: 160,
           filters: true,
           stateKey: {
             filter: 'isMonitoring',
@@ -209,7 +209,7 @@ function useColumns() {
         {
           title: '媒体库',
           dataIndex: 'folder',
-          width: 100,
+          width: 140,
           render: (_, r) => (
             <ColoredCell
               status={
@@ -382,7 +382,7 @@ function useColumns() {
             </Popconfirm>,
           ],
           search: false,
-          width: 120,
+          width: 140,
         },
       ],
       [history, semesterOptions, foldersOptions, client],
@@ -644,7 +644,7 @@ export default withAntdSearch(function MetadataPage() {
         ]}
         search={false}
         defaultSize={mobile ? 'middle' : 'large'}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1400 }}
         className={styles.root}
       />
       {createSeasonDialog}
