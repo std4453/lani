@@ -1,5 +1,8 @@
 import { PrismaService } from '@/common/prisma.service';
-import { EPISODE_PUBLISH_EVENT } from '@/download-job/events';
+import {
+  EpisodePublishEvent,
+  EPISODE_PUBLISH_EVENT,
+} from '@/download-job/events';
 import { env } from '@/env';
 import { ManagementNotificationProvider } from '@/notification/ManagementNotificationProvider';
 import {
@@ -37,14 +40,14 @@ export class NotificationService {
         },
       },
     });
-    await this.onEpisodePublish(episode);
+    await this.onEpisodePublish(new EpisodePublishEvent(episode));
     return 'ok';
   }
 
   @OnEvent(EPISODE_PUBLISH_EVENT)
-  async onEpisodePublish(episode: OnEpisodePublishEpisode) {
-    if (episode.season.notifyPublish) {
-      await this.user?.onEpisodePublish(episode);
+  async onEpisodePublish(event: EpisodePublishEvent) {
+    if (event.episode.season.notifyPublish) {
+      await this.user?.onEpisodePublish(event.episode);
     }
   }
 
