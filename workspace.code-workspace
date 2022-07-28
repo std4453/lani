@@ -35,6 +35,10 @@
     {
       "name": "🚀 @lani/gateway",
       "path": "apps/gateway"
+    },
+    {
+      "name": "📖 @lani/docs",
+      "path": "docs"
     }
   ],
 	"settings": {
