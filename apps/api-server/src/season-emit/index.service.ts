@@ -1,16 +1,16 @@
+import { MetadataRefreshMode } from '@/api/jellyfin';
+import { PrismaService } from '@/common/prisma.service';
+import { S3Service } from '@/common/s3.service';
 import config from '@/config';
+import {
+  writeFileIdempotent,
+  writeXMLFileIdempotent,
+} from '@/utils/idempotency';
+import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Image, JellyfinFolder, Season } from '@lani/db';
 import { resolveChroot } from '@lani/framework';
 import { ConflictException, Injectable } from '@nestjs/common';
 import path from 'path';
-import fs from 'fs/promises';
-import xml2js from 'xml2js';
-import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
-import { S3Service } from '@/common/s3.service';
-import md5 from 'md5';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
-import { MetadataRefreshMode } from '@/api/jellyfin';
-import { PrismaService } from '@/common/prisma.service';
 
 export type SeasonForWriteMetadata = Season & {
   jellyfinFolder: JellyfinFolder | null;
@@ -27,10 +27,36 @@ export type SeasonForSyncJellyfinSeriesId = Season & {
 export class SeasonEmitService {
   constructor(private s3: S3Service, private prisma: PrismaService) {}
 
-  private readonly builder = new xml2js.Builder();
-  private readonly parser = new xml2js.Parser();
+  async writeSeasonMetadata(season: SeasonForWriteMetadata) {
+    const { title, jellyfinFolder, jellyfinId } = season;
+    const seasonRoot = jellyfinFolder?.location;
+    if (!seasonRoot) {
+      throw new ConflictException('seasonRoot not set');
+    }
+    console.log(`writing metadata for season '${title}'`);
 
-  async writeSeasonMetadata({
+    let modified = false;
+    modified ||= await this.emitNfo(season);
+    modified ||= await this.emitImages(season);
+
+    if (modified) {
+      if (jellyfinId) {
+        // TODO: 通过mq触发？
+        await JellyfinHelp.refreshItem({
+          itemId: jellyfinId,
+          metadataRefreshMode: MetadataRefreshMode.DEFAULT,
+          imageRefreshMode: MetadataRefreshMode.DEFAULT,
+        });
+      } else {
+        await JellyfinHelp.refreshItem({
+          itemId: jellyfinFolder.jellyfinId,
+          recursive: true,
+        });
+      }
+    }
+  }
+
+  private async emitNfo({
     title,
     description,
     tags,
@@ -39,34 +65,18 @@ export class SeasonEmitService {
     id,
     yearAndSemester,
     jellyfinFolder,
-    bannerImage,
-    fanartImage,
-    posterImage,
-    jellyfinId,
   }: SeasonForWriteMetadata) {
     const seasonRoot = jellyfinFolder?.location;
     if (!seasonRoot) {
-      throw new ConflictException('seasonRoot not set');
+      throw new Error('seasonRoot not set');
     }
-    console.log(`writing metadata for season '${title}'`);
+
     const nfoPath = resolveChroot(
       path.join(config.lani.mediaRoot, seasonRoot, title, 'tvshow.nfo'),
     );
-    let xmlObj: any = {};
-    await fs.mkdir(path.dirname(nfoPath), { recursive: true });
-    let modified = false;
-    let currentContent = '';
-    try {
-      await fs.stat(nfoPath);
-      currentContent = await fs.readFile(nfoPath, 'utf8');
-      xmlObj = await this.parser.parseStringPromise(currentContent);
-    } catch (error) {
-      // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
-      // 如果是没有读权限，或是目录，之后写入时肯定会报错，现在也可以无视
-    }
-    ensureXMLRoot(xmlObj, 'tvshow');
     // https://kodi.wiki/view/NFO_files/TV_shows
-    mergeXMLNode(
+    return await writeXMLFileIdempotent(
+      nfoPath,
       {
         title: [title],
         ...(description ? { plot: [description] } : undefined),
@@ -100,13 +110,24 @@ export class SeasonEmitService {
           ? { year: [yearAndSemester.substring(0, 4)] }
           : undefined),
       },
-      xmlObj.tvshow,
+      {
+        rootType: 'tvshow',
+      },
     );
-    const nfoContent = this.builder.buildObject(xmlObj);
-    if (currentContent !== nfoContent) {
-      await fs.writeFile(nfoPath, nfoContent, 'utf-8');
-      modified = true;
+  }
+
+  private async emitImages({
+    bannerImage,
+    fanartImage,
+    posterImage,
+    title,
+    jellyfinFolder,
+  }: SeasonForWriteMetadata) {
+    const seasonRoot = jellyfinFolder?.location;
+    if (!seasonRoot) {
+      throw new Error('seasonRoot not set');
     }
+    let modified = false;
     await Promise.all(
       [
         { image: bannerImage, type: 'banner' },
@@ -134,39 +155,13 @@ export class SeasonEmitService {
         if (!Buffer.isBuffer(content)) {
           throw new Error('GetObject returns non-buffer result');
         }
-        const newFileHash = md5(content);
         const filePath = resolveChroot(
           path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
         );
-        let currentFileHash = '';
-        try {
-          const currentFileContent = await fs.readFile(filePath);
-          currentFileHash = md5(currentFileContent);
-        } catch (error) {
-          // 无论文件有没有问题，我们这里只是为了判断hash，因此忽略错误
-        }
-        console.log(currentFileHash, newFileHash);
-        if (currentFileHash !== newFileHash) {
-          await fs.writeFile(filePath, content);
-          modified = true;
-        }
+        modified ||= await writeFileIdempotent(filePath, content);
       }),
     );
-    if (modified) {
-      if (jellyfinId) {
-        // TODO: 通过mq触发？
-        await JellyfinHelp.refreshItem({
-          itemId: jellyfinId,
-          metadataRefreshMode: MetadataRefreshMode.DEFAULT,
-          imageRefreshMode: MetadataRefreshMode.DEFAULT,
-        });
-      } else {
-        await JellyfinHelp.refreshItem({
-          itemId: jellyfinFolder.jellyfinId,
-          recursive: true,
-        });
-      }
-    }
+    return modified;
   }
 
   async syncJellyfinSeriesId({
