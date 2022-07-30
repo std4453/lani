@@ -33,6 +33,7 @@ export default function CreateSeasonDialog({
           season: {
             title,
             jellyfinFolderId: folderId,
+            tags: [],
           },
         },
       });

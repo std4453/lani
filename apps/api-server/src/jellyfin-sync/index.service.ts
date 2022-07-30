@@ -39,6 +39,7 @@ export class JellyfinSyncService {
       }))
       .filter((folder) => !folder.location.startsWith('..'));
     await this.prisma.$transaction([
+      // 由于数据库侧设置 ON DELETE NO ACTION，如果这里试图删除用到的folder，会报错
       this.prisma.jellyfinFolder.deleteMany({
         where: {
           jellyfinId: {

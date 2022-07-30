@@ -1598,7 +1598,7 @@ export type Season = Node & {
   isMonitoring: Scalars['Boolean'];
   /** Reads a single `JellyfinFolder` that is related to this `Season`. */
   jellyfinFolderByJellyfinFolderId?: Maybe<JellyfinFolder>;
-  jellyfinFolderId?: Maybe<Scalars['Int']>;
+  jellyfinFolderId: Scalars['Int'];
   jellyfinId: Scalars['String'];
   mikanAnimeId: Scalars['String'];
   needDownloadCc: Scalars['Boolean'];
@@ -1778,8 +1778,6 @@ export type SeasonFilter = {
   isMonitoring?: InputMaybe<BooleanFilter>;
   /** Filter by the object’s `jellyfinFolderByJellyfinFolderId` relation. */
   jellyfinFolderByJellyfinFolderId?: InputMaybe<JellyfinFolderFilter>;
-  /** A related `jellyfinFolderByJellyfinFolderId` exists. */
-  jellyfinFolderByJellyfinFolderIdExists?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `jellyfinFolderId` field. */
   jellyfinFolderId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `jellyfinId` field. */
@@ -1860,7 +1858,7 @@ export type SeasonInput = {
   infoSource?: InputMaybe<MetadataSource>;
   isArchived?: InputMaybe<Scalars['Boolean']>;
   isMonitoring?: InputMaybe<Scalars['Boolean']>;
-  jellyfinFolderId?: InputMaybe<Scalars['Int']>;
+  jellyfinFolderId: Scalars['Int'];
   jellyfinId?: InputMaybe<Scalars['String']>;
   mikanAnimeId?: InputMaybe<Scalars['String']>;
   needDownloadCc?: InputMaybe<Scalars['Boolean']>;

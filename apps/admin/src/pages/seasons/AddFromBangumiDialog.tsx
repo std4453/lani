@@ -99,6 +99,7 @@ export default function AddFromBangumiDialog({
                         infoSource: MetadataSource.BgmCn,
                         episodesSource: MetadataSource.BgmCn,
                         jellyfinFolderId: folderId,
+                        tags: [],
                       },
                     },
                   });

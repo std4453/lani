@@ -73,7 +73,7 @@ model Season {
   episodesSource     MetadataSource   @default(MANUAL) @map("episodes_source")
   seasonRoot         String?          @map("season_root")
   jellyfinId         String           @default("") @map("jellyfin_id")
-  jellyfinFolderId   Int?             @map("jellyfin_folder_id")
+  jellyfinFolderId   Int              @map("jellyfin_folder_id")
   posterImageId      Int?             @map("poster_image_id")
   bannerImageId      Int?             @map("banner_image_id")
   fanartImageId      Int?             @map("fanart_image_id")
@@ -83,7 +83,7 @@ model Season {
   notifyPublish      Boolean          @default(true) @map("notify_publish")
   bannerImage        Image?           @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
   fanartImage        Image?           @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
-  jellyfinFolder     JellyfinFolder?  @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jellyfinFolder     JellyfinFolder   @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   posterImage        Image?           @relation("imagesToseasons_poster_image_id", fields: [posterImageId], references: [id])
   downloadSources    DownloadSource[]
   episodes           Episode[]

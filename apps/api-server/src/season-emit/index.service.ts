@@ -9,18 +9,18 @@ import {
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Image, JellyfinFolder, Season } from '@lani/db';
 import { resolveChroot } from '@lani/framework';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import path from 'path';
 
 export type SeasonForWriteMetadata = Season & {
-  jellyfinFolder: JellyfinFolder | null;
+  jellyfinFolder: JellyfinFolder;
   bannerImage: Image | null;
   fanartImage: Image | null;
   posterImage: Image | null;
 };
 
 export type SeasonForSyncJellyfinSeriesId = Season & {
-  jellyfinFolder: JellyfinFolder | null;
+  jellyfinFolder: JellyfinFolder;
 };
 
 @Injectable()
@@ -28,11 +28,11 @@ export class SeasonEmitService {
   constructor(private s3: S3Service, private prisma: PrismaService) {}
 
   async writeSeasonMetadata(season: SeasonForWriteMetadata) {
-    const { title, jellyfinFolder, jellyfinId } = season;
-    const seasonRoot = jellyfinFolder?.location;
-    if (!seasonRoot) {
-      throw new ConflictException('seasonRoot not set');
-    }
+    const {
+      title,
+      jellyfinFolder: { jellyfinId: folderJellyfinId },
+      jellyfinId,
+    } = season;
     console.log(`writing metadata for season '${title}'`);
 
     let modified = false;
@@ -49,7 +49,7 @@ export class SeasonEmitService {
         });
       } else {
         await JellyfinHelp.refreshItem({
-          itemId: jellyfinFolder.jellyfinId,
+          itemId: folderJellyfinId,
           recursive: true,
         });
       }
@@ -64,13 +64,8 @@ export class SeasonEmitService {
     bangumiId,
     id,
     yearAndSemester,
-    jellyfinFolder,
+    jellyfinFolder: { location: seasonRoot },
   }: SeasonForWriteMetadata) {
-    const seasonRoot = jellyfinFolder?.location;
-    if (!seasonRoot) {
-      throw new Error('seasonRoot not set');
-    }
-
     const nfoPath = resolveChroot(
       path.join(config.lani.mediaRoot, seasonRoot, title, 'tvshow.nfo'),
     );
@@ -121,12 +116,8 @@ export class SeasonEmitService {
     fanartImage,
     posterImage,
     title,
-    jellyfinFolder,
+    jellyfinFolder: { location: seasonRoot },
   }: SeasonForWriteMetadata) {
-    const seasonRoot = jellyfinFolder?.location;
-    if (!seasonRoot) {
-      throw new Error('seasonRoot not set');
-    }
     let modified = false;
     await Promise.all(
       [
@@ -170,10 +161,6 @@ export class SeasonEmitService {
     title,
     jellyfinFolder,
   }: SeasonForSyncJellyfinSeriesId) {
-    // TODO: 之后把folder改成non null就可以删掉了
-    if (!jellyfinFolder) {
-      return false;
-    }
     const items = await JellyfinHelp.getItemsByUserId({
       userId: config.jellyfin.dummyUserId,
       searchTerm: title,
