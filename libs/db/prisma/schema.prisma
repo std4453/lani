@@ -13,8 +13,6 @@ model DownloadSource {
   seasonId   Int       @map("season_id")
   groupId    String    @default("") @map("group_id")
   pattern    String    @unique @default("")
-  isArchived Boolean   @default(false) @map("is_archived")
-  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   isDisabled Boolean   @default(false) @map("is_disabled")
   offset     Int       @default(0)
@@ -57,9 +55,7 @@ model Season {
   description        String           @default("")
   infoSource         MetadataSource   @default(MANUAL) @map("info_source")
   tags               String[]         @db.VarChar
-  isArchived         Boolean          @default(false) @map("is_archived")
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  archivedAt         DateTime?        @map("archived_at") @db.Timestamptz(6)
   bilibiliThmId      String           @default("") @map("bilibili_thm_id")
   bilibiliMainlandId String           @default("") @map("bilibili_mainland_id")
   bangumiId          String           @default("") @map("bangumi_id")

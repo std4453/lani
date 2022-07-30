@@ -141,9 +141,6 @@ export class AdminResolver {
   @Query(() => [String])
   async getAvailableSemesters() {
     const results = await this.prisma.season.findMany({
-      where: {
-        isArchived: false,
-      },
       select: {
         yearAndSemester: true,
       },

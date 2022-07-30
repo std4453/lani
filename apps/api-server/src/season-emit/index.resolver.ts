@@ -21,9 +21,6 @@ export class SeasonEmitResolver {
         posterImage: true,
       },
     });
-    if (season.isArchived) {
-      throw new ConflictException('season is archived (deleted)');
-    }
     await this.seasonEmit.writeSeasonMetadata(season);
     return 'ok';
   }

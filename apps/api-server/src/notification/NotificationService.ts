@@ -58,7 +58,6 @@ export class NotificationService {
       where: {
         jellyfinEpisodeId: null,
         season: {
-          isArchived: false,
           isMonitoring: true,
           notifyMissing: true,
         },

@@ -159,11 +159,9 @@ export class JobService
         seasons,
         episodes
       WHERE download_sources.is_disabled = false
-        AND download_sources.is_archived = false
         AND torrents.title LIKE download_sources.pattern
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
-        AND seasons.is_archived = false
         AND seasons.jellyfin_folder_id IS NOT NULL
         AND episodes.index + download_sources.offset = torrents.episode_index
         AND episodes.jellyfin_episode_id IS NULL

@@ -20,9 +20,6 @@ export class ScrapeMetadataResolver {
     const season = await this.prisma.season.findUnique({
       where: { id: seasonId },
     });
-    if (season.isArchived) {
-      throw new ConflictException('season is archived (deleted)');
-    }
     await this.seasonScrape.syncMetadata(season);
     return 'ok';
   }
@@ -43,8 +40,7 @@ export class ScrapeMetadataResolver {
       where: {
         AND: [
           {
-            // 不同步已删除或未追番中的季度
-            isArchived: false,
+            // 不同步未追番中的季度
             isMonitoring: true,
           },
           {
