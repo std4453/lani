@@ -1,12 +1,12 @@
-import { MetadataRefreshMode } from '@/api/jellyfin';
-import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
+import { SeasonJellyfinService } from '@/season-jellyfin/SeasonJellyfinService';
+import { SeasonWithJellyfinFolder } from '@/types/entities';
 import {
+  removeDirectoryIdempotent,
   writeFileIdempotent,
   writeXMLFileIdempotent,
 } from '@/utils/idempotency';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Image, JellyfinFolder, Season } from '@lani/db';
 import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
@@ -19,40 +19,22 @@ export type SeasonForWriteMetadata = Season & {
   posterImage: Image | null;
 };
 
-export type SeasonForSyncJellyfinSeriesId = Season & {
-  jellyfinFolder: JellyfinFolder;
-};
-
 @Injectable()
 export class SeasonEmitService {
-  constructor(private s3: S3Service, private prisma: PrismaService) {}
+  constructor(
+    private s3: S3Service,
+    private seasonJellyfin: SeasonJellyfinService,
+  ) {}
 
   async writeSeasonMetadata(season: SeasonForWriteMetadata) {
-    const {
-      title,
-      jellyfinFolder: { jellyfinId: folderJellyfinId },
-      jellyfinId,
-    } = season;
-    console.log(`writing metadata for season '${title}'`);
+    console.log(`writing metadata for season '${season.title}'`);
 
     let modified = false;
     modified ||= await this.emitNfo(season);
     modified ||= await this.emitImages(season);
 
     if (modified) {
-      if (jellyfinId) {
-        // TODO: 通过mq触发？
-        await JellyfinHelp.refreshItem({
-          itemId: jellyfinId,
-          metadataRefreshMode: MetadataRefreshMode.DEFAULT,
-          imageRefreshMode: MetadataRefreshMode.DEFAULT,
-        });
-      } else {
-        await JellyfinHelp.refreshItem({
-          itemId: folderJellyfinId,
-          recursive: true,
-        });
-      }
+      this.seasonJellyfin.refreshAfterUpdate(season);
     }
   }
 
@@ -155,33 +137,12 @@ export class SeasonEmitService {
     return modified;
   }
 
-  async syncJellyfinSeriesId({
-    id: seasonId,
-    jellyfinId,
-    title,
-    jellyfinFolder,
-  }: SeasonForSyncJellyfinSeriesId) {
-    const items = await JellyfinHelp.getItemsByUserId({
-      userId: config.jellyfin.dummyUserId,
-      searchTerm: title,
-      limit: 10,
-      parentId: jellyfinFolder.jellyfinId,
-      recursive: true,
-      includeItemTypes: ['Series'],
-    });
-    const id = (items.Items ?? []).find((item) => item.Name === title)?.Id;
-    if (!id) {
-      return false;
-    }
-    if (id === jellyfinId) {
-      return true;
-    }
-    await this.prisma.season.update({
-      where: { id: seasonId },
-      data: {
-        jellyfinId: id,
-      },
-    });
-    return true;
+  async deleteSeasonFiles(season: SeasonWithJellyfinFolder) {
+    const { jellyfinFolder, title } = season;
+    const folderPath = resolveChroot(
+      path.join(config.lani.mediaRoot, jellyfinFolder.location, title),
+    );
+    await removeDirectoryIdempotent(folderPath);
+    await this.seasonJellyfin.refreshAfterDelete(season);
   }
 }

@@ -8,22 +8,21 @@ import {
   ResponseGroup,
   SubjectType,
 } from '@/api/bangumi';
-import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
-import config from '@/config';
 import { JobService } from '@/download-job/index.service';
 import { env } from '@/env';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
-import { resolveChroot } from '@lani/framework';
+import { SeasonEmitService } from '@/season-emit/index.service';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
-import fs from 'fs/promises';
-import path from 'path';
 
 @Injectable()
 @Resolver()
 export class AdminResolver {
-  constructor(private prisma: PrismaService, private job: JobService) {}
+  constructor(
+    private prisma: PrismaService,
+    private job: JobService,
+    private seasonEmit: SeasonEmitService,
+  ) {}
 
   @Query(() => ID)
   environment() {
@@ -158,22 +157,13 @@ export class AdminResolver {
 
   @Mutation(() => ID)
   async deleteSeasonById(@Args('id') id: number) {
-    const { jellyfinFolder, title } = await this.prisma.season.findUnique({
+    const season = await this.prisma.season.findUnique({
       where: { id },
       include: {
         jellyfinFolder: true,
       },
     });
-    if (jellyfinFolder) {
-      const folderPath = resolveChroot(
-        path.join(config.lani.mediaRoot, jellyfinFolder.location, title),
-      );
-      await fs.rm(folderPath, { recursive: true });
-      await JellyfinHelp.refreshItem({
-        itemId: jellyfinFolder.jellyfinId,
-        metadataRefreshMode: MetadataRefreshMode.DEFAULT,
-      });
-    }
+    await this.seasonEmit.deleteSeasonFiles(season);
     await this.prisma.season.delete({
       where: {
         id,

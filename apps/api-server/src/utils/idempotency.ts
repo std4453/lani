@@ -81,3 +81,14 @@ export async function writeXMLFileIdempotent(
     return false;
   }
 }
+
+export async function removeDirectoryIdempotent(path: string) {
+  try {
+    await fs.stat(path);
+    await fs.rm(path, { recursive: true });
+    return true;
+  } catch (error) {
+    // 若文件不存在，返回未删除
+    return false;
+  }
+}

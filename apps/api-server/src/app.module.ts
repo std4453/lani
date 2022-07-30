@@ -10,6 +10,7 @@ import { MikanSyncModule } from '@/mikan-sync/index.module';
 import { NotificationModule } from '@/notification/NotificationModule';
 import { ParseTorrentModule } from '@/parse-torrent/index.module';
 import { SeasonEmitModule } from '@/season-emit/index.module';
+import { SeasonJellyfinModule } from '@/season-jellyfin/SeasonJellyfinModule';
 import { SeasonScrapeModule } from '@/season-scrape/index.module';
 import {
   ApolloFederationDriver,
@@ -31,6 +32,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
 
     SeasonScrapeModule,
     SeasonEmitModule,
+    SeasonJellyfinModule,
 
     DownloadJobModule,
     AdminModule,

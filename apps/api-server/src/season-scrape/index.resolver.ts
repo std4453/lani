@@ -1,8 +1,6 @@
 import { PrismaService } from '@/common/prisma.service';
-import config from '@/config';
 import { EpisodeScrapeService } from '@/season-scrape/EpisodeScrapeService';
 import { SeasonScrapeService } from '@/season-scrape/SeasonScrapeService';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { MetadataSource } from '@lani/db';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
@@ -113,41 +111,5 @@ export class ScrapeMetadataResolver {
       }),
     );
     return results.filter((result) => result).length;
-  }
-
-  @Mutation(() => Boolean)
-  async syncJellyfinSeriesId(@Args('seasonId') seasonId: number) {
-    const { jellyfinId, title, jellyfinFolder } =
-      await this.prisma.season.findUnique({
-        where: { id: seasonId },
-        include: {
-          jellyfinFolder: true,
-        },
-      });
-    if (!jellyfinFolder) {
-      return false;
-    }
-    const items = await JellyfinHelp.getItemsByUserId({
-      userId: config.jellyfin.dummyUserId,
-      searchTerm: title,
-      limit: 10,
-      parentId: jellyfinFolder.jellyfinId,
-      recursive: true,
-      includeItemTypes: ['Series'],
-    });
-    const id = (items.Items ?? []).find((item) => item.Name === title)?.Id;
-    if (!id) {
-      return false;
-    }
-    if (id === jellyfinId) {
-      return true;
-    }
-    await this.prisma.season.update({
-      where: { id: seasonId },
-      data: {
-        jellyfinId: id,
-      },
-    });
-    return true;
   }
 }
