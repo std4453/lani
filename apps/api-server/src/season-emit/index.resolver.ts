@@ -1,8 +1,5 @@
 import { PrismaService } from '@/common/prisma.service';
-import {
-  SeasonEmitService,
-  SeasonForWriteMetadata,
-} from '@/season-emit/index.service';
+import { SeasonEmitService } from '@/season-emit/index.service';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 
@@ -15,7 +12,7 @@ export class SeasonEmitResolver {
 
   @Mutation(() => ID)
   async writeMetadata(@Args('seasonId') seasonId: number) {
-    const season: SeasonForWriteMetadata = await this.prisma.season.findUnique({
+    const season = await this.prisma.season.findUnique({
       where: { id: seasonId },
       include: {
         jellyfinFolder: true,

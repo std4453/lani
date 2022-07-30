@@ -1,23 +1,18 @@
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
 import { SeasonJellyfinService } from '@/season-jellyfin/SeasonJellyfinService';
-import { SeasonWithJellyfinFolder } from '@/types/entities';
+import {
+  SeasonWithFolderAndImages,
+  SeasonWithJellyfinFolder,
+} from '@/types/entities';
 import {
   removeDirectoryIdempotent,
   writeFileIdempotent,
   writeXMLFileIdempotent,
 } from '@/utils/idempotency';
-import { Image, JellyfinFolder, Season } from '@lani/db';
 import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
 import path from 'path';
-
-export type SeasonForWriteMetadata = Season & {
-  jellyfinFolder: JellyfinFolder;
-  bannerImage: Image | null;
-  fanartImage: Image | null;
-  posterImage: Image | null;
-};
 
 @Injectable()
 export class SeasonEmitService {
@@ -26,7 +21,7 @@ export class SeasonEmitService {
     private seasonJellyfin: SeasonJellyfinService,
   ) {}
 
-  async writeSeasonMetadata(season: SeasonForWriteMetadata) {
+  async writeSeasonMetadata(season: SeasonWithFolderAndImages) {
     console.log(`writing metadata for season '${season.title}'`);
 
     let modified = false;
@@ -47,7 +42,7 @@ export class SeasonEmitService {
     id,
     yearAndSemester,
     jellyfinFolder: { location: seasonRoot },
-  }: SeasonForWriteMetadata) {
+  }: SeasonWithFolderAndImages) {
     const nfoPath = resolveChroot(
       path.join(config.lani.mediaRoot, seasonRoot, title, 'tvshow.nfo'),
     );
@@ -99,7 +94,7 @@ export class SeasonEmitService {
     posterImage,
     title,
     jellyfinFolder: { location: seasonRoot },
-  }: SeasonForWriteMetadata) {
+  }: SeasonWithFolderAndImages) {
     let modified = false;
     await Promise.all(
       [
