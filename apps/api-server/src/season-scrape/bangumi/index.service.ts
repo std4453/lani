@@ -1,11 +1,11 @@
 import { BangumiAPIService, EpType } from '@/api/bangumi';
 import { DateFormat } from '@/constants/date-format';
-import { decomposeAirDate } from '@/season-sync/help';
+import { decomposeAirDate } from '@/season-scrape/help';
 import {
   FetchPartialSeasonRequest,
   PartialSeason,
   SeasonCharacter,
-} from '@/season-sync/index.model';
+} from '@/season-scrape/index.model';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 

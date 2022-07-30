@@ -1,12 +1,12 @@
 import { GlobalAxiosService } from '@/common/axios.service';
 import { DateFormat } from '@/constants/date-format';
-import { decomposeAirDate } from '@/season-sync/help';
+import { decomposeAirDate } from '@/season-scrape/help';
 import {
   FetchPartialSeasonRequest,
   PartialSeason,
   SeasonImages,
-} from '@/season-sync/index.model';
-import { SkyhookShow } from '@/season-sync/skyhook/types';
+} from '@/season-scrape/index.model';
+import { SkyhookShow } from '@/season-scrape/skyhook/types';
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
