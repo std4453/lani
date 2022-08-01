@@ -9,14 +9,7 @@ import {
   MetadataSource,
   TorrentFieldsFragment,
 } from '@/generated/types';
-import {
-  Episode,
-  formItemProps,
-  FormValues,
-  useSeasonPageContext,
-} from '@/pages/season/help';
-import { useManualDownloadMagnetDialog } from '@/pages/season/ManualDownloadMagnetDialog';
-import Section from '@/pages/season/Section';
+import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-download-magnet-dialog';
 import { getSeasonKeyword } from '@/utils/season';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
@@ -26,7 +19,14 @@ import { useApolloClient } from '@apollo/client';
 import { Alert, Button, Dropdown, Menu, message, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
-import styles from './Episodes.module.less';
+import Section from '../../components/section';
+import {
+  Episode,
+  formItemProps,
+  FormValues,
+  useSeasonPageContext,
+} from '../../help';
+import styles from './index.module.less';
 
 function useColumns({
   openDownloadMagnet,

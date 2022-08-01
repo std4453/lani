@@ -1,9 +1,6 @@
 import FormDependency from '@/components/FormDependency';
 import { weekdayToText, weekdayToValueEnum } from '@/constants';
 import { MetadataSource } from '@/generated/types';
-import { formItemProps, FormValues } from '@/pages/season/help';
-import Section from '@/pages/season/Section';
-import SectionTitle from '@/pages/season/Section';
 import {
   ProFormDependency,
   ProFormDigit,
@@ -13,7 +10,9 @@ import {
 } from '@ant-design/pro-form';
 import { Alert, Form, FormInstance, Input, Space, Tag, Typography } from 'antd';
 import clsx from 'clsx';
-import styles from './Metadata.module.less';
+import Section from '../../components/section';
+import { formItemProps, FormValues } from '../../help';
+import styles from './index.module.less';
 
 function ImageDisplay({
   src,

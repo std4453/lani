@@ -1,11 +1,5 @@
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
-import {
-  formItemProps,
-  FormValues,
-  useSeasonPageContext,
-} from '@/pages/season/help';
-import Section from '@/pages/season/Section';
 import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
 import { getSeasonKeyword } from '@/utils/season';
 import {
@@ -24,7 +18,9 @@ import { Alert, Button, Form, Tooltip, Typography } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
 import clsx from 'clsx';
 import { useRef } from 'react';
-import styles from './DownloadSources.module.less';
+import Section from '../../components/section';
+import { formItemProps, FormValues, useSeasonPageContext } from '../../help';
+import styles from './index.module.less';
 
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();

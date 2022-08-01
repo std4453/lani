@@ -1,5 +1,4 @@
 import { GetSeasonByTitleDocument } from '@/generated/types';
-import { useSeasonPageContext } from '@/pages/season/help';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { useDialog } from '@/utils/useDialog';
 import useMobile from '@/utils/useMobile';
@@ -8,7 +7,8 @@ import { useApolloClient } from '@apollo/client';
 import { Button, message, Modal, PageHeader, Space } from 'antd';
 import { ForwardedRef, forwardRef } from 'react';
 import { useHistory } from 'umi';
-import styles from './Header.module.less';
+import { useSeasonPageContext } from '../../help';
+import styles from './index.module.less';
 
 const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
   const { formRef, id, syncMetadataAndEpisodes, modified } =

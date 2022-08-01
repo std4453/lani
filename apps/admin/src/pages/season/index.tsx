@@ -1,19 +1,19 @@
-import Connections from '@/pages/season/Connections';
-import DownloadSources from '@/pages/season/DownloadSources';
-import Episodes from '@/pages/season/Episodes';
-import Header from '@/pages/season/Header';
 import {
   FormValues,
   SeasonPageContext,
   useSeasonPage,
 } from '@/pages/season/help';
-import Metadata from '@/pages/season/Metadata';
-import Notifications from '@/pages/season/Notifications';
 import ProForm from '@ant-design/pro-form';
 import { Spin } from 'antd';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'umi';
+import Connections from './parts/connections';
+import DownloadSources from './parts/download-sources';
+import Episodes from './parts/episodes';
+import Header from './parts/header';
+import Metadata from './parts/metadata';
+import Notifications from './parts/notifications';
 
 export default function SeasonPage() {
   const { id: idStr } = useParams<{

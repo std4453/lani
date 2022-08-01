@@ -1,7 +1,7 @@
 import { Divider, Space, Typography } from 'antd';
 import clsx from 'clsx';
 import { ReactNode } from 'react';
-import styles from './Section.module.less';
+import styles from './index.module.less';
 
 export interface SectionProps {
   title: ReactNode;

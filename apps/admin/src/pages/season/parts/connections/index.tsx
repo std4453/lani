@@ -9,8 +9,6 @@ import {
   tvdbLinkById,
 } from '@/constants/link';
 import { SyncJellyfinSeriesIdDocument } from '@/generated/types';
-import { FormValues, useSeasonPageContext } from '@/pages/season/help';
-import Section from '@/pages/season/Section';
 import { LinkOutlined, SearchOutlined } from '@ant-design/icons';
 import ProForm, { ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
@@ -24,7 +22,9 @@ import {
   Space,
   Typography,
 } from 'antd';
-import styles from './Connections.module.less';
+import Section from '../../components/section';
+import { FormValues, useSeasonPageContext } from '../../help';
+import styles from './index.module.less';
 
 export default function Connections() {
   const { id, reloadConfig } = useSeasonPageContext();

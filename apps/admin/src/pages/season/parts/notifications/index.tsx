@@ -1,6 +1,6 @@
-import { formItemProps } from '@/pages/season/help';
-import Section from '@/pages/season/Section';
 import { ProFormSwitch } from '@ant-design/pro-form';
+import Section from '../../components/section';
+import { formItemProps } from '../../help';
 
 export default function Notifications() {
   return (
