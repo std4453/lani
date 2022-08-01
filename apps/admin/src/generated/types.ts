@@ -734,8 +734,10 @@ export type FetchPartialSeasonRequest = {
 
 export type Image = Node & {
   __typename?: 'Image';
-  cosPath?: Maybe<Scalars['String']>;
+  cosPath: Scalars['String'];
+  createdAt: Scalars['Datetime'];
   downloadPath?: Maybe<Scalars['String']>;
+  hash: Scalars['String'];
   id: Scalars['Int'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
@@ -788,6 +790,10 @@ export type ImageSeasonsByPosterImageIdArgs = {
 export type ImageCondition = {
   /** Checks for equality with the object’s `cosPath` field. */
   cosPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `createdAt` field. */
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `hash` field. */
+  hash?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `id` field. */
   id?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `sourceUrl` field. */
@@ -800,6 +806,10 @@ export type ImageFilter = {
   and?: InputMaybe<Array<ImageFilter>>;
   /** Filter by the object’s `cosPath` field. */
   cosPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `hash` field. */
+  hash?: InputMaybe<StringFilter>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<IntFilter>;
   /** Negates the expression. */
@@ -824,7 +834,9 @@ export type ImageFilter = {
 
 /** An input for mutations affecting `Image` */
 export type ImageInput = {
-  cosPath?: InputMaybe<Scalars['String']>;
+  cosPath: Scalars['String'];
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  hash: Scalars['String'];
   id?: InputMaybe<Scalars['Int']>;
   sourceUrl: Scalars['String'];
 };
@@ -832,6 +844,8 @@ export type ImageInput = {
 /** Represents an update to a `Image`. Fields that are set will be updated. */
 export type ImagePatch = {
   cosPath?: InputMaybe<Scalars['String']>;
+  createdAt?: InputMaybe<Scalars['Datetime']>;
+  hash?: InputMaybe<Scalars['String']>;
   id?: InputMaybe<Scalars['Int']>;
   sourceUrl?: InputMaybe<Scalars['String']>;
 };
@@ -872,6 +886,10 @@ export type ImagesEdge = {
 export enum ImagesOrderBy {
   CosPathAsc = 'COS_PATH_ASC',
   CosPathDesc = 'COS_PATH_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  HashAsc = 'HASH_ASC',
+  HashDesc = 'HASH_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
   Natural = 'NATURAL',

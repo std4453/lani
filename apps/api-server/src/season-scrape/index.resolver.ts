@@ -2,7 +2,6 @@ import { PrismaService } from '@/common/prisma.service';
 import { EpisodeScrapeService } from '@/season-scrape/EpisodeScrapeService';
 import { SeasonScrapeService } from '@/season-scrape/SeasonScrapeService';
 import { MetadataSource } from '@lani/db';
-import { ConflictException } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import dayjs from 'dayjs';
@@ -19,6 +18,11 @@ export class ScrapeMetadataResolver {
   async syncMetadata(@Args('seasonId') seasonId: number) {
     const season = await this.prisma.season.findUnique({
       where: { id: seasonId },
+      include: {
+        bannerImage: true,
+        fanartImage: true,
+        posterImage: true,
+      },
     });
     await this.seasonScrape.syncMetadata(season);
     return 'ok';

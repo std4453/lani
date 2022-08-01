@@ -6,12 +6,13 @@ import {
   SeasonWithJellyfinFolder,
 } from '@/types/entities';
 import {
+  getFileHash,
   removeDirectoryIdempotent,
-  writeFileIdempotent,
   writeXMLFileIdempotent,
 } from '@/utils/idempotency';
 import { resolveChroot } from '@lani/framework';
 import { Injectable } from '@nestjs/common';
+import fs from 'fs/promises';
 import path from 'path';
 
 @Injectable()
@@ -29,7 +30,12 @@ export class SeasonEmitService {
     modified ||= await this.emitImages(season);
 
     if (modified) {
+      console.log(
+        `files modified, refreshing Jellyfin for season '${season.title}'`,
+      );
       this.seasonJellyfin.refreshAfterUpdate(season);
+    } else {
+      console.log(`files unchanged for season '${season.title}'`);
     }
   }
 
@@ -105,12 +111,17 @@ export class SeasonEmitService {
         if (!image) {
           return;
         }
-        const { cosPath } = image;
-        if (!cosPath) {
-          console.warn('cosPath not set');
+        const { cosPath, hash } = image;
+        const ext = cosPath.substring(cosPath.lastIndexOf('.'));
+        const filePath = resolveChroot(
+          path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
+        );
+        const currentHash = await getFileHash(filePath);
+
+        if (hash && currentHash && currentHash === hash) {
           return;
         }
-        const ext = cosPath.substring(cosPath.lastIndexOf('.'));
+
         const { Body: content } = await this.s3
           .getObject({
             Bucket: config.s3.bucket,
@@ -123,10 +134,9 @@ export class SeasonEmitService {
         if (!Buffer.isBuffer(content)) {
           throw new Error('GetObject returns non-buffer result');
         }
-        const filePath = resolveChroot(
-          path.join(config.lani.mediaRoot, seasonRoot, title, `${type}${ext}`),
-        );
-        modified ||= await writeFileIdempotent(filePath, content);
+
+        await fs.writeFile(filePath, content);
+        modified = true;
       }),
     );
     return modified;

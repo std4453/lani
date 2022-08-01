@@ -6,7 +6,8 @@ import { SeasonEmitService } from '@/season-emit/index.service';
 import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
 import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
-import { Image, MetadataSource, Season } from '@lani/db';
+import { SeasonImageKey, SeasonWithImages } from '@/types/entities';
+import { Image, MetadataSource, Prisma } from '@lani/db';
 import { ConflictException, Injectable } from '@nestjs/common';
 import md5 from 'md5';
 
@@ -21,8 +22,16 @@ export class SeasonScrapeService {
     private s3: S3Service,
   ) {}
 
-  async syncMetadata(season: Season) {
-    const { bangumiId, tvdbId, tvdbSeason, infoSource } = season;
+  async syncMetadata({
+    id,
+    bangumiId,
+    tvdbId,
+    tvdbSeason,
+    infoSource,
+    fanartImage,
+    bannerImage,
+    posterImage,
+  }: SeasonWithImages) {
     let result: PartialSeason = {};
     switch (infoSource) {
       case MetadataSource.BGM_CN:
@@ -57,60 +66,27 @@ export class SeasonScrapeService {
         throw new ConflictException('infoSource not available for auto sync');
     }
     const { info, images } = result;
+
+    const data: Prisma.SeasonUpdateInput = {
+      description: info?.description ?? '',
+      tags: info?.tags ?? info?.genres ?? [],
+      weekday: info?.weekday ?? null,
+      airTime: info?.time ?? '',
+      yearAndSemester:
+        info?.year && info?.semester
+          ? `${info.year}${info.semester.toString().padStart(2, '0')}`
+          : '',
+    };
+
+    await Promise.all([
+      this.uploadImage(fanartImage, images?.fanartURL, data, 'fanartImage'),
+      this.uploadImage(posterImage, images?.posterURL, data, 'posterImage'),
+      this.uploadImage(bannerImage, images?.bannerURL, data, 'bannerImage'),
+    ]);
+
     const newSeason = await this.prisma.season.update({
-      where: { id: season.id },
-      data: {
-        description: info?.description ?? '',
-        tags: info?.tags ?? info?.genres ?? [],
-        weekday: info?.weekday ?? null,
-        airTime: info?.time ?? '',
-        yearAndSemester:
-          info?.year && info?.semester
-            ? `${info.year}${info.semester.toString().padStart(2, '0')}`
-            : '',
-        ...(images?.posterURL
-          ? {
-              posterImage: {
-                connectOrCreate: {
-                  where: {
-                    sourceUrl: images.posterURL,
-                  },
-                  create: {
-                    sourceUrl: images.posterURL,
-                  },
-                },
-              },
-            }
-          : undefined),
-        ...(images?.fanartURL
-          ? {
-              fanartImage: {
-                connectOrCreate: {
-                  where: {
-                    sourceUrl: images.fanartURL,
-                  },
-                  create: {
-                    sourceUrl: images.fanartURL,
-                  },
-                },
-              },
-            }
-          : undefined),
-        ...(images?.bannerURL
-          ? {
-              bannerImage: {
-                connectOrCreate: {
-                  where: {
-                    sourceUrl: images.bannerURL,
-                  },
-                  create: {
-                    sourceUrl: images.bannerURL,
-                  },
-                },
-              },
-            }
-          : undefined),
-      },
+      where: { id },
+      data,
       include: {
         jellyfinFolder: true,
         bannerImage: true,
@@ -118,44 +94,48 @@ export class SeasonScrapeService {
         posterImage: true,
       },
     });
-    // TODO: 强制上传之后才能设置？
-    await Promise.all(
-      ['bannerImage', 'fanartImage', 'posterImage'].map(
-        async (key: 'bannerImage' | 'fanartImage' | 'posterImage') => {
-          const image = newSeason[key];
-          const result = await this.ensureImage(image);
-          if (result) {
-            newSeason[key] = result;
-          }
-        },
-      ),
-    );
-    // TODO: 改成通过MQ解耦
+
     await this.seasonEmitService.writeSeasonMetadata(newSeason);
   }
 
-  private async ensureImage(image: Image | null) {
-    if (!image) {
+  private async uploadImage(
+    image: Image | null,
+    url: string | undefined,
+    update: Prisma.SeasonUpdateInput,
+    type: SeasonImageKey,
+  ) {
+    if (!url) {
       return;
     }
-    if (image.cosPath) {
+    if (image && image.sourceUrl === url) {
       return;
     }
+
     // TODO: SSRF
-    const ext = image.sourceUrl
-      .substring(image.sourceUrl.lastIndexOf('.'))
-      .toLowerCase();
+    const ext = url.substring(url.lastIndexOf('.')).toLowerCase();
     // 防止XSS攻击，这里过滤一下后缀名
     if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
-      throw new Error('unsupported image type');
+      console.error('unsupported image type');
+      return;
     }
-    const { data } = await this.china.get<Buffer>(image.sourceUrl, {
+    const { data } = await this.china.get<Buffer>(url, {
       responseType: 'arraybuffer',
       // 最大10M
       maxContentLength: 10 * 1024 * 1024,
     });
     const hash = md5(data);
     const key = `${hash}${ext}`;
+
+    try {
+      await this.s3
+        .headObject({
+          Bucket: config.s3.bucket,
+          Key: key,
+        })
+        .promise();
+      return;
+    } catch (error) {}
+
     await this.s3
       .putObject({
         Bucket: config.s3.bucket,
@@ -163,11 +143,18 @@ export class SeasonScrapeService {
         Body: data,
       })
       .promise();
-    return await this.prisma.image.update({
-      where: { id: image.id },
-      data: {
-        cosPath: key,
+
+    update[type] = {
+      connectOrCreate: {
+        where: {
+          sourceUrl: url,
+        },
+        create: {
+          sourceUrl: url,
+          cosPath: key,
+          hash,
+        },
       },
-    });
+    };
   }
 }

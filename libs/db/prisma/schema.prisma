@@ -9,14 +9,14 @@ datasource db {
 }
 
 model DownloadSource {
-  id         Int       @id @default(autoincrement())
-  seasonId   Int       @map("season_id")
-  groupId    String    @default("") @map("group_id")
-  pattern    String    @unique @default("")
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  isDisabled Boolean   @default(false) @map("is_disabled")
-  offset     Int       @default(0)
-  season     Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  seasonId   Int      @map("season_id")
+  groupId    String   @default("") @map("group_id")
+  pattern    String   @unique @default("")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  isDisabled Boolean  @default(false) @map("is_disabled")
+  offset     Int      @default(0)
+  season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   @@map("download_sources")
 }
@@ -39,9 +39,13 @@ model Episode {
 }
 
 model Image {
-  id            Int      @id @default(autoincrement())
-  sourceUrl     String   @unique @map("source_url")
-  cosPath       String?  @map("cos_path")
+  id        Int    @id @default(autoincrement())
+  sourceUrl String @unique @map("source_url")
+  cosPath   String @map("cos_path")
+  hash      String
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
   bannerSeasons Season[] @relation("imagesToseasons_banner_image_id")
   fanartSeasons Season[] @relation("imagesToseasons_fanart_image_id")
   posterSeasons Season[] @relation("imagesToseasons_poster_image_id")

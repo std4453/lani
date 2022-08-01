@@ -5,36 +5,30 @@ import pathModule from 'path';
 import xml2js from 'xml2js';
 
 export interface WriteFileIdempotentOptions {
-  validateFile?: (content: Buffer) => boolean | Promise<boolean>;
   mkdir?: boolean;
+}
+
+export async function getFileHash(path: string) {
+  try {
+    await fs.stat(path);
+    const currentContent = await fs.readFile(path);
+    return md5(currentContent);
+  } catch (error) {
+    // 若文件不存在无视报错
+    return '';
+  }
 }
 
 export async function writeFileIdempotent(
   path: string,
   content: string | Buffer,
-  { validateFile, mkdir = true }: WriteFileIdempotentOptions = {},
+  { mkdir = true }: WriteFileIdempotentOptions = {},
 ) {
   if (mkdir) {
     await fs.mkdir(pathModule.dirname(path), { recursive: true });
   }
 
-  let currentFileHash = '';
-  try {
-    await fs.stat(path);
-    const currentContent = await fs.readFile(path);
-    if (validateFile) {
-      const valid = await validateFile(currentContent);
-      // 若文件无效，hash设置为空，即之后必定写入
-      if (valid) {
-        currentFileHash = md5(currentContent);
-      }
-    } else {
-      currentFileHash = md5(currentContent);
-    }
-  } catch (error) {
-    // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
-    // 如果是没有读权限，或是目录，之后写入时肯定会报错，现在也可以无视
-  }
+  const currentFileHash = await getFileHash(path);
   const newFileHash = await md5(content);
   if (currentFileHash !== newFileHash) {
     await fs.writeFile(path, content);
