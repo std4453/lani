@@ -140,13 +140,13 @@ export const formItemProps: FormItemProps = {
     md: 5,
     lg: 4,
     xl: 3,
-    xxl: 1,
+    xxl: 2,
   },
   wrapperCol: {
     md: 19,
     lg: 20,
     xl: 21,
-    xxl: 23,
+    xxl: 22,
   },
   labelAlign: 'left',
 };
