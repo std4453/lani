@@ -55,36 +55,49 @@ export class EpisodeScrapeService {
         return false;
     }
 
-    await this.prisma.season.update({
-      where: { id: seasonId },
-      data: {
-        episodesLastSync: new Date(),
-        episodes: {
-          upsert: (result.episodes ?? []).map(
-            ({ index, title, description = '', airDate }) => ({
-              where: {
-                seasonId_index: {
-                  seasonId,
-                  index,
+    await this.prisma.$transaction([
+      this.prisma.season.update({
+        where: { id: seasonId },
+        data: {
+          episodesLastSync: new Date(),
+          episodes: {
+            upsert: (result.episodes ?? []).map(
+              ({ index, title, description = '', airDate }) => ({
+                where: {
+                  seasonId_index: {
+                    seasonId,
+                    index,
+                  },
                 },
-              },
-              update: {
-                title,
-                description,
-                airTime: this.getEpisodeAirTime(airTime, airDate),
-              },
-              create: {
-                index,
-                title,
-                description,
-                airTime: this.getEpisodeAirTime(airTime, airDate),
-              },
-            }),
-          ),
+                update: {
+                  title,
+                  description,
+                  airTime: this.getEpisodeAirTime(airTime, airDate),
+                },
+                create: {
+                  index,
+                  title,
+                  description,
+                  airTime: this.getEpisodeAirTime(airTime, airDate),
+                },
+              }),
+            ),
+          },
         },
-      },
-    });
-    // TODO: 如果有已可用的剧集被更改，触发warning
+      }),
+      // 删除元数据中不存在，且没有任何下载任务的剧集，因为没有任务所以不会有文件，没有副作用
+      this.prisma.episode.deleteMany({
+        where: {
+          seasonId,
+          index: {
+            notIn: (result.episodes ?? []).map((e) => e.index),
+          },
+          downloadJobs: {
+            none: {},
+          },
+        },
+      }),
+    ]);
     return true;
   }
 
