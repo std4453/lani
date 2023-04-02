@@ -467,8 +467,10 @@ async function querySeasons(
             in: folder,
           },
         }
-      : // 未选择时，隐藏默认不展示的媒体库
-        {
+      : keyword
+      ? undefined // 精确查找时，不过滤媒体库
+      : {
+          // 未选择且非精确查找时，隐藏默认不展示的媒体库
           jellyfinFolderByJellyfinFolderId: {
             isHidden: {
               equalTo: false,
