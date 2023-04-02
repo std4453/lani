@@ -571,7 +571,8 @@ async function querySeasons(
     variables: {
       first: pageSize,
       offset: pageSize * (current - 1),
-      orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdAsc],
+      // 默认按照Id倒序，方便找到最新的季度
+      orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdDesc],
       ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       now,
     },
