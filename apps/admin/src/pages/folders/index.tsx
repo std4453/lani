@@ -1,9 +1,11 @@
+import AsyncButton from '@/components/AsyncButton';
 import { TableTitle } from '@/components/Layout';
 import { jellyfinFolderLink } from '@/constants/link';
 import {
   Folders_ListFoldersDocument,
   Folders_ListFoldersFieldsFragment,
   Folders_SetFolderDefaultDocument,
+  Folders_SyncJellyfinFoldersDocument,
   Folders_UpdateFolderByIdDocument,
   JellyfinFoldersOrderBy,
 } from '@/generated/types';
@@ -15,6 +17,7 @@ import {
   useProColumns,
   withAntdSearch,
 } from '@/utils/search';
+import { HistoryOutlined } from '@ant-design/icons';
 import ProTable, { ActionType } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
 import { Typography, message } from 'antd';
@@ -214,6 +217,30 @@ function FoldersPage() {
       {...props}
       headerTitle={<TableTitle>媒体库管理</TableTitle>}
       search={false}
+      toolBarRender={() => [
+        <AsyncButton
+          key={0}
+          type="primary"
+          onClick={async () => {
+            const hide = message.loading('同步中，请稍候……', 0);
+            try {
+              await client.mutate({
+                mutation: Folders_SyncJellyfinFoldersDocument,
+              });
+              void message.success('同步成功');
+              void action.current?.reload();
+            } catch (error) {
+              console.error(error);
+              void message.error('同步失败');
+            } finally {
+              hide();
+            }
+          }}
+          icon={<HistoryOutlined />}
+        >
+          同步媒体库
+        </AsyncButton>,
+      ]}
     />
   );
 }

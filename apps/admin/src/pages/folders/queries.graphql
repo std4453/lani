@@ -42,3 +42,7 @@ mutation Folders_UpdateFolderById(
 mutation Folders_SetFolderDefault($id: Int!) {
   setJellyfinFolderDefault(id: $id)
 }
+
+mutation Folders_SyncJellyfinFolders {
+  syncJellyfinFolders
+}
