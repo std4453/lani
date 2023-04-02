@@ -125,6 +125,13 @@ function useColumns() {
       })),
     [optionsData],
   );
+  const hasHiddenFolder = useMemo(
+    () =>
+      (extractNode(optionsData?.allJellyfinFolders) ?? []).some(
+        (folder) => folder.isHidden,
+      ),
+    [optionsData],
+  );
   const client = useApolloClient();
 
   return useProColumns(
@@ -225,6 +232,9 @@ function useColumns() {
             </ColoredCell>
           ),
           filters: foldersOptions,
+          tooltip: hasHiddenFolder
+            ? '部分媒体库默认隐藏，筛选后可见'
+            : undefined,
           stateKey: {
             filter: 'folder',
             mapValue: (f) => Number(f),
@@ -388,7 +398,7 @@ function useColumns() {
           width: 140,
         },
       ],
-      [history, semesterOptions, foldersOptions, client],
+      [history, semesterOptions, foldersOptions, client, hasHiddenFolder],
     ),
   );
 }
@@ -457,7 +467,14 @@ async function querySeasons(
             in: folder,
           },
         }
-      : undefined),
+      : // 未选择时，隐藏默认不展示的媒体库
+        {
+          jellyfinFolderByJellyfinFolderId: {
+            isHidden: {
+              equalTo: false,
+            },
+          },
+        }),
   };
   if (episodesFilter?.length) {
     const filters = [] as SeasonFilter[];

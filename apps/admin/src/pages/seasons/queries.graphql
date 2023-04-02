@@ -107,6 +107,8 @@ fragment jellyfinFolderFields on JellyfinFolder {
   id
   name
   location
+  isHidden
+  isDefault
 }
 
 query GetMetadataPageOptions {

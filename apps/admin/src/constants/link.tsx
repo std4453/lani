@@ -23,6 +23,17 @@ export function jellyfinSeasonLink(jellyfinSeasonId: string) {
   return `${publicHost}/web/index.html#!/details?id=${jellyfinSeasonId}`;
 }
 
+export function jellyfinFolderLink(jellyfinFolderId: string, type = 'tv') {
+  const config = selectConfig(store.getState());
+  if (!config?.jellyfin) {
+    return '';
+  }
+  const {
+    jellyfin: { publicHost },
+  } = config;
+  return `${publicHost}/web/index.html#!/${type}.html?topParentId=${jellyfinFolderId}`;
+}
+
 export function bilibiliSeasonLink(ssid: string) {
   return `https://www.bilibili.com/bangumi/play/ss${ssid}`;
 }

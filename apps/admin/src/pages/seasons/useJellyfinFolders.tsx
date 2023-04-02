@@ -9,22 +9,22 @@ export function useJellyfinFolders(visible: boolean) {
     ListJellyfinFoldersDocument,
   );
   const [folderId, setFolderId] = useState<number | null>(null);
-  const animeFolderId = useMemo(
+  const defaultFolderId = useMemo(
     () =>
       (extractNode(foldersData?.allJellyfinFolders) ?? []).find(
-        (folder) => folder.location === 'anime',
+        (folder) => folder.isDefault,
       )?.id,
     [foldersData],
   );
   useEffect(() => {
     if (visible) {
-      if (animeFolderId) {
-        setFolderId(animeFolderId);
+      if (defaultFolderId) {
+        setFolderId(defaultFolderId);
       } else {
         setFolderId(null);
       }
     }
-  }, [visible, animeFolderId]);
+  }, [visible, defaultFolderId]);
 
   const foldersSelectProps: SelectProps = {
     loading: foldersLoading,

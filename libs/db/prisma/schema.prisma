@@ -160,6 +160,8 @@ model JellyfinFolder {
   jellyfinId String   @unique @map("jellyfin_id")
   location   String
   seasons    Season[] @relation("jellyfin_foldersToseasons")
+  isDefault  Boolean  @default(false) @map("is_default")
+  isHidden   Boolean  @default(false) @map("is_hidden")
 
   @@map("jellyfin_folders")
 }

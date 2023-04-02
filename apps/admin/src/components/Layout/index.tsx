@@ -12,6 +12,7 @@ import useMobile from '@/utils/useMobile';
 import {
   DatabaseOutlined,
   DownloadOutlined,
+  FolderOpenOutlined,
   HomeOutlined,
   MenuOutlined,
   NodeExpandOutlined,
@@ -29,6 +30,7 @@ const pathToIcon: { [x: string]: ElementType } = {
   '/seasons': DatabaseOutlined,
   '/torrents': DownloadOutlined,
   '/jobs': NodeExpandOutlined,
+  '/folders': FolderOpenOutlined,
 };
 
 function UserProfile({ collapsed }: { collapsed: boolean }) {

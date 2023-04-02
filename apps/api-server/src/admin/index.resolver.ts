@@ -181,4 +181,27 @@ export class AdminResolver {
     });
     return 'ok';
   }
+
+  @Mutation(() => ID)
+  async setJellyfinFolderDefault(@Args('id') id: number) {
+    await this.prisma.$transaction([
+      this.prisma.jellyfinFolder.updateMany({
+        data: {
+          isDefault: false,
+        },
+        where: {
+          isDefault: true,
+        },
+      }),
+      this.prisma.jellyfinFolder.update({
+        data: {
+          isDefault: true,
+        },
+        where: {
+          id,
+        },
+      }),
+    ]);
+    return 'ok';
+  }
 }

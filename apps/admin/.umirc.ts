@@ -44,6 +44,13 @@ export default defineConfig({
           wrappers: ['@/wrappers/auth'],
         },
         {
+          path: '/folders',
+          exact: true,
+          component: '@/pages/folders',
+          name: '媒体库管理',
+          wrappers: ['@/wrappers/auth'],
+        },
+        {
           path: '/redirect',
           exact: true,
           component: '@/pages/302',

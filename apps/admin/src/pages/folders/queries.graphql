@@ -1,0 +1,44 @@
+fragment folders_listFoldersFields on JellyfinFolder {
+  jellyfinId
+  location
+  name
+  id
+  isDefault
+  isHidden
+}
+
+query Folders_ListFolders(
+  $offset: Int
+  $first: Int
+  $orderBy: [JellyfinFoldersOrderBy!] = []
+  $filter: JellyfinFolderFilter
+) {
+  data: allJellyfinFolders(
+    offset: $offset
+    first: $first
+    orderBy: $orderBy
+    filter: $filter
+  ) {
+    edges {
+      node {
+        ...folders_listFoldersFields
+      }
+    }
+    totalCount
+  }
+}
+
+mutation Folders_UpdateFolderById(
+  $id: Int!
+  $folderPatch: JellyfinFolderPatch!
+) {
+  updateJellyfinFolderById(
+    input: { id: $id, jellyfinFolderPatch: $folderPatch }
+  ) {
+    __typename
+  }
+}
+
+mutation Folders_SetFolderDefault($id: Int!) {
+  setJellyfinFolderDefault(id: $id)
+}
