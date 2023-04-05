@@ -1,7 +1,8 @@
-query SearchTorrent($keyword: String!, $first: Int!) {
+query SearchTorrent($keyword: String!, $first: Int!, $offset: Int = 0) {
   allTorrents(
     filter: { title: { includesInsensitive: $keyword } }
     first: $first
+    offset: $offset
     orderBy: PUBLISH_DATE_DESC
   ) {
     edges {
@@ -9,5 +10,6 @@ query SearchTorrent($keyword: String!, $first: Int!) {
         ...torrentFields
       }
     }
+    totalCount
   }
 }

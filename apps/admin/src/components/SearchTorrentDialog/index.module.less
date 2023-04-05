@@ -1,4 +1,4 @@
-@import "~@/styles/index.less";
+@import '~@/styles/index.less';
 
 .row {
   padding: 8px 24px;
@@ -21,9 +21,19 @@
     background-color: #e6f7ff;
     border-color: #1890ff;
   }
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.info {
+  width: 160px;
 }
 
 .title {
+  flex: 1;
   word-break: break-all;
 }
 
@@ -34,5 +44,19 @@
 
   @media @mobile {
     height: 400px;
+  }
+}
+
+.spin {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 40px;
+  align-items: center;
+}
+
+.noEmpty {
+  :global(.ant-list-empty-text) {
+    visibility: hidden;
   }
 }
