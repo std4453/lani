@@ -12,11 +12,23 @@ import {
 import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-download-magnet-dialog';
 import { getSeasonKeyword } from '@/utils/season';
 import { useAsyncButton } from '@/utils/useAsyncButton';
-import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
-import { ProFormSelect } from '@ant-design/pro-form';
+import {
+  DownOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import { ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
-import { Alert, Button, Dropdown, Menu, message, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Dropdown,
+  Menu,
+  message,
+  Tooltip,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef } from 'react';
 import Section from '../../components/section';
@@ -240,6 +252,24 @@ export default function Episodes() {
     <Section
       title="剧集列表"
       extra={[
+        <div
+          style={{
+            display: 'flex',
+          }}
+          key={3}
+        >
+          <div
+            style={{
+              marginRight: 8,
+            }}
+          >
+            自动同步&nbsp;
+            <Tooltip title="关闭后，将不会自动从数据源获取剧集信息。目前暂不支持手动编辑剧集信息，推荐仅在数据源存在严重问题时关闭">
+              <InfoCircleOutlined />
+            </Tooltip>
+          </div>
+          <ProFormSwitch name="episodesAutoSync" noStyle />
+        </div>,
         <div
           style={{
             display: 'flex',

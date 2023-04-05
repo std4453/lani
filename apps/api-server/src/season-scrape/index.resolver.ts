@@ -46,6 +46,8 @@ export class ScrapeMetadataResolver {
           {
             // 不同步未追番中的季度
             isMonitoring: true,
+            // 不同步禁用自动同步的季度
+            episodesAutoSync: true,
           },
           {
             // 从未同步过，或距离上次同步时间超过12小时

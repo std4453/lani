@@ -71,6 +71,7 @@ export interface FormValues {
   needDownloadCc: boolean;
   notifyMissing: boolean;
   notifyPublish: boolean;
+  episodesAutoSync: boolean;
 }
 
 export function queryToFormValues({
@@ -97,6 +98,7 @@ export function queryToFormValues({
   needDownloadCc,
   notifyMissing,
   notifyPublish,
+  episodesAutoSync,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -132,6 +134,7 @@ export function queryToFormValues({
     needDownloadCc,
     notifyMissing,
     notifyPublish,
+    episodesAutoSync,
   };
 }
 
@@ -353,6 +356,7 @@ export function useSeasonPage(id: number) {
       needDownloadCc,
       notifyMissing,
       notifyPublish,
+      episodesAutoSync,
     }: FormValues) => {
       try {
         await client.mutate({
@@ -391,6 +395,7 @@ export function useSeasonPage(id: number) {
               needDownloadCc,
               notifyMissing,
               notifyPublish,
+              episodesAutoSync,
             },
           },
         });
