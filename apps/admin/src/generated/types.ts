@@ -1484,6 +1484,7 @@ export type JellyfinFolder = Node & {
   isHidden: Scalars['Boolean'];
   jellyfinId: Scalars['String'];
   location: Scalars['String'];
+  mappedLocation?: Maybe<Scalars['String']>;
   name: Scalars['String'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
@@ -3532,7 +3533,7 @@ export type DownloadJobStatusFieldsFragment = { __typename?: 'DownloadJob', stat
 
 export type EpisodeStatusFieldsFragment = { __typename?: 'Episode', airTime?: any | null, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', status: DownloadStatus, isFailed: boolean } | null }> } };
 
-export type Folders_ListFoldersFieldsFragment = { __typename?: 'JellyfinFolder', jellyfinId: string, location: string, name: string, id: number, isDefault: boolean, isHidden: boolean };
+export type Folders_ListFoldersFieldsFragment = { __typename?: 'JellyfinFolder', jellyfinId: string, location: string, name: string, id: number, isDefault: boolean, isHidden: boolean, mappedLocation?: string | null };
 
 export type Folders_ListFoldersQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -3542,7 +3543,7 @@ export type Folders_ListFoldersQueryVariables = Exact<{
 }>;
 
 
-export type Folders_ListFoldersQuery = { __typename?: 'Query', data?: { __typename?: 'JellyfinFoldersConnection', totalCount: number, edges: Array<{ __typename?: 'JellyfinFoldersEdge', node?: { __typename?: 'JellyfinFolder', jellyfinId: string, location: string, name: string, id: number, isDefault: boolean, isHidden: boolean } | null }> } | null };
+export type Folders_ListFoldersQuery = { __typename?: 'Query', data?: { __typename?: 'JellyfinFoldersConnection', totalCount: number, edges: Array<{ __typename?: 'JellyfinFoldersEdge', node?: { __typename?: 'JellyfinFolder', jellyfinId: string, location: string, name: string, id: number, isDefault: boolean, isHidden: boolean, mappedLocation?: string | null } | null }> } | null };
 
 export type Folders_UpdateFolderByIdMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -3744,7 +3745,7 @@ export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetConfigQuery = { __typename?: 'Query', config: { __typename?: 'AdminConfig', jellyfin?: { __typename?: 'JellyfinConfig', publicHost: string } | null } };
 
-export const Folders_ListFoldersFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"folders_listFoldersFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}}]}}]} as unknown as DocumentNode<Folders_ListFoldersFieldsFragment, unknown>;
+export const Folders_ListFoldersFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"folders_listFoldersFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"mappedLocation"}}]}}]} as unknown as DocumentNode<Folders_ListFoldersFieldsFragment, unknown>;
 export const ListDownloadJobsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listDownloadJobsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}}]}}]} as unknown as DocumentNode<ListDownloadJobsFieldsFragment, unknown>;
 export const DownloadJobStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"downloadJobStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}}]}}]} as unknown as DocumentNode<DownloadJobStatusFieldsFragment, unknown>;
 export const EpisodeStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"episodeStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Episode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","alias":{"kind":"Name","value":"jobs"},"name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"downloadJobStatusFields"}}]}}]}}]}}]}},...DownloadJobStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<EpisodeStatusFieldsFragment, unknown>;

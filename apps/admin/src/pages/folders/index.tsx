@@ -77,10 +77,18 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
           width: 120,
         },
         {
-          title: '路径',
+          title: '原始路径',
+          tooltip: 'Jellyfin内配置的媒体库路径',
           dataIndex: 'location',
           ellipsis: true,
-          width: 500,
+          width: 400,
+        },
+        {
+          title: '映射路径',
+          tooltip: '映射到lani系统中的路径',
+          dataIndex: 'mappedLocation',
+          ellipsis: true,
+          width: 400,
         },
         {
           title: '可见性',

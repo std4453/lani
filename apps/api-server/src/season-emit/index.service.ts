@@ -11,6 +11,7 @@ import {
   removeDirectoryIdempotent,
   writeXMLFileIdempotent,
 } from '@/utils/idempotency';
+import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import fs from 'fs/promises';
 import path from 'path';
@@ -77,11 +78,12 @@ export class SeasonEmitService {
   private async renameFolder({
     lastWriteTitle: oldTitle,
     title: newTitle,
-    jellyfinFolder: { location: seasonRoot },
+    jellyfinFolder: { location: jellyfinFolderRoot },
   }: SeasonWithFolderAndImages) {
     if (oldTitle === null) {
       throw new Error('oldTitle is null');
     }
+    const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
     const oldPath = path.join(seasonRoot, oldTitle);
     const newPath = path.join(seasonRoot, newTitle);
     // 目录已经存在时会报错，不会覆盖
@@ -96,8 +98,9 @@ export class SeasonEmitService {
     bangumiId,
     id,
     yearAndSemester,
-    jellyfinFolder: { location: seasonRoot },
+    jellyfinFolder: { location: jellyfinFolderRoot },
   }: SeasonWithFolderAndImages) {
+    const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
     const nfoPath = path.join(seasonRoot, title, 'tvshow.nfo');
     // https://kodi.wiki/view/NFO_files/TV_shows
     return await writeXMLFileIdempotent(
@@ -146,8 +149,9 @@ export class SeasonEmitService {
     fanartImage,
     posterImage,
     title,
-    jellyfinFolder: { location: seasonRoot },
+    jellyfinFolder: { location: jellyfinFolderRoot },
   }: SeasonWithFolderAndImages) {
+    const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
     let modified = false;
     await Promise.all(
       [
@@ -189,7 +193,11 @@ export class SeasonEmitService {
 
   async deleteSeasonFiles(season: SeasonWithJellyfinFolder) {
     const { jellyfinFolder, title } = season;
-    const folderPath = path.join(jellyfinFolder.location, title);
+    const seasonRoot = mapPath(
+      config.jellyfin.pathMapping,
+      jellyfinFolder.location,
+    );
+    const folderPath = path.join(seasonRoot, title);
     await removeDirectoryIdempotent(folderPath);
     await this.seasonJellyfin.refreshAfterDelete(season);
   }

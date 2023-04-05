@@ -1,7 +1,5 @@
 import { CollectionTypeOptions, LibraryStructureService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
-import config from '@/config';
-import { mapPath } from '@/utils/path';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
 
@@ -9,10 +7,6 @@ import { ID, Mutation, Resolver } from '@nestjs/graphql';
 @Resolver()
 export class JellyfinSyncService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
-
-  private getMappedFolderLocation(location: string) {
-    return mapPath(config.jellyfin.pathMapping, location);
-  }
 
   @Mutation(() => ID)
   async syncJellyfinFolders() {
@@ -29,9 +23,7 @@ export class JellyfinSyncService implements OnModuleInit {
       )
       .map((folder) => ({
         name: folder.Name ?? '',
-        location: this.getMappedFolderLocation(
-          (folder.Locations ?? [])[0] ?? '',
-        ),
+        location: (folder.Locations ?? [])[0] ?? '',
         jellyfinId: folder.ItemId ?? '',
       }))
       .filter((folder) => !folder.location.startsWith('..'));

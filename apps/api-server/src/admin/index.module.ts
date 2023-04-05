@@ -1,3 +1,4 @@
+import { JellyfinFolderResolver } from '@/admin/JellyfinFolderResolver';
 import { ImageResolver } from '@/admin/image.resolver';
 import { AdminResolver } from '@/admin/index.resolver';
 import { CommonModule } from '@/common/index.module';
@@ -8,6 +9,6 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [CommonModule, ConfigModule, DownloadJobModule, SeasonEmitModule],
-  providers: [AdminResolver, ImageResolver],
+  providers: [AdminResolver, ImageResolver, JellyfinFolderResolver],
 })
 export class AdminModule {}

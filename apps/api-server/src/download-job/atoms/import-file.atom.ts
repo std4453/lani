@@ -90,10 +90,11 @@ export class ImportFileAtom extends AsyncAtom<
         },
       },
     });
-    const seasonRoot = jellyfinFolder?.location;
-    if (!seasonRoot) {
+    const jellyfinFolderRoot = jellyfinFolder?.location;
+    if (!jellyfinFolderRoot) {
       throw new Error('jellyfinFolder not set');
     }
+    const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
 
     const sourcePath = mapPath(
       config.downloadClient[config.downloadClient.kind].pathMapping,

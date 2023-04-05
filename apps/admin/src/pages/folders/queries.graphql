@@ -5,6 +5,7 @@ fragment folders_listFoldersFields on JellyfinFolder {
   id
   isDefault
   isHidden
+  mappedLocation
 }
 
 query Folders_ListFolders(

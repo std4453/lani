@@ -1,3 +1,4 @@
+import { JellyfinFolder } from '@/admin/JellyfinFolderResolver';
 import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
 import { BilibiliBangumiCCModule } from '@/bilibili-bangumi-cc/index.module';
@@ -44,7 +45,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
       autoSchemaFile: true,
       buildSchemaOptions: {
         numberScalarMode: 'integer',
-        orphanedTypes: [Image],
+        orphanedTypes: [Image, JellyfinFolder],
       },
     }),
     ConfigModule.forRoot({
