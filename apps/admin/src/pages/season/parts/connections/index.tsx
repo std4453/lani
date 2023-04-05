@@ -4,7 +4,6 @@ import {
   bangumiLink,
   bilibiliSeasonLink,
   jellyfinSeasonLink,
-  mikanAnimeLink,
   tvdbLinkById,
 } from '@/constants/link';
 import { LinkOutlined } from '@ant-design/icons';
@@ -171,40 +170,6 @@ export default function Connections() {
                   icon={<LinkOutlined />}
                   disabled={!bilibiliMainlandId}
                   href={bilibiliSeasonLink(bilibiliMainlandId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              )}
-            </FormDependency>
-          </Input.Group>
-        </Form.Item>
-        <Form.Item
-          label={
-            <Space>
-              <img src={IconPath.mikanAnimeIcon} className={styles.icon} />
-              <Typography.Text>Mikan Anime</Typography.Text>
-            </Space>
-          }
-        >
-          <Input.Group
-            compact
-            style={{
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <ProFormText
-              name="mikanAnimeId"
-              width="sm"
-              formItemProps={{
-                noStyle: true,
-              }}
-            />
-            <FormDependency<FormValues> name={['mikanAnimeId']}>
-              {({ mikanAnimeId }) => (
-                <Button
-                  icon={<LinkOutlined />}
-                  disabled={!mikanAnimeId}
-                  href={mikanAnimeLink(mikanAnimeId)}
                   target="_blank"
                   rel="noopener noreferrer"
                 />
