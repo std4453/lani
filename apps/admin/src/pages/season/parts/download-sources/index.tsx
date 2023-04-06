@@ -96,9 +96,7 @@ export default function DownloadSources() {
                   <Tooltip
                     title={
                       <>
-                        偏移3集表示该标题匹配到的第3集
-                        <br />
-                        对应系统中第1集
+                        偏移X集，则该标题匹配到的第(1+X)集，对应lani系统中第1集，通常用于年番后半季、第二季中，种子集数不从1开始的情况
                       </>
                     }
                   >
