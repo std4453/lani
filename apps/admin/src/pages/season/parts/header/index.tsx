@@ -1,10 +1,11 @@
 import { GetSeasonByTitleDocument } from '@/generated/types';
+import { normalizeError, throwLaniError } from '@/utils/error';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { useDialog } from '@/utils/useDialog';
 import useMobile from '@/utils/useMobile';
 import { ProFormText } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
-import { Button, message, Modal, PageHeader, Space } from 'antd';
+import { Button, Modal, PageHeader, Space, message } from 'antd';
 import { ForwardedRef, forwardRef } from 'react';
 import { useHistory } from 'umi';
 import { useSeasonPageContext } from '../../help';
@@ -58,17 +59,21 @@ const Header = forwardRef((_props, ref: ForwardedRef<HTMLDivElement>) => {
                 },
                 {
                   validator: async (_, value) => {
-                    const { data } = await client.query({
-                      query: GetSeasonByTitleDocument,
-                      variables: {
-                        title: value,
-                      },
-                    });
-                    if (
-                      data?.seasonByTitle?.id &&
-                      data?.seasonByTitle?.id !== id
-                    ) {
-                      throw new Error('存在同名季度');
+                    try {
+                      const { data } = await client.query({
+                        query: GetSeasonByTitleDocument,
+                        variables: {
+                          title: value,
+                        },
+                      });
+                      if (
+                        data?.seasonByTitle?.id &&
+                        data?.seasonByTitle?.id !== id
+                      ) {
+                        throwLaniError('存在同名季度');
+                      }
+                    } catch (error) {
+                      normalizeError(error);
                     }
                   },
                 },

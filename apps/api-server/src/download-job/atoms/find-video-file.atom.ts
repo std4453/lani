@@ -28,7 +28,7 @@ export class FindVideoFileAtom extends AsyncAtom<
         VIDEO_FILE_MATCHER.test(path) && size > totalSize * 0.9,
     );
     if (!videoFile) {
-      throw new Error('No video file found or multiple video files');
+      throw new Error('未找到视频文件或找到多个视频文件，无法确定导入目标');
     }
     return {
       importPath: path.join(steps.download.downloadPath, videoFile.path),

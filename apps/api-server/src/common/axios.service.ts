@@ -38,7 +38,7 @@ export function getAxiosConfig(
 // axios.create() 制造的少很多默认值，导致了问题，因此实际上我们的 request
 // 托管给 instance 而非 super
 export class AxiosService extends Axios {
-  private instance: AxiosInstance;
+  protected instance: AxiosInstance;
   defaults: Axios['defaults'];
   interceptors: Axios['interceptors'];
 

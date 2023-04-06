@@ -1,4 +1,5 @@
 import { DownloadTorrentForEpisodeDocument } from '@/generated/types';
+import { handleError } from '@/utils/error';
 import {
   createUseDialogWithOnResolve,
   DialogPropsWithOnResolve,
@@ -39,9 +40,8 @@ export default function ManualDownloadMagnetDialog({
           void message.success('下载任务创建成功');
           await resolve();
           return true;
-        } catch (e) {
-          console.error(e);
-          void message.error('下载任务创建失败');
+        } catch (error) {
+          handleError(error, '下载任务创建失败');
           return false;
         }
       }}

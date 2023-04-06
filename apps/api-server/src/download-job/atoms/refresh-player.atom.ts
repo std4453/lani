@@ -45,10 +45,7 @@ export class RefreshPlayerAtom extends Atom<
         },
       });
       if (!jellyfinSeriesId) {
-        this.jobFail(
-          id,
-          new Error('cannot refresh since season has no jellyfinId'),
-        );
+        this.jobFail(id, new Error('未获取到季度对应的Jellyfin ID，无法刷新'));
         return;
       }
       const jellyfinEpisodeId = await this.getJellyfinEpisode(
@@ -102,10 +99,7 @@ export class RefreshPlayerAtom extends Atom<
         const now = new Date().getTime();
         // 5分钟内没有完成就算失败
         if (now - enqueueTime > 5 * 60 * 1000) {
-          this.jobFail(
-            id,
-            new Error('episode waiting for more than 5 minutes'),
-          );
+          this.jobFail(id, new Error('超过5分钟未被识别，请检查Jellyfin设置'));
           return true;
         }
         return false;

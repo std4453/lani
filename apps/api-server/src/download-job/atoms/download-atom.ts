@@ -49,13 +49,10 @@ export class DownloadAtom extends Atom<DownloadWorkflowDefinition, 'download'> {
       let modified = false;
       if (!torrent) {
         modified = true;
-        this.jobFail(id, new Error('Torrent missing'));
+        this.jobFail(id, new Error('种子不存在或被删除'));
       } else if (torrent.status === 'error') {
         modified = true;
-        this.jobFail(
-          id,
-          new Error(`Torrent at invalid state: ${torrent.state}`),
-        );
+        this.jobFail(id, new Error(`种子下载失败，当前状态：${torrent.state}`));
       } else if (torrent.status === 'success') {
         modified = true;
         this.jobSuccess(id, {

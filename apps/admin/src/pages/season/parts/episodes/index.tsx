@@ -39,6 +39,7 @@ import {
   useSeasonPageContext,
 } from '../../help';
 import styles from './index.module.less';
+import { handleError } from '@/utils/error';
 
 function useColumns({
   openDownloadMagnet,
@@ -137,9 +138,8 @@ function useColumns({
                           });
                           void message.success('下载任务创建成功');
                           void reloadEpisodes();
-                        } catch (e) {
-                          console.error(e);
-                          void message.error('下载任务创建失败');
+                        } catch (error) {
+                          handleError(error, '下载任务创建失败');
                         }
                       },
                     });
@@ -185,9 +185,8 @@ function useColumns({
                         },
                       });
                       void message.success('字幕下载成功');
-                    } catch (e) {
-                      console.error(e);
-                      void message.error('字幕下载失败');
+                    } catch (error) {
+                      handleError(error, '字幕下载失败');
                     } finally {
                       hide();
                     }

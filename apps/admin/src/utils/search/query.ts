@@ -28,13 +28,7 @@ export function processApolloQueryResult<
       data: ExtractNode<T['data']>[];
       total: number;
     } {
-  const { data, error } = result;
-  if (error) {
-    console.error(error);
-    return {
-      success: false,
-    };
-  }
+  const { data } = result;
   const queryResult: T['data'] = data.data;
   if (!queryResult) {
     return {

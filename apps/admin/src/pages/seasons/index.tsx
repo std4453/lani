@@ -1,8 +1,8 @@
 import { TableTitle } from '@/components/Layout';
-import { seasonToText, weekdayToText } from '@/constants';
+import { seasonToText } from '@/constants';
 import {
-  calcEpisodeStatus,
   DownloadStatusTag,
+  calcEpisodeStatus,
 } from '@/constants/download-status';
 import { IconPath } from '@/constants/icon-path';
 import {
@@ -22,14 +22,15 @@ import {
 } from '@/generated/types';
 import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
-import { extractNode, ExtractNode } from '@/utils/graphql';
+import { handleError } from '@/utils/error';
+import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
-import { Button, message, Popconfirm, Space, Typography } from 'antd';
+import { Button, Popconfirm, Space, Typography, message } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
@@ -385,9 +386,8 @@ function useColumns() {
                   });
                   void message.success('删除成功');
                   void action?.reload();
-                } catch (e) {
-                  console.error(e);
-                  void message.error('删除失败');
+                } catch (error) {
+                  handleError(error, '删除失败');
                 }
               }}
             >
@@ -568,34 +568,35 @@ async function querySeasons(
         : [SeasonsOrderBy.EpisodesBySeasonIdMinAirTimeDesc]
       : []),
   ];
-  const { data, error } = await client.query({
-    query: ListSeasonsDocument,
-    variables: {
-      first: pageSize,
-      offset: pageSize * (current - 1),
-      // 默认按照Id倒序，方便找到最新的季度
-      orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdDesc],
-      ...(Object.keys(filter).length > 0 ? { filter } : undefined),
-      now,
-    },
-  });
-  if (error) {
-    console.error(error);
+  try {
+    const { data } = await client.query({
+      query: ListSeasonsDocument,
+      variables: {
+        first: pageSize,
+        offset: pageSize * (current - 1),
+        // 默认按照Id倒序，方便找到最新的季度
+        orderBy: orderBy.length > 0 ? orderBy : [SeasonsOrderBy.IdDesc],
+        ...(Object.keys(filter).length > 0 ? { filter } : undefined),
+        now,
+      },
+    });
+    const result = data.allSeasons;
+    if (!result) {
+      return {
+        success: false,
+      };
+    }
+    return {
+      data: extractNode(result),
+      success: true,
+      total: result.totalCount,
+    };
+  } catch (error) {
+    handleError(error, '季度列表获取失败');
     return {
       success: false,
     };
   }
-  const result = data.allSeasons;
-  if (!result) {
-    return {
-      success: false,
-    };
-  }
-  return {
-    data: extractNode(result),
-    success: true,
-    total: result.totalCount,
-  };
 }
 
 export default withAntdSearch(function MetadataPage() {

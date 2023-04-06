@@ -90,10 +90,7 @@ export class ImportFileAtom extends AsyncAtom<
         },
       },
     });
-    const jellyfinFolderRoot = jellyfinFolder?.location;
-    if (!jellyfinFolderRoot) {
-      throw new Error('jellyfinFolder not set');
-    }
+    const jellyfinFolderRoot = jellyfinFolder.location;
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
 
     const sourcePath = mapPath(
@@ -114,7 +111,7 @@ export class ImportFileAtom extends AsyncAtom<
     switch (config.lani.moveStrategy) {
       case 'hardLinkOnly':
         if (!(await this.tryHardLink(sourcePath, targetPath))) {
-          throw new Error('cannot hard link between different mount points');
+          throw new Error('无法在不同文件系统之间建立硬链接');
         }
         break;
       case 'hardLinkOrCopy':

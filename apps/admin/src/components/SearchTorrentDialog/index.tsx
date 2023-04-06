@@ -16,6 +16,7 @@ import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.less';
+import { handleError } from '@/utils/error';
 
 function useDebounce<T>(
   value: T,
@@ -136,7 +137,7 @@ export default function SearchTorrentDialog({
         loading: true,
         error: false,
       });
-      const { data, error } = await client.query({
+      const { data } = await client.query({
         query: SearchTorrentDocument,
         variables: {
           first: 50,
@@ -144,9 +145,6 @@ export default function SearchTorrentDialog({
           keyword: queryParams.keywords,
         },
       });
-      if (error) {
-        throw error;
-      }
       if (promiseRevisionRef.current === currentPromiseRevision) {
         const additionalTorrents = extractNode(data.allTorrents) ?? [];
         const totalCount = data.allTorrents?.totalCount ?? 0;
@@ -162,6 +160,7 @@ export default function SearchTorrentDialog({
       }
     } catch (error) {
       if (promiseRevisionRef.current === currentPromiseRevision) {
+        handleError(error, '搜索种子失败');
         setData({
           error: true,
           loading: false,

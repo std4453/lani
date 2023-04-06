@@ -1,6 +1,7 @@
 import { client } from '@/client';
 import { AdminConfig, GetConfigDocument } from '@/generated/types';
 import { AppDispatch, RootState } from '@/store';
+import { handleError } from '@/utils/error';
 import { ExcludeTypename } from '@/utils/graphql';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -35,7 +36,7 @@ export async function loadConfig(dispatch: AppDispatch) {
     const data = response.config as ExcludeTypename<typeof response.config>;
     dispatch(setConfig({ data }));
   } catch (error) {
-    console.error(error);
+    handleError(error, '配置获取失败');
   }
 }
 

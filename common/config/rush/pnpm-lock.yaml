@@ -14,6 +14,7 @@ specifiers:
   '@docusaurus/preset-classic': 2.0.0-rc.1
   '@docusaurus/types': ~2.0.0-rc.1
   '@graphile-contrib/pg-omit-archived': ~2.1.0
+  '@graphile-contrib/pg-order-by-related': ~1.0.0-beta.6
   '@graphile-contrib/pg-simplify-inflector': ~6.1.0
   '@graphile/federation': ~0.1.0
   '@graphql-codegen/cli': ~2.4.0
@@ -90,7 +91,6 @@ specifiers:
   clsx: ~1.1.1
   cookie: ~0.4.2
   dayjs: ~1.10.7
-  dotenv: ~16.0.3
   eslint: ^7.32.0
   eslint-config-oclif: ^4
   eslint-config-oclif-typescript: ^1.0.2
@@ -170,6 +170,7 @@ dependencies:
   '@docusaurus/preset-classic': 2.0.0-rc.1_7b80f8e9b1542d066e01e09d8e1fcfd6
   '@docusaurus/types': 2.0.1_react-dom@17.0.2+react@17.0.2
   '@graphile-contrib/pg-omit-archived': 2.1.0_250e71098788239b4a4dfe2a50d4f5b5
+  '@graphile-contrib/pg-order-by-related': 1.0.0-beta.6
   '@graphile-contrib/pg-simplify-inflector': 6.1.0
   '@graphile/federation': 0.1.0_6130c89331ecac3323ebe7f3a64be2b5
   '@graphql-codegen/cli': 2.4.0_72b035d5f9432c3bb1957f75d3d1b829
@@ -246,7 +247,6 @@ dependencies:
   clsx: 1.1.1
   cookie: 0.4.2
   dayjs: 1.10.8
-  dotenv: 16.0.3
   eslint: 7.32.0
   eslint-config-oclif: 4.0.0_eslint@7.32.0
   eslint-config-oclif-typescript: 1.0.2_eslint@7.32.0+typescript@4.5.5
@@ -9944,6 +9944,13 @@ packages:
     resolution: {integrity: sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==}
     dev: false
 
+  /axios-retry/3.4.0:
+    resolution: {integrity: sha512-VdgaP+gHH4iQYCCNUWF2pcqeciVOdGrBBAYUfTY+wPcO5Ltvp/37MLFNCmJKo7Gj3SHvCSdL8ouI1qLYJN3liA==}
+    dependencies:
+      '@babel/runtime': 7.19.0
+      is-retry-allowed: 2.2.0
+    dev: false
+
   /axios/0.25.0:
     resolution: {integrity: sha512-cD8FOb0tRH3uuEe6+evtAbgJtfxr7ly3fQjYcMcuPlgkwVS9xboaVIpcDV+cYQe+yGykgwZCs1pzjntcGa6l5g==}
     dependencies:
@@ -15915,6 +15922,11 @@ packages:
   /is-retry-allowed/1.2.0:
     resolution: {integrity: sha512-RUbUeKwvm3XG2VYamhJL1xFktgjvPzL0Hq8C+6yrWIswDy3BIXGqCxhxkc30N9jqK311gVU137K8Ei55/zVJRg==}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /is-retry-allowed/2.2.0:
+    resolution: {integrity: sha512-XVm7LOeLpTW4jV19QSH38vkswxoLud8sQ57YwJVTPWdiaI9I8keEhGFpBlslyVsgdQy4Opg8QOLb8YRgsyZiQg==}
+    engines: {node: '>=10'}
     dev: false
 
   /is-root/2.1.0:
@@ -26489,7 +26501,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-GWH9l5qaNWgUaRpOUfCQEfcBrAfn3ySMXYnKWb/lyLHY+7lEyU9clJcwfNMQh//XEqKwm9MT9aeDz1JKgfDTiQ==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-Cqf8qT8+BbJaxepyhHVQexz3ixTdKO8ZBzxCwLMVL8lpaGpLwSXewEmP08j1lDtu2wT6BeEC1xtQL9hYqfshAg==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -26571,7 +26583,7 @@ packages:
     dev: false
 
   file:projects/all-in-one.tgz:
-    resolution: {integrity: sha512-qF4XZAPjBNxN+ROMPWoCQDRyzS68c4QwYrfM4beq9WdeQwAFpYEmBC1PWXjRV/lT2HbVDHkbodHI01g0A36dvQ==, tarball: file:projects/all-in-one.tgz}
+    resolution: {integrity: sha512-wfGMmpsoWSulix7OWNtrGhNaVouSepD4SNuJxHRqOpR4aRAypIte5Fp4AuPcFvvinzSaACCpZgoXyyHTDaqVoQ==, tarball: file:projects/all-in-one.tgz}
     name: '@rush-temp/all-in-one'
     version: 0.0.0
     dependencies:
@@ -26579,7 +26591,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_396212c9817b8cb7283c4ecf8eee65ef:
-    resolution: {integrity: sha512-cT9HbxxoCxCJXyI/FNjhTahaufTMr54cpBi44z1GhO0pTiIYqE9l1Gk4vsB3zCh2nERo7KhsRzcohbChgoF6jw==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-SOskUDp4gWncFAvRJPPaHOyW7VeiwjOPR4iRAELuTpRp8G8vFb3CCmRxs1VIDetmcVC3JyBKSu2KoDpBsxncZQ==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -26614,6 +26626,7 @@ packages:
       '@typescript-eslint/parser': 5.17.0_eslint@7.32.0+typescript@4.5.5
       aws-sdk: 2.1152.0
       axios: 0.26.1
+      axios-retry: 3.4.0
       class-transformer: 0.5.1
       class-validator: 0.13.2
       cookie: 0.4.2

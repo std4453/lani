@@ -9,6 +9,7 @@ import {
   Folders_UpdateFolderByIdDocument,
   JellyfinFoldersOrderBy,
 } from '@/generated/types';
+import { handleError } from '@/utils/error';
 import { ExcludeTypename } from '@/utils/graphql';
 import {
   TableColumns,
@@ -126,8 +127,7 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
                   void message.success('设置成功');
                   void action?.reload();
                 } catch (error) {
-                  console.error(error);
-                  void message.error('设置失败');
+                  handleError(error, '设置失败');
                 }
               }}
               disabled={!r.isHidden}
@@ -150,8 +150,7 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
                   void message.success('设置成功');
                   void action?.reload();
                 } catch (error) {
-                  console.error(error);
-                  void message.error('设置失败');
+                  handleError(error, '设置失败');
                 }
               }}
               disabled={r.isHidden}
@@ -171,8 +170,7 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
                   void message.success('设置成功');
                   void action?.reload();
                 } catch (error) {
-                  console.error(error);
-                  void message.error('设置失败');
+                  handleError(error, '设置失败');
                 }
               }}
               disabled={r.isDefault}
@@ -202,15 +200,22 @@ function FoldersPage() {
             : [JellyfinFoldersOrderBy.NameDesc]
           : []),
       ];
-      const result = await client.query({
-        query: Folders_ListFoldersDocument,
-        variables: {
-          orderBy,
-          first: pageSize,
-          offset: (current - 1) * pageSize,
-        },
-      });
-      return processApolloQueryResult(result);
+      try {
+        const result = await client.query({
+          query: Folders_ListFoldersDocument,
+          variables: {
+            orderBy,
+            first: pageSize,
+            offset: (current - 1) * pageSize,
+          },
+        });
+        return processApolloQueryResult(result);
+      } catch (error) {
+        handleError(error, '媒体库列表获取失败');
+        return {
+          success: false,
+        };
+      }
     },
     {
       hasKeyword: false,
@@ -238,8 +243,7 @@ function FoldersPage() {
               void message.success('同步成功');
               void action.current?.reload();
             } catch (error) {
-              console.error(error);
-              void message.error('同步失败');
+              handleError(error, '同步失败');
             } finally {
               hide();
             }

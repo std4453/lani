@@ -138,31 +138,21 @@ export class LarkBot
   }
 
   private getDownloadJobState(job: DownloadJob) {
-    const state =
-      {
-        [DownloadStatus.AVAILABLE]: {
-          children: '可用',
-        },
-        [DownloadStatus.DOWNLOADING]: {
-          children: '下载中',
-        },
-        [DownloadStatus.DOWNLOAD_COMPLETED]: {
-          children: '寻找文件',
-        },
-        [DownloadStatus.IMPORTING]: {
-          children: '导入中',
-        },
-        [DownloadStatus.PLAYER_WAITING]: {
-          children: '等待识别',
-        },
-        [DownloadStatus.WRITING_METADATA]: {
-          children: '写入元数据',
-        },
-        [DownloadStatus.DOWNLOAD_SUBMITTING]: {
-          children: '提交下载',
-        },
-      }[job.status] ?? '未知';
-    return `${state}${job.isFailed ? '，已失败' : ''}`;
+    if (job.isFailed) {
+      return `已失败，原因为${job.failedReason}`;
+    } else {
+      return (
+        {
+          [DownloadStatus.AVAILABLE]: '可用',
+          [DownloadStatus.DOWNLOADING]: '下载中',
+          [DownloadStatus.DOWNLOAD_COMPLETED]: '寻找文件',
+          [DownloadStatus.IMPORTING]: '导入中',
+          [DownloadStatus.PLAYER_WAITING]: '等待识别',
+          [DownloadStatus.WRITING_METADATA]: '写入元数据',
+          [DownloadStatus.DOWNLOAD_SUBMITTING]: '提交下载',
+        }[job.status] ?? '未知'
+      );
+    }
   }
 
   async onEpisodesMissing(episodes: OnEpisodesMissingEpisode[]) {

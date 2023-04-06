@@ -29,7 +29,7 @@ export class QBittorrentClient implements IDownloadClient {
     if (torrentLink.startsWith('magnet:')) {
       const magnet = parseTorrent(torrentLink);
       if (!magnet.infoHash) {
-        throw new Error('Invalid magnet link');
+        throw new Error('磁力链接无效');
       }
       const params = new FormData();
       params.append('urls', torrentLink);
@@ -48,7 +48,7 @@ export class QBittorrentClient implements IDownloadClient {
       });
       const torrent = parseTorrent(data);
       if (!torrent.name || !torrent.infoHash) {
-        throw new Error('Invalid torrent file');
+        throw new Error('种子文件无效或已损坏');
       }
       const params = new FormData();
       params.append('torrents', data, {

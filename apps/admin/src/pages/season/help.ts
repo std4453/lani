@@ -12,6 +12,7 @@ import {
   UpdateSeasonDownloadSourcesDocument,
   WriteSeasonMetadataDocument,
 } from '@/generated/types';
+import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { ProFormInstance } from '@ant-design/pro-form';
 import { useApolloClient, useQuery } from '@apollo/client';
@@ -308,8 +309,7 @@ export function useSeasonPage(id: number) {
       });
       void message.success('同步元数据成功');
     } catch (error) {
-      console.error(error);
-      void message.error('同步元数据失败');
+      handleError(error, '同步元数据失败');
     } finally {
       setLoading(false);
     }
@@ -329,8 +329,7 @@ export function useSeasonPage(id: number) {
       });
       void message.success('同步剧集信息成功');
     } catch (error) {
-      console.error(error);
-      void message.error('同步剧集信息失败');
+      handleError(error, '同步剧集信息失败');
     } finally {
       setLoading(false);
     }
@@ -409,8 +408,7 @@ export function useSeasonPage(id: number) {
         void reloadConfig();
         return true;
       } catch (error) {
-        console.error(error);
-        void message.error('保存失败');
+        handleError(error, '保存失败');
         return false;
       }
     },

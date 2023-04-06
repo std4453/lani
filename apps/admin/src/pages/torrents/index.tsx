@@ -27,6 +27,7 @@ import md5 from 'md5';
 import prettyBytes from 'pretty-bytes';
 import { useMemo, useRef } from 'react';
 import styles from './index.module.less';
+import { handleError } from '@/utils/error';
 
 function chooseColor(text: string) {
   const hash = md5(text);
@@ -366,32 +367,34 @@ async function queryTorrents(
         : [TorrentsOrderBy.IndexDesc, TorrentsOrderBy.IndexFromDesc]
       : []),
   ];
-  const { data, error } = await client.query({
-    query: ListTorrentsDocument,
-    variables: {
-      first: pageSize,
-      offset: pageSize * (current - 1),
-      orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.PublishDateDesc],
-      ...(Object.keys(filter).length > 0 ? { filter } : undefined),
-    },
-  });
-  if (error) {
-    console.error(error);
+  try {
+    const { data } = await client.query({
+      query: ListTorrentsDocument,
+      variables: {
+        first: pageSize,
+        offset: pageSize * (current - 1),
+        orderBy:
+          orderBy.length > 0 ? orderBy : [TorrentsOrderBy.PublishDateDesc],
+        ...(Object.keys(filter).length > 0 ? { filter } : undefined),
+      },
+    });
+    const result = data.allTorrents;
+    if (!result) {
+      return {
+        success: false,
+      };
+    }
+    return {
+      data: extractNode(result),
+      success: true,
+      total: result.totalCount,
+    };
+  } catch (error) {
+    handleError(error, '种子列表获取失败');
     return {
       success: false,
     };
   }
-  const result = data.allTorrents;
-  if (!result) {
-    return {
-      success: false,
-    };
-  }
-  return {
-    data: extractNode(result),
-    success: true,
-    total: result.totalCount,
-  };
 }
 
 export default withAntdSearch(function Torrents() {
@@ -451,8 +454,7 @@ export default withAntdSearch(function Torrents() {
                   void message.success(`同步成功，新增 ${count} 条种子`);
                   void ref.current?.reload();
                 } catch (error) {
-                  console.error(error);
-                  void message.error('同步失败');
+                  handleError(error, '同步失败');
                 } finally {
                   hide();
                 }

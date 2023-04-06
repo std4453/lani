@@ -3,6 +3,7 @@ import {
   WriteSeasonMetadataDocument,
 } from '@/generated/types';
 import { useJellyfinFolders } from '@/pages/seasons/useJellyfinFolders';
+import { handleError } from '@/utils/error';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import useMobile from '@/utils/useMobile';
@@ -50,9 +51,8 @@ export default function CreateSeasonDialog({
       });
       void message.success('新建成功');
       void resolve({ id });
-    } catch (e) {
-      console.error(e);
-      void message.error('新建失败');
+    } catch (error) {
+      handleError(error, '新建失败');
     }
   });
 

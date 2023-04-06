@@ -27,6 +27,7 @@ import {
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
+import { handleError } from '@/utils/error';
 
 export default function AddFromBangumiDialog({
   visible,
@@ -124,15 +125,13 @@ export default function AddFromBangumiDialog({
                     // syncMetadata会写入元数据，这里不用手动触发写入
                     void message.success('同步元数据成功');
                     void resolve({ id });
-                  } catch (e) {
-                    console.error(e);
-                    void message.error('同步元数据失败');
+                  } catch (error) {
+                    handleError(error, '同步元数据失败');
                   } finally {
                     hide();
                   }
-                } catch (e) {
-                  console.error(e);
-                  void message.error('新建失败');
+                } catch (error) {
+                  handleError(error, '新建失败');
                 } finally {
                   setSubmitting(false);
                 }

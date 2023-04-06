@@ -15,6 +15,7 @@ import { Typography } from 'antd';
 import { useMemo, useRef } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
+import { handleError } from '@/utils/error';
 
 function useColumns({
   openEpisodeDetails,
@@ -158,31 +159,32 @@ async function queryDownloadJobs(
         }
       : undefined),
   };
-  const { data, error } = await client.query({
-    query: ListDownloadJobsDocument,
-    variables: {
-      first: pageSize,
-      offset: pageSize * (current - 1),
-      ...(Object.keys(filter).length > 0 ? { filter } : undefined),
-    },
-  });
-  if (error) {
-    console.error(error);
+  try {
+    const { data } = await client.query({
+      query: ListDownloadJobsDocument,
+      variables: {
+        first: pageSize,
+        offset: pageSize * (current - 1),
+        ...(Object.keys(filter).length > 0 ? { filter } : undefined),
+      },
+    });
+    const result = data.allDownloadJobs;
+    if (!result) {
+      return {
+        success: false,
+      };
+    }
+    return {
+      data: extractNode(result),
+      success: true,
+      total: result.totalCount,
+    };
+  } catch (error) {
+    handleError(error, '下载任务获取失败')
     return {
       success: false,
     };
   }
-  const result = data.allDownloadJobs;
-  if (!result) {
-    return {
-      success: false,
-    };
-  }
-  return {
-    data: extractNode(result),
-    success: true,
-    total: result.totalCount,
-  };
 }
 
 export default function JobsPage() {
