@@ -4,13 +4,11 @@ import {
   GetJellyfinIdByIdDocument,
   GetSeasonByIdDocument,
   MetadataSource,
+  SaveSeasonDocument,
   SeasonConfigFieldsFragment,
   SeasonEpisodesFragment,
   SyncEpisodeDataDocument,
   SyncMetadataDocument,
-  UpdateSeasonByIdDocument,
-  UpdateSeasonDownloadSourcesDocument,
-  WriteSeasonMetadataDocument,
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
@@ -49,7 +47,6 @@ type DownloadSource = ExtractNode<
 
 export interface FormValues {
   isMonitoring: boolean;
-  mikanAnimeId: string;
   jellyfinFolderDesc: string;
   tags: string[];
   title: string;
@@ -73,11 +70,13 @@ export interface FormValues {
   notifyMissing: boolean;
   notifyPublish: boolean;
   episodesAutoSync: boolean;
+  downloadOffsetType: 'postpone' | 'advance';
+  downloadOffsetDays: number;
+  downloadOffsetHours: number;
 }
 
 export function queryToFormValues({
   isMonitoring,
-  mikanAnimeId,
   jellyfinFolder,
   tags,
   title,
@@ -100,10 +99,10 @@ export function queryToFormValues({
   notifyMissing,
   notifyPublish,
   episodesAutoSync,
+  downloadOffsetHours,
 }: Season): FormValues {
   return {
     isMonitoring,
-    mikanAnimeId,
     jellyfinFolderDesc: jellyfinFolder
       ? `${jellyfinFolder.name} (${jellyfinFolder.location})`
       : '',
@@ -136,6 +135,9 @@ export function queryToFormValues({
     notifyMissing,
     notifyPublish,
     episodesAutoSync,
+    downloadOffsetType: downloadOffsetHours >= 0 ? 'advance' : 'postpone',
+    downloadOffsetDays: Math.floor(Math.abs(downloadOffsetHours) / 24),
+    downloadOffsetHours: Math.abs(downloadOffsetHours) % 24,
   };
 }
 
@@ -287,6 +289,17 @@ export function useSeasonPage(id: number) {
       setLoading(false);
     }
   });
+  const reloadAll = useMemoizedFn(async () => {
+    setLoading(true);
+    try {
+      await reload({
+        withConfig: true,
+        withEpisodes: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  });
 
   const syncMetadataAndEpisodes = useMemoizedFn(async () => {
     try {
@@ -338,7 +351,6 @@ export function useSeasonPage(id: number) {
   const submit = useMemoizedFn(
     async ({
       isMonitoring,
-      mikanAnimeId,
       title,
       tvdbId,
       tvdbSeason,
@@ -356,28 +368,18 @@ export function useSeasonPage(id: number) {
       notifyMissing,
       notifyPublish,
       episodesAutoSync,
+      downloadOffsetType,
+      downloadOffsetDays,
+      downloadOffsetHours,
     }: FormValues) => {
       try {
         await client.mutate({
-          mutation: UpdateSeasonDownloadSourcesDocument,
-          variables: {
-            input: {
-              seasonId: id,
-              sources: downloadSources.map(({ offset, ...source }) => ({
-                ...source,
-                offset,
-              })),
-            },
-          },
-        });
-        await client.mutate({
-          mutation: UpdateSeasonByIdDocument,
+          mutation: SaveSeasonDocument,
           variables: {
             id,
-            seasonPatch: {
+            patch: {
               isMonitoring,
               // jellyfinId,
-              mikanAnimeId,
               title,
               tvdbId,
               tvdbSeason: tvdbSeason ?? null,
@@ -395,17 +397,15 @@ export function useSeasonPage(id: number) {
               notifyMissing,
               notifyPublish,
               episodesAutoSync,
+              downloadOffsetHours:
+                (downloadOffsetType === 'advance' ? 1 : -1) *
+                (downloadOffsetDays * 24 + downloadOffsetHours),
+              sources: downloadSources,
             },
           },
         });
-        await client.mutate({
-          mutation: WriteSeasonMetadataDocument,
-          variables: {
-            id,
-          },
-        });
         void message.success('保存成功');
-        void reloadConfig();
+        void reloadAll();
         return true;
       } catch (error) {
         handleError(error, '保存失败');
@@ -420,6 +420,7 @@ export function useSeasonPage(id: number) {
       episodes,
       reloadConfig,
       reloadEpisodes,
+      reloadAll,
       syncMetadataAndEpisodes,
       syncEpisodes,
       submit,
@@ -428,12 +429,14 @@ export function useSeasonPage(id: number) {
       modified: touched,
       jellyfinId,
       episodesLastSync,
+      updateTouched,
     }),
     [
       id,
       episodes,
       reloadConfig,
       reloadEpisodes,
+      reloadAll,
       syncMetadataAndEpisodes,
       syncEpisodes,
       touched,
@@ -441,6 +444,7 @@ export function useSeasonPage(id: number) {
       reset,
       jellyfinId,
       episodesLastSync,
+      updateTouched,
     ],
   );
 

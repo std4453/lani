@@ -1,5 +1,6 @@
 query GetEpisodeById($episodeByIdId: Int!) {
   episodeById(id: $episodeByIdId) {
+    rawAirTime
     airTime
     createdAt
     description
@@ -29,6 +30,7 @@ query GetEpisodeById($episodeByIdId: Int!) {
     seasonBySeasonId {
       id
       title
+      downloadOffsetHours
     }
     title
   }

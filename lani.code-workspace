@@ -56,7 +56,8 @@
         "fileMatch": ["**/laniconf.json"],
         "url": "../../tools/cli/dist/schema/laniconf.schema.json"
       }
-    ]
+    ],
+    "typescript.tsdk": "📦 @lani/framework/node_modules/typescript/lib"
   },
   "extensions": {
     "recommendations": [

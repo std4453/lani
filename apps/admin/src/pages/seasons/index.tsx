@@ -340,18 +340,13 @@ function useColumns() {
                 valid={r.bilibiliMainlandId}
               />
               <LinkIcon
-                icon={IconPath.mikanAnimeIcon}
-                href={mikanAnimeLink(r.mikanAnimeId)}
-                valid={r.mikanAnimeId}
-              />
-              <LinkIcon
                 icon={IconPath.jellyfinIcon}
                 href={jellyfinSeasonLink(r.jellyfinId)}
                 valid={r.jellyfinId}
               />
             </Space>
           ),
-          width: 220,
+          width: 185,
         },
         {
           title: '操作',

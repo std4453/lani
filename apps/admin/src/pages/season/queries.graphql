@@ -9,6 +9,7 @@ fragment seasonEpisodes on Season {
     edges {
       node {
         airTime
+        rawAirTime
         id
         index
         jellyfinEpisodeId
@@ -23,7 +24,6 @@ fragment seasonConfigFields on Season {
   id
   infoSource
   isMonitoring
-  mikanAnimeId
   tags
   title
   tvdbId
@@ -63,6 +63,7 @@ fragment seasonConfigFields on Season {
   notifyMissing
   notifyPublish
   episodesAutoSync
+  downloadOffsetHours
 }
 
 query GetSeasonById(
@@ -137,4 +138,21 @@ query GetJellyfinIdById($id: Int!) {
   seasonById(id: $id) {
     jellyfinId
   }
+}
+
+query GetMatchingTorrents($filter: TorrentFilter!, $first: Int!) {
+  allTorrents(orderBy: PUBLISH_DATE_ASC, filter: $filter, first: $first) {
+    edges {
+      node {
+        id
+        title
+        episodeIndex
+        publishDate
+      }
+    }
+  }
+}
+
+mutation SaveSeason($id: Int!, $patch: SaveSeasonPatch!) {
+  saveSeason(id: $id, patch: $patch)
 }

@@ -299,13 +299,13 @@ export default function EpisodeDetailsDialog({
             }}
           />
           <ProDescriptions.Item
-            dataIndex={['airTime']}
-            label="放送时间"
+            dataIndex={['rawAirTime']}
+            label="原始放送时间"
             valueType="dateTime"
           />
           <ProDescriptions.Item
-            dataIndex={['createdAt']}
-            label="创建时间"
+            dataIndex={['airTime']}
+            label="开始下载时间"
             valueType="dateTime"
           />
           <ProDescriptions.Item

@@ -21,7 +21,8 @@ export class EpisodeScrapeService {
     bangumiId,
     tvdbId,
     tvdbSeason,
-    airTime,
+    airTime: seasonAirTime,
+    downloadOffsetHours,
   }: Season) {
     let result: PartialSeason = {};
     switch (episodesSource) {
@@ -62,25 +63,38 @@ export class EpisodeScrapeService {
           episodesLastSync: new Date(),
           episodes: {
             upsert: (result.episodes ?? []).map(
-              ({ index, title, description = '', airDate }) => ({
-                where: {
-                  seasonId_index: {
-                    seasonId,
-                    index,
+              ({ index, title, description = '', airDate }) => {
+                const rawAirTime = this.getEpisodeAirTime(
+                  seasonAirTime,
+                  airDate,
+                );
+                const airTime = rawAirTime
+                  ? dayjs(rawAirTime)
+                      .subtract(downloadOffsetHours, 'hour')
+                      .toDate()
+                  : undefined;
+                return {
+                  where: {
+                    seasonId_index: {
+                      seasonId,
+                      index,
+                    },
                   },
-                },
-                update: {
-                  title,
-                  description,
-                  airTime: this.getEpisodeAirTime(airTime, airDate),
-                },
-                create: {
-                  index,
-                  title,
-                  description,
-                  airTime: this.getEpisodeAirTime(airTime, airDate),
-                },
-              }),
+                  update: {
+                    title,
+                    description,
+                    rawAirTime,
+                    airTime,
+                  },
+                  create: {
+                    index,
+                    title,
+                    description,
+                    rawAirTime,
+                    airTime,
+                  },
+                };
+              },
             ),
           },
         },

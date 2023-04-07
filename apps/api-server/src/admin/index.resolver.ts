@@ -1,5 +1,6 @@
 import {
   AdminConfig,
+  SaveSeasonPatch,
   SearchBangumiSeason,
   UpdateSeasonDownloadSourcesInput,
 } from '@/admin/index.model';
@@ -14,6 +15,7 @@ import config from '@/config';
 import { JobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
+import { DownloadSource, Prisma } from '@lani/db';
 import { Injectable } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 
@@ -202,6 +204,85 @@ export class AdminResolver {
         },
       }),
     ]);
+    return 'ok';
+  }
+
+  @Mutation(() => ID)
+  async saveSeason(
+    @Args('id') id: number,
+    @Args({
+      name: 'patch',
+      type: () => SaveSeasonPatch,
+    })
+    { sources, ...seasonPatch }: SaveSeasonPatch,
+  ) {
+    const results = await this.prisma.$transaction([
+      // 更新下载链接
+      this.prisma.downloadSource.deleteMany({
+        where: {
+          seasonId: id,
+          id: {
+            notIn: sources.filter(({ id }) => id !== 0).map(({ id }) => id),
+          },
+        },
+      }),
+      ...sources
+        .filter(({ id }) => id !== 0)
+        .map(({ id, pattern, offset }) =>
+          this.prisma.downloadSource.update({
+            where: {
+              id,
+            },
+            data: {
+              pattern,
+              offset,
+            },
+          }),
+        ),
+      this.prisma.downloadSource.createMany({
+        data: sources
+          .filter(({ id }) => id === 0)
+          .map(({ pattern, offset }) => ({
+            seasonId: id,
+            pattern,
+            offset,
+          })),
+      }),
+      // 更新其他字段并获取结果
+      this.prisma.season.update({
+        where: {
+          id,
+        },
+        data: {
+          ...seasonPatch,
+        },
+        include: {
+          jellyfinFolder: true,
+          bannerImage: true,
+          fanartImage: true,
+          posterImage: true,
+        },
+      }),
+      // 更新剧集放送时间，注意这个是在其他字段更新之后，但不影响上一个查询的结果
+      this.prisma.$queryRaw<number>`
+        UPDATE episodes
+        SET air_time = episodes.raw_air_time - seasons.download_offset_hours * interval '1 hour'
+        FROM seasons
+        WHERE episodes.season_id = ${id}
+          AND episodes.raw_air_time IS NOT NULL
+          AND episodes.season_id = seasons.id
+      `,
+    ]);
+    const season = results[results.length - 2];
+
+    await this.job.enqueueDownloadJobs();
+    await this.seasonEmit.writeSeasonMetadata(
+      season as Exclude<
+        typeof season,
+        number | Prisma.BatchPayload | DownloadSource
+      >,
+    );
+
     return 'ok';
   }
 }

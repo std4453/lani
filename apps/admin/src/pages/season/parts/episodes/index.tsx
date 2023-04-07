@@ -10,6 +10,7 @@ import {
   TorrentFieldsFragment,
 } from '@/generated/types';
 import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-download-magnet-dialog';
+import { handleError } from '@/utils/error';
 import { getSeasonKeyword } from '@/utils/season';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import {
@@ -39,7 +40,6 @@ import {
   useSeasonPageContext,
 } from '../../help';
 import styles from './index.module.less';
-import { handleError } from '@/utils/error';
 
 function useColumns({
   openDownloadMagnet,
@@ -68,10 +68,16 @@ function useColumns({
         ellipsis: false,
       },
       {
-        title: '放送时间',
+        title: '原始放送时间',
+        dataIndex: 'rawAirTime',
+        width: 160,
+        valueType: 'dateTime',
+      },
+      {
+        title: '开始下载时间',
         dataIndex: 'airTime',
-        width: 120,
-        valueType: 'date',
+        width: 160,
+        valueType: 'dateTime',
       },
       {
         title: '下载状态',

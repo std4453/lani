@@ -2,7 +2,6 @@ fragment listSeasonsFields on Season {
   bangumiId
   airTime
   weekday
-  mikanAnimeId
   isMonitoring
   jellyfinFolderByJellyfinFolderId {
     name

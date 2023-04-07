@@ -5,10 +5,7 @@ import {
 } from '@/download-job/events';
 import { env } from '@/env';
 import { ManagementNotificationProvider } from '@/notification/ManagementNotificationProvider';
-import {
-  OnEpisodePublishEpisode,
-  UserNotificationProvider,
-} from '@/notification/UserNotificationProvider';
+import { UserNotificationProvider } from '@/notification/UserNotificationProvider';
 import { ForbiddenException, Injectable, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';

@@ -8,7 +8,8 @@ export type EpisodeStatus =
   | 'DOWNLOAD_FAILED'
   | 'NOT_AIRED'
   | 'DATE_UNKNOWN'
-  | 'RESOURCE_WAITING';
+  | 'RESOURCE_WAITING'
+  | 'RESOURCE_MISSING';
 
 export function calcEpisodeStatus(
   episode: EpisodeStatusFieldsFragment,
@@ -21,8 +22,15 @@ export function calcEpisodeStatus(
     return job.status;
   } else {
     if (episode.airTime) {
-      if (dayjs(episode.airTime).isBefore(dayjs())) {
-        return 'RESOURCE_WAITING';
+      const now = dayjs();
+      const startDownloadTime = dayjs(episode.airTime);
+      const resourceMissingTime = startDownloadTime.add(12, 'h');
+      if (startDownloadTime.isBefore(now)) {
+        if (now.isBefore(resourceMissingTime)) {
+          return 'RESOURCE_WAITING';
+        } else {
+          return 'RESOURCE_MISSING';
+        }
       } else {
         return 'NOT_AIRED';
       }
@@ -71,6 +79,10 @@ export const downloadStatusMap: Partial<Record<EpisodeStatus, TagProps>> = {
   RESOURCE_WAITING: {
     children: '等待资源',
     color: 'gold',
+  },
+  RESOURCE_MISSING: {
+    children: '缺集',
+    color: 'red',
   },
   DATE_UNKNOWN: {
     children: '日期未知',

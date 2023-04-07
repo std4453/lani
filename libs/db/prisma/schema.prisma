@@ -27,6 +27,7 @@ model Episode {
   title                 String        @default("")
   description           String        @default("")
   index                 Int
+  rawAirTime            DateTime?     @map("raw_air_time") @db.Timestamptz(6)
   airTime               DateTime?     @map("air_time") @db.Timestamptz(6)
   createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
@@ -85,11 +86,12 @@ model Season {
   lastWriteToDisk DateTime? @map("last_write_to_disk") @db.Timestamptz(6)
   lastWriteTitle  String?   @map("last_write_title")
 
-  isMonitoring    Boolean          @default(true) @map("is_monitoring")
-  needDownloadCc  Boolean          @default(false) @map("need_download_cc")
-  notifyMissing   Boolean          @default(true) @map("notify_missing")
-  notifyPublish   Boolean          @default(true) @map("notify_publish")
-  downloadSources DownloadSource[]
+  isMonitoring        Boolean          @default(true) @map("is_monitoring")
+  needDownloadCc      Boolean          @default(false) @map("need_download_cc")
+  notifyMissing       Boolean          @default(true) @map("notify_missing")
+  notifyPublish       Boolean          @default(true) @map("notify_publish")
+  downloadSources     DownloadSource[]
+  downloadOffsetHours Int              @default(0) @map("download_offset_hours")
 
   episodesSource   MetadataSource @default(MANUAL) @map("episodes_source")
   episodesLastSync DateTime?      @map("episodes_last_sync") @db.Timestamptz(6)

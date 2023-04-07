@@ -8,11 +8,21 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-form';
-import { Alert, Form, FormInstance, Input, Space, Tag, Typography } from 'antd';
+import {
+  Alert,
+  Form,
+  FormInstance,
+  Input,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
 import clsx from 'clsx';
 import Section from '../../components/section';
 import { formItemProps, FormValues } from '../../help';
 import styles from './index.module.less';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 function ImageDisplay({
   src,
@@ -128,15 +138,25 @@ export default function Metadata() {
           }
         }}
       </Form.Item>
-      <Form.Item label="放送日程" {...formItemProps}>
+      <Form.Item
+        label={
+          <>
+            放送日程&nbsp;
+            <Tooltip title="只影响季度列表页展示和筛选，下载时间以剧集数据为准。未来可能会用于日程表展示">
+              <QuestionCircleOutlined />
+            </Tooltip>
+          </>
+        }
+        {...formItemProps}
+      >
         <Space className={styles.schedule}>
           从
           <ProFormDigit
             name="year"
             formItemProps={{ noStyle: true }}
             width="xs"
-            min={2000}
-            max={2100}
+            min={1900}
+            max={2300}
           />
           年
           <ProFormSelect
@@ -152,7 +172,7 @@ export default function Metadata() {
             formItemProps={{
               noStyle: true,
             }}
-            width={120}
+            width={140}
           />
           开始，每
           <Input.Group
@@ -168,7 +188,7 @@ export default function Metadata() {
               formItemProps={{
                 noStyle: true,
               }}
-              width={120}
+              width={140}
             />
             <ProFormText
               name="airTime"

@@ -1,4 +1,4 @@
-import { isApolloError, throwServerError } from '@apollo/client';
+import { isApolloError } from '@apollo/client';
 import { message } from 'antd';
 
 export class LaniError extends Error {
