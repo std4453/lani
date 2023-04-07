@@ -50,7 +50,7 @@ function useColumns({
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
 }) {
-  const { reloadEpisodes, formRef } = useSeasonPageContext();
+  const { reloadEpisodes, formRef, id } = useSeasonPageContext();
 
   const client = useApolloClient();
   return useMemo(
@@ -133,6 +133,10 @@ function useColumns({
                       keyword: getSeasonKeyword(
                         formRef.current.getFieldValue('title'),
                       ),
+                      seasonId: id,
+                      useLocalSavedKeyword: true,
+                      saveLocalKeyword: true,
+                      seasonFullName: formRef.current?.getFieldValue('title'),
                       async onResolve(torrent: TorrentFieldsFragment) {
                         try {
                           await client.mutate({
@@ -220,6 +224,7 @@ function useColumns({
       reloadEpisodes,
       client,
       formRef,
+      id,
     ],
   );
 }

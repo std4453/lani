@@ -24504,6 +24504,10 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: false
 
+  /store2/2.14.2:
+    resolution: {integrity: sha512-siT1RiqlfQnGqgT/YzXVUNsom9S0H1OX+dpdGN1xkyYATo4I6sep5NmsRD/40s3IIOvlCq6akxkqG82urIZW1w==}
+    dev: false
+
   /stream-browserify/2.0.2:
     resolution: {integrity: sha512-nX6hmklHs/gr2FuxYDltq8fJA1GDlxKQCz8O/IM4atRqBH8OORmBNgfvW5gG10GT/qQ9u0CzIvr2X5Pkt6ntqg==}
     dependencies:
@@ -27134,7 +27138,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_fa4f32d9ea471631dcdec03aa58c7a9a:
-    resolution: {integrity: sha512-2kGc3yYLfhC2ov7Ipl19WHGgEpe+WgIHU//U/hQ9aZZ2/Jb5Q9uvwN5vvlOc9VU311FKUFiw5eaVMEIsSPfNpw==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-kFZftbH9FGgM8Wv2Ck+z9GR/1TnsH3EyaPM1w7aqpWSYEVzRmCmHOl/R9OzOl3I28ruy4A7BaMpce1wUwWv1iw==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -27191,6 +27195,7 @@ packages:
       redux: 4.2.0
       redux-thunk: 2.4.1_redux@4.2.0
       sass: 1.49.11
+      store2: 2.14.2
       typescript: 4.5.5
       umi: 3.5.21
       use-clipboard-copy: 0.2.0_react@17.0.2

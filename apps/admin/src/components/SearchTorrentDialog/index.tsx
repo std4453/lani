@@ -3,20 +3,21 @@ import {
   SearchTorrentDocument,
   TorrentFieldsFragment,
 } from '@/generated/types';
+import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
 import {
-  DialogPropsWithOnResolve,
   createUseDialogWithOnResolve,
+  DialogPropsWithOnResolve,
 } from '@/utils/useDialog';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn, useSetState, useUpdate } from 'ahooks';
-import { Input, List, Modal, Spin, Typography } from 'antd';
+import { Input, List, Modal, Space, Spin, Typography } from 'antd';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import { useEffect, useRef, useState } from 'react';
+import store2 from 'store2';
 import styles from './index.module.less';
-import { handleError } from '@/utils/error';
 
 function useDebounce<T>(
   value: T,
@@ -60,6 +61,10 @@ export default function SearchTorrentDialog({
 }: DialogPropsWithOnResolve<
   {
     keyword: string;
+    seasonFullName?: string;
+    seasonId?: number;
+    useLocalSavedKeyword?: boolean;
+    saveLocalKeyword?: boolean;
   } | void,
   TorrentFieldsFragment
 >) {
@@ -72,7 +77,15 @@ export default function SearchTorrentDialog({
   useEffect(() => {
     if (visible) {
       if (typeof input === 'object' && 'keyword' in input) {
-        setKeywords(input.keyword);
+        const { keyword, seasonId, useLocalSavedKeyword = false } = input;
+        const initialKeyword =
+          useLocalSavedKeyword && seasonId
+            ? (store2.get(
+                `season:${seasonId}:torrentSearchKeyword`,
+                keyword,
+              ) as string)
+            : keyword;
+        setKeywords(initialKeyword);
       } else {
         setKeywords('');
       }
@@ -227,6 +240,12 @@ export default function SearchTorrentDialog({
     }, 600);
   });
 
+  const saveKeyword = useMemoizedFn(() => {
+    if (input?.saveLocalKeyword && input?.seasonId) {
+      store2.set(`season:${input.seasonId}:torrentSearchKeyword`, keywords);
+    }
+  });
+
   return (
     <Modal
       visible={visible}
@@ -235,6 +254,7 @@ export default function SearchTorrentDialog({
       width={900}
       onCancel={() => {
         reject();
+        saveKeyword();
         clearData();
       }}
       okButtonProps={{
@@ -244,15 +264,39 @@ export default function SearchTorrentDialog({
       onOk={async () => {
         if (selected) {
           await resolve(selected);
+          saveKeyword();
           clearData();
         }
       }}
     >
-      <Input
-        value={keywords}
-        onChange={(e) => setKeywords(e.target.value)}
-        placeholder="输入关键词"
-      />
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center',
+        }}
+      >
+        <Input
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+          placeholder="输入关键词"
+          allowClear
+        />
+        {input?.seasonFullName ? (
+          <Typography.Link
+            onClick={() => {
+              if (input.seasonFullName) {
+                setKeywords(input.seasonFullName);
+              }
+            }}
+            style={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            使用季度全名
+          </Typography.Link>
+        ) : null}
+      </div>
       <div className={styles.list}>
         <List
           dataSource={torrents}

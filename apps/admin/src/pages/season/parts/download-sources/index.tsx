@@ -33,7 +33,7 @@ import styles from './index.module.less';
 
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
-  const { formRef, episodes, updateTouched } = useSeasonPageContext();
+  const { formRef, episodes, updateTouched, id } = useSeasonPageContext();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
   const client = useApolloClient();
 
@@ -299,6 +299,10 @@ export default function DownloadSources() {
                 keyword: getSeasonKeyword(
                   formRef.current.getFieldValue('title'),
                 ),
+                seasonId: id,
+                useLocalSavedKeyword: true,
+                saveLocalKeyword: true,
+                seasonFullName: formRef.current?.getFieldValue('title'),
               });
               if (result.type !== 'success') {
                 return;
