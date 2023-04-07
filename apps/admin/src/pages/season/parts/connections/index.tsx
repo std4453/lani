@@ -95,6 +95,7 @@ export default function Connections() {
                   href={bangumiLink(bangumiId)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={styles.linkButton}
                 />
               )}
             </FormDependency>
@@ -132,6 +133,7 @@ export default function Connections() {
                   href={bilibiliSeasonLink(bilibiliThmId)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={styles.linkButton}
                 />
               )}
             </FormDependency>
@@ -172,6 +174,7 @@ export default function Connections() {
                   href={bilibiliSeasonLink(bilibiliMainlandId)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={styles.linkButton}
                 />
               )}
             </FormDependency>
@@ -211,6 +214,7 @@ export default function Connections() {
                   href={tvdbLinkById(tvdbId)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={styles.linkButton}
                 />
               )}
             </FormDependency>
