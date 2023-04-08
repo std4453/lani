@@ -1,15 +1,15 @@
+import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { TableTitle } from '@/components/Layout';
 import { seasonToText } from '@/constants';
 import {
-  DownloadStatusTag,
   calcEpisodeStatus,
+  DownloadStatusTag,
 } from '@/constants/download-status';
 import { IconPath } from '@/constants/icon-path';
 import {
   bangumiLink,
   bilibiliSeasonLink,
   jellyfinSeasonLink,
-  mikanAnimeLink,
   tvdbLinkById,
 } from '@/constants/link';
 import {
@@ -30,7 +30,7 @@ import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
-import { Button, Popconfirm, Space, Typography, message } from 'antd';
+import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
@@ -103,7 +103,11 @@ enum EpisodesFilter {
   ALL_AIRED = 'all_aired',
 }
 
-function useColumns() {
+function useColumns({
+  openEpisodeDetails,
+}: {
+  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+}) {
   const history = useHistory();
   const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
   const semesterOptions = useMemo(
@@ -254,10 +258,15 @@ function useColumns() {
             if (!episode) {
               return '-';
             }
-            const status = calcEpisodeStatus(episode);
+            const { status, jobId } = calcEpisodeStatus(episode);
             return (
               <div>
-                <DownloadStatusTag status={status} />
+                <DownloadStatusTag
+                  status={status}
+                  episodeId={episode.id}
+                  jobId={jobId}
+                  openEpisodeDetails={openEpisodeDetails}
+                />
               </div>
             );
           },
@@ -393,7 +402,14 @@ function useColumns() {
           width: 140,
         },
       ],
-      [history, semesterOptions, foldersOptions, client, hasHiddenFolder],
+      [
+        history,
+        semesterOptions,
+        foldersOptions,
+        client,
+        hasHiddenFolder,
+        openEpisodeDetails,
+      ],
     ),
   );
 }
@@ -597,7 +613,9 @@ async function querySeasons(
 export default withAntdSearch(function MetadataPage() {
   const client = useApolloClient();
 
-  const columns = useColumns();
+  const [episodeDetailsDiglog, , openEpisodeDetails] =
+    useEpisodeDetailsDialog();
+  const columns = useColumns({ openEpisodeDetails });
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
@@ -675,6 +693,7 @@ export default withAntdSearch(function MetadataPage() {
       />
       {createSeasonDialog}
       {addFromBangumiDialog}
+      {episodeDetailsDiglog}
     </>
   );
 });

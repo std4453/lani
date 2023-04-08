@@ -1,10 +1,12 @@
 fragment downloadJobStatusFields on DownloadJob {
+  id
   status
   isFailed
 }
 
 fragment episodeStatusFields on Episode {
   airTime
+  id
   jobs: downloadJobsByEpisodeId(first: 1, orderBy: ID_DESC) {
     edges {
       node {

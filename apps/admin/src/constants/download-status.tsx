@@ -1,5 +1,7 @@
+import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { DownloadStatus, EpisodeStatusFieldsFragment } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
+import { SelectOutlined } from '@ant-design/icons';
 import { Tag, TagProps } from 'antd';
 import dayjs from 'dayjs';
 
@@ -11,15 +13,16 @@ export type EpisodeStatus =
   | 'RESOURCE_WAITING'
   | 'RESOURCE_MISSING';
 
-export function calcEpisodeStatus(
-  episode: EpisodeStatusFieldsFragment,
-): EpisodeStatus {
+export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
+  status: EpisodeStatus;
+  jobId?: number;
+} {
   const job = extractNode(episode.jobs)?.[0];
   if (job) {
     if (job.isFailed) {
-      return 'DOWNLOAD_FAILED';
+      return { status: 'DOWNLOAD_FAILED', jobId: job.id };
     }
-    return job.status;
+    return { status: job.status, jobId: job.id };
   } else {
     if (episode.airTime) {
       const now = dayjs();
@@ -27,20 +30,22 @@ export function calcEpisodeStatus(
       const resourceMissingTime = startDownloadTime.add(12, 'h');
       if (startDownloadTime.isBefore(now)) {
         if (now.isBefore(resourceMissingTime)) {
-          return 'RESOURCE_WAITING';
+          return { status: 'RESOURCE_WAITING' };
         } else {
-          return 'RESOURCE_MISSING';
+          return { status: 'RESOURCE_MISSING' };
         }
       } else {
-        return 'NOT_AIRED';
+        return { status: 'NOT_AIRED' };
       }
     } else {
-      return 'DATE_UNKNOWN';
+      return { status: 'DATE_UNKNOWN' };
     }
   }
 }
 
-export const downloadStatusMap: Partial<Record<EpisodeStatus, TagProps>> = {
+export const downloadStatusMap: Partial<
+  Record<EpisodeStatus, Pick<TagProps, 'children' | 'color'>>
+> = {
   [DownloadStatus.Available]: {
     children: '可用',
     color: 'green',
@@ -89,10 +94,43 @@ export const downloadStatusMap: Partial<Record<EpisodeStatus, TagProps>> = {
   },
 };
 
-export function DownloadStatusTag({ status }: { status: EpisodeStatus }) {
-  return downloadStatusMap[status] ? (
-    <Tag {...downloadStatusMap[status]} />
-  ) : (
-    <Tag color="red">未知状态</Tag>
-  );
+export function DownloadStatusTag({
+  status,
+  episodeId,
+  jobId,
+  openEpisodeDetails,
+}: {
+  status: EpisodeStatus;
+  episodeId?: number;
+  jobId?: number;
+  openEpisodeDetails?: ReturnType<typeof useEpisodeDetailsDialog>[2];
+}) {
+  const tagProps = downloadStatusMap[status];
+  if (tagProps) {
+    const { children, color } = tagProps;
+    // 可用状态隐藏按钮
+    const showDialog =
+      episodeId && jobId && status !== DownloadStatus.Available;
+    return (
+      <Tag
+        color={color}
+        style={{
+          cursor: showDialog ? 'pointer' : 'unset',
+        }}
+        onClick={() => {
+          if (showDialog) {
+            void openEpisodeDetails?.({
+              episodeId,
+              jobId,
+            });
+          }
+        }}
+        icon={showDialog ? <SelectOutlined /> : null}
+      >
+        {children}
+      </Tag>
+    );
+  } else {
+    return <Tag color="red">未知状态</Tag>;
+  }
 }

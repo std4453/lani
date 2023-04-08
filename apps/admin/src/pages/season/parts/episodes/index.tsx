@@ -85,7 +85,12 @@ function useColumns({
         width: 120,
         render: (_, r) => (
           <div>
-            <DownloadStatusTag status={r.jobStatus} />
+            <DownloadStatusTag
+              status={r.jobStatus}
+              episodeId={r.id}
+              jobId={r.jobId}
+              openEpisodeDetails={openEpisodeDetails}
+            />
           </div>
         ),
       },

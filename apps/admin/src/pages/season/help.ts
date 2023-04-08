@@ -33,12 +33,15 @@ type RawEpisode = NonNullable<
 >;
 export type Episode = Omit<RawEpisode, 'downloadJobsByEpisodeId'> & {
   jobStatus: EpisodeStatus;
+  jobId?: number;
 };
 
 export function mapEpisode(episode: RawEpisode): Episode {
+  const { status, jobId } = calcEpisodeStatus(episode);
   return {
     ...episode,
-    jobStatus: calcEpisodeStatus(episode),
+    jobStatus: status,
+    jobId,
   };
 }
 
