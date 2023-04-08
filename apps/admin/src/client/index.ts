@@ -36,7 +36,7 @@ export const client = new ApolloClient({
   cache: new InMemoryCache(),
   defaultOptions: {
     query: {
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
     },
   },
 });
