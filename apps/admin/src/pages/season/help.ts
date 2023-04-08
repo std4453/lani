@@ -12,6 +12,7 @@ import {
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { ProFormInstance } from '@ant-design/pro-form';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useMemoizedFn, useMount } from 'ahooks';
@@ -182,12 +183,17 @@ export function useSeasonId() {
 }
 
 function useJellyfinId(id: number) {
-  const { data } = useQuery(GetJellyfinIdByIdDocument, {
-    variables: {
-      id,
+  const { data, startPolling, stopPolling, refetch } = useQuery(
+    GetJellyfinIdByIdDocument,
+    {
+      variables: {
+        id,
+      },
+      pollInterval: 2000,
     },
-    pollInterval: 2000,
-  });
+  );
+  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 2000 });
+
   return data?.seasonById?.jellyfinId ?? '';
 }
 

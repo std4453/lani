@@ -5,6 +5,7 @@ import {
   RetryJobStepDocument,
 } from '@/generated/types';
 import { ExtractNode, extractNode } from '@/utils/graphql';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import useMobile from '@/utils/useMobile';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -247,13 +248,17 @@ export default function EpisodeDetailsDialog({
   visible,
   input,
 }: DialogProps<{ episodeId: number; jobId?: number }>) {
-  const { data, loading } = useQuery(GetEpisodeByIdDocument, {
-    skip: !input?.episodeId || !visible,
-    variables: {
-      episodeByIdId: input?.episodeId ?? 0,
+  const { data, loading, startPolling, stopPolling, refetch } = useQuery(
+    GetEpisodeByIdDocument,
+    {
+      skip: !input?.episodeId || !visible,
+      variables: {
+        episodeByIdId: input?.episodeId ?? 0,
+      },
+      pollInterval: 1000,
     },
-    pollInterval: 1000,
-  });
+  );
+  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 1000 });
   const jobs = useMemo(
     () => extractNode(data?.episodeById?.downloadJobsByEpisodeId) ?? [],
     [data],
