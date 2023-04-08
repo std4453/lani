@@ -3,11 +3,11 @@
 /* eslint-disable */
 
 /**
- * An enumeration.
+ * Blood type of a person. A, B, AB, O
  */
 export enum BloodType {
-  '_1' = 1,
-  '_2' = 2,
-  '_3' = 3,
-  '_4' = 4,
+  A = 1,
+  B = 2,
+  AB = 3,
+  O = 4,
 }

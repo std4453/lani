@@ -11,7 +11,7 @@ export type DetailedRevision = {
   summary: string;
   created_at: string;
   /**
-   * 编辑修改内容
+   * 编辑修改内容，响应类型不固定
    */
   data?: any;
 };

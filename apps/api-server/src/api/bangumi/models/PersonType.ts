@@ -3,10 +3,10 @@
 /* eslint-disable */
 
 /**
- * An enumeration.
+ * `1`, `2`, `3` 表示 `个人`, `公司`, `组合`
  */
 export enum PersonType {
-  '_1' = 1,
-  '_2' = 2,
-  '_3' = 3,
+  Individual = 1,
+  Corporation = 2,
+  Association = 3,
 }

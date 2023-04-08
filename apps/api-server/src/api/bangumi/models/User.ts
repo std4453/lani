@@ -2,39 +2,25 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Avatar } from './Avatar';
 import type { UserGroup } from './UserGroup';
 
 /**
- * 用户信息
+ * 实际的返回值可能包括文档未声明的 `url` 字段，此字段主要用于开发者从 api 响应直接转跳到网页。
+ * 客户端开发者请不用依赖于此特性，此字段的值随时可能会改变。
+ *
  */
 export type User = {
+  id: number;
   /**
-   * 用户 id
+   * 唯一用户名，初始与 UID 相同，可修改一次
    */
-  id?: number;
+  username: string;
+  nickname: string;
+  user_group: UserGroup;
+  avatar: Avatar;
   /**
-   * 用户主页地址
+   * 个人签名
    */
-  url?: string;
-  /**
-   * 用户名
-   */
-  username?: string;
-  /**
-   * 昵称
-   */
-  nickname?: string;
-  /**
-   * 头像地址
-   */
-  avatar?: {
-    large?: string;
-    medium?: string;
-    small?: string;
-  };
-  /**
-   * 签名
-   */
-  sign?: string;
-  usergroup?: UserGroup;
+  sign: string;
 };

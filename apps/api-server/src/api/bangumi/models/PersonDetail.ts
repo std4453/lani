@@ -36,7 +36,7 @@ export type PersonDetail = {
    */
   gender?: string;
   /**
-   * parsed from wiki, maybe null, `1, 2, 3, 4` for `A, B, CD, O`
+   * parsed from wiki, maybe null, `1, 2, 3, 4` for `A, B, AB, O`
    */
   blood_type?: BloodType;
   /**

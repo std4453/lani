@@ -3,260 +3,45 @@
 /* eslint-disable */
 import type { CharacterDetail } from '../models/CharacterDetail';
 import type { CharacterPerson } from '../models/CharacterPerson';
-import type { CollectionStatus } from '../models/CollectionStatus';
-import type { CollectionStatusType } from '../models/CollectionStatusType';
-import type { CollectionType } from '../models/CollectionType';
+import type { CharacterRevision } from '../models/CharacterRevision';
 import type { DetailedRevision } from '../models/DetailedRevision';
+import type { EpisodeCollectionType } from '../models/EpisodeCollectionType';
 import type { EpisodeDetail } from '../models/EpisodeDetail';
-import type { EpStatusId } from '../models/EpStatusId';
-import type { EpStatusName } from '../models/EpStatusName';
-import type { EpStatusType } from '../models/EpStatusType';
 import type { EpType } from '../models/EpType';
 import type { Index } from '../models/Index';
-import type { Me } from '../models/Me';
-import type { Paged_Episode_ } from '../models/Paged_Episode_';
-import type { Paged_IndexSubject_ } from '../models/Paged_IndexSubject_';
-import type { Paged_Revision_ } from '../models/Paged_Revision_';
-import type { Paged_UserCollection_ } from '../models/Paged_UserCollection_';
+import type { IndexBasicInfo } from '../models/IndexBasicInfo';
+import type { IndexSubjectAddInfo } from '../models/IndexSubjectAddInfo';
+import type { IndexSubjectEditInfo } from '../models/IndexSubjectEditInfo';
+import type { Legacy_SubjectLarge } from '../models/Legacy_SubjectLarge';
+import type { Legacy_SubjectMedium } from '../models/Legacy_SubjectMedium';
+import type { Legacy_SubjectSmall } from '../models/Legacy_SubjectSmall';
+import type { Legacy_SubjectType } from '../models/Legacy_SubjectType';
+import type { Page } from '../models/Page';
+import type { Paged_Episode } from '../models/Paged_Episode';
+import type { Paged_Revision } from '../models/Paged_Revision';
+import type { Paged_UserCollection } from '../models/Paged_UserCollection';
 import type { PersonCharacter } from '../models/PersonCharacter';
 import type { PersonDetail } from '../models/PersonDetail';
 import type { PersonRevision } from '../models/PersonRevision';
-import type { pol__api__v0__models__RelatedSubject } from '../models/pol__api__v0__models__RelatedSubject';
-import type { pol__api__v0__models__subject__RelatedSubject } from '../models/pol__api__v0__models__subject__RelatedSubject';
 import type { RelatedCharacter } from '../models/RelatedCharacter';
 import type { RelatedPerson } from '../models/RelatedPerson';
-import type { ResponseGroup } from '../models/ResponseGroup';
-import type { StatusCode } from '../models/StatusCode';
-import type { Subject1 } from '../models/Subject1';
-import type { SubjectBase } from '../models/SubjectBase';
-import type { SubjectCollection } from '../models/SubjectCollection';
-import type { SubjectSmall } from '../models/SubjectSmall';
+import type { Subject } from '../models/Subject';
+import type { SubjectCollectionType } from '../models/SubjectCollectionType';
+import type { SubjectID } from '../models/SubjectID';
+import type { SubjectRevision } from '../models/SubjectRevision';
+import type { SubjectTags } from '../models/SubjectTags';
 import type { SubjectType } from '../models/SubjectType';
-import type { SubjectType1 } from '../models/SubjectType1';
-import type { SubjectTypeName } from '../models/SubjectTypeName';
 import type { User } from '../models/User';
+import type { UserEpisodeCollection } from '../models/UserEpisodeCollection';
+import type { UserSubjectCollection } from '../models/UserSubjectCollection';
+import type { v0_RelatedSubject } from '../models/v0_RelatedSubject';
+import type { v0_subject_relation } from '../models/v0_subject_relation';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 
 export class BangumiAPIService {
-
-  /**
-   * 用户信息
-   * @param username 用户名 <br> 也可使用 UID
-   * @returns User 返回用户基础信息
-   * @throws ApiError
-   */
-  public static getUser(
-    username: string,
-  ): CancelablePromise<User> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/user/{username}',
-      path: {
-        'username': username,
-      },
-    });
-  }
-
-  /**
-   * @deprecated
-   * 用户收藏
-   * @param username 用户名 <br> 也可使用 UID
-   * @param cat 收藏类型 <br> watching = 在看的动画与三次元条目 <br> all_watching = 在看的动画三次元与书籍条目
-   * @param ids 收藏条目 ID <br> 批量查询收藏状态，将条目 ID 以半角逗号分隔，如 1,2,4,6
-   * @param responseGroup medium / small <br> 默认为 medium。small 时不返回条目详细信息
-   * @returns any 获取用户收藏列表，默认为在看
-   * @throws ApiError
-   */
-  public static getUserCollection(
-    username: string,
-    cat: 'watching' | 'all_watching',
-    ids?: string,
-    responseGroup: 'small' | 'medium' = 'medium',
-  ): CancelablePromise<Array<{
-    /**
-     * 番剧标题
-     */
-    name?: string;
-    /**
-     * 章节 ID
-     */
-    subject_id?: number;
-    /**
-     * 完成话数
-     */
-    ep_status?: number;
-    /**
-     * 完成卷数（书籍）
-     */
-    vol_status?: any;
-    /**
-     * 上次更新时间
-     */
-    lasttouch?: number;
-    subject?: (SubjectBase & {
-      /**
-       * 话数
-       */
-      eps?: number;
-      /**
-       * 话数
-       */
-      eps_count?: number;
-      collection?: SubjectCollection;
-    });
-  }>> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/user/{username}/collection',
-      path: {
-        'username': username,
-      },
-      query: {
-        'cat': cat,
-        'ids': ids,
-        'responseGroup': responseGroup,
-      },
-    });
-  }
-
-  /**
-   * @deprecated
-   * 用户收藏概览
-   * @param username 用户名 <br> 也可使用 UID
-   * @param subjectType 条目类型，详见 [SubjectTypeName](#model-SubjectTypeName)
-   * @param appId [https://bgm.tv/dev/app](https://bgm.tv/dev/app) 申请到的 App ID
-   * @param maxResults 显示条数 <br> 最多 25
-   * @returns any 获取用户指定类型的收藏概览，固定返回最近更新的收藏，不支持翻页
-   * @throws ApiError
-   */
-  public static getUserCollections(
-    username: string,
-    subjectType: SubjectTypeName,
-    appId: string,
-    maxResults?: number,
-  ): CancelablePromise<Array<{
-    type?: SubjectType;
-    name?: SubjectTypeName;
-    /**
-     * 条目类型中文名
-     */
-    name_cn?: string;
-    /**
-     * 收藏列表
-     */
-    collects?: Array<{
-      status?: CollectionStatus;
-      count?: number;
-      list?: Array<{
-        /**
-         * 条目 ID
-         */
-        subject_id?: string;
-        subject?: SubjectBase;
-      }>;
-    }>;
-  }>> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/user/{username}/collections/{subject_type}',
-      path: {
-        'username': username,
-        'subject_type': subjectType,
-      },
-      query: {
-        'app_id': appId,
-        'max_results': maxResults,
-      },
-    });
-  }
-
-  /**
-   * @deprecated
-   * 用户收藏统计
-   * @param username 用户名 <br> 也可使用 UID
-   * @param appId [https://bgm.tv/dev/app](https://bgm.tv/dev/app) 申请到的 App ID
-   * @returns any 获取用户所有收藏信息
-   * @throws ApiError
-   */
-  public static getUserCollectionsStatus(
-    username: string,
-    appId: string,
-  ): CancelablePromise<Array<{
-    type?: SubjectType;
-    name?: SubjectTypeName;
-    /**
-     * 条目类型中文名
-     */
-    name_cn?: string;
-    /**
-     * 收藏列表
-     */
-    collects?: Array<{
-      status?: CollectionStatus;
-      count?: number;
-    }>;
-  }>> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/user/{username}/collections/status',
-      path: {
-        'username': username,
-      },
-      query: {
-        'app_id': appId,
-      },
-    });
-  }
-
-  /**
-   * @deprecated
-   * 用户收视进度
-   * @param username 用户名 <br> 也可使用 UID
-   * @param subjectId 条目 ID <br> 获取指定条目收视进度
-   * @returns any 返回用户收视进度
-   * @throws ApiError
-   */
-  public static getUserProgress(
-    username: string,
-    subjectId?: number,
-  ): CancelablePromise<Array<{
-    /**
-     * 条目 ID
-     */
-    subject_id?: number;
-    /**
-     * 章节列表
-     */
-    eps?: Array<{
-      /**
-       * 章节 ID
-       */
-      id?: number;
-      status?: {
-        id?: EpStatusId;
-        css_name?: string;
-        url_name?: EpStatusType;
-        cn_name?: EpStatusName;
-      };
-    }>;
-  }>> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/user/{username}/progress',
-      path: {
-        'username': username,
-      },
-      query: {
-        'subject_id': subjectId,
-      },
-      errors: {
-        401: `未授权`,
-      },
-    });
-  }
 
   /**
    * 每日放送
@@ -270,7 +55,7 @@ export class BangumiAPIService {
       ja?: string;
       id?: number;
     };
-    items?: Array<SubjectSmall>;
+    items?: Array<Legacy_SubjectSmall>;
   }>> {
     return __request(OpenAPI, {
       method: 'GET',
@@ -281,20 +66,20 @@ export class BangumiAPIService {
   /**
    * 条目搜索
    * @param keywords 关键词 <br> 需要 URL Encode
-   * @param type 条目类型，参考 [SubjectType](#model-SubjectType)
-   * @param responseGroup 返回数据大小，参考 [ResponseGroup](#model-ResponseGroup) <br> 默认为 small
+   * @param type 条目类型，参考 [SubjectType](#model-Legacy_SubjectType)
+   * @param responseGroup 返回数据大小 <br> 默认为 small
    * @param start 开始条数
    * @param maxResults 每页条数 <br> 最多 25
    * @returns any 搜索结果
    * @throws ApiError
    */
-  public static getSearchSubject(
+  public static searchSubjectByKeywords(
     keywords: string,
-    type?: SubjectType,
-    responseGroup?: ResponseGroup,
+    type?: Legacy_SubjectType,
+    responseGroup: 'small' | 'medium' | 'large' = 'small',
     start?: number,
     maxResults?: number,
-  ): CancelablePromise<{
+  ): CancelablePromise<({
     /**
      * 总条数
      */
@@ -302,8 +87,26 @@ export class BangumiAPIService {
     /**
      * 结果列表
      */
-    list?: Array<SubjectSmall>;
-  }> {
+    list?: Array<Legacy_SubjectSmall>;
+  } | {
+    /**
+     * 总条数
+     */
+    results?: number;
+    /**
+     * 结果列表
+     */
+    list?: Array<Legacy_SubjectMedium>;
+  } | {
+    /**
+     * 总条数
+     */
+    results?: number;
+    /**
+     * 结果列表
+     */
+    list?: Array<Legacy_SubjectLarge>;
+  })> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/search/subject/{keywords}',
@@ -320,223 +123,154 @@ export class BangumiAPIService {
   }
 
   /**
-   * 更新收视进度
-   * @param id 章节 ID
-   * @param status 收视类型，参考 [EpStatusType](#model-EpStatusType)
-   * @returns StatusCode 成功
+   * 条目搜索
+   * ## 实验性 API， 本 schema 和实际的 API 行为都可能随时发生改动
+   *
+   * 目前支持的筛选条件包括:
+   * - `type`: 条目类型，参照 `SubjectType` enum， `或`。
+   * - `tag`: 标签，可以多次出现。`且` 关系。
+   * - `airdate`: 播出日期/发售日期。`且` 关系。
+   * - `rating`: 用于搜索指定评分的条目。`且` 关系。
+   * - `rank`: 用于搜索指定排名的条目。`且` 关系。
+   * - `nsfw`: 使用 `include` 包含NSFW搜索结果。默认排除搜索NSFW条目。无权限情况下忽略此选项，不会返回NSFW条目。
+   *
+   * 不同筛选条件之间为 `且`
+   *
+   *
+   * 由于目前 meilisearch 的一些问题，条目排名更新并不会触发搜索数据更新，所以条目排名可能是过期数据。
+   *
+   * 希望未来版本的 meilisearch 能解决相关的问题。
+   *
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @param requestBody
+   * @returns any 返回搜索结果
    * @throws ApiError
    */
-  public static getEpStatus(
-    id: number,
-    status: EpStatusType,
-  ): CancelablePromise<StatusCode> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/ep/{id}/status/{status}',
-      path: {
-        'id': id,
-        'status': status,
-      },
-      errors: {
-        401: `未授权`,
-      },
-    });
-  }
-
-  /**
-   * 更新收视进度
-   * @param id 章节 ID
-   * @param status 收视类型，参考 [EpStatusType](#model-EpStatusType)
-   * @param epId 使用 POST 批量更新 <br> 将章节以半角逗号分隔，如 `3697,3698,3699`。请求时 URL 中的 ep_id 为最后一个章节 ID
-   * @returns StatusCode 成功
-   * @throws ApiError
-   */
-  public static postEpStatus(
-    id: number,
-    status: EpStatusType,
-    epId?: string,
-  ): CancelablePromise<StatusCode> {
-    return __request(OpenAPI, {
-      method: 'POST',
-      url: '/ep/{id}/status/{status}',
-      path: {
-        'id': id,
-        'status': status,
-      },
-      query: {
-        'ep_id': epId,
-      },
-      errors: {
-        401: `未授权`,
-      },
-    });
-  }
-
-  /**
-   * 批量更新收视进度
-   * @param subjectId 条目 ID
-   * @param watchedEps 如看到 123 话则 POST `123` <br> 书籍条目传 watched_eps 与 watched_vols 至少其一
-   * @param watchedVols 如看到第 3 卷则 POST `3`, 仅对书籍条目有效
-   * @returns StatusCode 成功
-   * @throws ApiError
-   */
-  public static postSubjectUpdateWatchedEps(
-    subjectId: number,
-    watchedEps: string,
-    watchedVols?: string,
-  ): CancelablePromise<StatusCode> {
-    return __request(OpenAPI, {
-      method: 'POST',
-      url: '/subject/{subject_id}/update/watched_eps',
-      path: {
-        'subject_id': subjectId,
-      },
-      query: {
-        'watched_eps': watchedEps,
-        'watched_vols': watchedVols,
-      },
-      errors: {
-        401: `未授权`,
-      },
-    });
-  }
-
-  /**
-   * 获取指定条目收藏信息
-   * @param subjectId 条目 ID
-   * @returns any 条目收藏信息
-   * @throws ApiError
-   */
-  public static getCollection(
-    subjectId: number,
-  ): CancelablePromise<{
-    status?: CollectionStatus;
-    /**
-     * 评分
-     */
-    rating?: number;
-    /**
-     * 评论
-     */
-    comment?: string;
-    /**
-     * 收藏隐私
-     */
-    private?: 0 | 1;
-    /**
-     * 标签
-     */
-    tag?: Array<string>;
-    /**
-     * 完成话数
-     */
-    ep_status?: number;
-    /**
-     * 上次更新时间
-     */
-    lasttouch?: number;
-    user?: User;
-  }> {
-    return __request(OpenAPI, {
-      method: 'GET',
-      url: '/collection/{subject_id}',
-      path: {
-        'subject_id': subjectId,
-      },
-      errors: {
-        400: `用户未收藏该条目`,
-        401: `未授权`,
-      },
-    });
-  }
-
-  /**
-   * 管理收藏
-   * 管理收藏。Content-type必须为multipart/form-data或application/x-www-form-urlencoded，参数都得放在body里。
-   * @param subjectId 条目 ID
-   * @param action 收藏动作 <br> create = 添加收藏 <br> update = 更新收藏 <br> 可以统一使用 `update`，系统会自动判断需要新建还是更新收藏
-   * @param formData 必须是content-type对应的形式，不能采用Raw
-   * @returns any 条目收藏信息
-   * @throws ApiError
-   */
-  public static postCollection(
-    subjectId: number,
-    action: 'create' | 'update',
-    formData: {
+  public static searchSubjects(
+    limit?: number,
+    offset?: number,
+    requestBody?: {
+      keyword: string;
       /**
-       * 收藏状态，参考 [CollectionStatusType](#model-CollectionStatusType)
+       * 排序规则
+       *
+       * - `match` meilisearch 的默认排序，按照匹配程度
+       * - `heat` 收藏人数
+       * - `rank` 排名由高到低
+       * - `score` 评分
+       *
        */
-      status: CollectionStatusType;
+      sort?: 'match' | 'heat' | 'rank' | 'score';
       /**
-       * 简评
+       * 不同条件之间是 `且` 的关系
        */
-      comment?: string;
-      /**
-       * 标签 <br> 以半角空格分割
-       */
-      tags?: string;
-      /**
-       * 评分 <br> 1-10 <br> 不填默认重置为未评分
-       */
-      rating?: number;
-      /**
-       * 收藏隐私 <br> 0 = 公开 <br> 1 = 私密 <br> 不填默认为0
-       */
-      privacy?: number;
+      filter?: {
+        /**
+         * 条目类型，参照 `SubjectType` enum，多值之间为 `或` 的关系。
+         */
+        type?: Array<SubjectType>;
+        /**
+         * 标签，可以多次出现。多值之间为 `且` 关系。
+         */
+        tag?: Array<string>;
+        /**
+         * 播出日期/发售日期，日期必需为 `YYYY-MM-DD` 格式。多值之间为 `且` 关系。
+         */
+        air_date?: Array<string>;
+        /**
+         * 用于搜索指定评分的条目，多值之间为 `且` 关系。
+         */
+        rating?: Array<string>;
+        /**
+         * 用于搜索指定排名的条目，多值之间为 `且` 关系。
+         */
+        rank?: Array<string>;
+        /**
+         * 无权限的用户会直接忽略此字段，不会返回R18条目。
+         *
+         * 默认或者 `null` 会返回包含 R18 的所有搜索结果。
+         *
+         * `true` 只会返回 R18 条目。
+         *
+         * `false` 只会返回非 R18 条目。
+         *
+         */
+        nsfw?: boolean;
+      };
     },
   ): CancelablePromise<{
-    status?: CollectionStatus;
     /**
-     * 评分
+     * 搜索结果数量
      */
-    rating?: number;
+    total?: number;
     /**
-     * 评论
+     * 当前分页参数
      */
-    comment?: string;
+    limit?: number;
     /**
-     * 收藏隐私
+     * 当前分页参数
      */
-    private?: 0 | 1;
-    /**
-     * 标签
-     */
-    tag?: Array<string>;
-    /**
-     * 完成话数
-     */
-    ep_status?: number;
-    /**
-     * 上次更新时间
-     */
-    lasttouch?: number;
-    user?: User;
+    offset?: number;
+    data?: Array<{
+      /**
+       * 条目ID
+       */
+      id: number;
+      type?: SubjectType;
+      /**
+       * 上映/开播/连载开始日期，可能为空字符串
+       */
+      date: string;
+      /**
+       * 封面
+       */
+      image: string;
+      /**
+       * 条目描述
+       */
+      summary: string;
+      /**
+       * 条目原名
+       */
+      name: string;
+      /**
+       * 条目中文名
+       */
+      name_cn: string;
+      tags: SubjectTags;
+      /**
+       * 评分
+       */
+      score: number;
+      /**
+       * 排名
+       */
+      rank: number;
+    }>;
   }> {
     return __request(OpenAPI, {
       method: 'POST',
-      url: '/collection/{subject_id}/{action}',
-      path: {
-        'subject_id': subjectId,
-        'action': action,
+      url: '/v0/search/subjects',
+      query: {
+        'limit': limit,
+        'offset': offset,
       },
-      formData: formData,
-      mediaType: 'application/x-www-form-urlencoded',
-      errors: {
-        401: `未授权`,
-      },
+      body: requestBody,
+      mediaType: 'application/json',
     });
   }
 
   /**
    * 获取条目
    * cache with 300s
-   * @param subjectId
-   * @returns Subject1 Successful Response
+   * @param subjectId 条目 ID
+   * @returns Subject Successful Response
    * @throws ApiError
    */
-  public static getSubjectByIdV0SubjectsSubjectIdGet(
-    subjectId: number,
-  ): CancelablePromise<Subject1> {
+  public static getSubjectById(
+    subjectId: SubjectID,
+  ): CancelablePromise<Subject> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/subjects/{subject_id}',
@@ -551,13 +285,41 @@ export class BangumiAPIService {
   }
 
   /**
+   * Get Subject Image
+   * @param subjectId 条目 ID
+   * @param type 枚举值 {small|grid|large|medium|common}
+   * @returns void
+   * @throws ApiError
+   */
+  public static getSubjectImageById(
+    subjectId: SubjectID,
+    type: string,
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/subjects/{subject_id}/image',
+      path: {
+        'subject_id': subjectId,
+      },
+      query: {
+        'type': type,
+      },
+      errors: {
+        302: `Successful Response`,
+        400: `Validation Error`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
    * Get Subject Persons
-   * @param subjectId
+   * @param subjectId 条目 ID
    * @returns RelatedPerson Successful Response
    * @throws ApiError
    */
-  public static getSubjectPersonsV0SubjectsSubjectIdPersonsGet(
-    subjectId: number,
+  public static getRelatedPersonsBySubjectId(
+    subjectId: SubjectID,
   ): CancelablePromise<Array<RelatedPerson>> {
     return __request(OpenAPI, {
       method: 'GET',
@@ -574,12 +336,12 @@ export class BangumiAPIService {
 
   /**
    * Get Subject Characters
-   * @param subjectId
+   * @param subjectId 条目 ID
    * @returns RelatedCharacter Successful Response
    * @throws ApiError
    */
-  public static getSubjectCharactersV0SubjectsSubjectIdCharactersGet(
-    subjectId: number,
+  public static getRelatedCharactersBySubjectId(
+    subjectId: SubjectID,
   ): CancelablePromise<Array<RelatedCharacter>> {
     return __request(OpenAPI, {
       method: 'GET',
@@ -596,13 +358,13 @@ export class BangumiAPIService {
 
   /**
    * Get Subject Relations
-   * @param subjectId
-   * @returns pol__api__v0__models__subject__RelatedSubject Successful Response
+   * @param subjectId 条目 ID
+   * @returns v0_subject_relation Successful Response
    * @throws ApiError
    */
-  public static getSubjectRelationsV0SubjectsSubjectIdSubjectsGet(
-    subjectId: number,
-  ): CancelablePromise<Array<pol__api__v0__models__subject__RelatedSubject>> {
+  public static getRelatedSubjectsBySubjectId(
+    subjectId: SubjectID,
+  ): CancelablePromise<Array<v0_subject_relation>> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/subjects/{subject_id}/subjects',
@@ -618,19 +380,19 @@ export class BangumiAPIService {
 
   /**
    * Get Episodes
-   * @param subjectId
+   * @param subjectId 条目 ID
    * @param type 参照章节的`type`
-   * @param limit
-   * @param offset
-   * @returns Paged_Episode_ Successful Response
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_Episode Successful Response
    * @throws ApiError
    */
-  public static getEpisodesV0EpisodesGet(
-    subjectId: number,
+  public static getEpisodes(
+    subjectId: SubjectID,
     type?: EpType,
     limit: number = 100,
     offset?: number,
-  ): CancelablePromise<Paged_Episode_> {
+  ): CancelablePromise<Paged_Episode> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/episodes',
@@ -649,11 +411,11 @@ export class BangumiAPIService {
 
   /**
    * Get Episode
-   * @param episodeId
+   * @param episodeId 章节 ID
    * @returns EpisodeDetail Successful Response
    * @throws ApiError
    */
-  public static getEpisodeV0EpisodesEpisodeIdGet(
+  public static getEpisodeById(
     episodeId: number,
   ): CancelablePromise<EpisodeDetail> {
     return __request(OpenAPI, {
@@ -672,11 +434,11 @@ export class BangumiAPIService {
   /**
    * Get Character Detail
    * cache with 60s
-   * @param characterId
+   * @param characterId 角色 ID
    * @returns CharacterDetail Successful Response
    * @throws ApiError
    */
-  public static getCharacterDetailV0CharactersCharacterIdGet(
+  public static getCharacterById(
     characterId: number,
   ): CancelablePromise<CharacterDetail> {
     return __request(OpenAPI, {
@@ -693,14 +455,42 @@ export class BangumiAPIService {
   }
 
   /**
-   * get character related subjects
-   * @param characterId
-   * @returns pol__api__v0__models__RelatedSubject Successful Response
+   * Get Character Image
+   * @param characterId 角色 ID
+   * @param type 枚举值 {small|grid|large|medium}
+   * @returns void
    * @throws ApiError
    */
-  public static getPersonSubjectsV0CharactersCharacterIdSubjectsGet(
+  public static getCharacterImageById(
     characterId: number,
-  ): CancelablePromise<Array<pol__api__v0__models__RelatedSubject>> {
+    type: string,
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/characters/{character_id}/image',
+      path: {
+        'character_id': characterId,
+      },
+      query: {
+        'type': type,
+      },
+      errors: {
+        302: `Successful Response`,
+        400: `Validation Error`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * get character related subjects
+   * @param characterId 角色 ID
+   * @returns v0_RelatedSubject Successful Response
+   * @throws ApiError
+   */
+  public static getRelatedSubjectsByCharacterId(
+    characterId: number,
+  ): CancelablePromise<Array<v0_RelatedSubject>> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/characters/{character_id}/subjects',
@@ -716,11 +506,11 @@ export class BangumiAPIService {
 
   /**
    * get character related persons
-   * @param characterId
+   * @param characterId 角色 ID
    * @returns CharacterPerson Successful Response
    * @throws ApiError
    */
-  public static getCharacterPersonsV0CharactersCharacterIdPersonsGet(
+  public static getRelatedPersonsByCharacterId(
     characterId: number,
   ): CancelablePromise<Array<CharacterPerson>> {
     return __request(OpenAPI, {
@@ -739,11 +529,11 @@ export class BangumiAPIService {
   /**
    * Get Person
    * cache with 60s
-   * @param personId
+   * @param personId 人物 ID
    * @returns PersonDetail Successful Response
    * @throws ApiError
    */
-  public static getPersonV0PersonsPersonIdGet(
+  public static getPersonById(
     personId: number,
   ): CancelablePromise<PersonDetail> {
     return __request(OpenAPI, {
@@ -760,14 +550,42 @@ export class BangumiAPIService {
   }
 
   /**
-   * get person related subjects
-   * @param personId
-   * @returns pol__api__v0__models__RelatedSubject Successful Response
+   * Get Person Image
+   * @param personId 人物 ID
+   * @param type 枚举值 {small|grid|large|medium}
+   * @returns void
    * @throws ApiError
    */
-  public static getPersonSubjectsV0PersonsPersonIdSubjectsGet(
+  public static getPersonImageById(
     personId: number,
-  ): CancelablePromise<Array<pol__api__v0__models__RelatedSubject>> {
+    type: string,
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/persons/{person_id}/image',
+      path: {
+        'person_id': personId,
+      },
+      query: {
+        'type': type,
+      },
+      errors: {
+        302: `Successful Response`,
+        400: `Validation Error`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * get person related subjects
+   * @param personId 人物 ID
+   * @returns v0_RelatedSubject Successful Response
+   * @throws ApiError
+   */
+  public static getRelatedSubjectsByPersonId(
+    personId: number,
+  ): CancelablePromise<Array<v0_RelatedSubject>> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/persons/{person_id}/subjects',
@@ -783,11 +601,11 @@ export class BangumiAPIService {
 
   /**
    * get person related characters
-   * @param personId
+   * @param personId 人物 ID
    * @returns PersonCharacter Successful Response
    * @throws ApiError
    */
-  public static getPersonCharactersV0PersonsPersonIdCharactersGet(
+  public static getRelatedCharactersByPersonId(
     personId: number,
   ): CancelablePromise<Array<PersonCharacter>> {
     return __request(OpenAPI, {
@@ -804,12 +622,64 @@ export class BangumiAPIService {
   }
 
   /**
-   * Get User
-   * 返回当前 Access Token 对应的用户信息
-   * @returns Me Successful Response
+   * Get User by name
+   * 获取用户信息
+   * @param username 设置了用户名之后无法使用 UID。
+   * @returns User Successful Response
    * @throws ApiError
    */
-  public static getUserV0MeGet(): CancelablePromise<Me> {
+  public static getUserByName(
+    username: string,
+  ): CancelablePromise<User> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/users/{username}',
+      path: {
+        'username': username,
+      },
+      errors: {
+        400: `username 太长`,
+        404: `对应用户不存在`,
+      },
+    });
+  }
+
+  /**
+   * Get User Avatar by name
+   * 获取用户头像，302 重定向至头像地址，设置了 username 之后无法使用 UID 查询。
+   * @param username 设置了用户名之后无法使用 UID。
+   * @param type 枚举值 {small|large|medium}
+   * @returns void
+   * @throws ApiError
+   */
+  public static getUserAvatarByName(
+    username: string,
+    type: string,
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/users/{username}/avatar',
+      path: {
+        'username': username,
+      },
+      query: {
+        'type': type,
+      },
+      errors: {
+        302: `Successful Response`,
+        400: `username 太长`,
+        404: `对应用户不存在`,
+      },
+    });
+  }
+
+  /**
+   * Get User
+   * 返回当前 Access Token 对应的用户信息
+   * @returns User Successful Response
+   * @throws ApiError
+   */
+  public static getMyself(): CancelablePromise<User> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/me',
@@ -822,25 +692,25 @@ export class BangumiAPIService {
   /**
    * 获取用户收藏
    * 获取对应用户的收藏，查看私有收藏需要access token。
-   * @param username 设置了 username 后无法使用UID
+   * @param username 设置了用户名之后无法使用 UID。
    * @param subjectType 条目类型，默认为全部
    *
    * 具体含义见 [SubjectType](#model-SubjectType)
    * @param type 收藏类型，默认为全部
    *
    * 具体含义见 [CollectionType](#model-CollectionType)
-   * @param limit
-   * @param offset
-   * @returns Paged_UserCollection_ Successful Response
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_UserCollection Successful Response
    * @throws ApiError
    */
-  public static getUserCollectionV0UsersUsernameCollectionsGet(
+  public static getUserCollectionsByUsername(
     username: string,
-    subjectType?: SubjectType1,
-    type?: CollectionType,
+    subjectType?: SubjectType,
+    type?: SubjectCollectionType,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_UserCollection_> {
+  ): CancelablePromise<Paged_UserCollection> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/users/{username}/collections',
@@ -861,18 +731,226 @@ export class BangumiAPIService {
   }
 
   /**
-   * Get Person Revisions
-   * @param personId
-   * @param limit
-   * @param offset
-   * @returns Paged_Revision_ Successful Response
+   * 获取用户单个收藏
+   * 获取对应用户的收藏，查看私有收藏需要access token。
+   * @param username 设置了用户名之后无法使用 UID。
+   * @param subjectId 条目 ID
+   * @returns UserSubjectCollection Successful Response
    * @throws ApiError
    */
-  public static getPersonRevisionsV0RevisionsPersonsGet(
+  public static getUserCollection(
+    username: string,
+    subjectId: SubjectID,
+  ): CancelablePromise<UserSubjectCollection> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/users/{username}/collections/{subject_id}',
+      path: {
+        'username': username,
+        'subject_id': subjectId,
+      },
+      errors: {
+        400: `Validation Error`,
+        404: `用户不存在或者条目未收藏，或者条目为私有收藏`,
+      },
+    });
+  }
+
+  /**
+   * 修改用户单个收藏
+   * 修改条目收藏状态
+   *
+   * 由于直接修改剧集条目的完成度可能会引起意料之外效果，只能用于修改书籍类条目的完成度。
+   *
+   * PATCH 方法的所有请求体字段均可选
+   *
+   * @param subjectId 条目 ID
+   * @param requestBody
+   * @returns void
+   * @throws ApiError
+   */
+  public static patchUserCollection(
+    subjectId: SubjectID,
+    requestBody?: {
+      /**
+       * 修改条目收藏类型
+       */
+      type?: SubjectCollectionType;
+      /**
+       * 评分，`0` 表示删除评分
+       */
+      rate?: number;
+      /**
+       * 只能用于修改书籍条目进度
+       */
+      ep_status?: number;
+      /**
+       * 只能用于修改书籍条目进度
+       */
+      vol_status?: number;
+      /**
+       * 评价
+       */
+      comment?: string;
+      /**
+       * 仅自己可见
+       */
+      private?: boolean;
+      /**
+       * 不传或者 `null` 都会被忽略，传 `[]` 则会删除所有 tag。
+       */
+      tags?: Array<string>;
+    },
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'PATCH',
+      url: '/v0/users/-/collections/{subject_id}',
+      path: {
+        'subject_id': subjectId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `Validation Error`,
+        401: `Unauthorized`,
+        404: `用户不存在或者条目未收藏`,
+      },
+    });
+  }
+
+  /**
+   * 章节收藏信息
+   * @param subjectId 条目 ID
+   * @param offset 分页参数
+   * @param limit 分页参数
+   * @param episodeType 章节类型，不传则不按照章节进行筛选
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static getUserSubjectEpisodeCollection(
+    subjectId: SubjectID,
+    offset?: number,
+    limit: number = 100,
+    episodeType?: EpType,
+  ): CancelablePromise<(Page & {
+    data?: Array<UserEpisodeCollection>;
+  })> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/users/-/collections/{subject_id}/episodes',
+      path: {
+        'subject_id': subjectId,
+      },
+      query: {
+        'offset': offset,
+        'limit': limit,
+        'episode_type': episodeType,
+      },
+      errors: {
+        400: `Bad Request`,
+        401: `not authorized`,
+        404: `条目不存在`,
+      },
+    });
+  }
+
+  /**
+   * 章节收藏信息
+   * 同时会重新计算条目的完成度
+   *
+   * @param subjectId 条目 ID
+   * @param requestBody
+   * @returns void
+   * @throws ApiError
+   */
+  public static patchUserSubjectEpisodeCollection(
+    subjectId: SubjectID,
+    requestBody?: {
+      episode_id: Array<number>;
+      type: EpisodeCollectionType;
+    },
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'PATCH',
+      url: '/v0/users/-/collections/{subject_id}/episodes',
+      path: {
+        'subject_id': subjectId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `Bad Request`,
+        401: `not authorized`,
+        404: `条目不存在`,
+      },
+    });
+  }
+
+  /**
+   * 章节收藏信息
+   * @param episodeId 章节 ID
+   * @returns UserEpisodeCollection Successful Response
+   * @throws ApiError
+   */
+  public static getUserEpisodeCollection(
+    episodeId: number,
+  ): CancelablePromise<UserEpisodeCollection> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/v0/users/-/collections/-/episodes/{episode_id}',
+      path: {
+        'episode_id': episodeId,
+      },
+      errors: {
+        400: `episode ID not valid`,
+        401: `not authorized`,
+        404: `条目或者章节不存在`,
+      },
+    });
+  }
+
+  /**
+   * 更新章节收藏信息
+   * @param episodeId 章节 ID
+   * @param requestBody
+   * @returns void
+   * @throws ApiError
+   */
+  public static putUserEpisodeCollection(
+    episodeId: number,
+    requestBody?: {
+      type: EpisodeCollectionType;
+    },
+  ): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: 'PUT',
+      url: '/v0/users/-/collections/-/episodes/{episode_id}',
+      path: {
+        'episode_id': episodeId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `episode ID not valid or subject not collected`,
+        401: `not authorized`,
+        404: `条目或者章节不存在`,
+      },
+    });
+  }
+
+  /**
+   * Get Person Revisions
+   * @param personId 角色 ID
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_Revision Successful Response
+   * @throws ApiError
+   */
+  public static getPersonRevisions(
     personId: number,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_Revision_> {
+  ): CancelablePromise<Paged_Revision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/persons',
@@ -889,11 +967,11 @@ export class BangumiAPIService {
 
   /**
    * Get Person Revision
-   * @param revisionId
+   * @param revisionId 历史版本 ID
    * @returns PersonRevision Successful Response
    * @throws ApiError
    */
-  public static getPersonRevisionV0RevisionsPersonsRevisionIdGet(
+  public static getPersonRevisionByRevisionId(
     revisionId: number,
   ): CancelablePromise<PersonRevision> {
     return __request(OpenAPI, {
@@ -911,17 +989,17 @@ export class BangumiAPIService {
 
   /**
    * Get Character Revisions
-   * @param characterId
-   * @param limit
-   * @param offset
-   * @returns Paged_Revision_ Successful Response
+   * @param characterId 角色 ID
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_Revision Successful Response
    * @throws ApiError
    */
-  public static getCharacterRevisionsV0RevisionsCharactersGet(
+  public static getCharacterRevisions(
     characterId: number,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_Revision_> {
+  ): CancelablePromise<Paged_Revision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/characters',
@@ -938,13 +1016,13 @@ export class BangumiAPIService {
 
   /**
    * Get Character Revision
-   * @param revisionId
-   * @returns DetailedRevision Successful Response
+   * @param revisionId 版本 ID
+   * @returns CharacterRevision Successful Response
    * @throws ApiError
    */
-  public static getCharacterRevisionV0RevisionsCharactersRevisionIdGet(
+  public static getCharacterRevisionByRevisionId(
     revisionId: number,
-  ): CancelablePromise<DetailedRevision> {
+  ): CancelablePromise<CharacterRevision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/characters/{revision_id}',
@@ -960,17 +1038,17 @@ export class BangumiAPIService {
 
   /**
    * Get Subject Revisions
-   * @param subjectId
-   * @param limit
-   * @param offset
-   * @returns Paged_Revision_ Successful Response
+   * @param subjectId 条目 ID
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_Revision Successful Response
    * @throws ApiError
    */
-  public static getSubjectRevisionsV0RevisionsSubjectsGet(
+  public static getSubjectRevisions(
     subjectId: number,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_Revision_> {
+  ): CancelablePromise<Paged_Revision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/subjects',
@@ -987,13 +1065,13 @@ export class BangumiAPIService {
 
   /**
    * Get Subject Revision
-   * @param revisionId
-   * @returns DetailedRevision Successful Response
+   * @param revisionId 版本 ID
+   * @returns SubjectRevision Successful Response
    * @throws ApiError
    */
-  public static getSubjectRevisionV0RevisionsSubjectsRevisionIdGet(
+  public static getSubjectRevisionByRevisionId(
     revisionId: number,
-  ): CancelablePromise<DetailedRevision> {
+  ): CancelablePromise<SubjectRevision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/subjects/{revision_id}',
@@ -1009,17 +1087,17 @@ export class BangumiAPIService {
 
   /**
    * Get Episode Revisions
-   * @param episodeId
-   * @param limit
-   * @param offset
-   * @returns Paged_Revision_ Successful Response
+   * @param episodeId 章节 ID
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns Paged_Revision Successful Response
    * @throws ApiError
    */
-  public static getEpisodeRevisionsV0RevisionsEpisodesGet(
+  public static getEpisodeRevisions(
     episodeId: number,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_Revision_> {
+  ): CancelablePromise<Paged_Revision> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/revisions/episodes',
@@ -1036,11 +1114,11 @@ export class BangumiAPIService {
 
   /**
    * Get Episode Revision
-   * @param revisionId
+   * @param revisionId 版本 ID
    * @returns DetailedRevision Successful Response
    * @throws ApiError
    */
-  public static getEpisodeRevisionV0RevisionsEpisodesRevisionIdGet(
+  public static getEpisodeRevisionByRevisionId(
     revisionId: number,
   ): CancelablePromise<DetailedRevision> {
     return __request(OpenAPI, {
@@ -1057,12 +1135,27 @@ export class BangumiAPIService {
   }
 
   /**
-   * Get Index By Id
-   * @param indexId
+   * Create a new index
    * @returns Index Successful Response
    * @throws ApiError
    */
-  public static getIndexByIdV0IndicesIndexIdGet(
+  public static newIndex(): CancelablePromise<Index> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/v0/indices',
+      errors: {
+        401: `Unauthorized`,
+      },
+    });
+  }
+
+  /**
+   * Get Index By ID
+   * @param indexId 目录 ID
+   * @returns Index Successful Response
+   * @throws ApiError
+   */
+  public static getIndexById(
     indexId: number,
   ): CancelablePromise<Index> {
     return __request(OpenAPI, {
@@ -1072,7 +1165,33 @@ export class BangumiAPIService {
         'index_id': indexId,
       },
       errors: {
-        400: `Validation Error`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * Edit index's information
+   * @param indexId 目录 ID
+   * @param requestBody
+   * @returns Index Successful Response
+   * @throws ApiError
+   */
+  public static editIndexById(
+    indexId: number,
+    requestBody?: IndexBasicInfo,
+  ): CancelablePromise<Index> {
+    return __request(OpenAPI, {
+      method: 'PUT',
+      url: '/v0/indices/{index_id}',
+      path: {
+        'index_id': indexId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `Bad Request`,
+        401: `Unauthorized`,
         404: `Not Found`,
       },
     });
@@ -1080,19 +1199,19 @@ export class BangumiAPIService {
 
   /**
    * Get Index Subjects
-   * @param indexId
-   * @param type
-   * @param limit
-   * @param offset
-   * @returns Paged_IndexSubject_ Successful Response
+   * @param indexId 目录 ID
+   * @param type 条目类型
+   * @param limit 分页参数
+   * @param offset 分页参数
+   * @returns any Successful Response
    * @throws ApiError
    */
-  public static getIndexSubjectsV0IndicesIndexIdSubjectsGet(
+  public static getIndexSubjectsByIndexId(
     indexId: number,
-    type?: SubjectType1,
+    type?: SubjectType,
     limit: number = 30,
     offset?: number,
-  ): CancelablePromise<Paged_IndexSubject_> {
+  ): CancelablePromise<any> {
     return __request(OpenAPI, {
       method: 'GET',
       url: '/v0/indices/{index_id}/subjects',
@@ -1105,8 +1224,139 @@ export class BangumiAPIService {
         'offset': offset,
       },
       errors: {
-        400: `Validation Error`,
+        400: `Bad Request`,
         404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * Add a subject to Index
+   * @param indexId 目录 ID
+   * @param requestBody
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static addSubjectToIndexByIndexId(
+    indexId: number,
+    requestBody?: IndexSubjectAddInfo,
+  ): CancelablePromise<any> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/v0/indices/{index_id}/subjects',
+      path: {
+        'index_id': indexId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `Unauthorized`,
+        401: `Bad Request`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * Edit subject information in a index
+   * 如果条目不存在于目录，会创建该条目
+   * @param indexId 目录 ID
+   * @param subjectId 条目 ID
+   * @param requestBody
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static editIndexSubjectsByIndexIdAndSubjectId(
+    indexId: number,
+    subjectId: SubjectID,
+    requestBody?: IndexSubjectEditInfo,
+  ): CancelablePromise<any> {
+    return __request(OpenAPI, {
+      method: 'PUT',
+      url: '/v0/indices/{index_id}/subjects/{subject_id}',
+      path: {
+        'index_id': indexId,
+        'subject_id': subjectId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+      errors: {
+        400: `Bad Request`,
+        401: `Unauthorized`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * Delete a subject from a Index
+   * @param indexId 目录 ID
+   * @param subjectId 条目 ID
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static delelteSubjectFromIndexByIndexIdAndSubjectId(
+    indexId: number,
+    subjectId: SubjectID,
+  ): CancelablePromise<any> {
+    return __request(OpenAPI, {
+      method: 'DELETE',
+      url: '/v0/indices/{index_id}/subjects/{subject_id}',
+      path: {
+        'index_id': indexId,
+        'subject_id': subjectId,
+      },
+      errors: {
+        401: `Unauthorized`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * Collect index for current user
+   * 为当前用户收藏一条目录
+   * @param indexId 目录 ID
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static collectIndexByIndexIdAndUserId(
+    indexId: number,
+  ): CancelablePromise<any> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/v0/indices/{index_id}/collect',
+      path: {
+        'index_id': indexId,
+      },
+      errors: {
+        401: `Unauthorized`,
+        404: `Not Found`,
+        500: `Internal Server Error`,
+      },
+    });
+  }
+
+  /**
+   * Uncollect index for current user
+   * 为当前用户取消收藏一条目录
+   * @param indexId 目录 ID
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static uncollectIndexByIndexIdAndUserId(
+    indexId: number,
+  ): CancelablePromise<any> {
+    return __request(OpenAPI, {
+      method: 'DELETE',
+      url: '/v0/indices/{index_id}/collect',
+      path: {
+        'index_id': indexId,
+      },
+      errors: {
+        401: `Unauthorized`,
+        404: `Not Found`,
+        500: `Internal Server Error`,
       },
     });
   }

@@ -7,7 +7,7 @@ import {
 import {
   ApiError,
   BangumiAPIService,
-  ResponseGroup,
+  Legacy_SubjectType,
   SubjectType,
 } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
@@ -91,6 +91,12 @@ export class AdminResolver {
   @Query(() => [SearchBangumiSeason])
   async searchBangumi(
     @Args('keywords') keywords: string,
+    @Args({
+      name: 'useNewBangumiSearchApi',
+      nullable: true,
+      type: () => Boolean,
+    })
+    useNewBangumiSearchApi = true,
   ): Promise<SearchBangumiSeason[]> {
     const match = keywords.match(
       /^(bgmid|bangumiid|bangumi_id):(\s)*(?<bgmid>(\d)+)$/,
@@ -98,9 +104,8 @@ export class AdminResolver {
     if (match?.groups?.bgmid) {
       const bgmid = parseInt(match.groups.bgmid);
       try {
-        const item =
-          await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(bgmid);
-        if (item.type !== SubjectType._2) {
+        const item = await BangumiAPIService.getSubjectById(bgmid);
+        if (item.type !== SubjectType.Anime) {
           return [];
         }
         const added =
@@ -128,14 +133,27 @@ export class AdminResolver {
       }
     }
 
-    const results = await BangumiAPIService.getSearchSubject(
-      keywords,
-      SubjectType._2,
-      ResponseGroup.SMALL,
-      0,
-      25,
-    );
-    const ids = (results.list ?? []).map(({ id }) => `${id}`);
+    // 兼容新旧bangumi搜索API
+    const entries = useNewBangumiSearchApi
+      ? (
+          await BangumiAPIService.searchSubjects(50, 0, {
+            keyword: keywords,
+            sort: 'match',
+            filter: {
+              type: [SubjectType.Anime],
+            },
+          })
+        ).data ?? []
+      : (
+          await BangumiAPIService.searchSubjectByKeywords(
+            keywords,
+            Legacy_SubjectType._2,
+            'small',
+            0,
+            25,
+          )
+        ).list ?? [];
+    const ids = entries.map(({ id }) => `${id}`);
     const added = await this.prisma.season.findMany({
       where: {
         bangumiId: {
@@ -143,11 +161,11 @@ export class AdminResolver {
         },
       },
     });
-    return (results.list ?? []).map((item) => ({
+    return entries.map((item) => ({
       id: `${item.id}`,
       name: item.name_cn || item.name || '未命名',
-      airDate: item.air_date,
-      image: item.images?.small,
+      airDate: item.date || item.air_date,
+      image: item.image || item.images?.small,
       added:
         added.find((season) => season.bangumiId === `${item.id}`) !== undefined,
     }));

@@ -20,6 +20,9 @@ export type Episode = {
   ep?: number;
   airdate: string;
   comment: number;
+  /**
+   * 维基人填写的原始时长
+   */
   duration: string;
   /**
    * 简介
@@ -29,4 +32,8 @@ export type Episode = {
    * 音乐曲目的碟片数
    */
   disc: number;
+  /**
+   * 服务器解析的时长，无法解析时为 `0`
+   */
+  duration_seconds?: number;
 };

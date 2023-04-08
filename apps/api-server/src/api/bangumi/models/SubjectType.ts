@@ -3,12 +3,19 @@
 /* eslint-disable */
 
 /**
- * 条目类型 <br> 1 = book <br> 2 = anime <br> 3 = music <br> 4 = game <br> 6 = real
+ * 条目类型
+ * - `1` 为 书籍
+ * - `2` 为 动画
+ * - `3` 为 音乐
+ * - `4` 为 游戏
+ * - `6` 为 三次元
+ *
+ * 没有 `5`
  */
 export enum SubjectType {
-  '_1' = 1,
-  '_2' = 2,
-  '_3' = 3,
-  '_4' = 4,
-  '_6' = 6,
+  Book = 1,
+  Anime = 2,
+  Music = 3,
+  Game = 4,
+  Real = 6,
 }

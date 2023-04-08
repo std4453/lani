@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 import type { Images } from './Images';
-import type { Item } from './Item';
+import type { WikiV0 } from './WikiV0';
 
 /**
  * 同名字段意义同<a href="#model-Subject">Subject</a>
@@ -13,7 +13,7 @@ export type IndexSubject = {
   type: number;
   name: string;
   images?: Images;
-  infobox?: Array<Item>;
+  infobox?: WikiV0;
   date?: string;
   comment: string;
   added_at: string;

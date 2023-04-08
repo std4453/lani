@@ -3,11 +3,11 @@
 /* eslint-disable */
 
 /**
- * An enumeration.
+ * type of a character 角色，机体，舰船，组织...
  */
 export enum CharacterType {
-  '_1' = 1,
-  '_2' = 2,
-  '_3' = 3,
-  '_4' = 4,
+  Character = 1,
+  Mechanic = 2,
+  Ship = 3,
+  Organization = 4,
 }

@@ -18,6 +18,7 @@ export type Index = {
    */
   stat: Stat;
   created_at: string;
+  updated_at: string;
   creator: Creator;
   ban: boolean;
   nsfw: boolean;

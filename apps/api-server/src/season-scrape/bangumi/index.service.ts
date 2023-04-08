@@ -12,9 +12,7 @@ import dayjs from 'dayjs';
 @Injectable()
 export class BangumiSeasonService {
   private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
-    const season = await BangumiAPIService.getSubjectByIdV0SubjectsSubjectIdGet(
-      bangumiId,
-    );
+    const season = await BangumiAPIService.getSubjectById(bangumiId);
     result.info = {
       description: season.summary,
       genres: [],
@@ -33,13 +31,12 @@ export class BangumiSeasonService {
   }
 
   private async fetchEpisodes(result: PartialSeason, bangumiId: number) {
-    const { data: episodes = [] } =
-      await BangumiAPIService.getEpisodesV0EpisodesGet(
-        bangumiId,
-        EpType._0, // 本篇
-        100,
-        0,
-      );
+    const { data: episodes = [] } = await BangumiAPIService.getEpisodes(
+      bangumiId,
+      EpType.MainStory, // 本篇
+      100,
+      0,
+    );
     result.episodes = episodes
       // 因为过滤了本篇，应当总有ep字段，为了避免类似 https://github.com/bangumi/api/issues/146
       // 这样的事故造成的数据错误，且episode的逻辑是只增不删，因此进行额外的检查保证不录入错误数据
@@ -59,10 +56,9 @@ export class BangumiSeasonService {
   }
 
   private async fetchCharacters(result: PartialSeason, bangumiId: number) {
-    const characters =
-      await BangumiAPIService.getSubjectCharactersV0SubjectsSubjectIdCharactersGet(
-        bangumiId,
-      );
+    const characters = await BangumiAPIService.getRelatedCharactersBySubjectId(
+      bangumiId,
+    );
     const mapped: SeasonCharacter[] = [];
     for (const character of characters) {
       for (const actor of character.actors ?? []) {

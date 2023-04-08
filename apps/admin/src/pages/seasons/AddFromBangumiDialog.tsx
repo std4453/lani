@@ -13,6 +13,7 @@ import { useApolloClient, useQuery } from '@apollo/client';
 import { useDebounce } from 'ahooks';
 import {
   Button,
+  Checkbox,
   Image,
   Input,
   List,
@@ -22,12 +23,14 @@ import {
   Space,
   Spin,
   Tag,
+  Tooltip,
   Typography,
 } from 'antd';
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 import { handleError } from '@/utils/error';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 export default function AddFromBangumiDialog({
   visible,
@@ -36,12 +39,14 @@ export default function AddFromBangumiDialog({
 }: DialogProps<void, { id: number }>) {
   const client = useApolloClient();
   const [keywords, setKeywords] = useState('');
+  const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(true);
   const keywordsDebounced = useDebounce(keywords, {
     wait: 500,
   });
   const { data, loading } = useQuery(SearchBangumiDocument, {
     variables: {
       keywords: keywordsDebounced,
+      useNewBangumiSearchApi,
     },
     skip: !keywordsDebounced,
   });
@@ -54,6 +59,7 @@ export default function AddFromBangumiDialog({
   useEffect(() => {
     if (visible) {
       setKeywords('');
+      setUseNewBangumiSearchApi(true);
     }
   }, [visible]);
 
@@ -150,11 +156,35 @@ export default function AddFromBangumiDialog({
           width: '100%',
         }}
       >
-        <Input
-          value={keywords}
-          onChange={(e) => setKeywords(e.target.value)}
-          placeholder={'输入关键词，或「bgmid: 100000」精确查找'}
-        />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginRight: -8,
+          }}
+        >
+          <Input
+            value={keywords}
+            onChange={(e) => setKeywords(e.target.value)}
+            placeholder={'输入关键词，或「bgmid: 100000」精确查找'}
+            allowClear
+          />
+          <Checkbox
+            checked={useNewBangumiSearchApi}
+            onChange={(e) => {
+              setUseNewBangumiSearchApi(e.target.checked);
+            }}
+            style={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            使用新版搜索&nbsp;
+            <Tooltip title="旧版搜索有时不稳定，建议使用新版搜索">
+              <QuestionCircleOutlined />
+            </Tooltip>
+          </Checkbox>
+        </div>
         <Spin spinning={loading}>
           <div
             style={{

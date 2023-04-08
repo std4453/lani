@@ -19,4 +19,5 @@ export type CharacterPerson = {
   subject_id: number;
   subject_name: string;
   subject_name_cn: string;
+  staff?: string;
 };

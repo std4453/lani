@@ -2,13 +2,13 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { PersonRevisionExtra } from './PersonRevisionExtra';
 import type { PersonRevisionProfession } from './PersonRevisionProfession';
+import type { RevisionExtra } from './RevisionExtra';
 
 export type PersonRevisionDataItem = {
   prsn_infobox: string;
   prsn_summary: string;
   profession: PersonRevisionProfession;
-  extra: PersonRevisionExtra;
+  extra: RevisionExtra;
   prsn_name: string;
 };

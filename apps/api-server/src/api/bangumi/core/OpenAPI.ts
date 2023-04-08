@@ -20,7 +20,7 @@ export type OpenAPIConfig = {
 
 export const OpenAPI: OpenAPIConfig = {
   BASE: 'https://api.bgm.tv',
-  VERSION: '2022-03-23',
+  VERSION: '2023-03-31',
   WITH_CREDENTIALS: false,
   CREDENTIALS: 'include',
   TOKEN: undefined,

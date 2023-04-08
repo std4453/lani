@@ -2,8 +2,9 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { PersonRevisionDataItem } from './PersonRevisionDataItem';
 import type { Revision } from './Revision';
 
 export type PersonRevision = (Revision & {
-  data?: any;
+  data?: Record<string, PersonRevisionDataItem>;
 });

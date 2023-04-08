@@ -5,7 +5,7 @@
 export type ErrorDetail = {
   title: string;
   description: string;
-  detail: {
+  details?: (string | {
     /**
      * error message
      */
@@ -14,5 +14,5 @@ export type ErrorDetail = {
      * request path
      */
     path?: string;
-  };
+  });
 };
