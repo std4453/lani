@@ -204,9 +204,13 @@ export function withAntdSearch<Props>(render: (props: Props) => ReactNode) {
 
     const [revision, setRevision] = useState(0);
     const update = useMemoizedFn((update: Partial<AntdTableState>) => {
-      merge(stateRef.current, update, {
-        current: 1,
-      });
+      merge(
+        stateRef.current,
+        {
+          current: 1,
+        },
+        update,
+      );
       setRevision((r) => r + 1);
     });
 
