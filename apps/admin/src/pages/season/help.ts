@@ -31,10 +31,14 @@ export type Season = SeasonConfigFieldsFragment;
 type RawEpisode = NonNullable<
   ExtractNode<SeasonEpisodesFragment['episodesBySeasonId']>
 >;
-export type Episode = Omit<RawEpisode, 'downloadJobsByEpisodeId'> & {
+
+export interface EpisodeStatusFields {
   jobStatus: EpisodeStatus;
   jobId?: number;
-};
+}
+
+export type Episode = Omit<RawEpisode, 'downloadJobsByEpisodeId'> &
+  EpisodeStatusFields;
 
 export function mapEpisode(episode: RawEpisode): Episode {
   const { status, jobId } = calcEpisodeStatus(episode);

@@ -39,3 +39,14 @@ query GetEpisodeById($episodeByIdId: Int!) {
 mutation RetryJobStep($jobId: Int!) {
   retryJobStep(jobId: $jobId)
 }
+
+query GetActiveDownloadJobStatus($jobIds: [Int!]!) {
+  getActiveDownloadJobStatus(jobIds: $jobIds) {
+    downloaded
+    eta
+    id
+    peers
+    speed
+    total
+  }
+}

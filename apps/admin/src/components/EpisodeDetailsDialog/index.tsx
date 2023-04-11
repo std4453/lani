@@ -1,5 +1,7 @@
 import {
+  DownloadJobStatus,
   DownloadStatus,
+  GetActiveDownloadJobStatusDocument,
   GetEpisodeByIdDocument,
   GetEpisodeByIdQuery,
   RetryJobStepDocument,
@@ -11,8 +13,18 @@ import useMobile from '@/utils/useMobile';
 import { ReloadOutlined } from '@ant-design/icons';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { useApolloClient, useQuery } from '@apollo/client';
-import { Modal, Space, Spin, Steps, Tabs, Tag, Typography } from 'antd';
+import {
+  Modal,
+  Progress,
+  Space,
+  Spin,
+  Steps,
+  Tabs,
+  Tag,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
+import prettyBytes from 'pretty-bytes';
 import { ReactNode, useMemo } from 'react';
 import styles from './index.module.less';
 
@@ -28,6 +40,77 @@ const jobStatusToStep: Partial<Record<DownloadStatus, number>> = {
   [DownloadStatus.PlayerWaiting]: 6,
   [DownloadStatus.Available]: 7,
 };
+
+function secondsToDuration(seconds: number) {
+  const parts = [
+    // 天
+    Math.floor(seconds / 86400),
+    // 小时
+    Math.floor((seconds % 86400) / 3600),
+    // 分钟
+    Math.floor((seconds % 3600) / 60),
+    // 秒
+    seconds % 60,
+  ];
+  function pad(n: number) {
+    return `${n}`.padStart(2, '0');
+  }
+  if (parts[0] > 0) {
+    return `${parts[0]}天${parts[1] > 0 ? `${parts[1]}小时` : ''}`;
+  } else {
+    return `${parts[1] > 0 ? `${pad(parts[1])}:` : ''}${pad(parts[2])}:${pad(
+      parts[3],
+    )}`;
+  }
+}
+
+function DownloadingDescription({
+  step,
+  current,
+  job,
+  status,
+}: {
+  step: number;
+  current: number;
+  job: Job;
+  status?: DownloadJobStatus;
+}) {
+  if (step !== current || !status || job.isFailed) {
+    return null;
+  }
+  const downloaded = parseInt(status.downloaded as string);
+  const total = parseInt(status.total as string);
+  // qbt在完成下载之后，downloaded可能略微超过total，展示递减的下载速度，且剩余时间返回的是预计完成上传的时间
+  const finished = downloaded >= total;
+  const percentage = finished ? 100 : (downloaded / total) * 100;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span>
+        {prettyBytes(downloaded)} / {prettyBytes(total)} (
+        {percentage.toFixed(1)}%)
+      </span>
+      <Progress
+        percent={percentage}
+        showInfo={false}
+        status={!finished && status.peers === 0 ? 'exception' : 'active'}
+      />
+      <span>
+        {prettyBytes(finished ? 0 : status.speed)}/s
+        {typeof status.eta === 'number'
+          ? ` (约${secondsToDuration(finished ? 0 : status.eta)})`
+          : ''}
+      </span>
+    </div>
+  );
+}
 
 function JobStepDescription({
   content,
@@ -106,7 +189,13 @@ function JobStepTitle({
   );
 }
 
-function EpisodeJob({ job }: { job: Job }) {
+function EpisodeJob({
+  job,
+  jobIdToStatusMap,
+}: {
+  job: Job;
+  jobIdToStatusMap: Record<number, DownloadJobStatus>;
+}) {
   const current = jobStatusToStep[job.status] ?? 0;
   return (
     <Steps
@@ -158,13 +247,21 @@ function EpisodeJob({ job }: { job: Job }) {
           <JobStepTitle title="下载中" step={2} current={current} job={job} />
         }
         description={
-          <JobStepDescription
-            step={2}
-            current={current}
-            job={job}
-            label="下载文件根路径"
-            content={job.downloadPath}
-          />
+          <>
+            <JobStepDescription
+              step={2}
+              current={current}
+              job={job}
+              label="下载文件根路径"
+              content={job.downloadPath}
+            />
+            <DownloadingDescription
+              step={2}
+              current={current}
+              job={job}
+              status={jobIdToStatusMap[job.id]}
+            />
+          </>
         }
       />
       <Steps.Step
@@ -243,6 +340,33 @@ function EpisodeJob({ job }: { job: Job }) {
   );
 }
 
+function useActiveJobsStatus(
+  jobs: ExtractNode<
+    NonNullable<GetEpisodeByIdQuery['episodeById']>['downloadJobsByEpisodeId']
+  >[],
+) {
+  const jobIds = useMemo(() => jobs.map((job) => job.id), [jobs]);
+  const { data, startPolling, stopPolling, refetch } = useQuery(
+    GetActiveDownloadJobStatusDocument,
+    {
+      skip: !jobIds.length,
+      variables: {
+        jobIds,
+      },
+      pollInterval: 2000,
+    },
+  );
+  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 2000 });
+  const jobIdToStatusMap = useMemo(() => {
+    const map: Record<number, DownloadJobStatus> = {};
+    for (const entry of data?.getActiveDownloadJobStatus ?? []) {
+      map[entry.id] = entry;
+    }
+    return map;
+  }, [data]);
+  return jobIdToStatusMap;
+}
+
 export default function EpisodeDetailsDialog({
   reject,
   visible,
@@ -264,6 +388,8 @@ export default function EpisodeDetailsDialog({
     [data],
   );
   const mobile = useMobile();
+
+  const jobIdToStatusMap = useActiveJobsStatus(jobs);
 
   return (
     <Modal
@@ -366,7 +492,7 @@ export default function EpisodeDetailsDialog({
                     maxHeight: 800,
                   }}
                 >
-                  <EpisodeJob job={job} />
+                  <EpisodeJob job={job} jobIdToStatusMap={jobIdToStatusMap} />
                 </div>
               </Tabs.TabPane>
             ))}

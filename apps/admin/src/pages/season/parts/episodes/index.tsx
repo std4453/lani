@@ -1,26 +1,28 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
-import { DownloadStatusTag } from '@/constants/download-status';
+import {
+  calcEpisodeStatus,
+  DownloadStatusTag,
+} from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
   DownloadBilibiliCcDocument,
   DownloadTorrentForEpisodeDocument,
+  GetEpisodesStatusDocument,
   MetadataSource,
   TorrentFieldsFragment,
 } from '@/generated/types';
 import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-download-magnet-dialog';
 import { handleError } from '@/utils/error';
+import { extractNode } from '@/utils/graphql';
 import { getSeasonKeyword } from '@/utils/season';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useAsyncButton } from '@/utils/useAsyncButton';
-import {
-  DownOutlined,
-  InfoCircleOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
-import { useApolloClient } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
 import {
   Alert,
   Button,
@@ -31,15 +33,42 @@ import {
   Typography,
 } from 'antd';
 import dayjs from 'dayjs';
-import { useMemo, useRef } from 'react';
+import { createContext, useContext, useMemo, useRef } from 'react';
 import Section from '../../components/section';
 import {
   Episode,
+  EpisodeStatusFields,
   formItemProps,
   FormValues,
   useSeasonPageContext,
 } from '../../help';
 import styles from './index.module.less';
+
+const EpisodesStatusContext = createContext<
+  Record<number, EpisodeStatusFields> | undefined
+>(undefined);
+
+function EpisodeStatusTag({
+  episode,
+  openEpisodeDetails,
+}: {
+  episode: Episode;
+  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+}) {
+  const episodesStatus = useContext(EpisodesStatusContext);
+  const mergedEpisode = { ...episode, ...episodesStatus?.[episode.id] };
+
+  return (
+    <div>
+      <DownloadStatusTag
+        status={mergedEpisode.jobStatus}
+        episodeId={mergedEpisode.id}
+        jobId={mergedEpisode.jobId}
+        openEpisodeDetails={openEpisodeDetails}
+      />
+    </div>
+  );
+}
 
 function useColumns({
   openDownloadMagnet,
@@ -84,14 +113,10 @@ function useColumns({
         dataIndex: 'jobStatus',
         width: 120,
         render: (_, r) => (
-          <div>
-            <DownloadStatusTag
-              status={r.jobStatus}
-              episodeId={r.id}
-              jobId={r.jobId}
-              openEpisodeDetails={openEpisodeDetails}
-            />
-          </div>
+          <EpisodeStatusTag
+            episode={r}
+            openEpisodeDetails={openEpisodeDetails}
+          />
         ),
       },
       {
@@ -234,8 +259,41 @@ function useColumns({
   );
 }
 
+function useEpisodeStatus(episodes: Episode[]) {
+  const episodeIds = useMemo(
+    () => episodes.map((episode) => episode.id),
+    [episodes],
+  );
+  const { data, refetch, startPolling, stopPolling } = useQuery(
+    GetEpisodesStatusDocument,
+    {
+      skip: !episodeIds.length,
+      variables: {
+        episodeIds,
+      },
+      pollInterval: 5000,
+    },
+  );
+  useApolloPoll({ pollInterval: 5000, startPolling, stopPolling, refetch });
+  return useMemo(() => {
+    const episodesStatus = extractNode(data?.allEpisodes);
+    if (!episodesStatus) {
+      return undefined;
+    }
+    const episodesStatusMap: Record<number, EpisodeStatusFields> = {};
+    for (const item of episodesStatus) {
+      const { status, jobId } = calcEpisodeStatus(item);
+      episodesStatusMap[item.id] = {
+        jobStatus: status,
+        jobId,
+      };
+    }
+    return episodesStatusMap;
+  }, [data]);
+}
+
 export default function Episodes() {
-  const { episodes, formRef, syncEpisodes, reloadEpisodes, episodesLastSync } =
+  const { episodes, formRef, syncEpisodes, episodesLastSync } =
     useSeasonPageContext();
 
   const [downloadMagnetDialog, , openDownloadMagnet] =
@@ -249,6 +307,7 @@ export default function Episodes() {
     openEpisodeDetails,
     openSearchTorrent,
   });
+  const episodesStatus = useEpisodeStatus(episodes);
 
   const syncEpisodeProps = useAsyncButton(async () => {
     if (!formRef.current) {
@@ -260,8 +319,6 @@ export default function Episodes() {
     }
     await syncEpisodes();
   });
-
-  const refreshEpisodesProps = useAsyncButton(reloadEpisodes);
 
   return (
     <Section
@@ -300,14 +357,6 @@ export default function Episodes() {
         </div>,
         <Button type="primary" ghost {...syncEpisodeProps} key={0}>
           立即同步
-        </Button>,
-        <Button
-          {...refreshEpisodesProps}
-          key={2}
-          icon={<ReloadOutlined />}
-          type="default"
-        >
-          刷新
         </Button>,
       ]}
       extraClassName={styles.extra}
@@ -377,17 +426,19 @@ export default function Episodes() {
         ]}
         width="sm"
       />
-      <ProTable<Episode>
-        columns={columns}
-        dataSource={episodes}
-        rowKey="id"
-        pagination={false}
-        toolBarRender={false}
-        search={false}
-        defaultSize="middle"
-        actionRef={ref}
-        className={styles.table}
-      />
+      <EpisodesStatusContext.Provider value={episodesStatus}>
+        <ProTable<Episode>
+          columns={columns}
+          dataSource={episodes}
+          rowKey="id"
+          pagination={false}
+          toolBarRender={false}
+          search={false}
+          defaultSize="middle"
+          actionRef={ref}
+          className={styles.table}
+        />
+      </EpisodesStatusContext.Provider>
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
       {searchTorrentDialog}

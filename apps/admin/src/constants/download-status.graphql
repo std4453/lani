@@ -5,6 +5,7 @@ fragment downloadJobStatusFields on DownloadJob {
 }
 
 fragment episodeStatusFields on Episode {
+  jellyfinEpisodeId
   airTime
   id
   jobs: downloadJobsByEpisodeId(first: 1, orderBy: ID_DESC) {

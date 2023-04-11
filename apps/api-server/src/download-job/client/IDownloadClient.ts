@@ -31,4 +31,30 @@ export abstract class IDownloadClient {
       size: number;
     }[]
   >;
+
+  abstract getActiveTorrentsStatus(hashes: string[]): Promise<
+    {
+      hash: string;
+      /**
+       * 当前速度，单位: byte/s
+       */
+      speed: number;
+      /**
+       * 已下载量，单位：byte
+       */
+      downloaded: number;
+      /**
+       * 总大小，单位：byte
+       */
+      total: number;
+      /**
+       * 预期时间，单位：秒
+       */
+      eta?: number;
+      /**
+       * 做种人数
+       */
+      peers?: number;
+    }[]
+  >;
 }

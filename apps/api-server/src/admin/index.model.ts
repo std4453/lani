@@ -78,3 +78,30 @@ export class SaveSeasonPatch {
   yearAndSemester?: string;
   sources: DownloadSourcesInput[];
 }
+
+@ObjectType()
+export class DownloadJobStatus {
+  id: number;
+  /**
+   * 当前速度，单位: byte/s
+   */
+  speed: number;
+  /**
+   * 已下载量，单位：byte
+   */
+  @Field(() => BigInt)
+  downloaded: bigint;
+  /**
+   * 总大小，单位：byte
+   */
+  @Field(() => BigInt)
+  total: bigint;
+  /**
+   * 预期时间，单位：秒
+   */
+  eta?: number;
+  /**
+   * 做种人数
+   */
+  peers?: number;
+}

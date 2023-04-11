@@ -14,8 +14,11 @@ import {
 } from '@/constants/link';
 import {
   DeleteSeasonByIdDocument,
+  EpisodeStatusFieldsFragment,
   GetMetadataPageOptionsDocument,
+  GetSeasonsStatusDocument,
   ListSeasonsDocument,
+  ListSeasonsFieldsFragment,
   ListSeasonsQuery,
   SeasonFilter,
   SeasonsOrderBy,
@@ -26,6 +29,7 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
 import ProTable, { ActionType } from '@ant-design/pro-table';
@@ -34,11 +38,22 @@ import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useMemo, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
 
 type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
+
+const SeasonsStatusContext = createContext<
+  Record<number, EpisodeStatusFieldsFragment> | undefined
+>(undefined);
 
 function LinkIcon({
   icon,
@@ -101,6 +116,38 @@ enum EpisodesFilter {
   LACK = 'lack',
   NO_AIRED = 'no_aired',
   ALL_AIRED = 'all_aired',
+}
+
+function SeasonStatusTag({
+  season,
+  openEpisodeDetails,
+}: {
+  season: ListSeasonsFieldsFragment;
+  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+}) {
+  const seasonsStatus = useContext(SeasonsStatusContext);
+  const episodeStatus = useMemo(() => {
+    const mergedEpisode =
+      seasonsStatus?.[season.id] ?? extractNode(season.latestEpisode)?.[0];
+    if (!mergedEpisode) {
+      return undefined;
+    }
+    return { id: mergedEpisode.id, ...calcEpisodeStatus(mergedEpisode) };
+  }, [seasonsStatus, season]);
+  // 因为hooks不能选择性调用，这里判断放到最后
+  if (!season.isMonitoring || !episodeStatus) {
+    return <>-</>;
+  }
+  return (
+    <div>
+      <DownloadStatusTag
+        status={episodeStatus.status}
+        episodeId={episodeStatus.id}
+        jobId={episodeStatus.jobId}
+        openEpisodeDetails={openEpisodeDetails}
+      />
+    </div>
+  );
 }
 
 function useColumns({
@@ -250,26 +297,12 @@ function useColumns({
           tooltip: '季度最新一集的下载状态',
           key: 'latestEpisode',
           width: 120,
-          render: (_, r) => {
-            if (!r.isMonitoring) {
-              return '-';
-            }
-            const episode = extractNode(r.latestEpisode)?.[0];
-            if (!episode) {
-              return '-';
-            }
-            const { status, jobId } = calcEpisodeStatus(episode);
-            return (
-              <div>
-                <DownloadStatusTag
-                  status={status}
-                  episodeId={episode.id}
-                  jobId={jobId}
-                  openEpisodeDetails={openEpisodeDetails}
-                />
-              </div>
-            );
-          },
+          render: (_, r) => (
+            <SeasonStatusTag
+              season={r}
+              openEpisodeDetails={openEpisodeDetails}
+            />
+          ),
         },
         {
           title: '集数',
@@ -610,6 +643,52 @@ async function querySeasons(
   }
 }
 
+function useSeasonsStatus(seasonIds: number[]) {
+  // useQuery会检测variables变化触发新请求，如果now一直变化会一直触发，不受
+  // pollInterval控制，因此这里把now做成不变的，仅当：
+  // - 每分钟
+  // - 每次seasonIds变化
+  // 时更新
+  const nowRef = useRef(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      nowRef.current = new Date();
+    }, 60 * 1000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+  const lastSeasonIdsRef = useRef(seasonIds);
+  if (seasonIds !== lastSeasonIdsRef.current) {
+    nowRef.current = new Date();
+  }
+  lastSeasonIdsRef.current = seasonIds;
+
+  const { data, startPolling, stopPolling, refetch } = useQuery(
+    GetSeasonsStatusDocument,
+    {
+      skip: !seasonIds.length,
+      variables: {
+        seasonIds,
+        now: nowRef.current,
+      },
+      pollInterval: 5000,
+    },
+  );
+  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 5000 });
+  return useMemo(() => {
+    const seasonsStatusMap: Record<number, EpisodeStatusFieldsFragment> = {};
+    for (const season of extractNode(data?.allSeasons) ?? []) {
+      const episode = extractNode(season.latestEpisode)?.[0];
+      if (!episode) {
+        continue;
+      }
+      seasonsStatusMap[season.id] = episode;
+    }
+    return seasonsStatusMap;
+  }, [data]);
+}
+
 export default withAntdSearch(function MetadataPage() {
   const client = useApolloClient();
 
@@ -624,14 +703,20 @@ export default withAntdSearch(function MetadataPage() {
   const history = useHistory();
   const mobile = useMobile();
 
+  const [seasonIds, setSeasonIds] = useState<number[]>([]);
+  const seasonsStatus = useSeasonsStatus(seasonIds);
+
   const props = useAntdSearchProps(
-    ({ search, sort, filter, current, keyword, pageSize }) =>
-      querySeasons(
+    async ({ search, sort, filter, current, keyword, pageSize }) => {
+      const result = await querySeasons(
         client,
         { ...search, current, keyword, pageSize },
         sort,
         filter,
-      ),
+      );
+      setSeasonIds((result.data ?? []).map((season) => season.id));
+      return result;
+    },
     {
       hasKeyword: true,
       pagination: {
@@ -648,7 +733,7 @@ export default withAntdSearch(function MetadataPage() {
   );
 
   return (
-    <>
+    <SeasonsStatusContext.Provider value={seasonsStatus}>
       <ProTable<RowType>
         columns={columns}
         rowKey="id"
@@ -694,6 +779,6 @@ export default withAntdSearch(function MetadataPage() {
       {createSeasonDialog}
       {addFromBangumiDialog}
       {episodeDetailsDiglog}
-    </>
+    </SeasonsStatusContext.Provider>
   );
 });

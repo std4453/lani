@@ -1,5 +1,6 @@
 import {
   AdminConfig,
+  DownloadJobStatus,
   SaveSeasonPatch,
   SearchBangumiSeason,
   UpdateSeasonDownloadSourcesInput,
@@ -12,12 +13,13 @@ import {
 } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
+import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { JobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
-import { DownloadSource, Prisma } from '@lani/db';
+import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
 import { Injectable } from '@nestjs/common';
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 @Injectable()
 @Resolver()
@@ -26,6 +28,7 @@ export class AdminResolver {
     private prisma: PrismaService,
     private job: JobService,
     private seasonEmit: SeasonEmitService,
+    private client: IDownloadClient,
   ) {}
 
   @Query(() => ID)
@@ -302,5 +305,47 @@ export class AdminResolver {
     );
 
     return 'ok';
+  }
+
+  @Query(() => [DownloadJobStatus])
+  async getActiveDownloadJobStatus(
+    @Args({
+      name: 'jobIds',
+      type: () => [Int],
+    })
+    jobIds: number[],
+  ) {
+    const jobs = await this.prisma.downloadJob.findMany({
+      where: {
+        id: {
+          in: jobIds,
+        },
+        status: DownloadStatus.DOWNLOADING,
+        qbtTorrentHash: {
+          not: null,
+        },
+      },
+    });
+    const torrents = await this.client.getActiveTorrentsStatus(
+      jobs
+        .map((job) => job.qbtTorrentHash)
+        .filter((hash): hash is Exclude<typeof hash, null> => hash !== null),
+    );
+    const result: DownloadJobStatus[] = [];
+    for (const torrent of torrents) {
+      const job = jobs.find((job) => job.qbtTorrentHash === torrent.hash);
+      if (!job) {
+        continue;
+      }
+      result.push({
+        id: job.id,
+        downloaded: BigInt(torrent.downloaded),
+        speed: torrent.speed,
+        total: BigInt(torrent.total),
+        eta: torrent.eta,
+        peers: torrent.peers,
+      });
+    }
+    return result;
   }
 }

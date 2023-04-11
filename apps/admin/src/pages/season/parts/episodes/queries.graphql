@@ -1,0 +1,9 @@
+query GetEpisodesStatus($episodeIds: [Int!]!) {
+  allEpisodes(filter: { id: { in: $episodeIds } }) {
+    edges {
+      node {
+        ...episodeStatusFields
+      }
+    }
+  }
+}

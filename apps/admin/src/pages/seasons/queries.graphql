@@ -141,3 +141,24 @@ query ListJellyfinFolders {
 mutation WriteSeasonMetadata($id: Int!) {
   writeMetadata(seasonId: $id)
 }
+
+query GetSeasonsStatus($seasonIds: [Int!]!, $now: Datetime!) {
+  allSeasons(filter: { id: { in: $seasonIds } }) {
+    edges {
+      node {
+        id
+        latestEpisode: episodesBySeasonId(
+          first: 1
+          orderBy: INDEX_DESC
+          filter: { airTime: { lessThanOrEqualTo: $now } }
+        ) {
+          edges {
+            node {
+              ...episodeStatusFields
+            }
+          }
+        }
+      }
+    }
+  }
+}

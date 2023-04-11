@@ -96,4 +96,27 @@ export class QBittorrentClient implements IDownloadClient {
       };
     });
   }
+
+  async getActiveTorrentsStatus(hashes: string[]): Promise<
+    {
+      hash: string;
+      speed: number;
+      downloaded: number;
+      total: number;
+      eta?: number;
+      peers?: number;
+    }[]
+  > {
+    const torrents = await this.qbt.listTorrents({
+      hashes,
+    });
+    return torrents.map((torrent) => ({
+      hash: torrent.hash,
+      speed: torrent.completion_on > 0 ? 0 : torrent.dlspeed,
+      downloaded: torrent.downloaded,
+      total: torrent.size,
+      eta: torrent.completion_on > 0 ? 0 : torrent.eta,
+      peers: torrent.num_leechs,
+    }));
+  }
 }
