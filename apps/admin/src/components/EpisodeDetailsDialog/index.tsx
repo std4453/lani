@@ -233,13 +233,22 @@ function EpisodeJob({
           <JobStepTitle title="提交下载" step={1} current={current} job={job} />
         }
         description={
-          <JobStepDescription
-            step={1}
-            current={current}
-            job={job}
-            label="种子Hash"
-            content={job.qbtTorrentHash}
-          />
+          <>
+            <JobStepDescription
+              step={1}
+              current={current}
+              job={job}
+              label="种子Hash"
+              content={job.qbtTorrentHash}
+            />
+            <JobStepDescription
+              step={1}
+              current={current}
+              job={job}
+              label="种子名称"
+              content={job.torrentTitle}
+            />
+          </>
         }
       />
       <Steps.Step

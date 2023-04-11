@@ -16,6 +16,7 @@ export type DownloadWorkflowDefinition = {
     submitDownload: {
       output: {
         qbtTorrentHash: string;
+        torrentTitle?: string;
       };
     };
     download: {

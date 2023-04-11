@@ -1,3 +1,5 @@
+export type TorrentInfo = { hash: string; name?: string };
+
 export type TorrentStatus =
   | {
       status: 'error';
@@ -11,16 +13,12 @@ export type TorrentStatus =
       downloadPath: string;
     };
 
-export abstract class IDownloadClient {
-  abstract submitTorrentLink(torrentLink: string): Promise<{
-    hash: string;
-  }>;
+export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
 
-  abstract lookupTorrents(hashes: string[]): Promise<
-    ({
-      hash: string;
-    } & TorrentStatus)[]
-  >;
+export abstract class IDownloadClient {
+  abstract submitTorrentLink(torrentLink: string): Promise<TorrentInfo>;
+
+  abstract lookupTorrents(hashes: string[]): Promise<TorrentInfoWithStatus[]>;
 
   abstract getTorrentFiles(hash: string): Promise<
     {

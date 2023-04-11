@@ -67,6 +67,7 @@ specifiers:
   '@types/js-yaml': ~4.0.5
   '@types/koa': ~2.13.4
   '@types/lodash': ~4.14.178
+  '@types/magnet-uri': ~5.1.3
   '@types/md5': ~2.3.2
   '@types/node': ~17.0.4
   '@types/parse-torrent': ~5.8.4
@@ -144,6 +145,7 @@ specifiers:
   shx: ^0.3.3
   simple-git: ~2.48.0
   source-map-support: ^0.5.20
+  store2: ~2.14.2
   supertest: ^6.1.3
   ts-jest: ^27.0.3
   ts-loader: ^9.2.3
@@ -223,6 +225,7 @@ dependencies:
   '@types/js-yaml': 4.0.5
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.181
+  '@types/magnet-uri': 5.1.3
   '@types/md5': 2.3.2
   '@types/node': 17.0.23
   '@types/parse-torrent': 5.8.4
@@ -300,6 +303,7 @@ dependencies:
   shx: 0.3.4
   simple-git: 2.48.0
   source-map-support: 0.5.21
+  store2: 2.14.2
   supertest: 6.2.2
   ts-jest: 27.1.4_8fa130d172bf7d71653f05507c50c5a3
   ts-loader: 9.2.8_typescript@4.5.5
@@ -27229,7 +27233,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_396212c9817b8cb7283c4ecf8eee65ef:
-    resolution: {integrity: sha512-cT9HbxxoCxCJXyI/FNjhTahaufTMr54cpBi44z1GhO0pTiIYqE9l1Gk4vsB3zCh2nERo7KhsRzcohbChgoF6jw==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-hAu2c9vTQu6tn57nkC/ZaumtCHKNdNUKoBATJI/6mfES8xrpBXKgpM2cpfl97V3yC/dzjxTMc8mLGAu0RqqRHA==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -27255,9 +27259,11 @@ packages:
       '@types/cron': 1.7.3
       '@types/express': 4.17.13
       '@types/jest': 27.4.1
+      '@types/magnet-uri': 5.1.3
       '@types/md5': 2.3.2
       '@types/node': 17.0.23
       '@types/parse-torrent': 5.8.4
+      '@types/parse-torrent-file': 4.0.3
       '@types/supertest': 2.0.12
       '@types/xml2js': 0.4.9
       '@typescript-eslint/eslint-plugin': 5.17.0_774b14a0587fa14f49b58eca49953a7f

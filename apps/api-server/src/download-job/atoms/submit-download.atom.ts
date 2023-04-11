@@ -20,9 +20,10 @@ export class SubmitDownloadAtom extends AsyncAtom<
     if (!torrentLink) {
       throw new Error('torrentLink not set');
     }
-    const { hash } = await this.client.submitTorrentLink(torrentLink);
+    const { hash, name } = await this.client.submitTorrentLink(torrentLink);
     return {
       qbtTorrentHash: hash,
+      torrentTitle: name,
     };
   }
 }

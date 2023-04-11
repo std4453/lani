@@ -138,6 +138,7 @@ model DownloadJob {
   id                Int            @id @default(autoincrement())
   episodeId         Int            @map("episode_id")
   qbtTorrentHash    String?        @map("qbt_torrent_hash")
+  torrentTitle      String?        @default("") @map("torrent_title")
   status            DownloadStatus
   downloadPath      String?        @map("download_path")
   filePath          String?        @map("file_path")

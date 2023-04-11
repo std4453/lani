@@ -294,6 +294,7 @@ export class JobService
           ? DownloadStatus.AVAILABLE
           : this.completionToStatus(state.completion),
         qbtTorrentHash: state.steps.submitDownload?.qbtTorrentHash,
+        torrentTitle: state.steps.submitDownload?.torrentTitle,
         downloadPath: state.steps.download?.downloadPath,
         importPath: state.steps.findVideoFile?.importPath,
         filePath: state.steps.importFile?.filePath,

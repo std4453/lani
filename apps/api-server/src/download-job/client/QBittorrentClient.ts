@@ -1,6 +1,8 @@
 import { GlobalAxiosService } from '@/common/axios.service';
 import {
   IDownloadClient,
+  TorrentInfo,
+  TorrentInfoWithStatus,
   TorrentStatus,
 } from '@/download-job/client/IDownloadClient';
 import { QBittorrentService } from '@/download-job/client/QBittorrentService';
@@ -41,6 +43,7 @@ export class QBittorrentClient implements IDownloadClient {
       }
       return {
         hash: magnet.infoHash,
+        name: magnet.name instanceof Array ? magnet.name[0] : magnet.name,
       };
     } else {
       const { data } = await this.global.get<Buffer>(torrentLink, {
@@ -65,6 +68,7 @@ export class QBittorrentClient implements IDownloadClient {
       }
       return {
         hash: torrent.infoHash,
+        name: torrent.name instanceof Array ? torrent.name[0] : torrent.name,
       };
     }
   }
@@ -73,25 +77,29 @@ export class QBittorrentClient implements IDownloadClient {
     const torrents = await this.qbt.listTorrents({
       hashes,
     });
-    return torrents.map((torrent): { hash: string } & TorrentStatus => {
+    return torrents.map((torrent): TorrentInfoWithStatus => {
+      const torrentInfo: TorrentInfo = {
+        hash: torrent.hash,
+        name: torrent.name,
+      };
       switch (torrent.state as QBTTorrentState) {
         case 'error':
         case 'missingFiles':
           return {
-            hash: torrent.hash,
+            ...torrentInfo,
             status: 'error',
             state: torrent.state,
           };
       }
       if (torrent.completion_on > 0) {
         return {
-          hash: torrent.hash,
+          ...torrentInfo,
           status: 'success',
           downloadPath: torrent.save_path,
         };
       }
       return {
-        hash: torrent.hash,
+        ...torrentInfo,
         status: 'pending',
       };
     });

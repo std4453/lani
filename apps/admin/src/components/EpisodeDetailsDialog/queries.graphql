@@ -21,6 +21,7 @@ query GetEpisodeById($episodeByIdId: Int!) {
           status
           torrentLink
           jellyfinEpisodeId
+          torrentTitle
         }
       }
     }
