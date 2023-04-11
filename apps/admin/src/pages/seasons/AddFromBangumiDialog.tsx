@@ -39,7 +39,7 @@ export default function AddFromBangumiDialog({
 }: DialogProps<void, { id: number }>) {
   const client = useApolloClient();
   const [keywords, setKeywords] = useState('');
-  const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(true);
+  const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(false);
   const keywordsDebounced = useDebounce(keywords, {
     wait: 500,
   });
@@ -59,7 +59,7 @@ export default function AddFromBangumiDialog({
   useEffect(() => {
     if (visible) {
       setKeywords('');
-      setUseNewBangumiSearchApi(true);
+      setUseNewBangumiSearchApi(false);
     }
   }, [visible]);
 
@@ -180,7 +180,7 @@ export default function AddFromBangumiDialog({
             }}
           >
             使用新版搜索&nbsp;
-            <Tooltip title="旧版搜索有时不稳定，建议使用新版搜索">
+            <Tooltip title="如果旧版搜索无法找到结果，可以尝试使用新版搜索">
               <QuestionCircleOutlined />
             </Tooltip>
           </Checkbox>
