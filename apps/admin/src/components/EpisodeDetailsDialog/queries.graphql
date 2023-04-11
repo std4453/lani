@@ -17,7 +17,6 @@ query GetEpisodeById($episodeByIdId: Int!) {
           isFailed
           nfoPath
           qbtTorrentHash
-          qbtLastSync
           status
           torrentLink
           jellyfinEpisodeId

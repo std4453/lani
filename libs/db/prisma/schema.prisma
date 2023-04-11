@@ -135,25 +135,43 @@ model Torrent {
 }
 
 model DownloadJob {
-  id                Int            @id @default(autoincrement())
-  episodeId         Int            @map("episode_id")
-  qbtTorrentHash    String?        @map("qbt_torrent_hash")
-  torrentTitle      String?        @default("") @map("torrent_title")
-  status            DownloadStatus
-  downloadPath      String?        @map("download_path")
-  filePath          String?        @map("file_path")
-  isCancelled       Boolean        @default(false) @map("is_cancelled")
-  cancelledAt       DateTime?      @map("cancelled_at") @db.Timestamptz(6)
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  isFailed          Boolean        @default(false) @map("is_failed")
-  failedAt          DateTime?      @map("failed_at") @db.Timestamptz(6)
-  failedReason      String         @default("") @map("failed_reason")
-  qbtLastSync       DateTime?      @map("qbt_last_sync") @db.Timestamptz(6)
-  importPath        String?        @map("import_path")
-  torrentLink       String?        @map("torrent_link")
-  nfoPath           String?        @map("nfo_path")
-  jellyfinEpisodeId String?        @map("jellyfin_episode_id")
-  episode           Episode        @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
+  id Int @id @default(autoincrement())
+
+  // 入参
+  episodeId   Int?     @map("episode_id")
+  episode     Episode? @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
+  torrentLink String?  @map("torrent_link")
+
+  // 任务状态
+  status       DownloadStatus
+  isCancelled  Boolean        @default(false) @map("is_cancelled")
+  cancelledAt  DateTime?      @map("cancelled_at") @db.Timestamptz(6)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  isFailed     Boolean        @default(false) @map("is_failed")
+  failedAt     DateTime?      @map("failed_at") @db.Timestamptz(6)
+  failedReason String         @default("") @map("failed_reason")
+
+  // 步骤 - 提交下载
+  qbtTorrentHash String? @map("qbt_torrent_hash")
+  torrentTitle   String? @default("") @map("torrent_title")
+
+  // 步骤 - 下载
+  downloadPath String? @map("download_path")
+
+  // 步骤 - 寻找视频文件
+  importPath String? @map("import_path")
+
+  // 步骤 - 导入
+  filePath String? @map("file_path")
+
+  // 步骤 - 写入元数据
+  nfoPath String? @map("nfo_path")
+
+  // 步骤 - 刷新Jellyfin
+  jellyfinEpisodeId String? @map("jellyfin_episode_id")
+
+  // deprecated
+  qbtLastSync DateTime? @map("qbt_last_sync") @db.Timestamptz(6)
 
   @@map("download_jobs")
 }
