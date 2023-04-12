@@ -18,7 +18,9 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   jobId?: number;
 } {
   const job = extractNode(episode.jobs)?.[0];
-  if (job) {
+  if (episode.jellyfinEpisodeId) {
+    return { status: DownloadStatus.Available };
+  } else if (job) {
     if (job.isFailed) {
       return { status: 'DOWNLOAD_FAILED', jobId: job.id };
     }
