@@ -29,6 +29,9 @@ export class WriteMetadataAtom extends AsyncAtom<
     if (!steps.importFile) {
       throw new Error('input step not finished');
     }
+    if (!episodeId) {
+      throw new Error('剧集已被删除');
+    }
     const { index, title, airTime, description } =
       await this.prisma.episode.findUnique({
         where: { id: episodeId },

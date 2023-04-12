@@ -77,6 +77,9 @@ export class ImportFileAtom extends AsyncAtom<
     if (!steps.findVideoFile) {
       throw new Error('findVideoFile step not finished');
     }
+    if (!episodeId) {
+      throw new Error('剧集已被删除');
+    }
     const {
       index,
       season: { title: seasonTitle, jellyfinFolder },

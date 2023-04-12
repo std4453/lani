@@ -233,7 +233,7 @@ export class JobService
       id: job.id,
       completion: this.statusToCompletion(job.status),
       params: {
-        episodeId: job.episodeId,
+        episodeId: job.episodeId ?? undefined,
         torrentLink: job.torrentLink ?? '',
       },
       steps: {
@@ -328,7 +328,7 @@ export class JobService
         },
       },
     });
-    if (finished) {
+    if (finished && episode) {
       this.emitter.emit(
         EPISODE_PUBLISH_EVENT,
         new EpisodePublishEvent(episode),

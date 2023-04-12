@@ -34,6 +34,10 @@ export class RefreshPlayerAtom extends Atom<
       this.jobFail(id, new Error('writeMetadata step not finished'));
       return;
     }
+    if (!episodeId) {
+      this.jobFail(id, new Error('剧集已被删除'));
+      return;
+    }
     try {
       const {
         index,

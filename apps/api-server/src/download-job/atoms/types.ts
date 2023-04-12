@@ -9,7 +9,7 @@ export interface SubmitDownloadOutput {
 
 export type DownloadWorkflowDefinition = {
   params: {
-    episodeId: number;
+    episodeId?: number;
     torrentLink: string;
   };
   steps: {
