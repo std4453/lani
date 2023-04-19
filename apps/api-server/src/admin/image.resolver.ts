@@ -11,6 +11,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { Logger } from '@nestjs/common';
 
 @ObjectType()
 @Directive('@extends')
@@ -26,6 +27,8 @@ export class Image {
 
 @Resolver(() => Image)
 export class ImageResolver {
+  private readonly logger = new Logger(ImageResolver.name);
+
   constructor(private s3: S3Service, private prisma: PrismaService) {}
 
   @ResolveField(() => String)
@@ -44,10 +47,12 @@ export class ImageResolver {
     if (config.s3.publicHost) {
       const urlObject = new URL(url);
       const publicUrl = `${config.s3.publicHost}${cosPath}${urlObject.search}`;
-      console.log(publicUrl);
+      this.logger.verbose(
+        `Image #${id} (path = ${cosPath}) has URL ${publicUrl}`,
+      );
       return publicUrl;
     } else {
-      console.log(url);
+      this.logger.verbose(`Image #${id} (path = ${cosPath}) has URL ${url}`);
       return url;
     }
   }

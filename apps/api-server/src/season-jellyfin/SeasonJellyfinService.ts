@@ -2,15 +2,24 @@ import { MetadataRefreshMode } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { SeasonWithJellyfinFolder } from '@/types/entities';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { JellyfinHelp } from '@/utils/JellyfinHelp';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class SeasonJellyfinService {
+  private logger = new Logger(SeasonJellyfinService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async refreshAfterFolderRename({ jellyfinFolder }: SeasonWithJellyfinFolder) {
+    this.logger.verbose(
+      `Refreshing Jellyfin folder ${jellyfinFolder.jellyfinId.substring(
+        0,
+        8,
+      )} (${jellyfinFolder.name}) after season rename...`,
+    );
     await JellyfinHelp.refreshItem({
       itemId: jellyfinFolder.jellyfinId,
       recursive: true,
@@ -18,16 +27,32 @@ export class SeasonJellyfinService {
   }
 
   async refreshAfterWriteToDisk({
+    id,
+    title,
     jellyfinId,
     jellyfinFolder,
   }: SeasonWithJellyfinFolder) {
     if (jellyfinId) {
+      this.logger.verbose(
+        `Refreshing Jellyfin season ${jellyfinId.substring(
+          0,
+          8,
+        )} after writing season #${id} (${title}) to disk...`,
+      );
       await JellyfinHelp.refreshItem({
         itemId: jellyfinId,
         metadataRefreshMode: MetadataRefreshMode.DEFAULT,
         imageRefreshMode: MetadataRefreshMode.DEFAULT,
       });
     } else {
+      this.logger.verbose(
+        `Refreshing Jellyfin folder ${jellyfinFolder.jellyfinId.substring(
+          0,
+          8,
+        )} (${
+          jellyfinFolder.name
+        }) after writing to disk since season #${id} (${title}) has no Jellyfin ID...`,
+      );
       await JellyfinHelp.refreshItem({
         itemId: jellyfinFolder.jellyfinId,
         recursive: true,
@@ -35,7 +60,19 @@ export class SeasonJellyfinService {
     }
   }
 
-  async refreshAfterDelete({ jellyfinFolder }: SeasonWithJellyfinFolder) {
+  async refreshAfterDelete({
+    jellyfinFolder,
+    id,
+    title,
+  }: SeasonWithJellyfinFolder) {
+    this.logger.verbose(
+      `Refreshing Jellyfin folder ${jellyfinFolder.jellyfinId.substring(
+        0,
+        8,
+      )} (${
+        jellyfinFolder.name
+      }) after season #${id} (${title}) was deleted...`,
+    );
     await JellyfinHelp.refreshItem({
       itemId: jellyfinFolder.jellyfinId,
       metadataRefreshMode: MetadataRefreshMode.DEFAULT,
@@ -58,12 +95,17 @@ export class SeasonJellyfinService {
     });
     const id = (items.Items ?? []).find((item) => item.Name === title)?.Id;
     if (!id) {
+      this.logger.verbose(
+        `Season #${seasonId} (${title}) matched no Jellyfin season`,
+      );
       return false;
     }
     if (id === jellyfinId) {
       return true;
     }
-    console.log(`jellyfin season id for season '${title}' is ${id}`);
+    this.logger.verbose(
+      `Season #${seasonId} (${title}) matched Jellyfin season ID ${id}`,
+    );
     await this.prisma.season.update({
       where: { id: seasonId },
       data: {
@@ -74,7 +116,9 @@ export class SeasonJellyfinService {
   }
 
   @Cron('*/5 * * * * *') // 每 5 秒
+  @LaniFilterCron()
   async syncAllSeasonsJellyfinSeriesId() {
+    // 已经写入硬盘，且缺少 Jellyfin ID 的季度
     const seasons = await this.prisma.season.findMany({
       where: {
         jellyfinId: '',

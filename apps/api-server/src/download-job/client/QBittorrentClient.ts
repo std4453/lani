@@ -3,16 +3,17 @@ import {
   IDownloadClient,
   TorrentInfo,
   TorrentInfoWithStatus,
-  TorrentStatus,
 } from '@/download-job/client/IDownloadClient';
 import { QBittorrentService } from '@/download-job/client/QBittorrentService';
 import { QBTTorrentState } from '@/download-job/types';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import FormData from 'form-data';
 import parseTorrent from 'parse-torrent';
 
 @Injectable()
 export class QBittorrentClient implements IDownloadClient {
+  private logger = new Logger(QBittorrentClient.name);
+
   constructor(
     private qbt: QBittorrentService,
     private global: GlobalAxiosService,
@@ -29,6 +30,8 @@ export class QBittorrentClient implements IDownloadClient {
   async submitTorrentLink(torrentLink: string) {
     // 判断磁力链
     if (torrentLink.startsWith('magnet:')) {
+      this.logger.verbose(`Torrent link ${torrentLink} is a magnet link`);
+
       const magnet = parseTorrent(torrentLink);
       if (!magnet.infoHash) {
         throw new Error('磁力链接无效');
@@ -39,7 +42,7 @@ export class QBittorrentClient implements IDownloadClient {
         await this.qbt.post('/torrents/add', params.getBuffer(), {
           headers: params.getHeaders(),
         });
-        console.debug(`torrent ${magnet.xt} (${magnet.infoHash}) submitted`);
+        this.logger.log(`Torrent ${magnet.xt} (${magnet.infoHash}) submitted`);
       }
       return {
         hash: magnet.infoHash,
@@ -62,8 +65,8 @@ export class QBittorrentClient implements IDownloadClient {
         await this.qbt.post('/torrents/add', params.getBuffer(), {
           headers: params.getHeaders(),
         });
-        console.debug(
-          `torrent ${torrent.name} (${torrent.infoHash}) submitted`,
+        this.logger.log(
+          `Torrent ${torrent.name} (${torrent.infoHash}) submitted`,
         );
       }
       return {

@@ -1,13 +1,17 @@
 import { PrismaService } from '@/common/prisma.service';
 import { EpisodeScrapeService } from '@/season-scrape/EpisodeScrapeService';
 import { SeasonScrapeService } from '@/season-scrape/SeasonScrapeService';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { MetadataSource } from '@lani/db';
+import { Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import dayjs from 'dayjs';
 
 @Resolver()
 export class ScrapeMetadataResolver {
+  private logger = new Logger(ScrapeMetadataResolver.name);
+
   constructor(
     private prisma: PrismaService,
     private seasonScrape: SeasonScrapeService,
@@ -38,6 +42,11 @@ export class ScrapeMetadataResolver {
   }
 
   @Cron('*/10 * * * *') // 每 10 分钟
+  @LaniFilterCron()
+  async syncAllSeasonsEpisodeDataCronTask() {
+    return this.syncAllSeasonsEpisodeData();
+  }
+
   @Mutation(() => Int)
   async syncAllSeasonsEpisodeData() {
     const seasons = await this.prisma.season.findMany({
@@ -102,6 +111,11 @@ export class ScrapeMetadataResolver {
         ],
       },
     });
+    if (seasons.length > 0) {
+      this.logger.verbose(
+        `Found ${seasons.length} seasons to sync episode data`,
+      );
+    }
     const results = await Promise.all(
       seasons.map(async (season) => {
         try {

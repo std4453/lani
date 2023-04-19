@@ -12,9 +12,8 @@ import {
   VideoType,
 } from '@/api/jellyfin';
 import { request as __request } from '@/api/jellyfin/core/request';
-import dayjs from 'dayjs';
 
-// 这OpenAPI生成的破API突出一个难用，包一层
+// OpenAPI生成的API不好用，包一层
 export class JellyfinHelp {
   public static getItemsByUserId({
     userId,

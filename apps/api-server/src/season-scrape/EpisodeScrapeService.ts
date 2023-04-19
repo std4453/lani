@@ -4,11 +4,13 @@ import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
 import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
 import { MetadataSource, Season } from '@lani/db';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 
 @Injectable()
 export class EpisodeScrapeService {
+  private logger = new Logger(EpisodeScrapeService.name);
+
   constructor(
     private skyhook: SkyhookSeasonService,
     private bangumi: BangumiSeasonService,
@@ -17,6 +19,7 @@ export class EpisodeScrapeService {
 
   async syncEpisodeData({
     id: seasonId,
+    title,
     episodesSource,
     bangumiId,
     tvdbId,
@@ -30,6 +33,9 @@ export class EpisodeScrapeService {
         if (!bangumiId) {
           throw new ConflictException('bangumiId not set');
         }
+        this.logger.verbose(
+          `Syncing episode data for season #${seasonId} (${title}) from bgmid:${bangumiId}`,
+        );
         result = await this.bangumi.fetch(
           {
             episodes: true,
@@ -44,6 +50,11 @@ export class EpisodeScrapeService {
         if (tvdbSeason === null) {
           throw new ConflictException('tvdbSeason not set');
         }
+        this.logger.verbose(
+          `Syncing episode data for season #${seasonId} (${title}) from tvdb:${tvdbId} / S${tvdbSeason
+            .toString()
+            .padStart(2, '0')}`,
+        );
         result = await this.skyhook.fetch(
           {
             episodes: true,
@@ -54,6 +65,16 @@ export class EpisodeScrapeService {
         break;
       default:
         return false;
+    }
+
+    if (result.episodes?.length) {
+      this.logger.verbose(
+        `Got ${result.episodes.length} episodes for season #${seasonId} (${title}) from data source, writing to db...`,
+      );
+    } else {
+      this.logger.warn(
+        `Data source returned no episodes for season for season #${seasonId} (${title})`,
+      );
     }
 
     await this.prisma.$transaction([
@@ -119,7 +140,7 @@ export class EpisodeScrapeService {
     if (!airDate) {
       return undefined;
     }
-    // 很多动画都是这个时候播，目前还没有日历模块，因此这个时间最多导致下载比出的晚，可以随便指定一个
+    // 由于bangumi数据里没有播出时间，默认设置为23:00
     // TODO: 想办法从skyhook拿播出时间
     const seasonAirTime = airTime || '23:00';
     const airTimeHours = parseInt(seasonAirTime.substring(0, 2));

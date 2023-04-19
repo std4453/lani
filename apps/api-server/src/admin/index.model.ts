@@ -13,12 +13,6 @@ export class DownloadSourcesInput {
   offset: number;
 }
 
-@InputType()
-export class UpdateSeasonDownloadSourcesInput {
-  seasonId: number;
-  sources: DownloadSourcesInput[];
-}
-
 @ObjectType()
 export class SearchBangumiSeason {
   id: string;

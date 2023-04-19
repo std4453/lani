@@ -90,12 +90,6 @@ query GetSeasonByTitle($title: String!) {
   }
 }
 
-mutation UpdateSeasonDownloadSources(
-  $input: UpdateSeasonDownloadSourcesInput!
-) {
-  updateSeasonDownloadSources(input: $input)
-}
-
 query GetDownloadSourceByPattern($pattern: String!) {
   downloadSourceByPattern(pattern: $pattern) {
     id

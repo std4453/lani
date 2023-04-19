@@ -2,11 +2,12 @@ import { AxiosService, getAxiosConfig } from '@/common/axios.service';
 import config from '@/config';
 import { QBittorrentConfig } from '@/config/types';
 import { QBTFiles, QBTTorrent, QBTTorrents } from '@/download-job/types';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import cookie from 'cookie';
+import dayjs from 'dayjs';
 
 export type TorrentStateFilter =
   | 'all'
@@ -48,6 +49,8 @@ export class QBittorrentService extends AxiosService {
   private authPromise: Promise<void> | null = null;
   private qbtConfig: QBittorrentConfig;
 
+  private logger = new Logger(QBittorrentService.name);
+
   constructor() {
     super({
       baseURL: `${getQBittorrentConfig().apiEndpoint}/api/v2`,
@@ -69,12 +72,12 @@ export class QBittorrentService extends AxiosService {
    * 实际进行登录，成功则会写入 SID
    */
   private async doLogin() {
-    console.debug('logging in to qBittorrent...');
+    this.logger.verbose('Logging into qBittorrent...');
     const params = new URLSearchParams();
     params.append('username', this.qbtConfig.username);
     params.append('password', this.qbtConfig.password);
     // 使用 super.request，因为这次接口调用不需要拦截
-    const { headers } = await super.request({
+    const response = await super.request({
       method: 'post',
       url: '/auth/login',
       headers: {
@@ -82,10 +85,17 @@ export class QBittorrentService extends AxiosService {
       },
       data: params.toString(),
     });
-    const cookies = cookie.parse(headers?.['set-cookie']?.[0] ?? '');
-    this.SID = cookies.SID;
-    this.loginTime = new Date().getTime();
-    console.debug(`logged in to qBittorrent, SID=${this.SID}`);
+    const cookies = cookie.parse(response.headers?.['set-cookie']?.[0] ?? '');
+    if (!cookies.SID) {
+      this.logger.error(
+        `Login to qBittorrent failed (no cookie returned), full response:`,
+      );
+      this.logger.error(response);
+    } else {
+      this.SID = cookies.SID;
+      this.loginTime = new Date().getTime();
+      this.logger.log(`Logged into qBittorrent, SID=${this.SID}`);
+    }
   }
 
   /**
@@ -113,6 +123,15 @@ export class QBittorrentService extends AxiosService {
     if (this.SID && new Date().getTime() - this.loginTime <= 60 * 60 * 1000) {
       return;
     } else {
+      this.logger.verbose(
+        `qBittorrent credentials expired (${
+          this.loginTime
+            ? `last login at ${dayjs(this.loginTime).format(
+                'YYYY-MM-DD HH:mm:ss',
+              )}`
+            : 'never logged in'
+        }), refreshing credentials...`,
+      );
       return this.loginNoCheck();
     }
   }
@@ -142,6 +161,9 @@ export class QBittorrentService extends AxiosService {
         error.response?.status === 401 &&
         error.response?.status === 403
       ) {
+        this.logger.verbose(
+          `Got ${error.response?.status} status from qBittorrent, refreshing credentials...`,
+        );
         await this.refreshCredentials();
         return super.request<T, R, D>(config);
       }
@@ -162,7 +184,6 @@ export class QBittorrentService extends AxiosService {
     try {
       await validateOrReject(obj);
     } catch (error) {
-      console.error(error);
       throw error;
     }
     return Array.from(obj.torrents);

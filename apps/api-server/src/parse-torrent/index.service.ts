@@ -4,7 +4,7 @@ import parseTorrentTitle, {
   Platform,
   SourceType,
 } from '@lani/parse-torrent-title';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 const keyToColumnName = {
   organizationRaw: 'organization_raw',
@@ -54,6 +54,8 @@ type ParsedTorrentUpdate = Prisma.TorrentUpdateInput & {
 
 @Injectable()
 export class ParseTorrentService {
+  private logger = new Logger(ParseTorrentService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private titleToFields(title: string) {
@@ -138,7 +140,7 @@ export class ParseTorrentService {
 
   private torrentsToUpdate(
     torrents: Torrent[],
-    ignoreUnchanged: boolean = true,
+    ignoreUnchanged = true,
   ): ParsedTorrentUpdate[] {
     return torrents
       .map((torrent) => {
@@ -198,6 +200,12 @@ export class ParseTorrentService {
   private async updateTorrentsMany(updates: ParsedTorrentUpdate[]) {
     const batch = 200;
     for (let i = 0; i < updates.length; i += batch) {
+      this.logger.verbose(
+        `Updating torrents ${i}-${Math.min(
+          updates.length,
+          i + batch,
+        )} of total ${updates.length}`,
+      );
       const data = updates.slice(i, i + batch);
       await this.batchUpdateTorrents(data);
     }
@@ -218,7 +226,7 @@ export class ParseTorrentService {
       },
     });
     const updates = this.torrentsToUpdate(torrents);
-    console.log(`${updates.length} rows to update`);
+    this.logger.log(`${updates.length} rows to update`);
     await this.updateTorrentsMany(updates);
   }
 }

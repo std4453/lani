@@ -8,11 +8,13 @@ import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
 import { SeasonImageKey, SeasonWithImages } from '@/types/entities';
 import { Image, MetadataSource, Prisma } from '@lani/db';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import md5 from 'md5';
 
 @Injectable()
 export class SeasonScrapeService {
+  private logger = new Logger(SeasonScrapeService.name);
+
   constructor(
     private seasonEmitService: SeasonEmitService,
     private skyhook: SkyhookSeasonService,
@@ -24,6 +26,7 @@ export class SeasonScrapeService {
 
   async syncMetadata({
     id,
+    title,
     bangumiId,
     tvdbId,
     tvdbSeason,
@@ -38,6 +41,9 @@ export class SeasonScrapeService {
         if (!bangumiId) {
           throw new ConflictException('bangumiId not set');
         }
+        this.logger.verbose(
+          `Syncing metadata for season #${id} (${title}) from bgmid:${bangumiId}`,
+        );
         result = await this.bangumi.fetch(
           {
             info: true,
@@ -53,6 +59,11 @@ export class SeasonScrapeService {
         if (tvdbSeason === null) {
           throw new ConflictException('tvdbSeason not set');
         }
+        this.logger.verbose(
+          `Syncing metadata for season #${id} (${title}) from tvdb:${tvdbId} / S${tvdbSeason
+            .toString()
+            .padStart(2, '0')}`,
+        );
         result = await this.skyhook.fetch(
           {
             info: true,
@@ -78,12 +89,14 @@ export class SeasonScrapeService {
           : '',
     };
 
+    this.logger.verbose(`Uploading images for season #${id} (${title})...`);
     await Promise.all([
       this.uploadImage(fanartImage, images?.fanartURL, data, 'fanartImage'),
       this.uploadImage(posterImage, images?.posterURL, data, 'posterImage'),
       this.uploadImage(bannerImage, images?.bannerURL, data, 'bannerImage'),
     ]);
 
+    this.logger.verbose(`Writing db for season #${id} (${title})...`);
     const newSeason = await this.prisma.season.update({
       where: { id },
       data,
@@ -108,6 +121,7 @@ export class SeasonScrapeService {
       return;
     }
     if (image && image.sourceUrl === url) {
+      this.logger.verbose(`${type} unchanged (url = ${url}), upload skipped`);
       return;
     }
 
@@ -115,9 +129,12 @@ export class SeasonScrapeService {
     const ext = url.substring(url.lastIndexOf('.')).toLowerCase();
     // 防止XSS攻击，这里过滤一下后缀名
     if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
-      console.error('unsupported image type');
+      this.logger.warn(
+        `Unable to download ${type} from ${url} (unsupported file extension type)`,
+      );
       return;
     }
+    this.logger.verbose(`Downloading ${type} from ${url}...`);
     const { data } = await this.china.get<Buffer>(url, {
       responseType: 'arraybuffer',
       // 最大10M
@@ -125,16 +142,25 @@ export class SeasonScrapeService {
     });
     const hash = md5(data);
     const key = `${hash}${ext}`;
+    this.logger.verbose(
+      `${type} downloaded from ${url}, new path will be ${key}, uploading file...`,
+    );
 
     try {
+      // 如果文件已经存在，这里不会报错，因此会return
       await this.s3
         .headObject({
           Bucket: config.s3.bucket,
           Key: key,
         })
         .promise();
+      this.logger.warn(
+        `Upload ${type} skipped (file under path ${key} already exists)`,
+      );
       return;
-    } catch (error) {}
+    } catch (error) {
+      // 否则，文件不存在，继续上传
+    }
 
     await this.s3
       .putObject({

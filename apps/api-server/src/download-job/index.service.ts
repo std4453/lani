@@ -1,5 +1,4 @@
 import { PrismaService } from '@/common/prisma.service';
-import { DateFormat } from '@/constants/date-format';
 import {
   StepCompletion,
   StepInput,
@@ -17,12 +16,13 @@ import {
   EpisodePublishEvent,
   EPISODE_PUBLISH_EVENT,
 } from '@/download-job/events';
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { LaniError } from '@/utils/error';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
+import { DownloadJob, DownloadStatus } from '@lani/db';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
-import { DownloadJob, DownloadStatus } from '@lani/db';
-import dayjs from 'dayjs';
 
 @Injectable()
 @Resolver()
@@ -30,6 +30,8 @@ export class JobService
   extends WorkflowManager<DownloadWorkflowDefinition>
   implements OnModuleInit
 {
+  private logger = new Logger(JobService.name);
+
   constructor(
     private prisma: PrismaService,
     private emitter: EventEmitter2,
@@ -88,7 +90,7 @@ export class JobService
       },
     });
     if (currentJob) {
-      throw new ConflictException('A job is already running for this episode');
+      throw new LaniError('剧集已在下载中');
     } else {
       return await this.triggerWorkflow({ episodeId, torrentLink });
     }
@@ -98,10 +100,24 @@ export class JobService
   async retryJobStep(@Args('jobId') jobId: number) {
     const job = await this.prisma.downloadJob.findUnique({
       where: { id: jobId },
+      include: {
+        episode: {
+          include: {
+            season: true,
+          },
+        },
+      },
     });
     if (!job.isFailed) {
-      return 'not failed';
+      throw new Error('not failed');
     }
+    this.logger.log(
+      `Retrying job #${jobId}${
+        job.episode
+          ? ` (for ${job.episode.season.title} / #${job.episode.index})`
+          : ''
+      } at step ${job.status}...`,
+    );
     await this.prisma.downloadJob.update({
       where: { id: jobId },
       data: {
@@ -114,38 +130,11 @@ export class JobService
     return 'ok';
   }
 
-  @Mutation(() => Int)
-  @Cron('*/1 * * * *') // 每分钟运行一次
-  async enqueueDownloadJobs() {
-    // this.prisma.episode.findMany({
-    //   where: {
-    //     jellyfinEpisodeId: null,
-    //     season: {
-    //       isArchived: false,
-    //       jellyfinFolderId: {
-    //         not: null,
-    //       },
-    //       title: {},
-    //       downloadSources: {
-    //         some: {
-    //           isDisabled: false,
-    //           isArchived: false,
-    //         },
-    //       },
-    //     },
-    //     downloadJobs: {
-    //       none: {},
-    //     },
-    //     airTime: {
-    //       lt: new Date(),
-    //     },
-    //   },
-    // });
-
+  async findTorrentsToDownload() {
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
     // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
-    const result = await this.prisma.$queryRaw<
+    return this.prisma.$queryRaw<
       {
         torrent_link: string;
         episode_id: number;
@@ -170,8 +159,26 @@ export class JobService
 			    SELECT id from download_jobs WHERE episodes.id = download_jobs.episode_id
 	    	)
     `;
+  }
+
+  @Cron('*/1 * * * *') // 每分钟运行一次
+  @LaniFilterCron()
+  async enqueueDownloadJobsScheduledTask() {
+    return this.enqueueDownloadJobsInternal();
+  }
+
+  @Mutation(() => Int)
+  async enqueueDownloadJobs() {
+    return this.enqueueDownloadJobsInternal();
+  }
+
+  async enqueueDownloadJobsInternal() {
+    // 选择所有：
+    // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
+    // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
+    const result = await this.findTorrentsToDownload();
     if (result.length > 0) {
-      console.debug('queued', result.length, 'jobs');
+      this.logger.log(`Found ${result.length} new torrents to download`);
     }
     for (const { episode_id, torrent_link } of result) {
       try {
@@ -180,7 +187,7 @@ export class JobService
           torrentLink: torrent_link,
         });
       } catch (error) {
-        console.error(error);
+        this.logger.error(error);
       }
     }
     return result.length;
@@ -261,9 +268,13 @@ export class JobService
     completion: StepCompletion<DownloadWorkflowDefinition>,
     params: { episodeId: number; torrentLink: string },
   ) {
+    const status = this.completionToStatus(completion);
+    this.logger.log(
+      `Creating download workflow for episode #${params.episodeId}, starting with status = ${status} (torrent = ${params.torrentLink})`,
+    );
     const newJob = await this.prisma.downloadJob.create({
       data: {
-        status: this.completionToStatus(completion),
+        status,
         episodeId: params.episodeId,
         torrentLink: params.torrentLink,
       },
@@ -277,15 +288,9 @@ export class JobService
     finished: boolean,
   ) {
     if (finished) {
-      console.debug('Job', id, 'finished');
+      this.logger.log(`Job #${id} completed`);
     } else {
-      console.debug(
-        dayjs().format(DateFormat.DateTime),
-        'Running step',
-        state.completion,
-        'for job',
-        id,
-      );
+      this.logger.log(`Job #${id} is now at step ${state.completion}`);
     }
     const { episode, ...newJob } = await this.prisma.downloadJob.update({
       where: { id },
@@ -338,7 +343,8 @@ export class JobService
   }
 
   protected async persistWorkflowError(id: number, reason: any) {
-    console.debug('job', id, 'failed:', reason);
+    this.logger.error(`Job #${id} failed, fail reason:`);
+    this.logger.error(reason);
     await this.prisma.downloadJob.update({
       where: { id },
       data: {
@@ -367,7 +373,7 @@ export class JobService
     });
     for (const job of jobs) {
       const input = this.jobToInput(job);
-      console.debug('Enqueuing step', input.completion, 'for job', job.id);
+      this.logger.log(`Resuming job #${job.id} from step ${input.completion}`);
       this.triggerWorkflowStep(input);
     }
   }

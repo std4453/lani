@@ -3,7 +3,6 @@ import {
   DownloadJobStatus,
   SaveSeasonPatch,
   SearchBangumiSeason,
-  UpdateSeasonDownloadSourcesInput,
 } from '@/admin/index.model';
 import {
   ApiError,
@@ -18,12 +17,14 @@ import { JobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
 import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 @Injectable()
 @Resolver()
 export class AdminResolver {
+  private logger = new Logger(AdminResolver.name);
+
   constructor(
     private prisma: PrismaService,
     private job: JobService,
@@ -47,50 +48,6 @@ export class AdminResolver {
     };
   }
 
-  @Mutation(() => ID)
-  async updateSeasonDownloadSources(
-    @Args({
-      name: 'input',
-      type: () => UpdateSeasonDownloadSourcesInput,
-    })
-    { seasonId, sources }: UpdateSeasonDownloadSourcesInput,
-  ) {
-    await this.prisma.$transaction([
-      this.prisma.downloadSource.deleteMany({
-        where: {
-          seasonId: seasonId,
-          id: {
-            notIn: sources.filter(({ id }) => id !== 0).map(({ id }) => id),
-          },
-        },
-      }),
-      ...sources
-        .filter(({ id }) => id !== 0)
-        .map(({ id, pattern, offset }) =>
-          this.prisma.downloadSource.update({
-            where: {
-              id: id,
-            },
-            data: {
-              pattern,
-              offset,
-            },
-          }),
-        ),
-      this.prisma.downloadSource.createMany({
-        data: sources
-          .filter(({ id }) => id === 0)
-          .map(({ pattern, offset }) => ({
-            seasonId,
-            pattern,
-            offset,
-          })),
-      }),
-    ]);
-    await this.job.enqueueDownloadJobs();
-    return 'ok';
-  }
-
   @Query(() => [SearchBangumiSeason])
   async searchBangumi(
     @Args('keywords') keywords: string,
@@ -106,6 +63,9 @@ export class AdminResolver {
     );
     if (match?.groups?.bgmid) {
       const bgmid = parseInt(match.groups.bgmid);
+      this.logger.verbose(
+        `Input keyword '${keywords}' is precise search, bgmid = ${bgmid}`,
+      );
       try {
         const item = await BangumiAPIService.getSubjectById(bgmid);
         if (item.type !== SubjectType.Anime) {
@@ -196,12 +156,18 @@ export class AdminResolver {
         jellyfinFolder: true,
       },
     });
+    this.logger.log(`Deleting season #${id} (${season.title})...`);
+    this.logger.verbose(
+      `Deleting files for season #${id} (${season.title})...`,
+    );
     await this.seasonEmit.deleteSeasonFiles(season);
+    this.logger.verbose(`Delete db row for season #${id} (${season.title})...`);
     await this.prisma.season.delete({
       where: {
         id,
       },
     });
+    this.logger.log(`Delete #${id} (${season.title}) success`);
     return 'ok';
   }
 
@@ -237,6 +203,8 @@ export class AdminResolver {
     })
     { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
+    this.logger.log(`Updating season #${id}...`);
+    this.logger.verbose(`Writing season #${id} to db...`);
     const results = await this.prisma.$transaction([
       // 更新下载链接
       this.prisma.downloadSource.deleteMany({
@@ -296,13 +264,20 @@ export class AdminResolver {
     ]);
     const season = results[results.length - 2];
 
-    await this.job.enqueueDownloadJobs();
+    this.logger.verbose(
+      `Enqueuing new download jobs after season #${id} updated...`,
+    );
+    await this.job.enqueueDownloadJobsInternal();
+    this.logger.verbose(
+      `Writing metadata to disk after season #${id} updated...`,
+    );
     await this.seasonEmit.writeSeasonMetadata(
       season as Exclude<
         typeof season,
         number | Prisma.BatchPayload | DownloadSource
       >,
     );
+    this.logger.log(`Update season #${id} success`);
 
     return 'ok';
   }

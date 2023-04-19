@@ -21,7 +21,7 @@ import {
 } from '@/notification/UserNotificationProvider';
 import { DownloadJob, DownloadStatus } from '@lani/db';
 import * as lark from '@larksuiteoapi/allcore';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
 import dayjs from 'dayjs';
 
@@ -30,6 +30,7 @@ import dayjs from 'dayjs';
 export class LarkBot
   implements ManagementNotificationProvider, UserNotificationProvider
 {
+  private logger = new Logger(LarkBot.name);
   private larkConfig: LarkConfig;
   private conf: lark.core.Config;
 
@@ -48,6 +49,7 @@ export class LarkBot
     this.conf = lark.newConfig(lark.Domain.FeiShu, appSettings, {
       loggerLevel: lark.LoggerLevel.INFO,
     });
+    this.logger.log('LarkBot initialized');
   }
 
   async onEpisodePublish(episode: OnEpisodePublishEpisode) {
@@ -56,6 +58,9 @@ export class LarkBot
     const posterImage = episode.season.posterImage;
     if (posterImage?.cosPath) {
       try {
+        this.logger.verbose(
+          `Downloading poster image (path = ${posterImage.cosPath})...`,
+        );
         const { Body: image } = await this.s3
           .getObject({
             Bucket: config.s3.bucket,
@@ -65,6 +70,7 @@ export class LarkBot
         const formData = new lark.api.FormData();
         formData.addField('image_type', 'message');
         formData.addFile('image', new lark.api.File().setContent(image));
+        this.logger.verbose(`Uploading poster image to Lark...`);
         const resp = await this.request(
           '/open-apis/im/v1/images',
           'POST',
@@ -82,9 +88,11 @@ export class LarkBot
       } catch (error) {
         console.error(error);
       }
+    } else {
+      this.logger.verbose('Skipping poster image upload (no poster image)');
     }
 
-    // TODO: 发给用户
+    this.logger.verbose(`Sending Lark message...`);
     await this.sendMessage(
       'chat_id',
       this.larkConfig.adminChatId,

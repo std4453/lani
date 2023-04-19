@@ -6,7 +6,13 @@ import {
 import { env } from '@/env';
 import { ManagementNotificationProvider } from '@/notification/ManagementNotificationProvider';
 import { UserNotificationProvider } from '@/notification/UserNotificationProvider';
-import { ForbiddenException, Injectable, Optional } from '@nestjs/common';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -15,6 +21,8 @@ import dayjs from 'dayjs';
 @Injectable()
 @Resolver()
 export class NotificationService {
+  private logger = new Logger(NotificationService.name);
+
   constructor(
     private prisma: PrismaService,
     @Optional() private management?: ManagementNotificationProvider,
@@ -44,13 +52,31 @@ export class NotificationService {
   @OnEvent(EPISODE_PUBLISH_EVENT)
   async onEpisodePublish(event: EpisodePublishEvent) {
     if (event.episode.season.notifyPublish) {
-      await this.user?.onEpisodePublish(event.episode);
+      if (!this.user) {
+        this.logger.verbose(
+          'Episode publish notification skipped (no user notification provider)',
+        );
+      } else {
+        this.logger.verbose(
+          `Sending episode publish notification for episode #${event.episode.id} (${event.episode.season.title} / #${event.episode.index})...`,
+        );
+        await this.user?.onEpisodePublish(event.episode);
+      }
     }
   }
 
-  @Mutation(() => Int)
   @Cron('0 10,16,22 * * *') // 10:00, 16:00, 22:00 通知
+  @LaniFilterCron()
+  async notifyMissingEpisodesCronTask() {
+    return this.notifyMissingEpisodesInternal();
+  }
+
+  @Mutation(() => Int)
   async notifyMissingEpisodes() {
+    return this.notifyMissingEpisodesInternal();
+  }
+
+  private async notifyMissingEpisodesInternal() {
     const episodes = await this.prisma.episode.findMany({
       where: {
         jellyfinEpisodeId: null,
@@ -83,10 +109,21 @@ export class NotificationService {
     });
 
     if (episodes.length > 0 && this.management) {
+      this.logger.verbose(
+        `Sending missing episodes notification for ${episodes.length} episodes...`,
+      );
       await this.management.onEpisodesMissing(episodes);
       return episodes.length;
-    } else {
+    } else if (episodes.length > 0) {
+      this.logger.verbose(
+        'Missing episodes notification skipped (no management notification provider)',
+      );
       // 没有配置management时不提醒，也不更新lastMissingNotifyTime
+      return 0;
+    } else {
+      this.logger.verbose(
+        'Missing episodes notification skipped (no missing episodes)',
+      );
       return 0;
     }
   }

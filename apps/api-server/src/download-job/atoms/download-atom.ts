@@ -1,6 +1,7 @@
 import { Atom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
@@ -33,6 +34,11 @@ export class DownloadAtom extends Atom<DownloadWorkflowDefinition, 'download'> {
   }
 
   @Cron('*/30 * * * * *') // 每 30 秒
+  @LaniFilterCron()
+  async refreshAllDownloadStatusCronTask() {
+    return this.refreshAllDownloadStatus();
+  }
+
   @Mutation(() => Int)
   async refreshAllDownloadStatus() {
     const ids = Object.keys(this.queue).map((idStr) => parseInt(idStr, 10));
