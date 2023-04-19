@@ -118,12 +118,14 @@ function JobStepDescription({
   job,
   label,
   step,
+  showErrors = true,
 }: {
   step: number;
   current: number;
   job: Job;
   label: string;
   content: string | null | undefined;
+  showErrors?: boolean;
 }) {
   if (current > step) {
     return (
@@ -134,7 +136,7 @@ function JobStepDescription({
         </Typography.Text>
       </div>
     );
-  } else if (current === step && job.isFailed) {
+  } else if (current === step && job.isFailed && showErrors) {
     return (
       <>
         <div>
@@ -247,6 +249,7 @@ function EpisodeJob({
               job={job}
               label="种子名称"
               content={job.torrentTitle}
+              showErrors={false}
             />
           </>
         }
