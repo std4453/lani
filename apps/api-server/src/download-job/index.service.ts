@@ -371,10 +371,17 @@ export class JobService
         },
       },
     });
-    for (const job of jobs) {
-      const input = this.jobToInput(job);
-      this.logger.log(`Resuming job #${job.id} from step ${input.completion}`);
-      this.triggerWorkflowStep(input);
+    if (jobs.length > 0) {
+      this.logger.log('Jobs will be resumed after 5 seconds...');
+      setTimeout(() => {
+        for (const job of jobs) {
+          const input = this.jobToInput(job);
+          this.logger.log(
+            `Resuming job #${job.id} from step ${input.completion}`,
+          );
+          this.triggerWorkflowStep(input);
+        }
+      }, 5000);
     }
   }
 }
