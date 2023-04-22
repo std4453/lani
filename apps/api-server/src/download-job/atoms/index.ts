@@ -1,3 +1,4 @@
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
 export type PartialOutput<
@@ -184,6 +185,7 @@ export abstract class WorkflowManager<
   constructor(private workflowConfig: WorkflowConfig<WorkflowDefinition>) {}
 
   @OnEvent(JOB_STEP_SUCCEED_EVENT)
+  @LaniFilterCron()
   async handleJobStepSucceedEvent(
     event: JobStepSucceedEvent<WorkflowDefinition>,
   ) {
@@ -212,6 +214,7 @@ export abstract class WorkflowManager<
   }
 
   @OnEvent(JOB_STEP_FAIL_EVENT)
+  @LaniFilterCron()
   async handleJobStepFailEvent(event: JobStepFailEvent<WorkflowDefinition>) {
     const { id, reason } = event;
     await this.persistWorkflowError(id, reason);

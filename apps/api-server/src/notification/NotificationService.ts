@@ -45,12 +45,17 @@ export class NotificationService {
         },
       },
     });
-    await this.onEpisodePublish(new EpisodePublishEvent(episode));
+    await this.onEpisodePublishInternal(new EpisodePublishEvent(episode));
     return 'ok';
   }
 
   @OnEvent(EPISODE_PUBLISH_EVENT)
+  @LaniFilterCron()
   async onEpisodePublish(event: EpisodePublishEvent) {
+    return this.onEpisodePublishInternal(event);
+  }
+
+  private async onEpisodePublishInternal(event: EpisodePublishEvent) {
     if (event.episode.season.notifyPublish) {
       if (!this.user) {
         this.logger.verbose(
