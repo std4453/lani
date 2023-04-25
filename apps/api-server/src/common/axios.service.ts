@@ -64,30 +64,33 @@ export class AxiosService extends Axios {
           }),
         );
       }, timeout);
-      this.instance.request<T, R, D>(config).then(resolve, (error: unknown) => {
-        // 如果已经超时了，这里就不再抛错
-        if (timeoutRejected) {
-          return;
-        }
-        if (axios.isAxiosError(error)) {
-          // 如果是Axios报错，展示相关数据
-          if (error.response) {
-            throw new LaniError(
-              `响应错误 (${error.response.status}), data = ${error.response.data}`,
-              {
-                headers: error.response.headers,
-                data: error.response.data,
-              },
-            );
-          } else if (error.request) {
-            throw new LaniError(`请求错误`, {
-              request: error.request,
-            });
+      this.instance
+        .request<T, R, D>(config)
+        .then(resolve, (error: unknown) => {
+          // 如果已经超时了，这里就不再抛错
+          if (timeoutRejected) {
+            return;
           }
-        }
-        // 其他情况下，原封不动抛出
-        throw error;
-      });
+          if (axios.isAxiosError(error)) {
+            // 如果是Axios报错，展示相关数据
+            if (error.response) {
+              throw new LaniError(
+                `响应错误 (${error.response.status}), data = ${error.response.data}`,
+                {
+                  headers: error.response.headers,
+                  data: error.response.data,
+                },
+              );
+            } else if (error.request) {
+              throw new LaniError(`请求错误`, {
+                request: error.request,
+              });
+            }
+          }
+          // 其他情况下，原封不动抛出
+          throw error;
+        })
+        .catch(reject);
     });
   }
 }

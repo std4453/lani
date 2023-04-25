@@ -31,13 +31,18 @@ export function LaniFilterCron(): MethodDecorator {
   ) {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
-      const logger = this.logger as Logger | undefined;
+      if (!this.logger) {
+        console.error(
+          `No logger found in class ${
+            Object.getPrototypeOf(this)?.constructor?.name
+          }, required by @LaniFilterCron, falling back to console`,
+        );
+      }
+      // 回退到 console
+      const logger = (this.logger || console) as Logger;
       try {
         return await originalMethod.apply(this, args);
       } catch (error: unknown) {
-        if (!logger) {
-          throw error;
-        }
         if (isLaniError(error)) {
           logger.error(
             `${error.stack}\n\ninternalInfo = ${inspect(error.internalInfo)}`,

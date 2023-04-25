@@ -1,4 +1,5 @@
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
+import { Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
 export type PartialOutput<
@@ -182,6 +183,8 @@ export abstract class WorkflowManager<
     };
   },
 > {
+  protected logger = new Logger(WorkflowManager.name);
+
   constructor(private workflowConfig: WorkflowConfig<WorkflowDefinition>) {}
 
   @OnEvent(JOB_STEP_SUCCEED_EVENT)

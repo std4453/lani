@@ -19,7 +19,7 @@ import {
 import { LaniError } from '@/utils/error';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { DownloadJob, DownloadStatus } from '@lani/db';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -30,8 +30,6 @@ export class JobService
   extends WorkflowManager<DownloadWorkflowDefinition>
   implements OnModuleInit
 {
-  private logger = new Logger(JobService.name);
-
   constructor(
     private prisma: PrismaService,
     private emitter: EventEmitter2,

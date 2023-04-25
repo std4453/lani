@@ -2,7 +2,7 @@ import { Atom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -10,6 +10,8 @@ import { Cron } from '@nestjs/schedule';
 @Resolver()
 @Injectable()
 export class DownloadAtom extends Atom<DownloadWorkflowDefinition, 'download'> {
+  protected logger = new Logger(DownloadAtom.name);
+
   constructor(eventEmitter: EventEmitter2, private client: IDownloadClient) {
     super(eventEmitter, 'download');
   }
