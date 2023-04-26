@@ -8,6 +8,7 @@ import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import cookie from 'cookie';
 import dayjs from 'dayjs';
+import { inspect } from 'util';
 
 export type TorrentStateFilter =
   | 'all'
@@ -90,7 +91,7 @@ export class QBittorrentService extends AxiosService {
       this.logger.error(
         `Login to qBittorrent failed (no cookie returned), full response:`,
       );
-      this.logger.error(response);
+      this.logger.error(inspect(response));
     } else {
       this.SID = cookies.SID;
       this.loginTime = new Date().getTime();
