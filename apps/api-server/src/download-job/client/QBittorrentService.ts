@@ -87,15 +87,14 @@ export class QBittorrentService extends AxiosService {
       data: params.toString(),
     });
     const cookies = cookie.parse(response.headers?.['set-cookie']?.[0] ?? '');
-    if (!cookies.SID) {
-      this.logger.error(
-        `Login to qBittorrent failed (no cookie returned), full response:`,
-      );
-      this.logger.error(inspect(response));
-    } else {
+    this.loginTime = new Date().getTime();
+    if (cookies.SID) {
       this.SID = cookies.SID;
-      this.loginTime = new Date().getTime();
       this.logger.log(`Logged into qBittorrent, SID=${this.SID}`);
+    } else {
+      this.logger.log(
+        `Logged into qBittorrent, session reused (SID=${this.SID})`,
+      );
     }
   }
 
