@@ -19,7 +19,7 @@ import {
 import { LaniError } from '@/utils/error';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { DownloadJob, DownloadStatus } from '@lani/db';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -28,7 +28,7 @@ import { Cron } from '@nestjs/schedule';
 @Resolver()
 export class JobService
   extends WorkflowManager<DownloadWorkflowDefinition>
-  implements OnModuleInit
+  implements OnApplicationBootstrap
 {
   constructor(
     private prisma: PrismaService,
@@ -353,7 +353,7 @@ export class JobService
     });
   }
 
-  async onModuleInit() {
+  async onApplicationBootstrap() {
     const jobs = await this.prisma.downloadJob.findMany({
       where: {
         isFailed: false,
@@ -370,7 +370,7 @@ export class JobService
       },
     });
     if (jobs.length > 0) {
-      this.logger.log('Jobs will be resumed after 5 seconds...');
+      this.logger.log('Unfinished jobs will be resumed after 5 seconds...');
       setTimeout(() => {
         for (const job of jobs) {
           const input = this.jobToInput(job);

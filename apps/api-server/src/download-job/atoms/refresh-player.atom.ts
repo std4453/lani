@@ -1,9 +1,12 @@
-import { MetadataRefreshMode, TvShowsService } from '@/api/jellyfin';
+import {
+  JellyfinHelp,
+  MetadataRefreshMode,
+  TvShowsService,
+} from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { Atom, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Int, Mutation } from '@nestjs/graphql';

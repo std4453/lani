@@ -17,8 +17,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "codegen:jellyfin": "openapi -i https://api.jellyfin.org/openapi/jellyfin-openapi-stable.json -o src/api/jellyfin -c axios --indent 2",
-    "codegen:bangumi": "openapi -i https://bangumi.github.io/api/dist.json -o src/api/bangumi -c axios --indent 2 --postfix BangumiAPIService",
+    "codegen:jellyfin": "openapi -i https://api.jellyfin.org/openapi/jellyfin-openapi-stable.json -o src/api/jellyfin/generated -c axios --indent 2 --request src/api/jellyfin/generated/core/request.ts",
+    "codegen:bangumi": "openapi -i https://bangumi.github.io/api/dist.json -o src/api/bangumi/generated -c axios --indent 2 --postfix BangumiAPIService --request src/api/bangumi/generated/core/request.ts",
     "devops": "lani-cli devops",
     "manifest": "lani-cli manifest"
   },

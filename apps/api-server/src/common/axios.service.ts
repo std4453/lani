@@ -82,9 +82,13 @@ export class AxiosService extends Axios {
                 },
               );
             } else if (error.request) {
-              throw new LaniError(`请求错误`, {
-                request: error.request,
-              });
+              throw new LaniError(
+                `请求错误`,
+                {
+                  request: error.request,
+                },
+                error,
+              );
             }
           }
           // 其他情况下，原封不动抛出

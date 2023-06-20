@@ -2,7 +2,7 @@ import { MetadataRefreshMode } from '@/api/jellyfin';
 import { BilibiliBangumiCCService } from '@/bilibili-bangumi-cc/index.service';
 import { BilibiliProxyRegion } from '@/bilibili-bangumi-cc/types';
 import { PrismaService } from '@/common/prisma.service';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
+import { JellyfinHelp } from '@/api/jellyfin';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 import { DownloadStatus } from '@lani/db';

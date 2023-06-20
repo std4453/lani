@@ -96,6 +96,11 @@ export class AdminResolver {
       }
     }
 
+    this.logger.verbose(
+      `Searching bangumi for '${keywords}' using ${
+        useNewBangumiSearchApi ? 'new' : 'legacy'
+      } API...`,
+    );
     // 兼容新旧bangumi搜索API
     const entries = useNewBangumiSearchApi
       ? (

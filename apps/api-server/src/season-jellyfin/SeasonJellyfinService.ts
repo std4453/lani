@@ -1,9 +1,12 @@
-import { MetadataRefreshMode } from '@/api/jellyfin';
+import {
+  BaseItemKind,
+  JellyfinHelp,
+  MetadataRefreshMode,
+} from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { SeasonWithJellyfinFolder } from '@/types/entities';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { JellyfinHelp } from '@/utils/JellyfinHelp';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
@@ -91,7 +94,7 @@ export class SeasonJellyfinService {
       limit: 10,
       parentId: jellyfinFolder.jellyfinId,
       recursive: true,
-      includeItemTypes: ['Series'],
+      includeItemTypes: [BaseItemKind.SERIES],
     });
     const id = (items.Items ?? []).find((item) => item.Name === title)?.Id;
     if (!id) {

@@ -1,12 +1,12 @@
 import { CollectionTypeOptions, LibraryStructureService } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import { JellyfinFolder } from '@lani/db';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
 
 @Injectable()
 @Resolver()
-export class JellyfinSyncService implements OnModuleInit {
+export class JellyfinSyncService implements OnApplicationBootstrap {
   private readonly logger = new Logger(JellyfinSyncService.name);
 
   constructor(private prisma: PrismaService) {}
@@ -74,7 +74,7 @@ export class JellyfinSyncService implements OnModuleInit {
     return 'ok';
   }
 
-  async onModuleInit() {
+  async onApplicationBootstrap() {
     await this.syncJellyfinFolders();
   }
 }
