@@ -26,6 +26,8 @@ export const OpenAPI: OpenAPIConfig = {
   TOKEN: undefined,
   USERNAME: undefined,
   PASSWORD: undefined,
-  HEADERS: undefined,
+  HEADERS: {
+    'user-agent': 'bangumi-skyhook/v1.0.0',
+  },
   ENCODE_PATH: undefined,
 };
