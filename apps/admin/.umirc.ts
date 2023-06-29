@@ -62,9 +62,10 @@ export default defineConfig({
   fastRefresh: {},
   mfsu: {},
   proxy: {
-    '/api': {
-      target: 'https://lani.i.std4453.com',
+    '/api/gateway': {
+      target: 'http://localhost:8080/',
       changeOrigin: true,
+      pathRewrite: { '^/api/gateway': '' },
     },
   },
   cssModulesTypescriptLoader: {},
