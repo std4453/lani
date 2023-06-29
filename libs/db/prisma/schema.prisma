@@ -70,18 +70,19 @@ model Season {
   jellyfinId         String         @default("") @map("jellyfin_id")
   jellyfinFolder     JellyfinFolder @relation("jellyfin_foldersToseasons", fields: [jellyfinFolderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  infoSource      MetadataSource @default(MANUAL) @map("info_source")
-  description     String         @default("")
-  tags            String[]       @db.VarChar
-  yearAndSemester String         @default("") @map("year_and_semester") @db.VarChar(16)
-  weekday         Int?
-  airTime         String         @default("") @map("air_time") @db.VarChar
-  posterImageId   Int?           @map("poster_image_id")
-  bannerImageId   Int?           @map("banner_image_id")
-  fanartImageId   Int?           @map("fanart_image_id")
-  posterImage     Image?         @relation("imagesToseasons_poster_image_id", fields: [posterImageId], references: [id])
-  bannerImage     Image?         @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
-  fanartImage     Image?         @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
+  infoSource               MetadataSource @default(MANUAL) @map("info_source")
+  description              String         @default("")
+  tags                     String[]       @db.VarChar
+  yearAndSemester          String         @default("") @map("year_and_semester") @db.VarChar(16)
+  yearAndSemesterCanonical Int            @default(0) @map("year_and_semester_canonical")
+  weekday                  Int?
+  airTime                  String         @default("") @map("air_time") @db.VarChar
+  posterImageId            Int?           @map("poster_image_id")
+  bannerImageId            Int?           @map("banner_image_id")
+  fanartImageId            Int?           @map("fanart_image_id")
+  posterImage              Image?         @relation("imagesToseasons_poster_image_id", fields: [posterImageId], references: [id])
+  bannerImage              Image?         @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
+  fanartImage              Image?         @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
 
   lastWriteToDisk DateTime? @map("last_write_to_disk") @db.Timestamptz(6)
   lastWriteTitle  String?   @map("last_write_title")

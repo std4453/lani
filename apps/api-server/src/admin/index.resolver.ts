@@ -249,6 +249,20 @@ export class AdminResolver {
         },
         data: {
           ...seasonPatch,
+          yearAndSemesterCanonical: ((yearAndSemester?: string) => {
+            if (!yearAndSemester) {
+              return undefined;
+            }
+            const yearAndSemesterInt = parseInt(yearAndSemester);
+            // yearAndSemesterCanonical字段粗略做到可排序，原先的yearAndSemester冬季番
+            //（XXXX年1月开播）录入的是XXXX04，会显得大于当年4月开播的春季番。出于兼容性考虑，
+            // yearAndSemester字段的含义保持不变，写入的时候如果是春季则需要把年份-1
+            if (yearAndSemesterInt % 100 === 4) {
+              return yearAndSemesterInt - 100;
+            } else {
+              return yearAndSemesterInt;
+            }
+          })(seasonPatch.yearAndSemester),
         },
         include: {
           jellyfinFolder: true,

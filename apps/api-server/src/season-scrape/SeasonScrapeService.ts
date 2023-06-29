@@ -87,6 +87,13 @@ export class SeasonScrapeService {
         info?.year && info?.semester
           ? `${info.year}${info.semester.toString().padStart(2, '0')}`
           : '',
+      // yearAndSemesterCanonical字段粗略做到可排序，原先的yearAndSemester冬季番
+      //（XXXX年1月开播）录入的是XXXX04，会显得大于当年4月开播的春季番。出于兼容性考虑，
+      // 新增一个字段，对于冬季番录入(XXXX-1)04，顺序就正确了。
+      yearAndSemesterCanonical:
+        info?.year && info?.semester
+          ? (info.year - info.semester === 4 ? 1 : 0) * 100 + info.semester
+          : 0,
     };
 
     this.logger.verbose(`Uploading images for season #${id} (${title})...`);

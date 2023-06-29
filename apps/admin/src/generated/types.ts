@@ -641,6 +641,8 @@ export enum DownloadSourcesOrderBy {
   SeasonBySeasonIdWeekdayAsc = 'SEASON_BY_SEASON_ID__WEEKDAY_ASC',
   SeasonBySeasonIdWeekdayDesc = 'SEASON_BY_SEASON_ID__WEEKDAY_DESC',
   SeasonBySeasonIdYearAndSemesterAsc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_ASC',
+  SeasonBySeasonIdYearAndSemesterCanonicalAsc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonBySeasonIdYearAndSemesterCanonicalDesc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonBySeasonIdYearAndSemesterDesc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_DESC',
   SeasonIdAsc = 'SEASON_ID_ASC',
   SeasonIdDesc = 'SEASON_ID_DESC'
@@ -984,6 +986,8 @@ export enum EpisodesOrderBy {
   SeasonBySeasonIdWeekdayAsc = 'SEASON_BY_SEASON_ID__WEEKDAY_ASC',
   SeasonBySeasonIdWeekdayDesc = 'SEASON_BY_SEASON_ID__WEEKDAY_DESC',
   SeasonBySeasonIdYearAndSemesterAsc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_ASC',
+  SeasonBySeasonIdYearAndSemesterCanonicalAsc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonBySeasonIdYearAndSemesterCanonicalDesc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonBySeasonIdYearAndSemesterDesc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_DESC',
   SeasonIdAsc = 'SEASON_ID_ASC',
   SeasonIdDesc = 'SEASON_ID_DESC',
@@ -1222,6 +1226,8 @@ export enum ImagesOrderBy {
   SeasonsByBannerImageIdMaxWeekdayAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_WEEKDAY_ASC',
   SeasonsByBannerImageIdMaxWeekdayDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_WEEKDAY_DESC',
   SeasonsByBannerImageIdMaxYearAndSemesterAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_ASC',
+  SeasonsByBannerImageIdMaxYearAndSemesterCanonicalAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByBannerImageIdMaxYearAndSemesterCanonicalDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByBannerImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByBannerImageIdMinAirTimeAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByBannerImageIdMinAirTimeDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_AIR_TIME_DESC',
@@ -1282,6 +1288,8 @@ export enum ImagesOrderBy {
   SeasonsByBannerImageIdMinWeekdayAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_WEEKDAY_ASC',
   SeasonsByBannerImageIdMinWeekdayDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_WEEKDAY_DESC',
   SeasonsByBannerImageIdMinYearAndSemesterAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_ASC',
+  SeasonsByBannerImageIdMinYearAndSemesterCanonicalAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByBannerImageIdMinYearAndSemesterCanonicalDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByBannerImageIdMinYearAndSemesterDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_DESC',
   SeasonsByFanartImageIdCountAsc = 'SEASONS_BY_FANART_IMAGE_ID__COUNT_ASC',
   SeasonsByFanartImageIdCountDesc = 'SEASONS_BY_FANART_IMAGE_ID__COUNT_DESC',
@@ -1344,6 +1352,8 @@ export enum ImagesOrderBy {
   SeasonsByFanartImageIdMaxWeekdayAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_WEEKDAY_ASC',
   SeasonsByFanartImageIdMaxWeekdayDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_WEEKDAY_DESC',
   SeasonsByFanartImageIdMaxYearAndSemesterAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_YEAR_AND_SEMESTER_ASC',
+  SeasonsByFanartImageIdMaxYearAndSemesterCanonicalAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByFanartImageIdMaxYearAndSemesterCanonicalDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByFanartImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByFanartImageIdMinAirTimeAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByFanartImageIdMinAirTimeDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_AIR_TIME_DESC',
@@ -1404,6 +1414,8 @@ export enum ImagesOrderBy {
   SeasonsByFanartImageIdMinWeekdayAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_WEEKDAY_ASC',
   SeasonsByFanartImageIdMinWeekdayDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_WEEKDAY_DESC',
   SeasonsByFanartImageIdMinYearAndSemesterAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_YEAR_AND_SEMESTER_ASC',
+  SeasonsByFanartImageIdMinYearAndSemesterCanonicalAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByFanartImageIdMinYearAndSemesterCanonicalDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByFanartImageIdMinYearAndSemesterDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_YEAR_AND_SEMESTER_DESC',
   SeasonsByPosterImageIdCountAsc = 'SEASONS_BY_POSTER_IMAGE_ID__COUNT_ASC',
   SeasonsByPosterImageIdCountDesc = 'SEASONS_BY_POSTER_IMAGE_ID__COUNT_DESC',
@@ -1466,6 +1478,8 @@ export enum ImagesOrderBy {
   SeasonsByPosterImageIdMaxWeekdayAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_WEEKDAY_ASC',
   SeasonsByPosterImageIdMaxWeekdayDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_WEEKDAY_DESC',
   SeasonsByPosterImageIdMaxYearAndSemesterAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_ASC',
+  SeasonsByPosterImageIdMaxYearAndSemesterCanonicalAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByPosterImageIdMaxYearAndSemesterCanonicalDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByPosterImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByPosterImageIdMinAirTimeAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByPosterImageIdMinAirTimeDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_AIR_TIME_DESC',
@@ -1526,6 +1540,8 @@ export enum ImagesOrderBy {
   SeasonsByPosterImageIdMinWeekdayAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_WEEKDAY_ASC',
   SeasonsByPosterImageIdMinWeekdayDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_WEEKDAY_DESC',
   SeasonsByPosterImageIdMinYearAndSemesterAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_ASC',
+  SeasonsByPosterImageIdMinYearAndSemesterCanonicalAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByPosterImageIdMinYearAndSemesterCanonicalDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByPosterImageIdMinYearAndSemesterDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_YEAR_AND_SEMESTER_DESC',
   SourceUrlAsc = 'SOURCE_URL_ASC',
   SourceUrlDesc = 'SOURCE_URL_DESC'
@@ -1754,6 +1770,8 @@ export enum JellyfinFoldersOrderBy {
   SeasonsByJellyfinFolderIdMaxWeekdayAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_WEEKDAY_ASC',
   SeasonsByJellyfinFolderIdMaxWeekdayDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_WEEKDAY_DESC',
   SeasonsByJellyfinFolderIdMaxYearAndSemesterAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_YEAR_AND_SEMESTER_ASC',
+  SeasonsByJellyfinFolderIdMaxYearAndSemesterCanonicalAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByJellyfinFolderIdMaxYearAndSemesterCanonicalDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByJellyfinFolderIdMaxYearAndSemesterDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByJellyfinFolderIdMinAirTimeAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_AIR_TIME_ASC',
   SeasonsByJellyfinFolderIdMinAirTimeDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_AIR_TIME_DESC',
@@ -1814,6 +1832,8 @@ export enum JellyfinFoldersOrderBy {
   SeasonsByJellyfinFolderIdMinWeekdayAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_WEEKDAY_ASC',
   SeasonsByJellyfinFolderIdMinWeekdayDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_WEEKDAY_DESC',
   SeasonsByJellyfinFolderIdMinYearAndSemesterAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_YEAR_AND_SEMESTER_ASC',
+  SeasonsByJellyfinFolderIdMinYearAndSemesterCanonicalAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonsByJellyfinFolderIdMinYearAndSemesterCanonicalDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_YEAR_AND_SEMESTER_CANONICAL_DESC',
   SeasonsByJellyfinFolderIdMinYearAndSemesterDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_YEAR_AND_SEMESTER_DESC'
 }
 
@@ -2435,6 +2455,7 @@ export type Season = Node & {
   weekday?: Maybe<Scalars['Int']>;
   /** like '202201' ~ '202204', or null if unknown */
   yearAndSemester: Scalars['String'];
+  yearAndSemesterCanonical: Scalars['Int'];
 };
 
 
@@ -2531,6 +2552,8 @@ export type SeasonCondition = {
   weekday?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `yearAndSemester` field. */
   yearAndSemester?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `yearAndSemesterCanonical` field. */
+  yearAndSemesterCanonical?: InputMaybe<Scalars['Int']>;
 };
 
 export type SeasonEpisode = {
@@ -2631,6 +2654,8 @@ export type SeasonFilter = {
   weekday?: InputMaybe<IntFilter>;
   /** Filter by the object’s `yearAndSemester` field. */
   yearAndSemester?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `yearAndSemesterCanonical` field. */
+  yearAndSemesterCanonical?: InputMaybe<IntFilter>;
 };
 
 export type SeasonImages = {
@@ -2697,6 +2722,7 @@ export type SeasonInput = {
   weekday?: InputMaybe<Scalars['Int']>;
   /** like '202201' ~ '202204', or null if unknown */
   yearAndSemester?: InputMaybe<Scalars['String']>;
+  yearAndSemesterCanonical?: InputMaybe<Scalars['Int']>;
 };
 
 /** Represents an update to a `Season`. Fields that are set will be updated. */
@@ -2745,6 +2771,7 @@ export type SeasonPatch = {
   weekday?: InputMaybe<Scalars['Int']>;
   /** like '202201' ~ '202204', or null if unknown */
   yearAndSemester?: InputMaybe<Scalars['String']>;
+  yearAndSemesterCanonical?: InputMaybe<Scalars['Int']>;
 };
 
 /** A filter to be used against many `DownloadSource` object types. All fields are combined with a logical ‘and.’ */
@@ -2967,6 +2994,8 @@ export enum SeasonsOrderBy {
   WeekdayAsc = 'WEEKDAY_ASC',
   WeekdayDesc = 'WEEKDAY_DESC',
   YearAndSemesterAsc = 'YEAR_AND_SEMESTER_ASC',
+  YearAndSemesterCanonicalAsc = 'YEAR_AND_SEMESTER_CANONICAL_ASC',
+  YearAndSemesterCanonicalDesc = 'YEAR_AND_SEMESTER_CANONICAL_DESC',
   YearAndSemesterDesc = 'YEAR_AND_SEMESTER_DESC'
 }
 

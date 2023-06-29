@@ -227,7 +227,9 @@ function useColumns({
               '-'
             ),
           filters: semesterOptions,
+          sorter: true,
           stateKey: {
+            sort: 'yearAndSemester',
             filter: 'yearAndSemester',
           },
         },
@@ -464,10 +466,12 @@ async function querySeasons(
     id: idSort,
     title: titleSort,
     firstAired: firstAiredSort,
+    yearAndSemester: yearAndSemesterSort,
   }: {
     id?: 'ascend' | 'descend';
     title?: 'ascend' | 'descend';
     firstAired?: 'ascend' | 'descend';
+    yearAndSemester?: 'ascend' | 'descend';
   },
   // filter
   {
@@ -610,6 +614,11 @@ async function querySeasons(
       ? firstAiredSort === 'ascend'
         ? [SeasonsOrderBy.EpisodesBySeasonIdMinAirTimeAsc]
         : [SeasonsOrderBy.EpisodesBySeasonIdMinAirTimeDesc]
+      : []),
+    ...(yearAndSemesterSort
+      ? yearAndSemesterSort === 'ascend'
+        ? [SeasonsOrderBy.YearAndSemesterCanonicalAsc]
+        : [SeasonsOrderBy.YearAndSemesterCanonicalDesc]
       : []),
   ];
   try {
