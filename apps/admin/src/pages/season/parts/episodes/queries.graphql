@@ -7,3 +7,7 @@ query GetEpisodesStatus($episodeIds: [Int!]!) {
     }
   }
 }
+
+mutation MockEpisodePublish($episodeId: Int!) {
+  mockEpisodePublish(episodeId: $episodeId)
+}

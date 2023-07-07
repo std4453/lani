@@ -4,6 +4,7 @@ import { AppDispatch, RootState } from '@/store';
 import { handleError } from '@/utils/error';
 import { ExcludeTypename } from '@/utils/graphql';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { useSelector } from 'react-redux';
 
 export interface ConfigState {
   data: AdminConfig | undefined;
@@ -45,3 +46,7 @@ const configReducer = configSlice.reducer;
 export default configReducer;
 
 export const selectConfig = (state: RootState) => state.config.data;
+
+export function useConfig() {
+  return useSelector(selectConfig);
+}

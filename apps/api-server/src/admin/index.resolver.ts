@@ -54,6 +54,7 @@ export class AdminResolver {
           }
         : undefined,
       features: config.features,
+      env,
     };
   }
 

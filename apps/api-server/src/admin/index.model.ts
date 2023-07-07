@@ -42,6 +42,7 @@ export class AdminConfig {
   jellyfin?: JellyfinConfig;
   lania?: LaniaConfig;
   features: FeaturesConfig;
+  env: string;
 }
 
 registerEnumType(MetadataSource, {

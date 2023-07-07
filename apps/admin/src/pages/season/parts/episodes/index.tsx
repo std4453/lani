@@ -11,9 +11,11 @@ import {
   DownloadTorrentForEpisodeDocument,
   GetEpisodesStatusDocument,
   MetadataSource,
+  MockEpisodePublishDocument,
   TorrentFieldsFragment,
 } from '@/generated/types';
 import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-download-magnet-dialog';
+import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
 import { getSeasonKeyword } from '@/utils/season';
@@ -80,6 +82,8 @@ function useColumns({
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
 }) {
   const { reloadEpisodes, formRef, id } = useSeasonPageContext();
+
+  const config = useConfig();
 
   const client = useApolloClient();
   return useMemo(
@@ -234,6 +238,25 @@ function useColumns({
                 >
                   下载字幕
                 </Menu.Item>
+                {config?.env === 'dev' && (
+                  <Menu.Item
+                    onClick={async () => {
+                      try {
+                        await client.mutate({
+                          mutation: MockEpisodePublishDocument,
+                          variables: {
+                            episodeId: r.id,
+                          },
+                        });
+                        void message.success('模拟发布成功');
+                      } catch (error) {
+                        handleError(error, '模拟发布失败');
+                      }
+                    }}
+                  >
+                    模拟发布
+                  </Menu.Item>
+                )}
               </Menu>
             }
           >
