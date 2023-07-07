@@ -6,6 +6,7 @@ import { CommonModule } from '@/common/index.module';
 import config from '@/config';
 import { DownloadJobModule } from '@/download-job/index.module';
 import { FetchMikanModule } from '@/fetch-mikan/index.module';
+import { LaniaModule } from '@/integrations/lania/LaniaModule';
 import { JellyfinSyncModule } from '@/jellyfin-sync/index.module';
 import { MikanSyncModule } from '@/mikan-sync/index.module';
 import { NotificationModule } from '@/notification/NotificationModule';
@@ -52,6 +53,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
+
+    // TODO: enabled
+    LaniaModule,
   ],
 })
 export class AppModule {}

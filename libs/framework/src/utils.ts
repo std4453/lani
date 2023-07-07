@@ -11,6 +11,8 @@ type Tidify<X> = {} & { [Key in keyof X]: X[Key] };
 
 export const str = (): D<string> => as(Joi.string().required());
 
+export const bool = (): D<boolean> => as(Joi.boolean().required());
+
 export const num = (): D<number> => as(Joi.number().required());
 
 export const any = (): D<any> => as(Joi.any().required());

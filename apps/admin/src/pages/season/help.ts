@@ -81,6 +81,7 @@ export interface FormValues {
   downloadOffsetType: 'postpone' | 'advance';
   downloadOffsetDays: number;
   downloadOffsetHours: number;
+  integrationsLaniaSync: boolean;
 }
 
 export function queryToFormValues({
@@ -108,6 +109,7 @@ export function queryToFormValues({
   notifyPublish,
   episodesAutoSync,
   downloadOffsetHours,
+  integrationsLaniaSync,
 }: Season): FormValues {
   return {
     isMonitoring,
@@ -146,6 +148,7 @@ export function queryToFormValues({
     downloadOffsetType: downloadOffsetHours >= 0 ? 'advance' : 'postpone',
     downloadOffsetDays: Math.floor(Math.abs(downloadOffsetHours) / 24),
     downloadOffsetHours: Math.abs(downloadOffsetHours) % 24,
+    integrationsLaniaSync,
   };
 }
 
@@ -384,6 +387,7 @@ export function useSeasonPage(id: number) {
       downloadOffsetType,
       downloadOffsetDays,
       downloadOffsetHours,
+      integrationsLaniaSync,
     }: FormValues) => {
       try {
         await client.mutate({
@@ -414,6 +418,7 @@ export function useSeasonPage(id: number) {
                 (downloadOffsetType === 'advance' ? 1 : -1) *
                 (downloadOffsetDays * 24 + downloadOffsetHours),
               sources: downloadSources,
+              laniaSync: integrationsLaniaSync,
             },
           },
         });

@@ -28,8 +28,20 @@ export class JellyfinConfig {
 }
 
 @ObjectType()
+export class LaniaConfig {
+  publicHost: string;
+}
+
+@ObjectType()
+export class FeaturesConfig {
+  lania: boolean;
+}
+
+@ObjectType()
 export class AdminConfig {
   jellyfin?: JellyfinConfig;
+  lania?: LaniaConfig;
+  features: FeaturesConfig;
 }
 
 registerEnumType(MetadataSource, {
@@ -71,6 +83,7 @@ export class SaveSeasonPatch {
   weekday?: number;
   yearAndSemester?: string;
   sources: DownloadSourcesInput[];
+  laniaSync?: boolean;
 }
 
 @ObjectType()

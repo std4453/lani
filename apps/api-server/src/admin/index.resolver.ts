@@ -19,6 +19,8 @@ import { SeasonEmitService } from '@/season-emit/index.service';
 import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
 import { Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
 
 @Injectable()
 @Resolver()
@@ -30,6 +32,7 @@ export class AdminResolver {
     private job: JobService,
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
+    private emitter: EventEmitter2,
   ) {}
 
   @Query(() => ID)
@@ -45,6 +48,12 @@ export class AdminResolver {
             publicHost: config.jellyfin.publicHost,
           }
         : undefined,
+      lania: config.integrations.lania.enabled
+        ? {
+            publicHost: config.integrations.lania.publicHost,
+          }
+        : undefined,
+      features: config.features,
     };
   }
 
@@ -281,7 +290,10 @@ export class AdminResolver {
           AND episodes.season_id = seasons.id
       `,
     ]);
-    const season = results[results.length - 2];
+    const season = results[results.length - 2] as Exclude<
+      typeof results[number],
+      number | Prisma.BatchPayload | DownloadSource
+    >;
 
     this.logger.verbose(
       `Enqueuing new download jobs after season #${id} updated...`,
@@ -290,13 +302,10 @@ export class AdminResolver {
     this.logger.verbose(
       `Writing metadata to disk after season #${id} updated...`,
     );
-    await this.seasonEmit.writeSeasonMetadata(
-      season as Exclude<
-        typeof season,
-        number | Prisma.BatchPayload | DownloadSource
-      >,
-    );
+    await this.seasonEmit.writeSeasonMetadata(season);
     this.logger.log(`Update season #${id} success`);
+
+    this.emitter.emit(SEASON_SAVE_EVENT, new SeasonSaveEvent(season));
 
     return 'ok';
   }

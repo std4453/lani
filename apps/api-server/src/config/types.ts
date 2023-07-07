@@ -11,6 +11,7 @@ import {
   or,
   T,
   root,
+  bool,
 } from '@lani/framework';
 
 const pathMappingConfig = opt(
@@ -143,6 +144,34 @@ const networkConfig = opt(
   },
 );
 
+const laniaConfig = enabled(
+  obj({
+    agentEndpoint: str(),
+    authKey: opt(str(), ''),
+    publicHost: str(),
+  }),
+);
+
+const integrationsConfig = opt(
+  obj({
+    lania: laniaConfig,
+  }),
+  {
+    lania: {
+      enabled: false,
+    },
+  },
+);
+
+const featuresConfig = opt(
+  obj({
+    lania: opt(bool(), false),
+  }),
+  {
+    lania: false,
+  },
+);
+
 export const rootConfig = root({
   network: networkConfig,
   postgresUrl: str(),
@@ -151,6 +180,8 @@ export const rootConfig = root({
   jellyfin: jellyfinConfig,
   notifications: notificationsConfig,
   lani: laniConfig,
+  integrations: integrationsConfig,
+  features: featuresConfig,
 });
 
 export type RootConfig = T<typeof rootConfig>;

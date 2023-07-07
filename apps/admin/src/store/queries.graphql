@@ -3,5 +3,11 @@ query GetConfig {
     jellyfin {
       publicHost
     }
+    lania {
+      publicHost
+    }
+    features {
+      lania
+    }
   }
 }

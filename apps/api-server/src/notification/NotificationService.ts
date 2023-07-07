@@ -13,7 +13,7 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import dayjs from 'dayjs';
@@ -25,6 +25,7 @@ export class NotificationService {
 
   constructor(
     private prisma: PrismaService,
+    private emitter: EventEmitter2,
     @Optional() private management?: ManagementNotificationProvider,
     @Optional() private user?: UserNotificationProvider,
   ) {}
@@ -43,9 +44,15 @@ export class NotificationService {
             posterImage: true,
           },
         },
+        downloadJobs: {
+          orderBy: {
+            id: 'desc',
+          },
+          take: 1,
+        },
       },
     });
-    await this.onEpisodePublishInternal(new EpisodePublishEvent(episode));
+    this.emitter.emit(EPISODE_PUBLISH_EVENT, new EpisodePublishEvent(episode));
     return 'ok';
   }
 

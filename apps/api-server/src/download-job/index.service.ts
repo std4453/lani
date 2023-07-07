@@ -327,6 +327,9 @@ export class JobService
                 posterImage: true,
               },
             },
+            downloadJobs: {
+              where: { id },
+            },
           },
         },
       },

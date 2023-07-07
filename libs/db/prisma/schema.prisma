@@ -99,6 +99,8 @@ model Season {
   episodes         Episode[]
   episodesAutoSync Boolean        @default(true) @map("episodes_auto_sync")
 
+  laniaSync Boolean @default(false) @map("integrations_lania_sync")
+
   @@map("seasons")
 }
 
