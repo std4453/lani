@@ -64,8 +64,19 @@ export class LaniaService {
       return;
     }
     const { agentEndpoint, authKey } = config.integrations.lania;
-    const { id, seasonId, index, title, description, airTime, downloadJobs } =
-      event.episode;
+    const {
+      id,
+      seasonId,
+      index,
+      title,
+      description,
+      airTime,
+      downloadJobs,
+      season: { laniaSync },
+    } = event.episode;
+    if (!laniaSync) {
+      return;
+    }
     if (!downloadJobs.length) {
       this.logger.warn(
         `Episode published ${id} but no download job, skipping lania queue`,
