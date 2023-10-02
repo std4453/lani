@@ -92,7 +92,7 @@ export class SeasonScrapeService {
       // 新增一个字段，对于冬季番录入(XXXX-1)04，顺序就正确了。
       yearAndSemesterCanonical:
         info?.year && info?.semester
-          ? (info.year - info.semester === 4 ? 1 : 0) * 100 + info.semester
+          ? (info.year - (info.semester === 4 ? 1 : 0)) * 100 + info.semester
           : 0,
     };
 
