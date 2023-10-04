@@ -11,7 +11,7 @@ import {
 } from '@/utils/useDialog';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn, useSetState, useUpdate } from 'ahooks';
-import { Input, List, Modal, Space, Spin, Typography } from 'antd';
+import { Input, List, Modal, Spin, Typography } from 'antd';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
@@ -268,6 +268,7 @@ export default function SearchTorrentDialog({
           clearData();
         }
       }}
+      centered
     >
       <div
         style={{
