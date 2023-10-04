@@ -63,7 +63,9 @@ export function useAntdSearchProps<
 ): Partial<ProTableProps<RowType, Search>> {
   const { stateRef, revision, update, setObservedState } =
     useAntdSearchContext();
-  const [keyword, setKeyword] = useState(stateRef.current.keyword);
+  const [keywordImmediate, setKeywordImmediate] = useState(
+    stateRef.current.keyword,
+  );
 
   const history = useHistory();
 
@@ -72,13 +74,15 @@ export function useAntdSearchProps<
       {
         current,
         pageSize,
-        keyword,
+        keyword: _keyword,
         _revision,
         ...search
       }: Search & ProFormSearchBase,
       sort: ProFormSort,
       filter: ProFormFilter,
     ) => {
+      const keyword = keywordImmediate;
+
       const newFilter: Record<string, (string | number)[]> = {};
       // eslint-disable-next-line guard-for-in
       for (const key in filter) {
@@ -139,7 +143,9 @@ export function useAntdSearchProps<
     () =>
       ({
         _revision: revision,
+        keyword: stateRef.current.keyword,
       } as any),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [revision],
   );
 
@@ -148,9 +154,9 @@ export function useAntdSearchProps<
     options: hasKeyword
       ? {
           search: {
-            defaultValue: keyword,
-            value: keyword,
-            onChange: (e) => setKeyword(e.target.value),
+            defaultValue: stateRef.current.keyword,
+            value: keywordImmediate,
+            onChange: (e) => setKeywordImmediate(e.target.value),
           },
         }
       : undefined,
