@@ -185,6 +185,7 @@ function useColumns({
     [optionsData],
   );
   const client = useApolloClient();
+  const mobile = useMobile();
 
   return useProColumns(
     useMemo(
@@ -199,6 +200,7 @@ function useColumns({
           stateKey: {
             sort: 'id',
           },
+          fixed: mobile ? undefined : 'left',
         },
         {
           title: '季度标题',
@@ -210,6 +212,7 @@ function useColumns({
           stateKey: {
             sort: 'title',
           },
+          fixed: mobile ? undefined : 'left',
         },
         {
           title: '季度',
@@ -435,15 +438,17 @@ function useColumns({
           ],
           search: false,
           width: 140,
+          fixed: mobile ? undefined : 'right',
         },
       ],
       [
-        history,
+        mobile,
         semesterOptions,
         foldersOptions,
-        client,
         hasHiddenFolder,
         openEpisodeDetails,
+        history,
+        client,
       ],
     ),
   );
@@ -782,7 +787,11 @@ export default withAntdSearch(function MetadataPage() {
         ]}
         search={false}
         defaultSize={mobile ? 'middle' : 'large'}
-        scroll={{ x: 1400 }}
+        scroll={{
+          x: 1400,
+          y: mobile ? undefined : 'calc(100vh - 182px)',
+          scrollToFirstRowOnChange: true,
+        }}
         className={styles.root}
       />
       {createSeasonDialog}

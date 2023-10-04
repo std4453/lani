@@ -51,21 +51,28 @@
 }
 
 .root {
-  @media @mobile {
+  @media (max-width: 1500px) {
     :global {
       .ant-table-wrapper {
         margin: 0 -24px;
         max-width: calc(100% + 48px);
       }
+      .ant-table-pagination-right {
+        padding-right: 24px;
+      }
+    }
+  }
+  @media @mobile {
+    :global {
       .ant-pro-table-list-toolbar-left {
         margin-bottom: -36px;
         z-index: 10;
         pointer-events: none;
       }
-      .ant-table-pagination-right {
-        padding-right: 24px;
-      }
     }
+  }
+  @media @pc {
+    min-height: 100vh;
   }
 }
 
