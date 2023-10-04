@@ -1,0 +1,52 @@
+@import '~@/styles/index.less';
+
+.row {
+  padding: 8px 24px;
+  cursor: pointer;
+
+  transition: all 0.3s;
+  border-style: solid;
+  border-color: rgba(64, 169, 255, 0);
+  border-width: 1px 0;
+
+  &:nth-child(2n - 1) {
+    background-color: #f5f5f5;
+  }
+
+  &:hover {
+    border-color: #1890ff;
+  }
+
+  &.selected {
+    background-color: #e6f7ff;
+    border-color: #1890ff;
+  }
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.info {
+  width: 160px;
+}
+
+.title {
+  flex: 1;
+  word-break: break-all;
+}
+
+.spin {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 40px;
+  align-items: center;
+}
+
+.noEmpty {
+  :global(.ant-list-empty-text) {
+    visibility: hidden;
+  }
+}

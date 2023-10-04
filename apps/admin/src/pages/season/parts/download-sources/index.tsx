@@ -1,40 +1,39 @@
 import AsyncButton from '@/components/AsyncButton';
 import FormDependency from '@/components/FormDependency';
-import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
+import { useAddDownloadPatternDialog } from '@/components/SearchTorrentDialog';
 import { DownloadSource, GetMatchingTorrentsDocument } from '@/generated/types';
-import { LaniError, handleError } from '@/utils/error';
+import { handleError, LaniError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
 import { matchTorrentEpisode } from '@/utils/matchTorrentTitle';
-import { getSeasonKeyword } from '@/utils/season';
 import {
   MinusOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
-  SearchOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import {
   ProFormDigit,
   ProFormList,
   ProFormSelect,
   ProFormSwitch,
-  ProFormTextArea,
+  ProFormTextArea
 } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn } from 'ahooks';
-import { Alert, Button, Form, Space, Tooltip, Typography, message } from 'antd';
+import { Alert, Button, Form, message, Space, Tooltip, Typography } from 'antd';
 import { FormListOperation } from 'antd/lib/form/FormList';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { escapeRegExp } from 'lodash';
 import { useRef } from 'react';
 import Section from '../../components/section';
-import { FormValues, formItemProps, useSeasonPageContext } from '../../help';
+import { formItemProps, FormValues, useSeasonPageContext } from '../../help';
 import styles from './index.module.less';
 
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
   const { formRef, episodes, updateTouched, id } = useSeasonPageContext();
-  const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
+  const [addDownloadPatternDialog, , openAddDownloadPattern] = useAddDownloadPatternDialog();
   const client = useApolloClient();
 
   const autoMatchDownloadOffset = useMemoizedFn(async () => {
@@ -295,13 +294,8 @@ export default function DownloadSources() {
               if (!formRef.current) {
                 return;
               }
-              const result = await openSearchTorrent({
-                keyword: getSeasonKeyword(
-                  formRef.current.getFieldValue('title'),
-                ),
+              const result = await openAddDownloadPattern({
                 seasonId: id,
-                useLocalSavedKeyword: true,
-                saveLocalKeyword: true,
                 seasonFullName: formRef.current?.getFieldValue('title'),
               });
               if (result.type !== 'success') {
@@ -392,7 +386,7 @@ export default function DownloadSources() {
         name="needDownloadCc"
         formItemProps={formItemProps}
       />
-      {searchTorrentDialog}
+      {addDownloadPatternDialog}
     </Section>
   );
 }

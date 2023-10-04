@@ -18,7 +18,6 @@ import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-
 import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
-import { getSeasonKeyword } from '@/utils/season';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -164,12 +163,7 @@ function useColumns({
                       return;
                     }
                     void openSearchTorrent({
-                      keyword: getSeasonKeyword(
-                        formRef.current.getFieldValue('title'),
-                      ),
                       seasonId: id,
-                      useLocalSavedKeyword: true,
-                      saveLocalKeyword: true,
                       seasonFullName: formRef.current?.getFieldValue('title'),
                       async onResolve(torrent: TorrentFieldsFragment) {
                         try {
