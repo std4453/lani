@@ -9,14 +9,14 @@ import {
   MinusOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
-  SearchOutlined
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   ProFormDigit,
   ProFormList,
   ProFormSelect,
   ProFormSwitch,
-  ProFormTextArea
+  ProFormTextArea,
 } from '@ant-design/pro-form';
 import { useApolloClient } from '@apollo/client';
 import { useMemoizedFn } from 'ahooks';
@@ -33,7 +33,8 @@ import styles from './index.module.less';
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
   const { formRef, episodes, updateTouched, id } = useSeasonPageContext();
-  const [addDownloadPatternDialog, , openAddDownloadPattern] = useAddDownloadPatternDialog();
+  const [addDownloadPatternDialog, , openAddDownloadPattern] =
+    useAddDownloadPatternDialog();
   const client = useApolloClient();
 
   const autoMatchDownloadOffset = useMemoizedFn(async () => {
@@ -301,24 +302,25 @@ export default function DownloadSources() {
               if (result.type !== 'success') {
                 return;
               }
-              const title = result.output.title;
-              const match = matchTorrentEpisode(title);
-              if (match) {
-                const { index, length } = match;
-                ref.current?.add({
-                  id: 0,
-                  // 匹配到剧集的部分使用\d+代替，其余部分保持不变
-                  pattern: `${title.substring(0, index)}%${title.substring(
-                    index + length,
-                  )}`,
-                  offset: 0,
-                });
-              } else {
-                ref.current?.add({
-                  id: 0,
-                  pattern: title,
-                  offset: 0,
-                });
+              for (const { title } of result.output) {
+                const match = matchTorrentEpisode(title);
+                if (match) {
+                  const { index, length } = match;
+                  ref.current?.add({
+                    id: 0,
+                    // 匹配到剧集的部分使用\d+代替，其余部分保持不变
+                    pattern: `${title.substring(0, index)}%${title.substring(
+                      index + length,
+                    )}`,
+                    offset: 0,
+                  });
+                } else {
+                  ref.current?.add({
+                    id: 0,
+                    pattern: title,
+                    offset: 0,
+                  });
+                }
               }
             }}
           >

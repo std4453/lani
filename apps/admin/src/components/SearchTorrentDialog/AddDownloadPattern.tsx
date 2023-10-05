@@ -21,15 +21,13 @@ function AddDownloadPatternDialog({
     seasonFullName?: string;
     seasonId?: number;
   } | void,
-  TorrentFieldsFragment
+  TorrentFieldsFragment[]
 >) {
-  const [selected, setSelected] = useState<TorrentFieldsFragment | undefined>(
-    undefined,
-  );
+  const [selected, setSelected] = useState<TorrentFieldsFragment[]>([]);
 
   useEffect(() => {
     if (visible) {
-      setSelected(undefined);
+      setSelected([]);
     }
   }, [visible]);
 
@@ -60,7 +58,7 @@ function AddDownloadPatternDialog({
         reject();
       }}
       okButtonProps={{
-        disabled: !selected,
+        disabled: !selected.length,
         loading: submitting,
       }}
       onOk={async () => {
@@ -94,8 +92,9 @@ function AddDownloadPatternDialog({
       </div>
       <div className={styles.list}>
         <TorrentsList
-          selected={selected}
-          setSelected={setSelected}
+          mode='multi'
+          selectedMulti={selected}
+          setSelectedMulti={setSelected}
           error={error}
           hasNext={hasNext}
           loading={loading}

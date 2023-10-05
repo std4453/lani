@@ -1,18 +1,21 @@
 import Highlight from '@/components/Highlight';
 import { TorrentFieldsFragment } from '@/generated/types';
 import { useMemoizedFn } from 'ahooks';
-import { List, Spin, Typography } from 'antd';
+import { List, Spin, Typography, Checkbox } from 'antd';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './index.module.less';
 
 const noTorrents = [] as TorrentFieldsFragment[];
 
 export default function TorrentsList({
+  mode = 'single',
   selected,
   setSelected,
+  selectedMulti,
+  setSelectedMulti,
   error = false,
   hasNext = false,
   loading = false,
@@ -20,8 +23,11 @@ export default function TorrentsList({
   torrents = noTorrents,
   onScrollToBottom,
 }: {
-  selected: TorrentFieldsFragment | undefined;
-  setSelected: (selected: TorrentFieldsFragment | undefined) => void;
+  mode?: 'single' | 'multi';
+  selected?: TorrentFieldsFragment | undefined;
+  setSelected?: (selected: TorrentFieldsFragment | undefined) => void;
+  selectedMulti?: TorrentFieldsFragment[];
+  setSelectedMulti?: (selected: TorrentFieldsFragment[]) => void;
   error?: boolean;
   hasNext?: boolean;
   loading?: boolean;
@@ -50,6 +56,23 @@ export default function TorrentsList({
     }
   }, [spinEl, loadMore]);
 
+  const selectedSet = useMemo(() => {
+    const set = new Set<number>();
+    if (mode === 'single') {
+      if (selected) {
+        set.add(selected.id);
+      }
+    }
+    if (mode === 'multi') {
+      if (selectedMulti) {
+        for (const item of selectedMulti) {
+          set.add(item.id);
+        }
+      }
+    }
+    return set;
+  }, [mode, selected, selectedMulti]);
+
   return (
     <>
       <List
@@ -58,12 +81,31 @@ export default function TorrentsList({
         renderItem={(item) => (
           <div
             className={clsx(styles.row, {
-              [styles.selected]: item.id === selected?.id,
+              [styles.selected]: selectedSet.has(item.id),
             })}
             onClick={() => {
-              setSelected(item);
+              if (mode === 'single') {
+                setSelected?.(item);
+              }
+              if (mode === 'multi') {
+                const newSelected = [...(selectedMulti ?? [])];
+                const index = newSelected.findIndex(
+                  (selected) => selected.id === item.id,
+                );
+                if (index === -1) {
+                  newSelected.push(item);
+                } else {
+                  newSelected.splice(index, 1);
+                }
+                setSelectedMulti?.(newSelected);
+              }
             }}
           >
+            {mode === 'multi' && (
+              <div className={styles.checkbox}>
+                <Checkbox checked={selectedSet.has(item.id)} />
+              </div>
+            )}
             <Typography.Text className={styles.info}>
               {dayjs(item.publishDate).format('YYYY-MM-DD HH:mm:ss')}
               <br />
