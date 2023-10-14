@@ -32,9 +32,9 @@ export class NotificationService {
 
   @Mutation(() => ID)
   async mockEpisodePublish(@Args('episodeId') episodeId: number) {
-    if (env !== 'dev') {
-      throw new ForbiddenException('only available in dev mode');
-    }
+    // if (env !== 'dev') {
+    //   throw new ForbiddenException('only available in dev mode');
+    // }
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: {
