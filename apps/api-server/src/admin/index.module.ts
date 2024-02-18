@@ -7,6 +7,7 @@ import { SeasonEmitModule } from '@/season-emit/index.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DownloadClientModule } from '@/download-job/client/DownloadClientModule';
+import { FilesResolver } from '@/admin/files.resolver';
 
 @Module({
   imports: [
@@ -16,6 +17,11 @@ import { DownloadClientModule } from '@/download-job/client/DownloadClientModule
     SeasonEmitModule,
     DownloadClientModule,
   ],
-  providers: [AdminResolver, ImageResolver, JellyfinFolderResolver],
+  providers: [
+    AdminResolver,
+    ImageResolver,
+    JellyfinFolderResolver,
+    FilesResolver,
+  ],
 })
 export class AdminModule {}

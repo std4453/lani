@@ -132,6 +132,8 @@ export class JobService
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
     // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
+    // TODO: 这里目前是根据 jellyfin_episode_id 判断是否已下载的，当前为了快速迭代
+    // 先放着，之后需要改成基于具体的剧集状态枚举进行判断
     return this.prisma.$queryRaw<
       {
         torrent_link: string;

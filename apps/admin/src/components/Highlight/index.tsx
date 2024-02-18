@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { escapeRegExp } from 'lodash';
 import { useMemo } from 'react';
 import styles from './index.module.less';
 
@@ -21,78 +22,84 @@ export default function Highlight({
             index: number;
             length: number;
           }
+        | Array<{
+            index: number;
+            length: number;
+          }>
         | undefined
         | null);
 }) {
   const parts = useMemo((): HighlightPart[] => {
-    if (keyword) {
-      const index = content.toLowerCase().indexOf(keyword.toLowerCase());
-      if (index < 0) {
-        return [{ text: content, highlight: false }];
-      } else {
-        return [
-          {
-            text: content.substring(0, index),
-            highlight: false,
-          },
-          {
-            text: content.substring(index, index + keyword.length),
-            highlight: true,
-          },
-          {
-            text: content.substring(index + keyword.length),
-            highlight: false,
-          },
-        ];
-      }
+    const matchMap = new Array(content.length).fill(false);
+
+    let actualMatch = match;
+
+    if (!actualMatch && keyword) {
+      const keywordParts = keyword.split(' ');
+
+      // eslint-disable-next-line @rushstack/security/no-unsafe-regexp
+      const matchRegExp = new RegExp(
+        keywordParts.map((part) => escapeRegExp(part)).join('|'),
+        'ig',
+      );
+
+      actualMatch = matchRegExp;
     }
-    if (match) {
-      if (match instanceof Function) {
-        const result = match(content);
-        if (!result) {
-          return [{ text: content, highlight: false }];
-        } else {
-          const { index, length } = result;
-          return [
-            {
-              text: content.substring(0, index),
-              highlight: false,
-            },
-            {
-              text: content.substring(index, index + length),
-              highlight: true,
-            },
-            {
-              text: content.substring(index + length),
-              highlight: false,
-            },
-          ];
+
+    if (actualMatch instanceof Function) {
+      const result = actualMatch(content);
+      if (result && Array.isArray(result)) {
+        for (const { index, length } of result) {
+          for (let i = index; i < index + length; i++) {
+            matchMap[i] = true;
+          }
         }
-      } else {
-        const result = content.match(match);
+      } else if (result) {
+        const { index, length } = result;
+        for (let i = index; i < index + length; i++) {
+          matchMap[i] = true;
+        }
+      }
+    } else if (actualMatch instanceof RegExp) {
+      const matchAllResult = content.matchAll(actualMatch);
+
+      for (const result of matchAllResult) {
         const index = result?.index;
         const matchLength = result?.[0]?.length;
-        if (typeof index !== 'number' || !matchLength) {
-          return [{ text: content, highlight: false }];
-        } else {
-          return [
-            {
-              text: content.substring(0, index),
-              highlight: false,
-            },
-            {
-              text: content.substring(index, index + matchLength),
-              highlight: true,
-            },
-            {
-              text: content.substring(index + matchLength),
-              highlight: false,
-            },
-          ];
+        if (typeof index === 'number' && matchLength) {
+          for (let i = index; i < index + matchLength; i++) {
+            matchMap[i] = true;
+          }
         }
       }
     }
-    return [{ text: content, highlight: false }];
+
+    const result: HighlightPart[] = [];
+
+    let lastHighlight = false;
+    let lastText = '';
+    for (let i = 0; i < content.length; i++) {
+      if (matchMap[i] !== lastHighlight) {
+        if (lastText) {
+          result.push({
+            text: lastText,
+            highlight: lastHighlight,
+          });
+        }
+        lastText = content[i];
+        lastHighlight = matchMap[i];
+      } else {
+        lastText += content[i];
+      }
+    }
+    if (lastText) {
+      result.push({
+        text: lastText,
+        highlight: lastHighlight,
+      });
+    }
+
+    return result;
   }, [content, keyword, match]);
 
   return (
