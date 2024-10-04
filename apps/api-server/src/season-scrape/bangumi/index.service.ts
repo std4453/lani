@@ -16,7 +16,10 @@ export class BangumiSeasonService {
     result.info = {
       description: season.summary,
       genres: [],
-      tags: season.tags.map((tag) => tag.name),
+      tags: season.tags
+        .filter((tag) => tag.count > 20)
+        .map((tag) => tag.name)
+        .filter((tag) => !tag.match(/[\u0001-\u001F]/)), // 不包含控制字符，否则无法写入 XML
     };
     if (season.date) {
       const { semester, weekday, year } = decomposeAirDate(season.date);
