@@ -1,0 +1,17 @@
+query ListFiles($path: String!) {
+  listFiles(path: $path) {
+    lastModified
+    name
+    path
+    size
+    type
+  }
+}
+
+mutation ImportSingle($episodeId: Int!, $path: String!) {
+  importSingle(episodeId: $episodeId, importPath: $path)
+}
+
+mutation ImportMultiple($entries: [ImportMultipleEntry!]!) {
+  importMultiple(entries: $entries)
+}

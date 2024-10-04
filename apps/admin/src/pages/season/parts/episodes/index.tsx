@@ -1,5 +1,9 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
+import {
+  useImportMultipleDialog,
+  useImportSingleDialog,
+} from '@/components/ImportDialog';
 import { useSearchTorrentDialog } from '@/components/SearchTorrentDialog';
 import {
   calcEpisodeStatus,
@@ -28,6 +32,7 @@ import {
   Alert,
   Button,
   Dropdown,
+  Form,
   Menu,
   message,
   Tooltip,
@@ -75,10 +80,16 @@ function useColumns({
   openDownloadMagnet,
   openEpisodeDetails,
   openSearchTorrent,
+  openImportSingleDialog,
+  refetchEpisodesStatus,
 }: {
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
+  openImportSingleDialog: ReturnType<typeof useImportSingleDialog>[2];
+  refetchEpisodesStatus: ReturnType<
+    typeof useEpisodeStatus
+  >['refetchEpisodesStatus'];
 }) {
   const { reloadEpisodes, formRef, id } = useSeasonPageContext();
 
@@ -152,7 +163,20 @@ function useColumns({
           >
             查看详情
           </Typography.Link>,
-          <Typography.Link key={1}>手动导入</Typography.Link>,
+          <Typography.Link
+            key={1}
+            onClick={() => {
+              void openImportSingleDialog({
+                episode: r,
+                async onResolve() {
+                  void reloadEpisodes();
+                  void refetchEpisodesStatus();
+                },
+              });
+            }}
+          >
+            手动导入
+          </Typography.Link>,
           <Dropdown
             key={2}
             overlay={
@@ -176,6 +200,7 @@ function useColumns({
                           });
                           void message.success('下载任务创建成功');
                           void reloadEpisodes();
+                          void refetchEpisodesStatus();
                         } catch (error) {
                           handleError(error, '下载任务创建失败');
                         }
@@ -189,7 +214,10 @@ function useColumns({
                   onClick={() => {
                     void openDownloadMagnet({
                       episodeId: r.id,
-                      onResolve: reloadEpisodes,
+                      onResolve: () => {
+                        void reloadEpisodes();
+                        void refetchEpisodesStatus();
+                      },
                     });
                   }}
                 >
@@ -268,7 +296,10 @@ function useColumns({
       openDownloadMagnet,
       openEpisodeDetails,
       openSearchTorrent,
+      openImportSingleDialog,
       reloadEpisodes,
+      refetchEpisodesStatus,
+      config?.env,
       client,
       formRef,
       id,
@@ -292,7 +323,7 @@ function useEpisodeStatus(episodes: Episode[]) {
     },
   );
   useApolloPoll({ pollInterval: 5000, startPolling, stopPolling, refetch });
-  return useMemo(() => {
+  const result = useMemo(() => {
     const episodesStatus = extractNode(data?.allEpisodes);
     if (!episodesStatus) {
       return undefined;
@@ -307,11 +338,22 @@ function useEpisodeStatus(episodes: Episode[]) {
     }
     return episodesStatusMap;
   }, [data]);
+
+  return {
+    episodesStatus: result,
+    refetchEpisodesStatus: refetch,
+  };
 }
 
 export default function Episodes() {
-  const { episodes, formRef, syncEpisodes, episodesLastSync } =
-    useSeasonPageContext();
+  const {
+    id,
+    episodes,
+    formRef,
+    syncEpisodes,
+    episodesLastSync,
+    reloadEpisodes,
+  } = useSeasonPageContext();
 
   const [downloadMagnetDialog, , openDownloadMagnet] =
     useManualDownloadMagnetDialog();
@@ -319,12 +361,19 @@ export default function Episodes() {
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
+  const [importSingleDialog, , openImportSingleDialog] =
+    useImportSingleDialog();
+  const [importMultipleDialog, , openImportMultipleDialog] =
+    useImportMultipleDialog();
+  const { episodesStatus, refetchEpisodesStatus } = useEpisodeStatus(episodes);
+
   const columns = useColumns({
     openDownloadMagnet,
     openEpisodeDetails,
     openSearchTorrent,
+    openImportSingleDialog,
+    refetchEpisodesStatus,
   });
-  const episodesStatus = useEpisodeStatus(episodes);
 
   const syncEpisodeProps = useAsyncButton(async () => {
     if (!formRef.current) {
@@ -443,6 +492,31 @@ export default function Episodes() {
         ]}
         width="sm"
       />
+      <Form.Item label="批量操作" {...formItemProps}>
+        <div className={styles.actions}>
+          <Button
+            type="primary"
+            ghost
+            onClick={() => {
+              void openImportMultipleDialog({
+                seasonId: id,
+                episodes,
+                async onResolve() {
+                  void reloadEpisodes();
+                  void refetchEpisodesStatus();
+                },
+              });
+            }}
+          >
+            批量导入……
+          </Button>
+          <Tooltip title="暂不支持">
+            <Button ghost disabled>
+              整季下载
+            </Button>
+          </Tooltip>
+        </div>
+      </Form.Item>
       <EpisodesStatusContext.Provider value={episodesStatus}>
         <ProTable<Episode>
           columns={columns}
@@ -459,6 +533,8 @@ export default function Episodes() {
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
       {searchTorrentDialog}
+      {importSingleDialog}
+      {importMultipleDialog}
     </Section>
   );
 }

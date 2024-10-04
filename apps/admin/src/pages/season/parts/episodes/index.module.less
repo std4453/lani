@@ -1,4 +1,4 @@
-@import "~@/styles/index.less";
+@import '~@/styles/index.less';
 
 .extra {
   @media @mobile {
@@ -10,5 +10,16 @@
 .table {
   @media @mobile {
     margin: 0 -24px;
+  }
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+
+  & :global(.ant-btn) {
+    width: 100%;
   }
 }
