@@ -61,7 +61,7 @@
               "type": "array",
               "items": {
                 "description": "Environment type",
-                "enum": ["offline", "prerelease", "production"]
+                "enum": ["offline", "prerelease", "production", "online"]
               }
             }
           },
