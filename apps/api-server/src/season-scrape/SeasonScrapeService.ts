@@ -1,4 +1,4 @@
-import { ChinaAxiosService } from '@/common/axios.service';
+import { GlobalAxiosService } from '@/common/axios.service';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -20,7 +20,7 @@ export class SeasonScrapeService {
     private skyhook: SkyhookSeasonService,
     private bangumi: BangumiSeasonService,
     private prisma: PrismaService,
-    private china: ChinaAxiosService,
+    private global: GlobalAxiosService,
     private s3: S3Service,
   ) {}
 
@@ -142,7 +142,8 @@ export class SeasonScrapeService {
       return;
     }
     this.logger.verbose(`Downloading ${type} from ${url}...`);
-    const { data } = await this.china.get<Buffer>(url, {
+    // lani.bgm.tv 当前已无法直连，必须使用代理
+    const { data } = await this.global.get<Buffer>(url, {
       responseType: 'arraybuffer',
       // 最大10M
       maxContentLength: 10 * 1024 * 1024,

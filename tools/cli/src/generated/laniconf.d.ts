@@ -55,7 +55,7 @@ export interface LaniConfig {
       /**
        * Enabled environments
        */
-      env: ("offline" | "prerelease" | "production")[];
+      env: ("offline" | "prerelease" | "production" | "online")[];
     };
   };
 }
