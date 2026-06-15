@@ -1,8 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../dist"
+  provider      = "prisma-client-js"
+  output        = "../dist"
+  binaryTargets = ["native"]
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
