@@ -2,7 +2,7 @@ import inclusion from "inclusion";
 import { TypeBuildFn } from "../commands";
 
 const build: TypeBuildFn = async () => {
-  const ttscBinPath = require.resolve("ttypescript/bin/tsc");
+  const ttscBinPath = require.resolve("ts-patch/bin/tspc.js");
 
   const { execaNode } = await inclusion("execa");
 
