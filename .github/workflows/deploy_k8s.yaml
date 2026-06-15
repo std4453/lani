@@ -35,36 +35,34 @@ jobs:
         id: app_name
         run: |
           app_name="${project_name##*/}"
-          echo "::set-output name=app_name::$app_name"
+          echo "app_name=$app_name" >> $GITHUB_OUTPUT
         env:
           project_name: ${{ inputs.project_name }}
 
       # find specific image to deploy
-      
-      - uses: docker-practice/actions-setup-docker@master
 
       - name: Get Image Digest
         id: image_digest
         run: |
           docker pull $latest_image
           image_digest=$(docker inspect $latest_image | jq -r '.[0].RepoDigests[0]')
-          echo "::set-output name=image_digest::$image_digest"
+          echo "image_digest=$image_digest" >> $GITHUB_OUTPUT
         env:
           latest_image: ghcr.io/${{ github.repository_owner }}/lani-${{ steps.app_name.outputs.app_name }}:latest
 
       # generate manifest
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         name: Checkout deploy repo
         with:
           repository: std4453/lani-deploy
           ref: main
           token: ${{ secrets.DEPLOY_PAT }}
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         name: Setup Node
         with:
-          node-version: 14
+          node-version: 20
           cache: yarn
 
       - name: Install Dependencies
