@@ -145,7 +145,7 @@ export default class Devops extends Command {
             name: "env",
             message: "Select deployment environment",
             type: "list",
-            choices: [envList],
+            choices: envList,
           },
         ]);
         env = result.env as "offline" | "prerelease" | "production";
