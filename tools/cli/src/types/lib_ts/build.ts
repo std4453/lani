@@ -5,7 +5,7 @@ const build: TypeBuildFn = async (
   _proj,
   { "lib:ts": { buildTsConfig } = {} }
 ) => {
-  const ttscBinPath = require.resolve("ts-patch/bin/tspc.js");
+  const ttscBinPath = require.resolve("ttypescript/bin/tsc");
 
   const { execaNode } = await inclusion("execa");
 

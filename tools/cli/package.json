@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "typescript": "~4.5.4",
-    "ts-patch": "^3.0.0",
+    "ttypescript": "~1.5.15",
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.0.1",
