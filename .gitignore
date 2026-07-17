@@ -72,3 +72,7 @@ common/autoinstallers/*/.npmrc
 
 # Files mounted via telepresence
 **/mount
+
+# Local Codex guidance and private deployment context
+/AGENTS.md
+/.codex/
