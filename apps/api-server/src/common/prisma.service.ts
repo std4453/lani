@@ -1,5 +1,5 @@
 import config from '@/config';
-import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@lani/db';
 import { PrismaClientOptions } from '@lani/db/dist/runtime';
 
@@ -13,7 +13,7 @@ export class PrismaService
     datasources: PrismaClientOptions['datasources'];
     rejectOnNotFound: typeof rejectOnNotFound;
   }>
-  implements OnModuleInit
+  implements OnModuleInit, OnApplicationShutdown
 {
   constructor() {
     super({
@@ -28,9 +28,7 @@ export class PrismaService
     await this.$connect();
   }
 
-  async enableShutdownHooks(app: INestApplication) {
-    this.$on('beforeExit', async () => {
-      await app.close();
-    });
+  async onApplicationShutdown() {
+    await this.$disconnect();
   }
 }

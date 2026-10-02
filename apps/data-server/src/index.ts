@@ -34,5 +34,20 @@ const options: PostGraphileOptions = {
 };
 
 const app = new Koa();
-app.use(postgraphile(config.postgresUrl, "public", options));
-app.listen(getPort(8080));
+const middleware = postgraphile(config.postgresUrl, "public", options);
+app.use(middleware);
+const server = app.listen(getPort(8080));
+let stopping = false;
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    if (stopping) return;
+    stopping = true;
+    // Stop accepting requests, drain HTTP connections, then release PostgreSQL.
+    server.close(() => {
+      middleware.release().then(
+        () => process.exit(0),
+        () => process.exit(1)
+      );
+    });
+  });
+}

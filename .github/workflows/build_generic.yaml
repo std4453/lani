@@ -23,11 +23,38 @@ on:
         description: "Project package name"
         required: true
 
+    outputs:
+      image:
+        description: Immutable image reference from this build
+        value: ${{ jobs.build.outputs.image }}
+      revision:
+        description: Checked out source commit
+        value: ${{ jobs.build.outputs.revision }}
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build ${{ inputs.project_name }}
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.result.outputs.image }}
+      revision: ${{ steps.build_info.outputs.revision }}
+    env:
+      PROJECT_NAME: ${{ inputs.project_name }}
+      # Prisma 3 uses OpenSSL 1.1 in the migration runtime, independent of the runner.
+      PRISMA_CLI_BINARY_TARGETS: debian-openssl-1.1.x
     steps:
+      - name: Validate project
+        shell: bash
+        run: |
+          case "$PROJECT_NAME" in
+            @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway|@lani/db|@lani/all-in-one) ;;
+            *) echo "Unsupported project" >&2; exit 1 ;;
+          esac
+
       - uses: actions/checkout@v4
         name: Checkout
         with:
@@ -78,49 +105,23 @@ jobs:
           # Keep this compatibility option scoped to the build process.
           NODE_OPTIONS: --openssl-legacy-provider
         run: |
-          node common/scripts/install-run-rush.js build -t ${{ inputs.project_name }} -p 1 -v
+          node common/scripts/install-run-rush.js build -t "$PROJECT_NAME" -p 1 -v
 
       - name: Rush Deploy
         run: |
-          node common/scripts/install-run-rush.js deploy -p ${{ inputs.project_name }}
+          node common/scripts/install-run-rush.js deploy -p "$PROJECT_NAME"
 
-      # https://github.community/t/syntax-for-replacing-characters-in-string/17240
-      # install-run-rush.js outputs unnecessary information, use tail to remove it
-      # https://github.com/microsoft/rushstack/issues/2607
       - name: Build Info
         id: build_info
-        run: |
-          project_path=$(node common/scripts/install-run-rush.js list -o ${{ inputs.project_name }} -p --json | tail -n +6 | jq -r .projects[0].path)
-          echo "Project path: $project_path"
-
-          dockerfile_path="$project_path/Dockerfile"
-          echo "Dockerfile path: $dockerfile_path"
-          echo "dockerfile_path=$dockerfile_path" >> $GITHUB_OUTPUT
-
-          image_name="lani-${project_name##*/}"
-          echo "Image name: $image_name"
-          echo "image_name=$image_name" >> $GITHUB_OUTPUT
-
-          ref_escaped="${ref_raw////-}"
-          echo "Escaped ref: $ref_escaped"
-          echo "ref_escaped=$ref_escaped" >> $GITHUB_OUTPUT
+        shell: bash
         env:
-          project_name: ${{ inputs.project_name }}
-          ref_raw: ${{ inputs.ref }}
-
-      - name: Eval tag names
-        id: tag_names
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "image_ref=$image_name" >> $GITHUB_OUTPUT
-          echo "image_ref_run_number=$image_ref_run_number" >> $GITHUB_OUTPUT
-          echo "image_ref_sha=$image_ref_sha" >> $GITHUB_OUTPUT
-          echo "image_ref_branch=$image_ref_branch" >> $GITHUB_OUTPUT
-          echo "image_ref_latest=$image_ref_latest" >> $GITHUB_OUTPUT
-        env:
-          image_ref_run_number: ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:1.0.${{ github.run_number }}
-          image_ref_sha: ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:${{ github.sha }}
-          image_ref_branch: ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:${{ github.sha }}
-          image_ref_latest: ghcr.io/${{ github.repository_owner }}/${{ steps.build_info.outputs.image_name }}:latest
+          app="${PROJECT_NAME##*/}"
+          if [ "$app" = db ]; then directory=libs/db; else directory="apps/$app"; fi
+          echo "dockerfile_path=$directory/Dockerfile" >> "$GITHUB_OUTPUT"
+          echo "image_name=ghcr.io/${REPOSITORY_OWNER,,}/lani-$app" >> "$GITHUB_OUTPUT"
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         id: docker_build
@@ -128,9 +129,17 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64
           file: ${{ steps.build_info.outputs.dockerfile_path }}
-          tags: >
-            ${{ steps.tag_names.outputs.image_ref_run_number }},
-            ${{ steps.tag_names.outputs.image_ref_sha }},
-            ${{ steps.tag_names.outputs.image_ref_branch }},
-            ${{ steps.tag_names.outputs.image_ref_latest }}
+          labels: org.opencontainers.image.revision=${{ steps.build_info.outputs.revision }}
+          tags: |
+            ${{ steps.build_info.outputs.image_name }}:${{ steps.build_info.outputs.revision }}
+            ${{ steps.build_info.outputs.image_name }}:run-${{ github.run_id }}-${{ github.run_attempt }}
+            ${{ steps.build_info.outputs.image_name }}:latest
+
+      - name: Export immutable build result
+        id: result
+        env:
+          IMAGE_NAME: ${{ steps.build_info.outputs.image_name }}
+          IMAGE_DIGEST: ${{ steps.docker_build.outputs.digest }}
+        run: echo "image=$IMAGE_NAME@$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
