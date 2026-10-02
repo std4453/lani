@@ -20,6 +20,26 @@
 
 `@lani/db` 也可以直接通过 `rush deploy` 部署，部署之后在包目录下运行 `npm run migrate:deploy` 会在 `DATABASE_URL` 指向的数据库中执行 migration。
 
+下载源的匹配规则按 `(season_id, pattern)` 唯一，不同季度可以复用同一个 pattern，
+同一季度仍不允许重复规则。对应 migration 在事务中创建联合唯一索引、删除原全局
+唯一索引（兼容实际 UNIQUE 约束）并更新 PostGraphile Smart Comment，不修改已有记录，
+也不改写历史 migration。构建时生成新的 Prisma Client，部署时执行
+`npm run migrate:deploy`，并依次重启 data-server、gateway 以加载新的 GraphQL schema。
+单条下载源查询由 `downloadSourceByPattern` 改为
+`downloadSourceBySeasonIdAndPattern`；仓库内未使用的旧查询已移除。
+
+迁移连接账号必须是相关表的 owner 或具备相应管理权限，仅有读写权限的应用账号
+无法修改约束。对于没有 `_prisma_migrations` 的既有数据库，先备份并核对已有结构，
+确认初始迁移已体现在数据库中后，运行
+`prisma migrate resolve --applied 20221002140138_init` 建立 baseline，再执行 deploy；
+不要在既有数据库上重新执行初始化 SQL。
+迁移历史表 `_prisma_migrations` 通过 `@omit` 注释从 PostGraphile API 隐藏。
+
+可在仓库根目录运行 `python3 libs/db/tests/download-source-migration.py` 验证旧库升级、
+全新建库、数据保留、唯一约束及当前 enqueue SQL。该测试需要 Python 3 和 PATH 中的
+`initdb`、`pg_ctl`、`psql`，以非 root 用户运行；它会创建并清理临时 PostgreSQL 实例，
+不使用 `DATABASE_URL`。
+
 > ⚠️ 警告
 >
 > 数据库相关操作均存在潜在的数据丢失风险，如果你是用户，请参考 [用户手册](https://std4453.github.io/lani/docs/category/%E9%83%A8%E7%BD%B2) 。如果你在开发 lani 项目，请在明确后果的前提下操作。

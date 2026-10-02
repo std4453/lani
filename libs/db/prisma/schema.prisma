@@ -12,12 +12,13 @@ model DownloadSource {
   id         Int      @id @default(autoincrement())
   seasonId   Int      @map("season_id")
   groupId    String   @default("") @map("group_id")
-  pattern    String   @unique @default("")
+  pattern    String   @default("")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   isDisabled Boolean  @default(false) @map("is_disabled")
   offset     Int      @default(0)
   season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
+  @@unique([seasonId, pattern])
   @@map("download_sources")
 }
 
