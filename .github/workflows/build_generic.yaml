@@ -73,6 +73,10 @@ jobs:
           node common/scripts/install-run-rush.js link
 
       - name: Build
+        env:
+          # Umi 3's bundled Webpack uses legacy hashes unavailable in OpenSSL 3.
+          # Keep this compatibility option scoped to the build process.
+          NODE_OPTIONS: --openssl-legacy-provider
         run: |
           node common/scripts/install-run-rush.js build -t ${{ inputs.project_name }} -p 1 -v
 
