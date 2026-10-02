@@ -24,7 +24,7 @@ node common/scripts/install-run-rush.js build --to @lani/gateway
 - Data Server：`apps/data-server/src/config.ts`；需要 `postgresUrl` 和 `postgraphile`，没有额外选项时也应提供 `postgraphile: {}`。
 - Admin：`apps/admin/src/store/config.ts` 通过 GraphQL 获取配置，登录设置来自 Gateway；只启动 Umi 不代表整个应用已就绪。
 
-可将自行准备的配置放在被 Git 忽略的 `.codex/local-config/`，分别命名为 `api-server.yaml`、`data-server.yaml` 和 `gateway.yaml`。含凭据的文件应限制为仅当前用户可读写。不要提交实际配置，也不要复制维护者的远端凭据来代替自己的开发依赖。
+将自行准备的开发配置放在各后端包的 `config.yaml` 中：`apps/api-server/config.yaml`、`apps/data-server/config.yaml` 和 `apps/gateway/config.yaml`。这些路径已由各包的 `.gitignore` 忽略。已有文件时先确认其用途，不要覆盖原配置；如需使用其他位置，可通过 `CONFIG_FILENAME` 指定，并确保该文件不会被提交。含凭据的文件应限制为仅当前用户可读写。不要提交实际配置，也不要复制维护者的远端凭据来代替自己的开发依赖。
 
 本地 Gateway 的 subgraph 地址应与本次启动方式一致：API 默认使用 `http://127.0.0.1:3000/graphql`，下文的 Data Server 使用 `http://127.0.0.1:8083/graphql`，Gateway 自身使用 8080。数据库 schema 和迁移位于 `libs/db/prisma`；初始化前确认目标是隔离的开发数据库。
 
@@ -49,27 +49,27 @@ export no_proxy="$NO_PROXY"
 
 ## 按需启动服务
 
-不要运行 `start_tmux.sh`。为每个需要的服务使用独立终端，记录会话或 PID，便于结束后清理。以下命令均从仓库根目录开始，在各自终端中执行；配置文件需先按上文准备好。
+不要运行 `start_tmux.sh`。为每个需要的服务使用独立终端，记录会话或 PID，便于结束后清理。以下命令均从仓库根目录开始，在各自终端中执行；配置文件需先按上文准备好。示例显式指定当前包的 `./config.yaml`，避免继承终端中可能指向其他环境的 `CONFIG_FILENAME`。
 
 Data Server 使用 8083，避免与 Gateway 冲突：
 
 ```bash
 cd apps/data-server
-PORT=8083 CONFIG_FILENAME=../../.codex/local-config/data-server.yaml rushx dev
+PORT=8083 CONFIG_FILENAME=./config.yaml rushx dev
 ```
 
 确认 API 的依赖隔离后启动 API Server：
 
 ```bash
 cd apps/api-server
-CONFIG_FILENAME=../../.codex/local-config/api-server.yaml rushx start:dev
+CONFIG_FILENAME=./config.yaml rushx start:dev
 ```
 
 两个 subgraph 就绪后启动 Gateway：
 
 ```bash
 cd apps/gateway
-CONFIG_FILENAME=../../.codex/local-config/gateway.yaml rushx dev
+CONFIG_FILENAME=./config.yaml rushx dev
 ```
 
 需要前端时再启动 Admin：
