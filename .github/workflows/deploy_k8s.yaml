@@ -1,89 +1,123 @@
-name: "Deplot to K8s Cluster"
+name: "Deploy to Kubernetes"
 
+# Deployment only consumes immutable outputs of the build pipeline.
 on:
-  workflow_dispatch:
-    inputs:
-      project_name:
-        type: string
-        description: "Project package name"
-        required: true
-
-      environment:
-        type: string
-        description: "Deploy environment type"
-        required: true
-
   workflow_call:
     inputs:
       project_name:
         type: string
-        description: "Project package name"
         required: true
-
       environment:
         type: string
-        description: "Deploy environment type"
         required: true
+      image:
+        type: string
+        required: true
+      migration_image:
+        type: string
+        default: ""
+      revision:
+        type: string
+        required: true
+      migration_revision:
+        type: string
+        default: ""
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
-    name: Deploy ${{ inputs.project_name }} to ${{ inputs.environment }} environment
+    name: Deploy ${{ inputs.project_name }}
     runs-on: ubuntu-latest
-
+    timeout-minutes: 45
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: lani-deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      PROJECT_NAME: ${{ inputs.project_name }}
+      DEPLOY_ENV: ${{ inputs.environment }}
+      APP_IMAGE: ${{ inputs.image }}
+      MIGRATION_IMAGE: ${{ inputs.migration_image }}
+      REVISION: ${{ inputs.revision }}
+      MIGRATION_REVISION: ${{ inputs.migration_revision }}
+      RELEASE_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
+      KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT }}
+      KUBECTL_VERSION: ${{ vars.KUBECTL_VERSION }}
+      DEPLOY_REF: ${{ vars.DEPLOY_REF }}
+      LANI_BACKUP_REFERENCE: ${{ vars.LANI_BACKUP_REFERENCE }}
+      LANI_MIGRATION_NETWORK: ${{ vars.LANI_MIGRATION_NETWORK }}
+      LANI_VERIFY_QUERY: ${{ vars.LANI_VERIFY_QUERY }}
+      LANI_VERIFY_TOKEN: ${{ secrets.LANI_VERIFY_TOKEN }}
     steps:
-      - name: App Name
-        id: app_name
+      - name: Validate release inputs
+        shell: bash
         run: |
-          app_name="${project_name##*/}"
-          echo "app_name=$app_name" >> $GITHUB_OUTPUT
-        env:
-          project_name: ${{ inputs.project_name }}
+          case "$PROJECT_NAME" in @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway) ;; *) exit 1 ;; esac
+          case "$DEPLOY_ENV" in offline|online) ;; *) exit 1 ;; esac
+          test -n "$KUBE_CONTEXT"
+          [[ "$KUBECTL_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$DEPLOY_REF" =~ ^[0-9a-f]{40}$ ]]
+          if [ "$PROJECT_NAME" != '@lani/admin' ]; then
+            test "$REVISION" = "$MIGRATION_REVISION"
+            test -n "$MIGRATION_IMAGE"
+          fi
 
-      # find specific image to deploy
-
-      - name: Get Image Digest
-        id: image_digest
-        run: |
-          docker pull $latest_image
-          image_digest=$(docker inspect $latest_image | jq -r '.[0].RepoDigests[0]')
-          echo "image_digest=$image_digest" >> $GITHUB_OUTPUT
-        env:
-          latest_image: ghcr.io/${{ github.repository_owner }}/lani-${{ steps.app_name.outputs.app_name }}:latest
-
-      # generate manifest
-
-      - uses: actions/checkout@v4
-        name: Checkout deploy repo
+      - name: Checkout deployment tooling
+        uses: actions/checkout@v4
         with:
           repository: std4453/lani-deploy
-          ref: main
+          ref: ${{ env.DEPLOY_REF }}
           token: ${{ secrets.DEPLOY_PAT }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
-        name: Setup Node
         with:
-          node-version: 20
+          node-version: "20"
           cache: yarn
 
-      - name: Install Dependencies
+      - name: Install and build deployment tooling
         run: |
           yarn install --frozen-lockfile
-
-      - name: Build Script
-        run: |
           yarn build
 
-      - name: Generate Manifests
-        run: >
-          yarn start ${{ steps.app_name.outputs.app_name }} ${{ steps.image_digest.outputs.image_digest }} ${{ inputs.environment }}
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
 
       - name: Prepare kubeconfig
-        run: |
-          echo "KUBE_CONFIG=$(cat lani-cd.kubeconfig | base64 -w 0)" >> $GITHUB_ENV
-
-      - uses: actions-hub/kubectl@master
-        name: Apply manifest
+        shell: bash
         env:
-          KUBE_CONFIG: ${{ env.KUBE_CONFIG }}
-        with:
-          args: apply -k ./generated/${{ steps.app_name.outputs.app_name }}/${{ inputs.environment }}
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          test -n "$KUBECONFIG_CONTENT"
+          umask 077
+          config_file="$RUNNER_TEMP/lani-kubeconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          printf '%s' "$KUBECONFIG_CONTENT" > "$config_file"
+          echo "KUBECONFIG=$config_file" >> "$GITHUB_ENV"
+
+      - name: Deploy release
+        shell: bash
+        run: |
+          yarn deploy --app "${PROJECT_NAME##*/}" --environment "$DEPLOY_ENV" \
+            --image "$APP_IMAGE" --migration-image "$MIGRATION_IMAGE" \
+            --revision "$REVISION" --migration-revision "$MIGRATION_REVISION" \
+            --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Publish credential-free release summary
+        if: always()
+        shell: bash
+        run: |
+          report="generated/releases/$RELEASE_ID/report.json"
+          if [ -f "$report" ]; then
+            printf '\n```json\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$report" >> "$GITHUB_STEP_SUMMARY"
+            printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Remove kubeconfig
+        if: always()
+        shell: bash
+        run: rm -f -- "$RUNNER_TEMP/lani-kubeconfig-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"

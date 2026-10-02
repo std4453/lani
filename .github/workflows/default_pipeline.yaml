@@ -4,17 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Ref to trigger workflow"
-        required: false
-        default: "master"
+        description: Source ref (resolved once by the application build)
+        required: true
+        default: next
       project_name:
-        description: "Project package name"
+        description: Application package
+        type: choice
+        options: ["@lani/admin", "@lani/api-server", "@lani/data-server", "@lani/gateway"]
         required: true
       environment:
-        type: string
-        description: "Deploy environment type"
+        description: Deployment environment
+        type: choice
+        options: [offline, online]
         required: true
-  
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     uses: ./.github/workflows/build_generic.yaml
@@ -22,11 +29,28 @@ jobs:
       ref: ${{ inputs.ref }}
       project_name: ${{ inputs.project_name }}
     secrets: inherit
-  
-  deploy:
+
+  migration:
+    if: inputs.project_name != '@lani/admin'
     needs: build
+    uses: ./.github/workflows/build_generic.yaml
+    with:
+      ref: ${{ needs.build.outputs.revision }}
+      project_name: "@lani/db"
+    secrets: inherit
+
+  deploy:
+    if: >-
+      always() && needs.build.result == 'success' &&
+      (needs.migration.result == 'success' ||
+       (inputs.project_name == '@lani/admin' && needs.migration.result == 'skipped'))
+    needs: [build, migration]
     uses: ./.github/workflows/deploy_k8s.yaml
     with:
       project_name: ${{ inputs.project_name }}
       environment: ${{ inputs.environment }}
+      image: ${{ needs.build.outputs.image }}
+      migration_image: ${{ needs.migration.outputs.image }}
+      revision: ${{ needs.build.outputs.revision }}
+      migration_revision: ${{ needs.migration.outputs.revision }}
     secrets: inherit

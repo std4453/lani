@@ -1,0 +1,70 @@
+# Migration-aware Kubernetes CD
+
+The default pipeline builds an application image and, for backend releases, a
+separate `@lani/db` migration image from the application's exact checked-out
+commit. Build outputs carry immutable image digests and the source revision to
+the deployment workflow; deployment never resolves `latest` again. Existing
+all-in-one startup migration behavior is separate from this workflow.
+
+The migration image contains the locked Prisma CLI, schema, complete migration
+history, and Debian OpenSSL 1.1 engines. Engine downloads and runtime checks happen
+while building the image. Its default command is `npm run migrate:deploy`; only
+the cluster Job receives `DATABASE_URL` from a pre-provisioned Secret. The runner
+never parses application database configuration or connects to PostgreSQL.
+
+Deployment is owned by the private deployment tooling. Its existing renderer
+remains read-only with respect to Kubernetes. The explicit deploy command checks
+prerequisites, gates ingress, stops Gateway/API/Data Server, waits for old Pods to
+disappear, runs and observes a unique migration Job, then restores and verifies
+applications before reopening ingress. Normal backend releases use the same
+protocol even when there are no pending migrations. Admin-only releases use a
+lighter path under the same environment lock.
+
+The selected application is updated; other backend images are preserved and
+restarted after migration. Schema changes must remain compatible with those
+installed versions. Recreate prevents overlapping API schedulers, and direct
+Node container commands allow SIGTERM shutdown hooks to run. Persisted task
+recovery does not guarantee that arbitrary in-flight work is lossless.
+
+## Integration prerequisites
+
+Merge and review the companion deployment-tooling change before enabling the new
+pipeline. Configure these values in each GitHub deployment Environment:
+
+- Secrets: `DEPLOY_PAT`, standard file contents in `KUBECONFIG`, and
+  `LANI_VERIFY_TOKEN` for authenticated smoke verification.
+- Variables: `DEPLOY_REF` (full tooling commit SHA), `KUBE_CONTEXT`, and an approved
+  exact `KUBECTL_VERSION`.
+- Backend release variables: `LANI_BACKUP_REFERENCE` identifies an independently
+  verified recovery point; `LANI_MIGRATION_NETWORK=sidecar-disabled` attests that
+  the migration Job's database connectivity was validated without mesh injection;
+  `LANI_VERIFY_QUERY` supplies a named, read-only critical query across both backend
+  subgraphs.
+
+Apply the companion RBAC and provision the migration Secret separately using the
+private operations procedure. The migration identity needs DDL permissions on the
+managed tables. Existing databases without Prisma history require a separately
+reviewed baseline; the normal pipeline never baselines or resolves failed
+migrations automatically. The private tooling documentation defines namespace
+mapping, permissions, configuration reconciliation and recovery details.
+
+The runner installs a pinned kubectl, checks the explicit context and supported
+client/server version skew, writes a restricted temporary kubeconfig, and cleans
+it up on completion. Keep generated private configuration and migration logs out
+of public workflow artifacts and PRs.
+
+## Failures and validation
+
+Environment-level Actions concurrency uses `cancel-in-progress: false`. A shared,
+non-expiring cluster lock also covers cooperative local and cross-repository
+callers. Direct cluster writers must not bypass it. Migration or post-migration
+failure retains maintenance state and recovery evidence; cancellation does not
+mean the cluster Job stopped or the database rolled back. Do not blindly retry or
+restore an old image after schema changes.
+
+This implementation has not run a deployment, migration, test suite or Actions
+workflow. Before enabling production CD, validate the companion mock tests and
+perform separately authorized staging acceptance: no pending migrations, real
+schema changes, old Pod termination, migration failure/timeouts, failed startup,
+runner interruption, competing publishers, mesh networking, authentication and
+critical reads. Record the validated kubectl/cluster combination privately.

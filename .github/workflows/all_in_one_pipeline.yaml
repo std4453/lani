@@ -11,6 +11,10 @@ on:
         description: "Project package name"
         required: true
   
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     uses: ./.github/workflows/build_generic.yaml
