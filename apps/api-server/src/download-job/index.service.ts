@@ -129,6 +129,7 @@ export class JobService
   }
 
   async findTorrentsToDownload() {
+    // pattern 可跨季度复用；按 season_id 关联，按 episodes.id 去重，避免多条规则重复入队。
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
     // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）

@@ -91,12 +91,6 @@ query GetSeasonByTitle($title: String!) {
   }
 }
 
-query GetDownloadSourceByPattern($pattern: String!) {
-  downloadSourceByPattern(pattern: $pattern) {
-    id
-  }
-}
-
 mutation SyncMetadata($seasonId: Int!) {
   syncMetadata(seasonId: $seasonId)
 }
