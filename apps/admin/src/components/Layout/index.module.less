@@ -54,9 +54,35 @@
   }
 }
 
-// 没有办法从 ProLayout 给 Drawer 传参数，只能用 CSS 方法强行隐藏掉
-// 这会造成全局污染，其他地方不能使用 .ant-drawer-header-close-only
+// The mobile sidebar is rendered in a Drawer portal outside .layout.
 :global {
+  html[data-theme='dark'] .ant-pro-sider.ant-layout-sider {
+    background-color: var(--lani-surface);
+
+    .ant-menu {
+      background: transparent;
+    }
+
+    .ant-menu.ant-menu-dark .ant-menu-item-selected {
+      background-color: var(--lani-menu-selected);
+
+      &,
+      a {
+        color: var(--lani-primary);
+      }
+
+      &::after {
+        position: absolute;
+        inset: 0 0 0 auto;
+        border-right: 3px solid var(--lani-primary);
+        opacity: 1;
+        transform: scaleY(1);
+        content: '';
+      }
+    }
+  }
+
+  // ProLayout does not expose Drawer header props; reserve this selector for it.
   // 增加specificity
   .ant-drawer-header-close-only.ant-drawer-header-close-only {
     display: none;

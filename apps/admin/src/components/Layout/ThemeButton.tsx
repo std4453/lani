@@ -1,4 +1,5 @@
 import { useTheme } from '@/theme';
+import useMobile from '@/utils/useMobile';
 import { MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
 import styles from './index.module.less';
@@ -22,11 +23,11 @@ const icons = {
 
 export default function ThemeButton() {
   const { mode, cycle } = useTheme();
+  const mobile = useMobile();
   const Icon = icons[mode];
   const label = labels[mode];
-  return (
-    <Tooltip title={label}>
-      <Button type="text" icon={<Icon />} onClick={cycle} aria-label={label} />
-    </Tooltip>
+  const button = (
+    <Button type="text" icon={<Icon />} onClick={cycle} aria-label={label} />
   );
+  return mobile ? button : <Tooltip title={label}>{button}</Tooltip>;
 }
