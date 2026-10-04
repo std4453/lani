@@ -86,12 +86,12 @@ jobs:
           yarn deploy prepare --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
 
-      - name: Close entry and stop backends (skip for Admin-only)
+      - name: Close entry and stop backends (skip for admin-only)
         run: >-
           yarn deploy quiesce --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
 
-      - name: Run Prisma migrate deploy once (skip for Admin-only)
+      - name: Run Prisma migrate deploy once (skip for admin-only)
         run: >-
           yarn deploy migrate --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"

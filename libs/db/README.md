@@ -97,7 +97,7 @@ DATABASE_URL=postgres://{user}:{password}@{hostname}:{port}/{database-name}
 `npm run migrate:deploy`（即 `prisma migrate deploy`）。包含任意后端应用的
 release 都先关闭入口、停止相关后端并确认旧 Pod 退出，再在集群内运行一次迁移
 Job；即使没有新增或待执行的 migration，也会经历维护窗口，由 Prisma 处理空操作。
-Job 成功后才部署选中的应用并按依赖顺序恢复服务。纯 Admin 发布不构建 db 镜像，
+Job 成功后才部署选中的应用并按依赖顺序恢复服务。纯 admin 发布不构建 db 镜像，
 也不执行迁移或停止后端。
 
 数据库连接通过集群 Secret 注入，Actions 不获取连接串。发布工具不自行解析迁移
