@@ -1,4 +1,4 @@
-import laniText from '@/assets/lani-text.svg';
+import { ReactComponent as LaniLogo } from '@/assets/lani-text.svg';
 import { selectCollapsed, setCollapsed } from '@/store/app';
 import {
   logout,
@@ -9,21 +9,25 @@ import {
 } from '@/store/auth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import useMobile from '@/utils/useMobile';
+import { useTheme } from '@/theme';
 import {
   DatabaseOutlined,
   DownloadOutlined,
   FolderOpenOutlined,
   HomeOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   NodeExpandOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
-import { Avatar, Popover, Typography } from 'antd';
+import { Avatar, Button, Popover, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import { ElementType, ReactNode } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
+import ThemeButton from './ThemeButton';
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
@@ -148,6 +152,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
 export default function Layout(props: any) {
   const collapsed = useAppSelector(selectCollapsed);
   const auth = useAppSelector(selectAuth);
+  const { theme } = useTheme();
   const dispatch = useAppDispatch();
 
   const mobile = useMobile();
@@ -155,8 +160,9 @@ export default function Layout(props: any) {
   return (
     <ProLayout
       {...props}
-      navTheme="light"
+      navTheme={theme}
       headerRender={false}
+      collapsedButtonRender={false}
       collapsed={collapsed}
       onCollapse={(collapsed: boolean) => {
         dispatch(setCollapsed({ collapsed }));
@@ -174,7 +180,7 @@ export default function Layout(props: any) {
             })}
           >
             <div className={styles.logoBlock}>
-              <img src={laniText} alt="Lani" className={styles.logo} />
+              <LaniLogo role="img" aria-label="Lani" className={styles.logo} />
             </div>
           </div>
         </Link>
@@ -199,12 +205,37 @@ export default function Layout(props: any) {
       }}
       contentStyle={{
         margin: 0,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--lani-surface)',
       }}
       className={styles.layout}
-      menuFooterRender={() =>
-        auth.config?.enabled ? <UserProfile collapsed={collapsed} /> : null
-      }
+      menuFooterRender={() => (
+        <>
+          <div
+            className={clsx(styles.sidebarControls, {
+              [styles.controlsCollapsed]: collapsed && !mobile,
+            })}
+          >
+            {!mobile && (
+              <Tooltip title={collapsed ? '展开侧边栏' : '折叠侧边栏'}>
+                <Button
+                  type="text"
+                  aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+                  icon={
+                    collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+                  }
+                  onClick={() =>
+                    dispatch(setCollapsed({ collapsed: !collapsed }))
+                  }
+                />
+              </Tooltip>
+            )}
+            <ThemeButton showLabel={mobile} />
+          </div>
+          {auth.config?.enabled && (
+            <UserProfile collapsed={collapsed && !mobile} />
+          )}
+        </>
+      )}
     />
   );
 }

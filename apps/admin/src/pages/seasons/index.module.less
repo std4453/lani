@@ -14,12 +14,12 @@
 
   &.bad {
     &::after {
-      background-color: rgba(252, 26, 26, 0.1);
+      background-color: var(--lani-error-bg);
     }
   }
   &.good {
     &::after {
-      background-color: rgba(31, 252, 26, 0.1);
+      background-color: var(--lani-success-bg);
     }
   }
 }
@@ -33,7 +33,7 @@
 }
 
 .slash {
-  color: #d9d9d9;
+  color: var(--lani-border);
   margin: 0 6px;
 }
 

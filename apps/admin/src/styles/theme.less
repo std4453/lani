@@ -1,0 +1,17 @@
+// Business colors share antd 4's semantic Less palette. Only these custom
+// properties change at runtime; no form, route or modal needs to remount.
+:root {
+  @import (reference, multiple) '~antd/es/style/themes/default.less';
+  @import (multiple) './theme-colors.less';
+}
+
+html[data-theme='dark'] {
+  @import (reference, multiple) '~antd/es/style/themes/dark.less';
+  @import (multiple) './theme-colors.less';
+}
+
+html,
+body {
+  background: var(--lani-surface);
+  color: var(--lani-text);
+}

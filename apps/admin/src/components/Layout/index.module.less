@@ -34,24 +34,18 @@
 }
 
 .logo {
+  color: var(--lani-text);
+  fill: currentColor;
   && {
     height: 44px;
     width: 133px;
   }
 }
 
-.content {
-  background-color: white;
-  padding: 0px 32px 16px;
-}
-
 .layout {
   :global {
     .ant-layout-sider {
-      border-right: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    .ant-pro-sider-collapsed-button {
-      border-top: none;
+      border-right: 1px solid var(--lani-divider);
     }
     .ant-pro-basicLayout-content {
       height: 100vh;
@@ -146,7 +140,7 @@
   }
 
   &:hover {
-    color: #1890ff;
+    color: var(--lani-primary);
   }
 }
 
@@ -168,7 +162,31 @@
   cursor: pointer;
 
   &:not(:last-child) {
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    border-right: 1px solid var(--lani-divider);
+  }
+}
+
+.sidebarControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+
+  @media @mobile {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--lani-divider);
+    margin-bottom: 8px;
+  }
+}
+
+.controlsCollapsed {
+  gap: 0;
+  padding: 8px 0;
+
+  :global(.ant-btn) {
+    width: 24px;
+    min-width: 24px;
+    padding: 0;
   }
 }
 
