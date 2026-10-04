@@ -60,7 +60,7 @@ jobs:
             const p = run('read-proxy-state', ['get', 'configmap', 'lani-release-' + process.env.PROBE_RELEASE, '-o', 'json']);
             if(p.status !== 0) throw Error('Read failed; no dry-run performed');
             const original = JSON.parse(p.stdout);
-            for (let round = 0; round < 10; round++) {
+            for (let round = 0; round < 25; round++) {
               for (const mode of ['proxy']) {
                 for (const size of ['original', 'padded']) {
                   const resource = structuredClone(original);
