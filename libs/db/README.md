@@ -90,3 +90,25 @@ DATABASE_URL=postgres://{user}:{password}@{hostname}:{port}/{database-name}
 - unique：`postgraphile` 基于 unique constraint 识别 unique，影响 query 和 mutation 的创建，然而 prisma migrate 只创建 unique index，不创建 unique contraint。因此，需要在用到 unique 的表上添加 [`@unique` Smart Comment](https://www.graphile.org/postgraphile/smart-tags/#unique)。
 
 最后，运行 `rushx migrate:apply` 将完成的 migration 提交到数据库，之后再次创建 migration 时均会以这次提交的为准。
+
+## Release migration inspection
+
+The migration image includes `scripts/migration-job.cjs` for cluster Jobs. `check`
+reads the complete migration directory and `_prisma_migrations` in a read-only,
+repeatable-read transaction, comparing successful records and byte-exact SQL
+checksums. It emits a versioned JSON termination message with `current` or
+`pending`, plus source/history hashes. Missing/empty history, unresolved failures,
+gaps, unknown or modified migrations and query errors block a release. Explicitly
+resolved rolled-back attempts are not applied. Business rows and Git diffs do not
+participate; restored environments can therefore be behind the same source image.
+
+This deliberately does not infer synchronization from Prisma 3.15.2 `migrate
+status` exit codes. It checks migration history, not arbitrary out-of-band schema
+drift, and never automatically baselines, resolves, resets or generates migrations.
+The `deploy` Job mode requires preflight hashes, rechecks them before invoking
+`migrate deploy` once, and requires a fully current history afterwards. Database
+access stays in the cluster; only Jobs receive `DATABASE_URL`.
+
+Regression code is in `tests/migration-history.test.cjs`; it was not executed for
+the implementation request. Run it only in a separately authorized validation
+session. The pure history comparison fixtures do not connect to a database.

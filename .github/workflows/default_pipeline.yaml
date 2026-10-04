@@ -4,14 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Source ref (resolved once by the application build)
+        description: Source ref (resolved once for the entire release)
         required: true
         default: next
+      apps:
+        description: "Comma-separated applications: admin,api-server,data-server,gateway"
+        type: string
+        required: false
       project_name:
-        description: Application package
-        type: choice
-        options: ["@lani/admin", "@lani/api-server", "@lani/data-server", "@lani/gateway"]
-        required: true
+        description: Legacy single package; use either this input or apps
+        type: string
+        required: false
       environment:
         description: Deployment environment
         type: choice
@@ -23,34 +26,83 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.plan.outputs.apps }}
+      revision: ${{ steps.plan.outputs.revision }}
+      backend: ${{ steps.plan.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Resolve source revision and selected applications
+        id: plan
+        env:
+          RELEASE_APPS: ${{ inputs.apps }}
+          LEGACY_PROJECT: ${{ inputs.project_name }}
+        run: node .github/scripts/release-plan.cjs select
+
+  applications:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps) }}
     uses: ./.github/workflows/build_generic.yaml
     with:
-      ref: ${{ inputs.ref }}
-      project_name: ${{ inputs.project_name }}
+      ref: ${{ needs.plan.outputs.revision }}
+      project_name: ${{ format('@lani/{0}', matrix.app) }}
+      artifact_name: release-build-${{ matrix.app }}
     secrets: inherit
 
   migration:
-    if: inputs.project_name != '@lani/admin'
-    needs: build
+    needs: plan
+    if: needs.plan.outputs.backend == 'true'
     uses: ./.github/workflows/build_generic.yaml
     with:
-      ref: ${{ needs.build.outputs.revision }}
+      ref: ${{ needs.plan.outputs.revision }}
       project_name: "@lani/db"
+      artifact_name: release-build-db
     secrets: inherit
 
-  deploy:
+  assemble:
     if: >-
-      always() && needs.build.result == 'success' &&
+      ${{ !cancelled() && needs.plan.result == 'success' && needs.applications.result == 'success' &&
       (needs.migration.result == 'success' ||
-       (inputs.project_name == '@lani/admin' && needs.migration.result == 'skipped'))
-    needs: [build, migration]
+       (needs.plan.outputs.backend == 'false' && needs.migration.result == 'skipped')) }}
+    needs: [plan, applications, migration]
+    runs-on: ubuntu-latest
+    outputs:
+      release_plan: ${{ steps.assemble.outputs.plan }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.revision }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-build-*
+          path: release-artifacts
+      - name: Validate all artifacts and assemble one release plan
+        id: assemble
+        env:
+          RELEASE_APPS: ${{ join(fromJSON(needs.plan.outputs.apps), ',') }}
+          SOURCE_REVISION: ${{ needs.plan.outputs.revision }}
+        run: node .github/scripts/release-plan.cjs assemble
+
+  deploy:
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
+    needs: assemble
     uses: ./.github/workflows/deploy_k8s.yaml
     with:
-      project_name: ${{ inputs.project_name }}
+      release_plan: ${{ needs.assemble.outputs.release_plan }}
       environment: ${{ inputs.environment }}
-      image: ${{ needs.build.outputs.image }}
-      migration_image: ${{ needs.migration.outputs.image }}
-      revision: ${{ needs.build.outputs.revision }}
-      migration_revision: ${{ needs.migration.outputs.revision }}
     secrets: inherit

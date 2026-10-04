@@ -1,70 +1,111 @@
-# Migration-aware Kubernetes CD
+# Multi-application Kubernetes releases
 
-The default pipeline builds an application image and, for backend releases, a
-separate `@lani/db` migration image from the application's exact checked-out
-commit. Build outputs carry immutable image digests and the source revision to
-the deployment workflow; deployment never resolves `latest` again. Existing
-all-in-one startup migration behavior is separate from this workflow.
+The default pipeline accepts a comma-separated `apps` selection such as
+`api-server,data-server,gateway`. It resolves one source commit before building,
+then builds each selected application and **one** db image for any backend
+release. All artifacts must succeed and identify the same commit. Their immutable
+image digests are assembled into one release plan and deployed under one lock.
+Admin-only releases omit the db image. The legacy `project_name` input still
+accepts one application; use either `apps` or `project_name`, not both.
 
-The migration image contains the locked Prisma CLI, schema, complete migration
-history, and Debian OpenSSL 1.1 engines. Engine downloads and runtime checks happen
-while building the image. Its default command is `npm run migrate:deploy`; only
-the cluster Job receives `DATABASE_URL` from a pre-provisioned Secret. The runner
-never parses application database configuration or connects to PostgreSQL.
+From an application package with the CLI available, a coordinated release can be
+requested with:
 
-Deployment is owned by the private deployment tooling. Its existing renderer
-remains read-only with respect to Kubernetes. The explicit deploy command checks
-prerequisites, gates ingress, stops Gateway/API/Data Server, waits for old Pods to
-disappear, runs and observes a unique migration Job, then restores and verifies
-applications before reopening ingress. Normal backend releases use the same
-protocol even when there are no pending migrations. Admin-only releases use a
-lighter path under the same environment lock.
+```sh
+rushx devops --apps api-server,data-server,gateway --environment offline
+```
 
-The selected application is updated; other backend images are preserved and
-restarted after migration. Schema changes must remain compatible with those
-installed versions. Recreate prevents overlapping API schedulers, and direct
-Node container commands allow SIGTERM shutdown hooks to run. Persisted task
-recovery does not guarantee that arbitrary in-flight work is lossless.
+Omitting `--apps` preserves the current-package single-application entry point.
+The CLI checks the selected apps' common deployment environments and pins the
+remote source commit before dispatch. `--no-cd` continues to select a build-only
+workflow for a single package; it cannot be combined with `--apps`. These commands
+can push commits and trigger Actions; they are not local verification commands.
+Existing all-in-one startup/build behavior remains separate.
 
-## Integration prerequisites
+## Decide downtime from the target database
 
-Merge and review the companion deployment-tooling change before enabling the new
-pipeline. Configure these values in each GitHub deployment Environment:
+The db image contains the locked Prisma CLI/client, full migration history and
+matching runtime engines. The deployment tool first acquires the environment
+lock, then runs a **read-only** check Job in the cluster. That Job compares the
+image's migration names and SQL file checksums with the target schema's actual
+`_prisma_migrations` records in a read-only transaction. Actions never reads the
+database URL; Jobs receive it from a pre-provisioned Secret.
 
-- Secrets: `DEPLOY_PAT`, standard file contents in `KUBECONFIG`, and
-  `LANI_VERIFY_TOKEN` for authenticated smoke verification.
-- Variables: `DEPLOY_REF` (full tooling commit SHA), `KUBE_CONTEXT`, and an approved
-  exact `KUBECTL_VERSION`.
-- Backend release variables: `LANI_BACKUP_REFERENCE` identifies an independently
-  verified recovery point; `LANI_MIGRATION_NETWORK=sidecar-disabled` attests that
-  the migration Job's database connectivity was validated without mesh injection;
-  `LANI_VERIFY_QUERY` supplies a named, read-only critical query across both backend
-  subgraphs.
+- **Pending migrations:** gate ingress, stop all related backends and wait for old
+  Pods to disappear, execute one migration Job, install every selected app's
+  resources, restore services, verify, then reopen ingress.
+- **Current history:** skip overall downtime and migration execution. Deploy only
+  selected apps. API replacement waits for old API Pods to disappear, preventing
+  scheduler overlap. API/Data updates trigger one Gateway recomposition; an
+  unselected Gateway keeps its image/configuration, and unrelated backends remain
+  running.
+- **Uncertain or abnormal history:** block the release. Missing/empty history,
+  unresolved failed/active migrations, unknown records, changed checksums, gaps,
+  duplicate success records, missing files and check errors never mean “current.”
 
-Apply the companion RBAC and provision the migration Secret separately using the
-private operations procedure. The migration identity needs DDL permissions on the
-managed tables. Existing databases without Prisma history require a separately
-reviewed baseline; the normal pipeline never baselines or resolves failed
-migrations automatically. The private tooling documentation defines namespace
-mapping, permissions, configuration reconciliation and recovery details.
+This decision uses neither Git diff nor business data nor a schema file comparison.
+A restored or previously failed environment can need migrations even if this
+release introduced no new migration files. Prisma 3.15.2 `migrate status` output
+and exit zero are not a reliable synchronization API; the helper produces an
+explicit validated JSON result instead. Applied SQL checksums are byte-exact.
+The checker does not detect arbitrary out-of-band schema drift or automatically
+bootstrap/baseline existing databases. No production migration generation, reset
+or failure resolution is performed.
 
-The runner installs a pinned kubectl, checks the explicit context and supported
-client/server version skew, writes a restricted temporary kubeconfig, and cleans
-it up on completion. Keep generated private configuration and migration logs out
-of public workflow artifacts and PRs.
+Before executing a pending migration, the Job rechecks the source/history hashes
+against the locked preflight result, invokes `migrate deploy` once, then verifies
+that all expected migrations are applied. No tool-level retry occurs. Unselected
+apps keep their images, so schema changes must remain compatible with them or
+those apps must be included in the release.
 
-## Failures and validation
+## Visible Actions phases and local parity
 
-Environment-level Actions concurrency uses `cancel-in-progress: false`. A shared,
-non-expiring cluster lock also covers cooperative local and cross-repository
-callers. Direct cluster writers must not bypass it. Migration or post-migration
-failure retains maintenance state and recovery evidence; cancellation does not
-mean the cluster Job stopped or the database rolled back. Do not blindly retry or
-restore an old image after schema changes.
+One deploy job displays separate steps for:
 
-This implementation has not run a deployment, migration, test suite or Actions
-workflow. Before enabling production CD, validate the companion mock tests and
-perform separately authorized staging acceptance: no pending migrations, real
-schema changes, old Pod termination, migration failure/timeouts, failed startup,
-runner interruption, competing publishers, mesh networking, authentication and
-critical reads. Record the validated kubectl/cluster combination privately.
+1. Preflight, lock acquisition, plan/snapshot persistence and migration inspection.
+2. Conditional ingress gating and backend shutdown.
+3. Conditional migration execution.
+4. Selected application deployment and readiness.
+5. Verification, conditional ingress restoration, completion and lock release.
+6. Read-only evidence/summary collection and temporary credential cleanup.
+
+Each step invokes the deployment tool's corresponding phase. The complete local
+entry point invokes the exact same phases. No-op shutdown/migration phases log
+and persist a skipped result. Phase state survives process boundaries in the
+cluster; private rendered files are hash-bound to the release. Every phase checks
+lock identity and predecessor state and atomically claims its execution with
+`resourceVersion`. A failed, running, repeated or out-of-order phase cannot advance
+publication. The lock remains held between steps.
+
+GitHub environment concurrency supplements the shared cluster lock for cooperative
+local and cross-repository publishers. Independent deployment/database writers
+must not bypass it. Failures and cancellation do not automatically restore old
+images or remove the lock. A cluster Job can outlive its runner; inspect its state
+and migration history before manual takeover. Evidence collection in `always()`
+is read-only, and credential cleanup cannot reopen ingress or unlock a release.
+
+## Integration and validation
+
+Land the reviewed companion tooling implementation and pin it with `DEPLOY_REF`.
+Each GitHub deployment Environment needs secrets `DEPLOY_PAT`, standard file
+contents in `KUBECONFIG`, and `LANI_VERIFY_TOKEN`; variables `KUBE_CONTEXT`, approved
+exact `KUBECTL_VERSION`, `LANI_MIGRATION_NETWORK=sidecar-disabled` after network
+validation, and `LANI_VERIFY_QUERY` for critical authenticated reads. A pending
+migration additionally requires `LANI_BACKUP_REFERENCE` identifying an
+independently verified recovery point. Provision the companion RBAC and migration
+Secret separately; reconcile private template/configuration drift before adoption.
+
+The private tooling documentation defines target mapping, stage commands, plan
+format, network approval, permissions and manual recovery. Initial/legacy
+databases without trusted Prisma history need a separate reviewed bootstrap or
+baseline. Keep configuration, kubeconfig and Job logs out of public artifacts and
+PRs; the Actions summary omits private target details, original workload images
+and backup references as well as credentials.
+
+This implementation was statically checked only. No test suite, migration, Docker
+build, Actions workflow or cluster deployment was run for this request. Added
+regression tests cover full-history classification, multi-image plan assembly,
+CLI selection, phase transitions, lock contention, current/pending paths and
+failure/interruption cases. Execute tests and staging acceptance separately before
+enabling production CD, including actual engines, network/sidecar behavior,
+read-only inspection, task recovery, authentication and critical business reads.

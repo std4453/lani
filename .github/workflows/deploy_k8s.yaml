@@ -4,44 +4,28 @@ name: "Deploy to Kubernetes"
 on:
   workflow_call:
     inputs:
-      project_name:
+      release_plan:
         type: string
         required: true
       environment:
         type: string
         required: true
-      image:
-        type: string
-        required: true
-      migration_image:
-        type: string
-        default: ""
-      revision:
-        type: string
-        required: true
-      migration_revision:
-        type: string
-        default: ""
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    name: Deploy ${{ inputs.project_name }}
+    name: Deploy release
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     environment: ${{ inputs.environment }}
     concurrency:
       group: lani-deploy-${{ inputs.environment }}
       cancel-in-progress: false
     env:
-      PROJECT_NAME: ${{ inputs.project_name }}
+      RELEASE_PLAN: ${{ inputs.release_plan }}
       DEPLOY_ENV: ${{ inputs.environment }}
-      APP_IMAGE: ${{ inputs.image }}
-      MIGRATION_IMAGE: ${{ inputs.migration_image }}
-      REVISION: ${{ inputs.revision }}
-      MIGRATION_REVISION: ${{ inputs.migration_revision }}
       RELEASE_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
       KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT }}
       KUBECTL_VERSION: ${{ vars.KUBECTL_VERSION }}
@@ -54,15 +38,10 @@ jobs:
       - name: Validate release inputs
         shell: bash
         run: |
-          case "$PROJECT_NAME" in @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway) ;; *) exit 1 ;; esac
           case "$DEPLOY_ENV" in offline|online) ;; *) exit 1 ;; esac
           test -n "$KUBE_CONTEXT"
           [[ "$KUBECTL_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           [[ "$DEPLOY_REF" =~ ^[0-9a-f]{40}$ ]]
-          if [ "$PROJECT_NAME" != '@lani/admin' ]; then
-            test "$REVISION" = "$MIGRATION_REVISION"
-            test -n "$MIGRATION_IMAGE"
-          fi
 
       - name: Checkout deployment tooling
         uses: actions/checkout@v4
@@ -98,13 +77,43 @@ jobs:
           printf '%s' "$KUBECONFIG_CONTENT" > "$config_file"
           echo "KUBECONFIG=$config_file" >> "$GITHUB_ENV"
 
-      - name: Deploy release
-        shell: bash
+      - name: Save immutable release plan
         run: |
-          yarn deploy --app "${PROJECT_NAME##*/}" --environment "$DEPLOY_ENV" \
-            --image "$APP_IMAGE" --migration-image "$MIGRATION_IMAGE" \
-            --revision "$REVISION" --migration-revision "$MIGRATION_REVISION" \
-            --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+          node -e 'require("fs").writeFileSync("release-plan.json", process.env.RELEASE_PLAN, {mode: 0o600})'
+
+      - name: Preflight, acquire lock, save state and check migration history
+        id: prepare
+        run: >-
+          yarn deploy prepare --plan release-plan.json --environment "$DEPLOY_ENV"
+          --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Close entry and stop related services if migrations are pending
+        run: >-
+          yarn deploy quiesce --plan release-plan.json --environment "$DEPLOY_ENV"
+          --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Run one migration Job if migrations are pending
+        run: >-
+          yarn deploy migrate --plan release-plan.json --environment "$DEPLOY_ENV"
+          --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Deploy selected applications and wait for readiness
+        run: >-
+          yarn deploy apply --plan release-plan.json --environment "$DEPLOY_ENV"
+          --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Verify, restore entry if gated, complete and release lock
+        run: >-
+          yarn deploy finish --plan release-plan.json --environment "$DEPLOY_ENV"
+          --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+
+      - name: Collect release evidence (read-only)
+        if: always()
+        run: |
+          if [ -f release-plan.json ] && [ -f dist/deploy.js ] && [ -n "${KUBECONFIG:-}" ]; then
+            yarn deploy report --plan release-plan.json --environment "$DEPLOY_ENV" \
+              --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
+          fi
 
       - name: Publish credential-free release summary
         if: always()

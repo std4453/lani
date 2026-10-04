@@ -8,6 +8,7 @@ import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
 import { loadLaniConfig } from "../../utils/laniconfig";
 import { resolveProjectConfig } from "../../utils/project";
+import { releaseApplications, releaseInputs } from "../../utils/release";
 
 export default class Devops extends Command {
   static description = "Trigger CI workflow";
@@ -17,6 +18,13 @@ export default class Devops extends Command {
     strict: Flags.boolean(),
     "log-git": Flags.boolean(),
     "no-cd": Flags.boolean(),
+    apps: Flags.string({
+      description:
+        "Release comma-separated apps together, e.g. api-server,data-server,gateway",
+    }),
+    environment: Flags.string({
+      description: "Deployment environment; otherwise choose interactively",
+    }),
   };
 
   async run(): Promise<void> {
@@ -26,6 +34,8 @@ export default class Devops extends Command {
         strict,
         "log-git": logGit,
         "no-cd": noCd,
+        apps: appSelection,
+        environment: requestedEnvironment,
       },
     } = await this.parse(Devops);
 
@@ -36,6 +46,58 @@ export default class Devops extends Command {
       console.log(kleur.red("This project has no CI config"));
       process.exit(1);
     }
+
+    if (appSelection && noCd)
+      throw new Error(
+        "--apps selects a coordinated release and cannot be combined with --no-cd"
+      );
+    const selected = appSelection
+      ? releaseApplications(appSelection)
+      : undefined;
+    let environments = config.ci.deployment?.env || [];
+    if (selected) {
+      const configs = await Promise.all(
+        selected.map((app) =>
+          loadLaniConfig({
+            ...project,
+            packageName: `@lani/${app}`,
+            path: path.join(project.monorepoRoot, "apps", app),
+          })
+        )
+      );
+      if (
+        configs.some(
+          (candidate) =>
+            !candidate.ci?.deployment ||
+            (candidate.ci.workflow &&
+              candidate.ci.workflow !== "default_pipeline.yaml")
+        )
+      ) {
+        throw new Error(
+          "Selected applications must use the coordinated deployment workflow"
+        );
+      }
+      environments = configs[0].ci!.deployment!.env.filter((env) =>
+        configs.every((candidate) =>
+          candidate.ci!.deployment!.env.includes(env)
+        )
+      );
+    }
+    if (
+      requestedEnvironment &&
+      (noCd ||
+        !environments.includes(
+          requestedEnvironment as typeof environments[number]
+        ))
+    ) {
+      throw new Error(
+        "Requested environment is not shared by the selected applications"
+      );
+    }
+    if (selected && environments.length === 0)
+      throw new Error(
+        "Selected applications have no common deployment environment"
+      );
 
     console.log(
       kleur.gray(`Command \"devops\" requires \"git\" to be in $PATH`)
@@ -125,35 +187,40 @@ export default class Devops extends Command {
 
     const octokit = new Octokit({ auth: ghToken });
 
-    const inputs: {
-      [x: string]: string;
-    } = {
-      ref,
+    // The tracking ref is the source actually present on the remote, including
+    // --no-auto-push mode. Pin it before dispatch so all images use one commit.
+    const revision = (await git.revparse([tracking])).trim();
+    const coordinated =
+      !noCd && (Boolean(selected) || Boolean(config.ci.deployment));
+    let inputs: Record<string, string> = {
+      ref: revision,
       project_name: project.packageName,
     };
-
-    if (config.ci.deployment && !noCd) {
-      const { env: envList } = config.ci.deployment;
-      if (envList.length === 0) {
-        console.log(kleur.red("No available environment"));
-        process.exit(1);
-      }
-      let env = envList[0];
-      if (envList.length > 1) {
+    let workflow =
+      config.ci.workflow ??
+      (noCd ? "build_generic.yaml" : "default_pipeline.yaml");
+    if (coordinated) {
+      if (!environments.length)
+        throw new Error("No available deployment environment");
+      let environment = requestedEnvironment || environments[0];
+      if (!requestedEnvironment && environments.length > 1) {
         const result = await inquirer.prompt([
           {
-            name: "env",
+            name: "environment",
             message: "Select deployment environment",
             type: "list",
-            choices: envList,
+            choices: environments,
           },
         ]);
-        env = result.env as "offline" | "prerelease" | "production";
+        environment = result.environment;
       }
-      inputs.environment = env;
+      inputs = releaseInputs(
+        revision,
+        selected || releaseApplications(project.packageName),
+        environment
+      );
+      workflow = "default_pipeline.yaml";
     }
-
-    const workflow = config.ci.workflow ?? "default_pipeline.yaml";
 
     const createTime = new Date().getTime();
     await octokit.rest.actions.createWorkflowDispatch({
@@ -192,7 +259,7 @@ export default class Devops extends Command {
     if (!found) {
       console.log(
         `Unable to find workflow run, visit ${kleur.cyan(
-          `https://github.com/std4453/lani/actions/workflows/pipeline.yaml`
+          `https://github.com/std4453/lani/actions/workflows/${workflow}`
         )} to view details`
       );
       process.exit(1);

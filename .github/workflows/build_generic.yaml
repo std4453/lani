@@ -23,6 +23,11 @@ on:
         description: "Project package name"
         required: true
 
+      artifact_name:
+        type: string
+        description: Optional unique artifact name for a release build
+        default: ""
+
     outputs:
       image:
         description: Immutable image reference from this build
@@ -143,3 +148,20 @@ jobs:
           IMAGE_NAME: ${{ steps.build_info.outputs.image_name }}
           IMAGE_DIGEST: ${{ steps.docker_build.outputs.digest }}
         run: echo "image=$IMAGE_NAME@$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Write build result for release assembly
+        if: inputs.artifact_name != ''
+        env:
+          BUILD_IMAGE: ${{ steps.result.outputs.image }}
+          BUILD_REVISION: ${{ steps.build_info.outputs.revision }}
+        run: |
+          node -e 'require("fs").writeFileSync("build-result.json", JSON.stringify({project: process.env.PROJECT_NAME, image: process.env.BUILD_IMAGE, revision: process.env.BUILD_REVISION}))'
+
+      - name: Upload immutable build result
+        if: inputs.artifact_name != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: build-result.json
+          if-no-files-found: error
+          retention-days: 7

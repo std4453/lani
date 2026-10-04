@@ -24,6 +24,7 @@
   },
   "files": [
     "/dist",
-    "/prisma"
+    "/prisma",
+    "/scripts"
   ]
 }
