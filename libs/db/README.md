@@ -91,24 +91,17 @@ DATABASE_URL=postgres://{user}:{password}@{hostname}:{port}/{database-name}
 
 最后，运行 `rushx migrate:apply` 将完成的 migration 提交到数据库，之后再次创建 migration 时均会以这次提交的为准。
 
-## Release migration inspection
+## Kubernetes 发布迁移
 
-The migration image includes `scripts/migration-job.cjs` for cluster Jobs. `check`
-reads the complete migration directory and `_prisma_migrations` in a read-only,
-repeatable-read transaction, comparing successful records and byte-exact SQL
-checksums. It emits a versioned JSON termination message with `current` or
-`pending`, plus source/history hashes. Missing/empty history, unresolved failures,
-gaps, unknown or modified migrations and query errors block a release. Explicitly
-resolved rolled-back attempts are not applied. Business rows and Git diffs do not
-participate; restored environments can therefore be behind the same source image.
+迁移镜像包含锁定版本的 Prisma CLI、运行引擎和完整迁移文件，默认执行
+`npm run migrate:deploy`（即 `prisma migrate deploy`）。包含任意后端应用的
+release 都先关闭入口、停止相关后端并确认旧 Pod 退出，再在集群内运行一次迁移
+Job；即使没有新增或待执行的 migration，也会经历维护窗口，由 Prisma 处理空操作。
+Job 成功后才部署选中的应用并按依赖顺序恢复服务。纯 Admin 发布不构建 db 镜像，
+也不执行迁移或停止后端。
 
-This deliberately does not infer synchronization from Prisma 3.15.2 `migrate
-status` exit codes. It checks migration history, not arbitrary out-of-band schema
-drift, and never automatically baselines, resolves, resets or generates migrations.
-The `deploy` Job mode requires preflight hashes, rechecks them before invoking
-`migrate deploy` once, and requires a fully current history afterwards. Database
-access stays in the cluster; only Jobs receive `DATABASE_URL`.
+数据库连接通过集群 Secret 注入，Actions 不获取连接串。发布工具不自行解析迁移
+历史或比较 SQL checksum，不调用 `migrate status`，也不在生产发布中生成 migration、
+reset、baseline 或 resolve。迁移失败、超时或结果不明时保留锁和现场，交由人工接管。
 
-Regression code is in `tests/migration-history.test.cjs`; it was not executed for
-the implementation request. Run it only in a separately authorized validation
-session. The pure history comparison fixtures do not connect to a database.
+完整入口及接入要求见[迁移与持续部署指南](../../docs/docs/installation/deployment/migration-cd.mdx)。

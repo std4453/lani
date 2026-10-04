@@ -1,111 +1,131 @@
-# Multi-application Kubernetes releases
+---
+sidebar_position: 30
+sidebar_label: 迁移与持续部署
+---
 
-The default pipeline accepts a comma-separated `apps` selection such as
-`api-server,data-server,gateway`. It resolves one source commit before building,
-then builds each selected application and **one** db image for any backend
-release. All artifacts must succeed and identify the same commit. Their immutable
-image digests are assembled into one release plan and deployed under one lock.
-Admin-only releases omit the db image. The legacy `project_name` input still
-accepts one application; use either `apps` or `project_name`, not both.
+# Kubernetes 迁移与持续部署
 
-From an application package with the CLI available, a coordinated release can be
-requested with:
+本指南介绍 GitHub Actions 与独立部署工具协作的 Kubernetes 发布流程。一次 release
+固定一个源码 commit，可以同时更新多个应用。所有选中应用及所需的 db 镜像构建成功、
+收齐不可变 image digest 后，才会在一个环境锁下统一部署。
+
+**包含任意后端应用的 release 都会经历维护窗口，即使没有新增或待执行的 migration。**
+后端包括 API Server、Data Server 和 Gateway。发布时关闭入口并停止这三个后端，
+确认旧 Pod 全部退出后，执行一次 `prisma migrate deploy`。纯 Admin 发布只更新 Admin，
+不构建 db 镜像、不执行迁移，也不停止或重启后端。
+
+## 选择应用并发起发布
+
+在已配置 CLI 的应用包目录中，可以使用以下入口发布多个应用：
 
 ```sh
 rushx devops --apps api-server,data-server,gateway --environment offline
 ```
 
-Omitting `--apps` preserves the current-package single-application entry point.
-The CLI checks the selected apps' common deployment environments and pins the
-remote source commit before dispatch. `--no-cd` continues to select a build-only
-workflow for a single package; it cannot be combined with `--apps`. These commands
-can push commits and trigger Actions; they are not local verification commands.
-Existing all-in-one startup/build behavior remains separate.
+`--apps` 接受逗号分隔的应用名：`admin`、`api-server`、`data-server`、`gateway`。
+省略该参数时，保留发布当前应用包的单应用行为。CLI 会检查所选应用是否支持共同的
+目标环境，并在触发 workflow 前固定远端源码 commit。这些命令可能推送 Git 提交并触发
+Actions，不能用作本地验证命令。`--no-cd` 仍用于单包只构建流程，不能与 `--apps` 同用。
 
-## Decide downtime from the target database
+也可以在 Actions 的 default pipeline 中填写：
 
-The db image contains the locked Prisma CLI/client, full migration history and
-matching runtime engines. The deployment tool first acquires the environment
-lock, then runs a **read-only** check Job in the cluster. That Job compares the
-image's migration names and SQL file checksums with the target schema's actual
-`_prisma_migrations` records in a read-only transaction. Actions never reads the
-database URL; Jobs receive it from a pre-provisioned Secret.
+| 输入           | 用途                                        |
+| -------------- | ------------------------------------------- |
+| `apps`         | 逗号分隔的选中应用列表                      |
+| `project_name` | 兼容旧调用的单应用输入，与 `apps` 二选一    |
+| `ref`          | 本次构建的源码引用，构建前解析为唯一 commit |
+| `environment`  | 目标发布环境                                |
 
-- **Pending migrations:** gate ingress, stop all related backends and wait for old
-  Pods to disappear, execute one migration Job, install every selected app's
-  resources, restore services, verify, then reopen ingress.
-- **Current history:** skip overall downtime and migration execution. Deploy only
-  selected apps. API replacement waits for old API Pods to disappear, preventing
-  scheduler overlap. API/Data updates trigger one Gateway recomposition; an
-  unselected Gateway keeps its image/configuration, and unrelated backends remain
-  running.
-- **Uncertain or abnormal history:** block the release. Missing/empty history,
-  unresolved failed/active migrations, unknown records, changed checksums, gaps,
-  duplicate success records, missing files and check errors never mean “current.”
+流水线并行构建选中应用；只要包含后端，就额外构建一次同 commit 的 db 镜像。构建结果
+必须完整且 revision 一致，才会汇总成一个发布计划。部署直接使用计划中的 digest，
+不会重新解析可变标签，也不会通过逐个调用单应用部署实现多应用 release。
 
-This decision uses neither Git diff nor business data nor a schema file comparison.
-A restored or previously failed environment can need migrations even if this
-release introduced no new migration files. Prisma 3.15.2 `migrate status` output
-and exit zero are not a reliable synchronization API; the helper produces an
-explicit validated JSON result instead. Applied SQL checksums are byte-exact.
-The checker does not detect arbitrary out-of-band schema drift or automatically
-bootstrap/baseline existing databases. No production migration generation, reset
-or failure resolution is performed.
+未选中应用保留现有镜像。后端 release 会恢复它们原有的副本数，因此迁移后的数据库
+必须与这些版本兼容；需要协同升级时，应将相关应用一并选入 release。
 
-Before executing a pending migration, the Job rechecks the source/history hashes
-against the locked preflight result, invokes `migrate deploy` once, then verifies
-that all expected migrations are applied. No tool-level retry occurs. Unselected
-apps keep their images, so schema changes must remain compatible with them or
-those apps must be included in the release.
+## 发布阶段
 
-## Visible Actions phases and local parity
+一个 Actions deploy job 展示以下独立 steps，每个阶段都调用部署工具，日志和耗时分别可见：
 
-One deploy job displays separate steps for:
+1. **prepare：获取锁与预检。** 保存发布计划，检查权限、工具版本、工作负载、已有 Job、
+   Secret 引用和渲染结果，保存原镜像、副本数及入口状态。后端发布还需确认恢复点和验证配置。
+2. **quiesce：关闭入口并停机。** 后端发布先关闭 Gateway 入口，再停止 Gateway、API Server、
+   Data Server，等待旧 Pod 真正删除。不会仅凭副本数为零就继续，也不会强删 Pod 绕过退出屏障。
+3. **migrate：执行迁移。** 再次确认旧 Pod 已退出，创建一个不自动重试的迁移 Job，在集群内
+   执行 db 镜像的 `npm run migrate:deploy`，即 `prisma migrate deploy`。Job 完成且对应迁移
+   容器成功退出后，才允许继续。失败、超时、身份不符或无法确认结果均阻止后续发布。
+4. **apply：应用发布计划。** 先安装全部选中应用的资源，保持后端副本数为零，再恢复 API Server
+   和 Data Server 并等待就绪，最后启动 Gateway 重新组合 schema。API 的旧 Pod 退出屏障与
+   Recreate 策略避免新旧调度实例重叠。选中的 Admin 同时纳入发布计划。
+5. **finish：验证并完成。** 检查就绪状态、认证和关键只读查询，成功后恢复入口、记录完成并释放锁。
+6. **report 与清理。** 收集只读报告，输出不含私有目标信息的摘要，并清理 runner 的临时凭据。
 
-1. Preflight, lock acquisition, plan/snapshot persistence and migration inspection.
-2. Conditional ingress gating and backend shutdown.
-3. Conditional migration execution.
-4. Selected application deployment and readiness.
-5. Verification, conditional ingress restoration, completion and lock release.
-6. Read-only evidence/summary collection and temporary credential cleanup.
+Admin-only 同样使用这些阶段，但 quiesce 和 migrate 会记录为跳过，apply 仅更新 Admin。
+完整本地部署入口也依次调用同样的阶段：
 
-Each step invokes the deployment tool's corresponding phase. The complete local
-entry point invokes the exact same phases. No-op shutdown/migration phases log
-and persist a skipped result. Phase state survives process boundaries in the
-cluster; private rendered files are hash-bound to the release. Every phase checks
-lock identity and predecessor state and atomically claims its execution with
-`resourceVersion`. A failed, running, repeated or out-of-order phase cannot advance
-publication. The lock remains held between steps.
+```sh
+yarn deploy --plan release-plan.json --environment offline \
+  --release "$UNIQUE_RELEASE_ID" --context "$EXPECTED_CONTEXT"
+```
 
-GitHub environment concurrency supplements the shared cluster lock for cooperative
-local and cross-repository publishers. Independent deployment/database writers
-must not bypass it. Failures and cancellation do not automatically restore old
-images or remove the lock. A cluster Job can outlive its runner; inspect its state
-and migration history before manual takeover. Evidence collection in `always()`
-is read-only, and credential cleanup cannot reopen ingress or unlock a release.
+此命令在已准备好的部署工具目录执行，会操作集群。各阶段也可通过
+`yarn deploy prepare|quiesce|migrate|apply|finish|report` 加相同参数分别调用，具体参数及
+发布计划格式以部署工具的使用文档为准。Actions YAML 不另行实现一套部署编排。
 
-## Integration and validation
+## 迁移与数据库访问
 
-Land the reviewed companion tooling implementation and pin it with `DEPLOY_REF`.
-Each GitHub deployment Environment needs secrets `DEPLOY_PAT`, standard file
-contents in `KUBECONFIG`, and `LANI_VERIFY_TOKEN`; variables `KUBE_CONTEXT`, approved
-exact `KUBECTL_VERSION`, `LANI_MIGRATION_NETWORK=sidecar-disabled` after network
-validation, and `LANI_VERIFY_QUERY` for critical authenticated reads. A pending
-migration additionally requires `LANI_BACKUP_REFERENCE` identifying an
-independently verified recovery point. Provision the companion RBAC and migration
-Secret separately; reconcile private template/configuration drift before adoption.
+db 镜像包含完整迁移文件、锁定版本的 Prisma CLI 和匹配运行时的引擎。迁移 Job 通过
+预先配置的集群 Secret 接收 `DATABASE_URL`；Actions 不获取数据库连接串，也不直接连接数据库。
 
-The private tooling documentation defines target mapping, stage commands, plan
-format, network approval, permissions and manual recovery. Initial/legacy
-databases without trusted Prisma history need a separate reviewed bootstrap or
-baseline. Keep configuration, kubeconfig and Job logs out of public artifacts and
-PRs; the Actions summary omits private target details, original workload images
-and backup references as well as credentials.
+每个后端 release 都运行一次 `migrate deploy`，由 Prisma 自身处理没有待执行迁移的情况。
+发布工具不根据 Git diff、`schema.prisma` 或业务数据决定是否迁移，不自行读取和解释
+`_prisma_migrations`，不比较 SQL checksum，也不依赖 `migrate status` 判断同步。
+生产发布不会生成 migration、重置数据库、自动建立 baseline 或 resolve 失败记录。
+既有数据库的初次接入与异常恢复需要单独审查处理。
 
-This implementation was statically checked only. No test suite, migration, Docker
-build, Actions workflow or cluster deployment was run for this request. Added
-regression tests cover full-history classification, multi-image plan assembly,
-CLI selection, phase transitions, lock contention, current/pending paths and
-failure/interruption cases. Execute tests and staging acceptance separately before
-enabling production CD, including actual engines, network/sidecar behavior,
-read-only inspection, task recovery, authentication and critical business reads.
+## 接入准备
+
+先审查并固定部署工具版本，通过 `DEPLOY_REF` 指定完整 commit SHA。每个 GitHub
+Environment 需要独立配置以下接口，实际值由维护者私下管理：
+
+| 类型     | 名称                     | 用途                                     |
+| -------- | ------------------------ | ---------------------------------------- |
+| Secret   | `DEPLOY_PAT`             | 读取部署工具仓库                         |
+| Secret   | `KUBECONFIG`             | 标准 kubeconfig 文件内容                 |
+| Secret   | `LANI_VERIFY_TOKEN`      | 发布后验证身份                           |
+| Variable | `DEPLOY_REF`             | 审查过的部署工具完整 commit SHA          |
+| Variable | `KUBE_CONTEXT`           | 明确的目标 context                       |
+| Variable | `KUBECTL_VERSION`        | 批准使用的 kubectl 精确版本              |
+| Variable | `LANI_MIGRATION_NETWORK` | 验证网络后填写 `sidecar-disabled`        |
+| Variable | `LANI_VERIFY_QUERY`      | 覆盖两个 subgraph 的认证只读查询         |
+| Variable | `LANI_BACKUP_REFERENCE`  | 每次后端发布所需的、独立验证的恢复点标识 |
+
+RBAC、迁移 Secret、私有应用模板及引用资源需要提前准备并核对。迁移身份应具备目标表
+所需的 DDL 权限；确认它与应用连接同一环境的数据库。部署工具检查恢复点标识的存在性，
+不代替备份或验证恢复点的新鲜度。Admin-only 不要求迁移网络、恢复点和后端验证配置。
+
+接入前应在隔离环境验收实际镜像引擎、Job 网络与 sidecar 策略、Pod 退出、任务恢复、
+认证及关键读查询，并演练无待执行迁移和迁移失败路径。API 的停机恢复不能保证所有外部
+副作用或长任务都无损；应结合业务恢复机制安排维护窗口。一体机启动流程与此发布协议独立。
+
+## 失败、中断与人工接管
+
+发布计划、原始状态、Job 身份和阶段结果持久化在集群中，私有渲染文件以 hash 绑定到
+release。每个阶段核对目标、计划、锁归属及前置状态，并通过资源版本原子认领执行权。
+锁覆盖整个 release，不在 Actions steps 之间释放。运行中、失败、重复或顺序错误的
+阶段不能直接重入，也不能越过失败继续启动应用。
+
+预检失败保留锁供排查；停机开始后的失败会尽力维持入口关闭和后端停止，不自动回滚旧
+镜像、开放入口或释放锁。Admin 发布失败保留当前状态与锁。GitHub concurrency 是补充
+约束；其他部署、扩缩容和数据库维护入口也必须遵守共同的环境锁。
+
+取消、进程被终止或 runner 丢失时，持久化阶段可能仍为运行中，集群 Job 也可能继续执行
+甚至成功。`always()` 仅用于只读报告和临时凭据清理，不能保证 runner 丢失后仍会运行。
+Job 配置不自动重试，但 Kubernetes 故障下不能宣称数据库操作严格只执行一次；不明状态
+必须人工检查，不能因为 runner 消失就重新提交 Job 或移除锁。
+
+接管前先确认原进程不能恢复执行，检查发布记录、Job/Pod、数据库状态和当前应用版本，
+再制定兼容的前向修复或恢复方案。确认没有遗留执行者、服务与数据库状态明确后，才由
+维护者处理锁并使用新的 release ID。runner 本地渲染文件丢失、工具协议版本变化或未完成
+Job 都需要人工处理，不能自动续跑。私有配置、渲染文件、恢复点及 Job 日志不应上传到
+公开 artifact、文档或 PR；公开摘要只保留允许公开的发布信息。

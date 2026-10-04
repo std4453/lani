@@ -57,3 +57,18 @@ test("release assembly requires all immutable artifacts at one commit and exactl
     assemble(["admin"], revision, [result("admin"), result("db")])
   );
 });
+
+test("every backend selection requires one db artifact, including Gateway-only releases", () => {
+  for (const apps of [
+    ["gateway"],
+    ["api-server"],
+    ["data-server"],
+    ["admin", "gateway"],
+  ]) {
+    const artifacts = apps.map(result);
+    assert.throws(() => assemble(apps, revision, artifacts));
+    const plan = assemble(apps, revision, [...artifacts, result("db")]);
+    assert.deepEqual(plan.migration, { image: result("db").image, revision });
+    assert.deepEqual(Object.keys(plan.applications), apps);
+  }
+});

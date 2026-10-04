@@ -81,18 +81,17 @@ jobs:
         run: |
           node -e 'require("fs").writeFileSync("release-plan.json", process.env.RELEASE_PLAN, {mode: 0o600})'
 
-      - name: Preflight, acquire lock, save state and check migration history
-        id: prepare
+      - name: Acquire lock, preflight and save release state
         run: >-
           yarn deploy prepare --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
 
-      - name: Close entry and stop related services if migrations are pending
+      - name: Close entry and stop backends (skip for Admin-only)
         run: >-
           yarn deploy quiesce --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
 
-      - name: Run one migration Job if migrations are pending
+      - name: Run Prisma migrate deploy once (skip for Admin-only)
         run: >-
           yarn deploy migrate --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
