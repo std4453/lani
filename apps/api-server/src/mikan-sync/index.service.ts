@@ -28,7 +28,7 @@ export class MikanSyncService {
       return 0;
     }
 
-    // Skip known hashes before INSERT so repeated RSS items do not consume IDs.
+    // 插入前过滤已有 hash，避免重复的 RSS 条目消耗自增 ID
     const existing = await this.prisma.torrent.findMany({
       where: { hash: { in: [...hashes] } },
       select: { hash: true },
@@ -58,7 +58,7 @@ export class MikanSyncService {
           ...this.parseTorrentService.titleToCreateInput(title),
         }),
       ),
-      // Concurrent syncs may insert a hash after the lookup above.
+      // 查重后仍可能有其他同步任务插入相同 hash，由数据库处理并发冲突
       skipDuplicates: true,
     });
     return count;
