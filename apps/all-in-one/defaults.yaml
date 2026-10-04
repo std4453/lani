@@ -7,6 +7,10 @@ s3:
   endpoint: http://127.0.0.1:9000
   s3ForcePathStyle: true
   publicHost: /api/storage/images/
+  proxyEnabled: true
+
+imageProxy:
+  upstream: http://127.0.0.1:9000/images/
 
 subgraphs:
   - name: data

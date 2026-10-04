@@ -66,10 +66,11 @@ const laniConfig = opt(
   },
 );
 
-const s3Config = ext<AWS.S3.Types.ClientConfiguration>()(
+export const s3Config = ext<AWS.S3.Types.ClientConfiguration>()(
   obj({
     bucket: str(),
     publicHost: opt(str()),
+    proxyEnabled: opt(bool(), true),
   }),
 );
 

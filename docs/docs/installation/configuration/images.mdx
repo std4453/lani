@@ -1,0 +1,59 @@
+---
+title: 图片访问与域名聚合
+---
+
+管理端的入库图片默认通过 Lani 的 `/api/gateway/storage/` 路径访问。Gateway 将图片请求转发到存储源站，因此浏览器只需访问 Lani 的域名，无须另外购买图片域名或 CDN 服务。存储费用及 Gateway 的流量费用仍由各自服务承担。
+
+## 分体部署
+
+API Server 保留现有 S3 配置，增加地址生成开关（省略时为 `true`）：
+
+```yaml
+s3:
+  # 保留已有 endpoint、bucket、credentials 等配置
+  proxyEnabled: true
+```
+
+Gateway 配置图片桶的完整源站根地址，无须配置 S3 密钥：
+
+```yaml
+imageProxy:
+  upstream: http://storage:9000/images/
+```
+
+上例对应 API Server 的 `endpoint: http://storage:9000`、`bucket: images` 和 `s3ForcePathStyle: true`。使用虚拟主机式寻址时，地址应包含桶名域名，例如 `https://images.s3.<region>.amazonaws.com/`。使用自定义端点时，以 SDK 实际生成的签名地址为准。
+
+**源站的协议、Host（包括端口）和桶路径必须与 API Server 的 S3 签名地址匹配。** 不要填写 CDN 地址，也不要只为方便访问而换成另一个域名，否则签名可能失效。Gateway 必须能够解析并访问这个源站。
+
+入口反向代理应将整个 `/api/gateway/` 前缀转发到 Gateway，并去掉该前缀，不能只转发 `/graphql`。本地 Umi 和 all-in-one 已按此前缀配置。
+
+Gateway 始终提供 `/storage/` 的 GET、HEAD 代理。未配置 `imageProxy.upstream` 时，Gateway 仍可启动，图片请求返回 503，其他接口不受影响。它不会自动退回旧图片地址。不可达源站返回 502，超时返回 504，存储返回的 403、404 保留原状态。
+
+## 升级与关闭
+
+先部署 Gateway 并配置源站，再部署默认开启代理的 API Server；这样 API 开始生成新地址时代理已就绪。若暂时无法配置 Gateway，在升级 API 前显式设置：
+
+```yaml
+s3:
+  proxyEnabled: false
+```
+
+关闭后，API Server 恢复现有地址生成逻辑：有 `s3.publicHost` 时使用该地址，否则使用原 S3 签名地址。Gateway 没有第二个开关，已有代理链接在签名有效、源站配置可用时仍可访问。修改配置后重启对应服务，刷新管理端获取新地址。
+
+## all-in-one
+
+默认配置指向本机 MinIO 的 `http://127.0.0.1:9000/images/`。原 Nginx `/api/storage/` 路由和 `s3.publicHost: /api/storage/images/` 继续保留，用于旧链接和关闭代理后的访问。
+
+自定义 S3 存储、桶名或端点时，同时覆盖 `imageProxy.upstream`，使其与实际签名地址匹配。
+
+## 图片与权限
+
+本功能复用已有图片记录、对象键和签名，不迁移图片，不改变 GraphQL 的 `Image.downloadPath` 字段。管理端仍使用普通图片标签。签名链接的访问权限和过期规则由原 S3 配置决定，退出管理端登录不会立即撤销已经签发的链接。
+
+Gateway 不重签名、不将浏览器登录凭据发给存储，也不把图片请求重定向到外部域名。它透传存储的 ETag、条件请求和缓存头，不增加长期缓存；失败响应不缓存。详情页保留固定图片区域，无图片显示占位图，失败时可以重新获取签名地址并重试，不清空未保存的表单。
+
+首期覆盖已有入库图片；季度列表不新增封面，Bangumi 搜索结果图片仍沿用原有外站地址。人工上传、删除、覆盖规则及相同来源 URL 的重新刮削不属于本次改动。
+
+下图使用本地模拟数据展示正常图片、缺图占位和失败重试：
+
+![管理端图片加载状态示例](/img/admin-image-proxy.png)

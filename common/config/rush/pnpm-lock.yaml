@@ -28244,7 +28244,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_e9135e3aadee9fadc8ca05347d60aedd:
-    resolution: {integrity: sha512-E8qSIu1eWxtOLTXfX/jNVc2EMLIejmrh+zXebE+f1mtlq7hWWChVtmJcrZ9QRACHKmQ6XSH7wl7j2yT/92Awaw==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-HMxta/pB92FfGgncR5K78rh61D/SS7UW1pwiMus1iLy+tZFa7GBEZRHpuO+RdTnE9BQm269HheFWdy2PiMnZaQ==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -28320,13 +28320,13 @@ packages:
     dev: false
 
   file:projects/all-in-one.tgz:
-    resolution: {integrity: sha512-jcbG10zQMXCRk8BLlFVnMMZcn1gxzq7MdhqCLRvohnmwCfSsr7Wqh5q6Muq9xftAdkxcj00UuNPOycXpR22H4Q==, tarball: file:projects/all-in-one.tgz}
+    resolution: {integrity: sha512-wfGMmpsoWSulix7OWNtrGhNaVouSepD4SNuJxHRqOpR4aRAypIte5Fp4AuPcFvvinzSaACCpZgoXyyHTDaqVoQ==, tarball: file:projects/all-in-one.tgz}
     name: '@rush-temp/all-in-one'
     version: 0.0.0
     dev: false
 
   file:projects/api-server.tgz_15893210049667005b57ffcd3361e91c:
-    resolution: {integrity: sha512-cNKBnddJraTBc9nhqr3teXZ7up0hFVbzTNlnE9f88tXMCK+KgPfJVq59XTkjqtRhUUwWWG7EmfeCkh1BeTK2ZQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-CZpTDhNme2bWD+V8LH5NqqN+ViHo9xrLOkt3ZTlfVLhM/Ogj66c+V40XeM5+SbXwcd8mybGs/n2uDrJxuUwfAg==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -28432,7 +28432,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz:
-    resolution: {integrity: sha512-XprxBdYqtqIJBS5bJsjRpjhymK1GC/nK8LlWip+d8SW2c00fe/effmWnAqeTdvgZUfWnXvou4eC4NvyrJy5d2Q==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-uulCkkWlSf5yY9DupzgAMmUoZJb0j3ibO0nvU33JehH+0EQ4b8NiLUu+Za0M1BZyyk0pce9K3Ayvx4snVuig/Q==, tarball: file:projects/cli.tgz}
     name: '@rush-temp/cli'
     version: 0.0.0
     dependencies:
@@ -28475,7 +28475,7 @@ packages:
     dev: false
 
   file:projects/data-server.tgz_@types+node@17.0.45:
-    resolution: {integrity: sha512-rU28Cnc4GGqs0Bp0lSYbDb+8erfvoQcUf+XTP9Xp1Z0ESjWtQSOAAYkEj1c6jfuSfPg5hglrP7C4rRc/qTa3ew==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-CQTvwtRQrj+CA7FGxl7d9lacA4AWRHr4NQBxWbeNAhcT+ImBqyv8+N9S8LanEJKtqDZ32tOsGq8L0WA7zs6ovA==, tarball: file:projects/data-server.tgz}
     id: file:projects/data-server.tgz
     name: '@rush-temp/data-server'
     version: 0.0.0
@@ -28506,7 +28506,7 @@ packages:
     dev: false
 
   file:projects/db.tgz:
-    resolution: {integrity: sha512-aeaGXFQBDH0Z5AzPkGHgwpJfU9iK+i3zfSm41OVLPEa3cw6pfva7i6k2b68up+orGG+2qNBlyC2Gbmw1KF3WLA==, tarball: file:projects/db.tgz}
+    resolution: {integrity: sha512-fXVsoDmMFLNKlUAV3qPBfvwitoPGuo+0Xx1bh2sw3Q+hdKGp0kI1cGdBBVZn2A0bwoVYGbe+uENVfhaOCz5r0A==, tarball: file:projects/db.tgz}
     name: '@rush-temp/db'
     version: 0.0.0
     dependencies:
@@ -28518,7 +28518,7 @@ packages:
     dev: false
 
   file:projects/docs.tgz_ee8ddb3b2e8dd69f13adf968b2159735:
-    resolution: {integrity: sha512-Xe+axKwqlt4OYwfL0T92E+JKG8cmut3w6BP7/P+CDsmrBoR8F3R4CtzfQzgccgdwirmDm9XQ4LsM1DZyLQz2oQ==, tarball: file:projects/docs.tgz}
+    resolution: {integrity: sha512-DvTQMosTePvCoKfaGOgCp/xD8CMW9s0FiXWtMYFovq3LsEhkiiTXYwWm9y9YAmoQc4aPv2exmQxfdD/JVTzJTQ==, tarball: file:projects/docs.tgz}
     id: file:projects/docs.tgz
     name: '@rush-temp/docs'
     version: 0.0.0
@@ -28563,7 +28563,7 @@ packages:
     dev: false
 
   file:projects/framework.tgz:
-    resolution: {integrity: sha512-Ghzl75bNflq8twZALHIZ5JnCwFeFmFUfDw389FJGfMNXeLdI17puEKwzb0AznUhSuS6uwkett/5JxjACDIuMmg==, tarball: file:projects/framework.tgz}
+    resolution: {integrity: sha512-zDqFTDQNH8Bv47CnJQSudvbkyIe1KcKGKuR9DlBCtWC/kjdx9AZZTFUfxy5jbTULkGmaGFcV1luDjzLGVcDhbQ==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
     version: 0.0.0
     dependencies:
@@ -28576,13 +28576,14 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-t6C7vGmiE+0f1UgngXZSiT/XW8bFJvVLRaL8CDyAwFnmTj+CCSvmxfG17bzvDgI7Z6U8zSGsE+w09jP1T0y9ag==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-V9cxekESgg5SXzHHPOY9qfZsy5sRzr6VpTizX11U2NCUejycl8lqOBJ9ihml/S6giqqkJ6uMNGqQ4bVtgf6MWA==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
       '@apollo/gateway': 0.46.0_graphql@15.8.0
       '@types/express': 4.17.14
       '@types/jmespath': 0.15.2
+      '@types/node': 17.0.45
       apollo-server-core: 3.10.4_graphql@15.8.0
       apollo-server-express: 3.10.4_express@4.18.3+graphql@15.8.0
       axios: 0.26.1
@@ -28601,7 +28602,7 @@ packages:
     dev: false
 
   file:projects/parse-torrent-title.tgz_ts-node@10.9.2:
-    resolution: {integrity: sha512-PWHbTLNdibVNOP9dxJe32IB50E1Z461Gdw/uBqvzHOKHt7vvtUma8mZvygGfiwnO7g7kkwU+Nav/qiWVdPb0vA==, tarball: file:projects/parse-torrent-title.tgz}
+    resolution: {integrity: sha512-OLl3lfSHxZtWWNd5eCn5KB68kXukQC5WAWPcU4YoHALdvy+UPKWnB0fWmzkXmukeie1zUvW1CAs5wZNtqFqUPA==, tarball: file:projects/parse-torrent-title.tgz}
     id: file:projects/parse-torrent-title.tgz
     name: '@rush-temp/parse-torrent-title'
     version: 0.0.0

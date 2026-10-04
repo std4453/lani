@@ -1,6 +1,8 @@
 import FormDependency from '@/components/FormDependency';
+import StoredImage from '@/components/StoredImage';
 import { weekdayToText, weekdayToValueEnum } from '@/constants';
-import { MetadataSource } from '@/generated/types';
+import { GetSeasonByIdDocument, MetadataSource } from '@/generated/types';
+import { useApolloClient } from '@apollo/client';
 import {
   ProFormDependency,
   ProFormDigit,
@@ -20,17 +22,21 @@ import {
 } from 'antd';
 import clsx from 'clsx';
 import Section from '../../components/section';
-import { formItemProps, FormValues } from '../../help';
+import { formItemProps, FormValues, useSeasonPageContext } from '../../help';
 import styles from './index.module.less';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 function ImageDisplay({
   src,
   className,
+  imageType,
 }: {
   src: string | undefined | null;
   className?: string;
+  imageType: 'poster' | 'banner' | 'fanart';
 }) {
+  const { id } = useSeasonPageContext();
+  const client = useApolloClient();
   return (
     <div
       className={clsx(
@@ -41,7 +47,17 @@ function ImageDisplay({
         className,
       )}
     >
-      {src ? <img className={styles.image} src={src} /> : null}
+      <StoredImage
+        src={src}
+        reload={async () => {
+          const { data } = await client.query({
+            query: GetSeasonByIdDocument,
+            variables: { id, withConfig: true, withEpisodes: false },
+            fetchPolicy: 'no-cache',
+          });
+          return data.seasonById?.[imageType]?.downloadPath;
+        }}
+      />
     </div>
   );
 }
@@ -230,15 +246,18 @@ export default function Metadata() {
           {({ poster, fanart, banner }) => (
             <div className={styles.images}>
               <ImageDisplay
+                imageType="poster"
                 src={poster?.downloadPath}
                 className={styles.posterContainer}
               />
               <div className={styles.rightColumn}>
                 <ImageDisplay
+                  imageType="banner"
                   src={banner?.downloadPath}
                   className={styles.bannerContainer}
                 />
                 <ImageDisplay
+                  imageType="fanart"
                   src={fanart?.downloadPath}
                   className={styles.fanartContainer}
                 />

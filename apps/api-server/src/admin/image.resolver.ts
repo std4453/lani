@@ -12,6 +12,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import { Logger } from '@nestjs/common';
+import { imageDownloadPath } from './image-url';
 
 @ObjectType()
 @Directive('@extends')
@@ -34,26 +35,19 @@ export class ImageResolver {
   @ResolveField(() => String)
   async downloadPath(@Parent() { nodeId }: { nodeId: string }) {
     const id = getIdFromNodeId(nodeId);
-    const { cosPath } = await this.prisma.image.findUnique({
+    const image = await this.prisma.image.findUnique({
       where: { id },
+      rejectOnNotFound: false,
     });
-    if (!cosPath) {
+    if (!image?.cosPath) {
       return undefined;
     }
-    const url = this.s3.getSignedUrl('getObject', {
+    const { cosPath } = image;
+    const url = await this.s3.getSignedUrlPromise('getObject', {
       Bucket: config.s3.bucket,
       Key: cosPath,
     });
-    if (config.s3.publicHost) {
-      const urlObject = new URL(url);
-      const publicUrl = `${config.s3.publicHost}${cosPath}${urlObject.search}`;
-      this.logger.verbose(
-        `Image #${id} (path = ${cosPath}) has URL ${publicUrl}`,
-      );
-      return publicUrl;
-    } else {
-      this.logger.verbose(`Image #${id} (path = ${cosPath}) has URL ${url}`);
-      return url;
-    }
+    this.logger.verbose(`Resolving image #${id}`);
+    return imageDownloadPath(url, cosPath, config.s3);
   }
 }

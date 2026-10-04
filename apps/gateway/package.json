@@ -9,14 +9,16 @@
     "devops": "lani-cli devops",
     "dev": "lani-cli dev",
     "dev:tp": "telepresence intercept -n lani-offline gateway -p 8080:http --mount=mount -- lani-cli dev",
-    "manifest": "lani-cli manifest"
+    "manifest": "lani-cli manifest",
+    "test": "tsc -p tests/tsconfig.json && node --test .test-dist/tests/*.test.js"
   },
   "devDependencies": {
     "typescript": "~4.5.4",
     "@lani/cli": "~1.0.0",
     "typescript-transform-paths": "~3.3.1",
     "@types/express": "4.17.14",
-    "@types/jmespath": "~0.15.0"
+    "@types/jmespath": "~0.15.0",
+    "@types/node": "~17.0.4"
   },
   "dependencies": {
     "@lani/framework": "~1.0.0",

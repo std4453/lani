@@ -4,6 +4,10 @@
   color: var(--lani-text-secondary);
 }
 
+.imageContainer {
+  position: relative;
+}
+
 .images {
   width: 100%;
   max-width: 1200px;
@@ -80,20 +84,12 @@
   }
 }
 
-.image {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .imageContainer {
   background-color: var(--lani-placeholder);
 
   &.withImage {
     &::after {
+      pointer-events: none;
       content: '';
       position: absolute;
       left: 0;
