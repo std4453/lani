@@ -90,18 +90,3 @@ DATABASE_URL=postgres://{user}:{password}@{hostname}:{port}/{database-name}
 - unique：`postgraphile` 基于 unique constraint 识别 unique，影响 query 和 mutation 的创建，然而 prisma migrate 只创建 unique index，不创建 unique contraint。因此，需要在用到 unique 的表上添加 [`@unique` Smart Comment](https://www.graphile.org/postgraphile/smart-tags/#unique)。
 
 最后，运行 `rushx migrate:apply` 将完成的 migration 提交到数据库，之后再次创建 migration 时均会以这次提交的为准。
-
-## Kubernetes 发布迁移
-
-迁移镜像包含锁定版本的 Prisma CLI、运行引擎和完整迁移文件，默认执行
-`npm run migrate:deploy`（即 `prisma migrate deploy`）。包含任意后端应用的
-release 都先关闭入口、停止相关后端并确认旧 Pod 退出，再在集群内运行一次迁移
-Job；即使没有新增或待执行的 migration，也会经历维护窗口，由 Prisma 处理空操作。
-Job 成功后才部署选中的应用并按依赖顺序恢复服务。纯 admin 发布不构建 db 镜像，
-也不执行迁移或停止后端。
-
-数据库连接通过集群 Secret 注入，Actions 不获取连接串。发布工具不自行解析迁移
-历史或比较 SQL checksum，不调用 `migrate status`，也不在生产发布中生成 migration、
-reset、baseline 或 resolve。迁移失败、超时或结果不明时保留锁和现场，交由人工接管。
-
-完整入口及接入要求见[迁移与持续部署指南](../../docs/docs/installation/deployment/migration-cd.mdx)。
