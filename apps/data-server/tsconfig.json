@@ -2,6 +2,7 @@
   "extends": "@lani/cli/tsconfig/node_ts.json",
   "compilerOptions": {
     "declaration": false,
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./src/*"
