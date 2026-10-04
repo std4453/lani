@@ -30,10 +30,6 @@ jobs:
       KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT }}
       KUBECTL_VERSION: ${{ vars.KUBECTL_VERSION }}
       DEPLOY_REF: ${{ vars.DEPLOY_REF }}
-      LANI_BACKUP_REFERENCE: ${{ vars.LANI_BACKUP_REFERENCE }}
-      LANI_MIGRATION_NETWORK: ${{ vars.LANI_MIGRATION_NETWORK }}
-      LANI_VERIFY_QUERY: ${{ vars.LANI_VERIFY_QUERY }}
-      LANI_VERIFY_TOKEN: ${{ secrets.LANI_VERIFY_TOKEN }}
     steps:
       - name: Validate release inputs
         shell: bash
@@ -101,7 +97,7 @@ jobs:
           yarn deploy apply --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
 
-      - name: Verify, restore entry if gated, complete and release lock
+      - name: Confirm rollout, restore entry if gated, complete and release lock
         run: >-
           yarn deploy finish --plan release-plan.json --environment "$DEPLOY_ENV"
           --release "$RELEASE_ID" --context "$KUBE_CONTEXT"
