@@ -1,0 +1,74 @@
+name: Temporary CD connection diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Existing rehearsal release record (read-only)
+        required: true
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: offline
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: std4453/lani-deploy
+          ref: ${{ vars.DEPLOY_REF }}
+          token: ${{ secrets.DEPLOY_PAT }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: yarn install --frozen-lockfile && yarn build
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ vars.KUBECTL_VERSION }}
+      - name: Read state and compare dry-run transports
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+          KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT }}
+          PROBE_RELEASE: ${{ inputs.release_id }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { spawnSync } from 'node:child_process';
+          import { namespaces } from './dist/options.js';
+          const filename = path.join(process.env.RUNNER_TEMP, 'cd-probe-kubeconfig');
+          fs.writeFileSync(filename, process.env.KUBECONFIG_CONTENT, {mode: 0o600});
+          const args = ['--kubeconfig', filename, '--context', process.env.KUBE_CONTEXT,
+            '--namespace', namespaces.offline, '--request-timeout=10s'];
+          function run(label, command, input, env = process.env) {
+            const start = Date.now();
+            const p = spawnSync('kubectl', [...args, ...command], {input, env, encoding: 'utf8', timeout: 15000});
+            const stderr = p.stderr || '';
+            const cause = /timeout|timed out|deadline exceeded|request canceled/i.test(stderr)
+              ? 'timeout' : /Conflict|object has been modified/.test(stderr) ? 'conflict'
+              : /Forbidden/.test(stderr) ? 'forbidden' : p.status === 0 ? 'ok' : 'other';
+            console.log(JSON.stringify({label, code:p.status, signal:p.signal,
+              milliseconds:Date.now()-start, bytes:(p.stdout || '').length, cause}));
+            return p;
+          }
+          try {
+            if (!/^gh-[0-9]+-[0-9]+$/.test(process.env.PROBE_RELEASE)) throw Error('Invalid release ID');
+            const p = run('read', ['get', 'configmap', 'lani-release-' + process.env.PROBE_RELEASE, '-o', 'json']);
+            if(p.status !== 0) throw Error('Read failed; no dry-run performed');
+            const original = JSON.parse(p.stdout);
+            for (let round = 0; round < 2; round++) {
+              for (const mode of ['default', 'http1']) {
+                for (const size of ['original', 'padded']) {
+                  const resource = structuredClone(original);
+                  if (size === 'padded') resource.data.networkProbe = 'x'.repeat(8192);
+                  const env = mode === 'http1' ? {...process.env, GODEBUG: 'http2client=0'} : process.env;
+                  run(`${round}-${mode}-${size}`, ['replace', '--dry-run=server', '--validate=false',
+                    '-f', '-', '-o', 'json'], JSON.stringify(resource), env);
+                }
+              }
+            }
+          } finally {
+            fs.unlinkSync(filename);
+          }
+          JS
