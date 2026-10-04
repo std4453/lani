@@ -73,6 +73,9 @@ jobs:
           printf '%s' "$KUBECONFIG_CONTENT" > "$config_file"
           echo "KUBECONFIG=$config_file" >> "$GITHUB_ENV"
 
+      - name: Reuse API connection through runner-local proxy
+        run: yarn api-proxy start
+
       - name: Save immutable release plan
         run: |
           node -e 'require("fs").writeFileSync("release-plan.json", process.env.RELEASE_PLAN, {mode: 0o600})'
@@ -120,6 +123,12 @@ jobs:
             cat "$report" >> "$GITHUB_STEP_SUMMARY"
             printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Stop runner-local API proxy
+        if: always()
+        shell: bash
+        run: |
+          if [ -f dist/proxy.js ]; then node dist/proxy.js stop; fi
 
       - name: Remove kubeconfig
         if: always()

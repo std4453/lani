@@ -195,7 +195,8 @@ function useColumns({
           dataIndex: 'id',
           align: 'center',
           search: false,
-          width: 48,
+          width: 64,
+          className: styles.numberCell,
           sorter: true,
           stateKey: {
             sort: 'id',
@@ -313,7 +314,8 @@ function useColumns({
           title: '集数',
           tooltip: '可用集数 / 已放送集数 / 总集数',
           dataIndex: 'episodes',
-          width: 120,
+          width: 144,
+          className: styles.numberCell,
           render: (_, r) => (
             <ColoredCell
               className={styles.episodesCell}
@@ -789,7 +791,8 @@ export default withAntdSearch(function MetadataPage() {
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
           x: 1400,
-          y: mobile ? undefined : 'calc(100vh - 182px)',
+          // 工具栏 64 + 表头 55 + 分页及外边距 64 + 卡片底部 padding 24。
+          y: mobile ? undefined : 'calc(100vh - 207px)',
           scrollToFirstRowOnChange: true,
         }}
         className={styles.root}
