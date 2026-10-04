@@ -63,18 +63,19 @@ enum TorrentSizeFilter {
   XL = 'xl',
 }
 
+type TorrentTableRow = TorrentFieldsFragment &
+  TorrentParseFieldsFragment & { sequenceNumber: number };
+
 function useColumns() {
   const mobile = useMobile();
   const { update } = useAntdSearchContext();
 
   return useProColumns(
     useMemo(
-      (): TableColumns<
-        TorrentFieldsFragment & TorrentParseFieldsFragment
-      >[] => [
+      (): TableColumns<TorrentTableRow>[] => [
         {
-          title: 'ID',
-          dataIndex: 'id',
+          title: '序号',
+          dataIndex: 'sequenceNumber',
           align: 'center',
           width: 96,
         },
@@ -388,7 +389,10 @@ async function queryTorrents(
     };
   }
   return {
-    data: extractNode(result),
+    data: (extractNode(result) ?? []).map((torrent, index) => ({
+      ...torrent,
+      sequenceNumber: result.totalCount - pageSize * (current - 1) - index,
+    })),
     success: true,
     total: result.totalCount,
   };
@@ -427,7 +431,7 @@ export default withAntdSearch(function Torrents() {
 
   return (
     <>
-      <ProTable<TorrentFieldsFragment & TorrentParseFieldsFragment>
+      <ProTable<TorrentTableRow>
         columns={columns}
         rowKey="id"
         {...props}
