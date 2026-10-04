@@ -1,9 +1,7 @@
-FROM node:20-bullseye-slim
-
-# Prisma 3.15 uses the Debian OpenSSL 1.1 engine in this runtime.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# The full Bullseye image includes OpenSSL 1.1 and CA certificates required
+# by Prisma 3.15, without installing packages from aging Debian repositories.
+FROM node:20-bullseye
+RUN openssl version && test -s /etc/ssl/certs/ca-certificates.crt
 WORKDIR /deploy/libs/db
 COPY --chown=1000:1000 ./common/deploy /deploy
 

@@ -59,7 +59,7 @@ specifiers:
   '@tsconfig/docusaurus': ~1.0.5
   '@types/cookie': ~0.4.1
   '@types/cron': ~1.7.3
-  '@types/express': ^4.17.13
+  '@types/express': 4.17.14
   '@types/history': 2.0.45
   '@types/inquirer': ~8.2.1
   '@types/jest': 27.4.1
@@ -219,7 +219,7 @@ dependencies:
   '@tsconfig/docusaurus': 1.0.7
   '@types/cookie': 0.4.1
   '@types/cron': 1.7.3
-  '@types/express': 4.17.25
+  '@types/express': 4.17.14
   '@types/history': 2.0.45
   '@types/inquirer': 8.2.13
   '@types/jest': 27.4.1
@@ -8345,8 +8345,8 @@ packages:
   /@types/express/4.17.14:
     resolution: {integrity: sha512-TEbt+vaPFQ+xpxFLFssxUDXj5cWCxZJjIcB7Yg0k0GMHGtgtQgpvx/MUQUeAkNbA9AAGrwkAsoeItdTgS7FMyg==}
     dependencies:
-      '@types/body-parser': 1.19.2
-      '@types/express-serve-static-core': 4.17.31
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 4.19.8
       '@types/qs': 6.9.18
       '@types/serve-static': 2.2.0
     dev: false
@@ -28326,7 +28326,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_15893210049667005b57ffcd3361e91c:
-    resolution: {integrity: sha512-hNWfcw5jmxnDyiGvNJ5em9KmC6vpSFaLrfaOvtTpj7aOztNo4HECiGK0CroLQ6hBaWnQxhcw6yCpjUa08fyQAw==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-cNKBnddJraTBc9nhqr3teXZ7up0hFVbzTNlnE9f88tXMCK+KgPfJVq59XTkjqtRhUUwWWG7EmfeCkh1BeTK2ZQ==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -28350,7 +28350,7 @@ packages:
       '@sentry/types': 6.19.7
       '@types/cookie': 0.4.1
       '@types/cron': 1.7.3
-      '@types/express': 4.17.25
+      '@types/express': 4.17.14
       '@types/jest': 27.4.1
       '@types/magnet-uri': 5.1.5
       '@types/md5': 2.3.6
@@ -28576,12 +28576,12 @@ packages:
     dev: false
 
   file:projects/gateway.tgz:
-    resolution: {integrity: sha512-vvPkQreoiZnPO651wSw+74IwFMrqm365Wra/CFQyiyTUcS8kkJzHerIfZgy6nCHkAg5dOlI8R4VUOIyOQIjwbA==, tarball: file:projects/gateway.tgz}
+    resolution: {integrity: sha512-t6C7vGmiE+0f1UgngXZSiT/XW8bFJvVLRaL8CDyAwFnmTj+CCSvmxfG17bzvDgI7Z6U8zSGsE+w09jP1T0y9ag==, tarball: file:projects/gateway.tgz}
     name: '@rush-temp/gateway'
     version: 0.0.0
     dependencies:
       '@apollo/gateway': 0.46.0_graphql@15.8.0
-      '@types/express': 4.17.25
+      '@types/express': 4.17.14
       '@types/jmespath': 0.15.2
       apollo-server-core: 3.10.4_graphql@15.8.0
       apollo-server-express: 3.10.4_express@4.18.3+graphql@15.8.0
