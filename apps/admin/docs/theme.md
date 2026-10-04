@@ -1,6 +1,6 @@
 # 主题
 
-侧栏主题按钮按「亮 → 暗 → 系统 → 亮」循环，默认跟随系统。桌面端按钮位于独立折叠按钮右侧；移动端位于侧栏底部、用户信息上方。
+侧栏主题按钮按「亮 → 暗 → 系统 → 亮」循环，默认跟随系统。桌面端按钮位于独立折叠按钮右侧，侧栏折叠后隐藏主题按钮；移动端以纯图标位于侧栏底部分割线下方、单行用户信息上方。Tooltip 只显示当前状态「亮色」「暗色」「遵循系统」。太阳、月亮使用 AntD 图标，系统图标由两者的半边和斜杠组合。
 
 偏好复用 `store2`，以 JSON 字符串保存到 localStorage 的 `lani:theme`，只在当前浏览器保存。系统模式监听 `prefers-color-scheme`；同源标签页通过 `storage` 事件同步。无效或不可读的设置回退到系统模式，无法写入存储时仍可在当前页面切换。
 
@@ -24,4 +24,4 @@
 | --- | --- |
 | ![桌面亮色](screenshots/theme-desktop-light.png) | ![桌面暗色](screenshots/theme-desktop-dark.png) |
 
-[折叠侧栏](screenshots/theme-desktop-collapsed.png) · [移动端](screenshots/theme-mobile-dark.png) · [下载弹窗](screenshots/theme-modal-dark.png)
+[折叠侧栏](screenshots/theme-desktop-collapsed.png) · [移动端](screenshots/theme-mobile-dark.png) · [下载弹窗](screenshots/theme-modal-dark.png) · [种子选择](screenshots/theme-torrent-selection-dark.png)

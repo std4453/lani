@@ -97,7 +97,8 @@
   }
 
   @media @mobile {
-    margin-bottom: 4px;
+    margin-bottom: 16px;
+    cursor: default;
   }
 }
 
@@ -144,25 +145,49 @@
   }
 }
 
-.mobileActions {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  margin-bottom: 16px;
+.accountButton {
+  flex-shrink: 0;
+  padding: 0;
+  margin-right: 8px;
+  border: 0;
 }
 
-.mobileAction {
-  flex-grow: 1;
-  flex-basis: 0;
-  flex-shrink: 1;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+.logoutButton {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
 
-  &:not(:last-child) {
-    border-right: 1px solid var(--lani-divider);
+.systemThemeIcon {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+
+  .sunHalf,
+  .moonHalf {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+
+  .sunHalf {
+    clip-path: polygon(0 0, 85% 0, 0 85%);
+  }
+
+  .moonHalf {
+    clip-path: polygon(100% 15%, 100% 100%, 15% 100%);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1.2em;
+    background: currentColor;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
   }
 }
 
@@ -173,21 +198,20 @@
   padding: 8px 12px;
 
   @media @mobile {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--lani-divider);
-    margin-bottom: 8px;
+    padding: 8px 7px;
+
+    :global(.ant-btn) {
+      font-size: 14px;
+    }
+
+    border-top: 1px solid var(--lani-divider);
+    margin-top: 8px;
   }
 }
 
 .controlsCollapsed {
-  gap: 0;
+  justify-content: center;
   padding: 8px 0;
-
-  :global(.ant-btn) {
-    width: 24px;
-    min-width: 24px;
-    padding: 0;
-  }
 }
 
 .hamburger {

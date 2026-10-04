@@ -15,6 +15,7 @@ import {
   DownloadOutlined,
   FolderOpenOutlined,
   HomeOutlined,
+  LogoutOutlined,
   MenuOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -46,42 +47,40 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
 
   if (profile) {
     return mobile ? (
-      <>
-        <div
-          className={clsx(styles.userRow, {
-            [styles.collapsed]: collapsed,
-          })}
-        >
+      <div className={styles.userRow}>
+        {hasAccountPage ? (
+          <Tooltip title="账户设置">
+            <Button
+              type="text"
+              className={styles.accountButton}
+              aria-label="账户设置"
+              onClick={() => void dispatch(toAccountPage)}
+              icon={<Avatar icon={<UserOutlined />} src={profile.picture} />}
+            />
+          </Tooltip>
+        ) : (
           <Avatar
             icon={<UserOutlined />}
             className={styles.avatar}
-            src={profile?.picture}
+            src={profile.picture}
           />
-          <Typography.Text className={styles.username}>
-            {profile?.preferred_username ?? '用户'}
-          </Typography.Text>
-        </div>
-        <div className={styles.mobileActions}>
-          {hasAccountPage && (
-            <Typography.Text
-              className={styles.mobileAction}
-              onClick={() => {
-                void dispatch(toAccountPage);
-              }}
-            >
-              账户设置
-            </Typography.Text>
-          )}
-          <Typography.Text
-            className={styles.mobileAction}
-            onClick={() => {
-              void dispatch(logout);
-            }}
-          >
-            退出登录
-          </Typography.Text>
-        </div>
-      </>
+        )}
+        <Typography.Text
+          className={styles.username}
+          title={profile.email ?? profile.preferred_username}
+        >
+          {profile.email ?? profile.preferred_username ?? '用户'}
+        </Typography.Text>
+        <Tooltip title="退出登录">
+          <Button
+            type="text"
+            className={styles.logoutButton}
+            aria-label="退出登录"
+            icon={<LogoutOutlined />}
+            onClick={() => void dispatch(logout)}
+          />
+        </Tooltip>
+      </div>
     ) : (
       <Popover
         placement="rightBottom"
@@ -216,10 +215,10 @@ export default function Layout(props: any) {
             })}
           >
             {!mobile && (
-              <Tooltip title={collapsed ? '展开侧边栏' : '折叠侧边栏'}>
+              <Tooltip title={collapsed ? '展开' : '折叠'}>
                 <Button
                   type="text"
-                  aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+                  aria-label={collapsed ? '展开' : '折叠'}
                   icon={
                     collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
                   }
@@ -229,7 +228,7 @@ export default function Layout(props: any) {
                 />
               </Tooltip>
             )}
-            <ThemeButton showLabel={mobile} />
+            {(mobile || !collapsed) && <ThemeButton />}
           </div>
           {auth.config?.enabled && (
             <UserProfile collapsed={collapsed && !mobile} />

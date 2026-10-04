@@ -1,28 +1,32 @@
 import { useTheme } from '@/theme';
-import { nextThemeMode } from '@/theme/settings';
-import { BulbOutlined, DesktopOutlined, BulbFilled } from '@ant-design/icons';
+import { MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
+import styles from './index.module.less';
 
-const labels = { light: '亮', dark: '暗', system: '系统' };
+const labels = { light: '亮色', dark: '暗色', system: '遵循系统' };
+
+function SystemThemeIcon() {
+  return (
+    <span className={styles.systemThemeIcon} aria-hidden="true">
+      <SunOutlined className={styles.sunHalf} />
+      <MoonOutlined className={styles.moonHalf} />
+    </span>
+  );
+}
+
 const icons = {
-  light: BulbOutlined,
-  dark: BulbFilled,
-  system: DesktopOutlined,
+  light: SunOutlined,
+  dark: MoonOutlined,
+  system: SystemThemeIcon,
 };
 
-export default function ThemeButton({
-  showLabel = false,
-}: {
-  showLabel?: boolean;
-}) {
+export default function ThemeButton() {
   const { mode, cycle } = useTheme();
   const Icon = icons[mode];
-  const label = `主题：${labels[mode]}；切换到${labels[nextThemeMode(mode)]}`;
+  const label = labels[mode];
   return (
     <Tooltip title={label}>
-      <Button type="text" icon={<Icon />} onClick={cycle} aria-label={label}>
-        {showLabel ? `主题：${labels[mode]}` : null}
-      </Button>
+      <Button type="text" icon={<Icon />} onClick={cycle} aria-label={label} />
     </Tooltip>
   );
 }

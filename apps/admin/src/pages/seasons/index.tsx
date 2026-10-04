@@ -106,7 +106,7 @@ function ColoredCell({
         className,
       )}
     >
-      {children}
+      <span className={styles.cellContent}>{children}</span>
     </div>
   );
 }

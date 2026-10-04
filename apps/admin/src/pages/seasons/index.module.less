@@ -24,6 +24,12 @@
   }
 }
 
+// Keep the full-cell status background behind its contents.
+.cellContent {
+  position: relative;
+  z-index: 1;
+}
+
 .numberCell {
   && {
     padding-left: 8px;
@@ -63,6 +69,10 @@
 }
 
 .root {
+  :global(.ant-badge-status-default) {
+    background-color: var(--lani-status-inactive);
+  }
+
   @media (max-width: 1500px) {
     :global {
       .ant-table-wrapper {
