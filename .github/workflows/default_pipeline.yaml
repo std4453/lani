@@ -87,6 +87,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           NOTIFY_ENABLED: ${{ vars.PRIVATE_CD_ENABLED }}
+          SOURCE_EVENT: ${{ github.event_name }}
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
           RELEASE_APPS: ${{ join(fromJSON(needs.plan.outputs.apps), ',') }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
@@ -104,7 +105,7 @@ jobs:
               automatic: 'false'
             };
             let message = 'Deployment request not confirmed; dispatch the private release workflow manually with these inputs.';
-            if (process.env.NOTIFY_ENABLED === 'true' && process.env.PRIVATE_CD_TOKEN) {
+            if (process.env.NOTIFY_ENABLED === 'true' && process.env.SOURCE_EVENT === 'push' && process.env.PRIVATE_CD_TOKEN) {
               try {
                 const target = process.env.TARGET_REPOSITORY || '';
                 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target)) throw new Error('Invalid target');
