@@ -1,4 +1,3 @@
-import { ImagePath } from '@/constants/icon-path';
 import { Button, Image, Spin } from 'antd';
 import { useState } from 'react';
 import styles from './index.module.less';
@@ -16,9 +15,11 @@ function ImageContent({ src, reload }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [retrying, setRetrying] = useState(false);
 
+  if (!source) return null;
+
   return (
     <div className={styles.root}>
-      {source && status !== 'error' ? (
+      {status !== 'error' ? (
         <Image
           key={attempt}
           src={source}
@@ -31,19 +32,20 @@ function ImageContent({ src, reload }: Props) {
           onError={() => setStatus('error')}
         />
       ) : (
-        <img
-          src={ImagePath.emptyPosterImage}
-          alt={source ? '图片加载失败' : '暂无图片'}
+        <div
+          role="img"
+          aria-label="图片加载失败"
           className={styles.placeholder}
         />
       )}
-      {source && status === 'loading' && (
+      {status === 'loading' && (
         <div className={styles.overlay}>
           <Spin />
         </div>
       )}
       {status === 'error' && (
         <div className={styles.overlay}>
+          <span>图片加载失败</span>
           <Button
             size="small"
             loading={retrying}

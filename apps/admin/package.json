@@ -12,6 +12,7 @@
     "generate": "graphql-codegen --config codegen.yml",
     "lint": "eslint src/",
     "test:theme": "node tests/run-theme-tests.cjs",
+    "test:images": "node tests/run-image-tests.cjs",
     "manifest": "lani-cli manifest"
   },
   "devDependencies": {

@@ -47,17 +47,19 @@ function ImageDisplay({
         className,
       )}
     >
-      <StoredImage
-        src={src}
-        reload={async () => {
-          const { data } = await client.query({
-            query: GetSeasonByIdDocument,
-            variables: { id, withConfig: true, withEpisodes: false },
-            fetchPolicy: 'no-cache',
-          });
-          return data.seasonById?.[imageType]?.downloadPath;
-        }}
-      />
+      {src ? (
+        <StoredImage
+          src={src}
+          reload={async () => {
+            const { data } = await client.query({
+              query: GetSeasonByIdDocument,
+              variables: { id, withConfig: true, withEpisodes: false },
+              fetchPolicy: 'no-cache',
+            });
+            return data.seasonById?.[imageType]?.downloadPath;
+          }}
+        />
+      ) : null}
     </div>
   );
 }
