@@ -11,6 +11,7 @@
     "devops": "lani-cli devops",
     "generate": "graphql-codegen --config codegen.yml",
     "lint": "eslint src/",
+    "test:theme": "node tests/run-theme-tests.cjs",
     "manifest": "lani-cli manifest"
   },
   "devDependencies": {

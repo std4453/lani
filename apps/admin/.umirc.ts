@@ -1,6 +1,29 @@
 import { defineConfig } from 'umi';
+import { initializeTheme, THEME_STORAGE_KEY } from './src/theme/bootstrap';
 
 export default defineConfig({
+  headScripts: [
+    {
+      content: `(${initializeTheme.toString()})(${JSON.stringify(
+        THEME_STORAGE_KEY,
+      )});`,
+    },
+  ],
+  chainWebpack(config) {
+    const rule = config.module.rule('less').oneOf('css');
+    const postcssLoader = rule.use('postcss-loader').get('loader');
+    for (const use of rule.uses.values()) {
+      const loader = use.get('loader');
+      if (loader?.includes('less-loader')) {
+        const options = use.get('options');
+        use.loader(require.resolve('./config/theme-loader.cjs')).options({
+          loader,
+          options,
+          postcss: require.resolve('postcss', { paths: [postcssLoader] }),
+        });
+      }
+    }
+  },
   nodeModulesTransform: {
     type: 'none',
   },

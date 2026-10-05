@@ -4,17 +4,17 @@
   padding: 12px;
   transition: all 0.3s;
   border-width: 1px;
-  border-color: rgba(64, 169, 255, 0);
+  border-color: transparent;
   border-style: solid;
   cursor: pointer;
 
   &:hover {
-    border-color: #1890ff;
+    border-color: var(--lani-primary);
   }
 
   &.selected {
-    background-color: #e6f7ff;
-    border-color: #1890ff;
+    background-color: var(--lani-selected);
+    border-color: var(--lani-primary);
   }
 }
 
@@ -28,7 +28,7 @@
 }
 
 .image {
-  background-color: #fafafa;
+  background-color: var(--lani-muted);
 }
 
 .imageWrapper {

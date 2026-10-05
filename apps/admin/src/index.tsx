@@ -4,6 +4,7 @@ import { store } from '@/store';
 import { initAuth } from '@/store/auth';
 import { loadConfig } from '@/store/config';
 import { useAppDispatch } from '@/store/hooks';
+import { ThemeProvider } from '@/theme';
 import { ApolloProvider } from '@apollo/client';
 import { useMount } from 'ahooks';
 import { Provider } from 'react-redux';
@@ -13,7 +14,9 @@ import './global.less';
 export default function App(props: any) {
   return (
     <Provider store={store}>
-      <AppInner {...props} />
+      <ThemeProvider>
+        <AppInner {...props} />
+      </ThemeProvider>
     </Provider>
   );
 }

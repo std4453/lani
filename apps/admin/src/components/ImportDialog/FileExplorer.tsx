@@ -314,7 +314,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
           >
             <Badge
               count={Number(showVideoOnly) + Number(showHidden)}
-              color="#1890ff"
+              color="var(--lani-primary)"
               size="small"
             >
               <Button icon={<SettingOutlined />} />

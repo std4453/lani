@@ -1,4 +1,4 @@
-import laniText from '@/assets/lani-text.svg';
+import { ReactComponent as LaniLogo } from '@/assets/lani-text.svg';
 import { selectCollapsed, setCollapsed } from '@/store/app';
 import {
   logout,
@@ -9,21 +9,26 @@ import {
 } from '@/store/auth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import useMobile from '@/utils/useMobile';
+import { useTheme } from '@/theme';
 import {
   DatabaseOutlined,
   DownloadOutlined,
   FolderOpenOutlined,
   HomeOutlined,
+  LogoutOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   NodeExpandOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
-import { Avatar, Popover, Typography } from 'antd';
+import { Avatar, Button, Popover, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import { ElementType, ReactNode } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
+import ThemeButton from './ThemeButton';
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
@@ -42,42 +47,40 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
 
   if (profile) {
     return mobile ? (
-      <>
-        <div
-          className={clsx(styles.userRow, {
-            [styles.collapsed]: collapsed,
-          })}
-        >
+      <div className={styles.userRow}>
+        {hasAccountPage ? (
+          <Tooltip title="账户设置">
+            <Button
+              type="text"
+              className={styles.accountButton}
+              aria-label="账户设置"
+              onClick={() => void dispatch(toAccountPage)}
+              icon={<Avatar icon={<UserOutlined />} src={profile.picture} />}
+            />
+          </Tooltip>
+        ) : (
           <Avatar
             icon={<UserOutlined />}
             className={styles.avatar}
-            src={profile?.picture}
+            src={profile.picture}
           />
-          <Typography.Text className={styles.username}>
-            {profile?.preferred_username ?? '用户'}
-          </Typography.Text>
-        </div>
-        <div className={styles.mobileActions}>
-          {hasAccountPage && (
-            <Typography.Text
-              className={styles.mobileAction}
-              onClick={() => {
-                void dispatch(toAccountPage);
-              }}
-            >
-              账户设置
-            </Typography.Text>
-          )}
-          <Typography.Text
-            className={styles.mobileAction}
-            onClick={() => {
-              void dispatch(logout);
-            }}
-          >
-            退出登录
-          </Typography.Text>
-        </div>
-      </>
+        )}
+        <Typography.Text
+          className={styles.username}
+          title={profile.email ?? profile.preferred_username}
+        >
+          {profile.email ?? profile.preferred_username ?? '用户'}
+        </Typography.Text>
+        <Tooltip title="退出登录">
+          <Button
+            type="text"
+            className={styles.logoutButton}
+            aria-label="退出登录"
+            icon={<LogoutOutlined />}
+            onClick={() => void dispatch(logout)}
+          />
+        </Tooltip>
+      </div>
     ) : (
       <Popover
         placement="rightBottom"
@@ -148,6 +151,7 @@ function UserProfile({ collapsed }: { collapsed: boolean }) {
 export default function Layout(props: any) {
   const collapsed = useAppSelector(selectCollapsed);
   const auth = useAppSelector(selectAuth);
+  const { theme } = useTheme();
   const dispatch = useAppDispatch();
 
   const mobile = useMobile();
@@ -155,8 +159,9 @@ export default function Layout(props: any) {
   return (
     <ProLayout
       {...props}
-      navTheme="light"
+      navTheme={theme}
       headerRender={false}
+      collapsedButtonRender={false}
       collapsed={collapsed}
       onCollapse={(collapsed: boolean) => {
         dispatch(setCollapsed({ collapsed }));
@@ -174,7 +179,7 @@ export default function Layout(props: any) {
             })}
           >
             <div className={styles.logoBlock}>
-              <img src={laniText} alt="Lani" className={styles.logo} />
+              <LaniLogo role="img" aria-label="Lani" className={styles.logo} />
             </div>
           </div>
         </Link>
@@ -199,12 +204,37 @@ export default function Layout(props: any) {
       }}
       contentStyle={{
         margin: 0,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--lani-surface)',
       }}
       className={styles.layout}
-      menuFooterRender={() =>
-        auth.config?.enabled ? <UserProfile collapsed={collapsed} /> : null
-      }
+      menuFooterRender={() => (
+        <>
+          <div
+            className={clsx(styles.sidebarControls, {
+              [styles.controlsCollapsed]: collapsed && !mobile,
+            })}
+          >
+            {!mobile && (
+              <Tooltip title={collapsed ? '展开' : '折叠'}>
+                <Button
+                  type="text"
+                  aria-label={collapsed ? '展开' : '折叠'}
+                  icon={
+                    collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+                  }
+                  onClick={() =>
+                    dispatch(setCollapsed({ collapsed: !collapsed }))
+                  }
+                />
+              </Tooltip>
+            )}
+            {(mobile || !collapsed) && <ThemeButton />}
+          </div>
+          {auth.config?.enabled && (
+            <UserProfile collapsed={collapsed && !mobile} />
+          )}
+        </>
+      )}
     />
   );
 }

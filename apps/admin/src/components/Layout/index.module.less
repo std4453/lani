@@ -34,24 +34,18 @@
 }
 
 .logo {
+  color: var(--lani-text);
+  fill: currentColor;
   && {
     height: 44px;
     width: 133px;
   }
 }
 
-.content {
-  background-color: white;
-  padding: 0px 32px 16px;
-}
-
 .layout {
   :global {
     .ant-layout-sider {
-      border-right: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    .ant-pro-sider-collapsed-button {
-      border-top: none;
+      border-right: 1px solid var(--lani-divider);
     }
     .ant-pro-basicLayout-content {
       height: 100vh;
@@ -60,10 +54,36 @@
   }
 }
 
-// 没有办法从 ProLayout 给 Drawer 传参数，只能用 CSS 方法强行隐藏掉
-// 这会造成全局污染，其他地方不能使用 .ant-drawer-header-close-only
+// 移动端侧栏通过 Drawer 的 Portal 渲染在 .layout 外，因此使用全局选择器。
 :global {
-  // 增加specificity
+  html[data-theme='dark'] .ant-pro-sider.ant-layout-sider {
+    background-color: var(--lani-surface);
+
+    .ant-menu {
+      background: transparent;
+    }
+
+    .ant-menu.ant-menu-dark .ant-menu-item-selected {
+      background-color: var(--lani-menu-selected);
+
+      &,
+      a {
+        color: var(--lani-primary);
+      }
+
+      &::after {
+        position: absolute;
+        inset: 0 0 0 auto;
+        border-right: 3px solid var(--lani-primary);
+        opacity: 1;
+        transform: scaleY(1);
+        content: '';
+      }
+    }
+  }
+
+  // ProLayout 未提供 Drawer 头部配置，因此用此选择器隐藏头部，请勿在其他组件中复用。
+  // 重复类名以提高选择器优先级。
   .ant-drawer-header-close-only.ant-drawer-header-close-only {
     display: none;
   }
@@ -103,7 +123,8 @@
   }
 
   @media @mobile {
-    margin-bottom: 4px;
+    margin-bottom: 16px;
+    cursor: default;
   }
 }
 
@@ -146,30 +167,77 @@
   }
 
   &:hover {
-    color: #1890ff;
+    color: var(--lani-primary);
   }
 }
 
-.mobileActions {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  margin-bottom: 16px;
+.accountButton {
+  flex-shrink: 0;
+  padding: 0;
+  margin-right: 8px;
+  border: 0;
 }
 
-.mobileAction {
-  flex-grow: 1;
-  flex-basis: 0;
-  flex-shrink: 1;
-  height: 100%;
+.logoutButton {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.systemThemeIcon {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+
+  .sunHalf,
+  .moonHalf {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+
+  .sunHalf {
+    clip-path: polygon(0 0, 85% 0, 0 85%);
+  }
+
+  .moonHalf {
+    clip-path: polygon(100% 15%, 100% 100%, 15% 100%);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1.2em;
+    background: currentColor;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+}
+
+.sidebarControls {
   display: flex;
   align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+
+  @media @mobile {
+    padding: 8px 7px;
+
+    :global(.ant-btn) {
+      font-size: 14px;
+    }
+
+    border-top: 1px solid var(--lani-divider);
+    margin-top: 8px;
+  }
+}
+
+.controlsCollapsed {
   justify-content: center;
-  cursor: pointer;
-
-  &:not(:last-child) {
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
-  }
+  padding: 8px 0;
 }
 
 .hamburger {

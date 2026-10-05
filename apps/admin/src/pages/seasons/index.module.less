@@ -14,14 +14,20 @@
 
   &.bad {
     &::after {
-      background-color: rgba(252, 26, 26, 0.1);
+      background-color: var(--lani-error-bg);
     }
   }
   &.good {
     &::after {
-      background-color: rgba(31, 252, 26, 0.1);
+      background-color: var(--lani-success-bg);
     }
   }
+}
+
+// Keep the full-cell status background behind its contents.
+.cellContent {
+  position: relative;
+  z-index: 1;
 }
 
 .numberCell {
@@ -45,7 +51,7 @@
 }
 
 .slash {
-  color: #d9d9d9;
+  color: var(--lani-border);
   margin: 0 6px;
 }
 
@@ -63,6 +69,10 @@
 }
 
 .root {
+  :global(.ant-badge-status-default) {
+    background-color: var(--lani-status-inactive);
+  }
+
   @media (max-width: 1500px) {
     :global {
       .ant-table-wrapper {

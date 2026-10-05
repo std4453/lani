@@ -22,10 +22,11 @@ import { HistoryOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import ProTable, { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { message, Space, Tag, TagProps, Tooltip, Typography } from 'antd';
-import { hsluvToHex } from 'hsluv';
+import { useTheme } from '@/theme';
+import { tagColors } from '@/theme/tagColors';
 import md5 from 'md5';
 import prettyBytes from 'pretty-bytes';
-import { useMemo, useRef } from 'react';
+import { CSSProperties, useMemo, useRef } from 'react';
 import styles from './index.module.less';
 import { handleError } from '@/utils/error';
 
@@ -36,18 +37,12 @@ function chooseColor(text: string) {
 
 function ColoredTag({ text, ...props }: { text: string } & TagProps) {
   const hue = useMemo(() => chooseColor(text), [text]);
+  const { theme } = useTheme();
   return (
     <Tooltip title={text}>
       <Tag
         className={styles.tag}
-        style={{
-          ['--tag-border-color' as string]: hsluvToHex([hue, 80, 80]),
-          ['--tag-hover-border-color' as string]: hsluvToHex([hue, 90, 65]),
-          ['--tag-color' as string]: hsluvToHex([hue, 65, 50]),
-          ['--tag-hover-color' as string]: hsluvToHex([hue, 90, 30]),
-          ['--tag-bg-color' as string]: hsluvToHex([hue, 65, 96]),
-          ['--tag-hover-bg-color' as string]: hsluvToHex([hue, 50, 90]),
-        }}
+        style={tagColors(hue, theme) as CSSProperties}
         {...props}
       >
         {text}

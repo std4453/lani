@@ -1,7 +1,7 @@
 @import '~@/styles/index.less';
 
 .noData {
-  color: #666666;
+  color: var(--lani-text-secondary);
 }
 
 .images {
@@ -90,7 +90,7 @@
 }
 
 .imageContainer {
-  background-color: #e6e6e6;
+  background-color: var(--lani-placeholder);
 
   &.withImage {
     &::after {
@@ -101,7 +101,7 @@
       right: 0;
       bottom: 0;
 
-      box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--lani-image-shadow);
     }
   }
 }
