@@ -54,7 +54,7 @@
   }
 }
 
-// The mobile sidebar is rendered in a Drawer portal outside .layout.
+// 移动端侧栏通过 Drawer 的 Portal 渲染在 .layout 外，因此使用全局选择器。
 :global {
   html[data-theme='dark'] .ant-pro-sider.ant-layout-sider {
     background-color: var(--lani-surface);
@@ -82,8 +82,8 @@
     }
   }
 
-  // ProLayout does not expose Drawer header props; reserve this selector for it.
-  // 增加specificity
+  // ProLayout 未提供 Drawer 头部配置，因此用此选择器隐藏头部，请勿在其他组件中复用。
+  // 重复类名以提高选择器优先级。
   .ant-drawer-header-close-only.ant-drawer-header-close-only {
     display: none;
   }
