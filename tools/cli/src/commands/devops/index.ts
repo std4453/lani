@@ -54,7 +54,9 @@ export default class Devops extends Command {
     const selected = appSelection
       ? releaseApplications(appSelection)
       : undefined;
-    let environments = config.ci.deployment?.env || [];
+    let environments = (config.ci.deployment?.env || []).filter(
+      (environment) => environment === "online"
+    );
     if (selected) {
       const configs = await Promise.all(
         selected.map((app) =>
@@ -77,17 +79,19 @@ export default class Devops extends Command {
           "Selected applications must use the coordinated deployment workflow"
         );
       }
-      environments = configs[0].ci!.deployment!.env.filter((env) =>
-        configs.every((candidate) =>
-          candidate.ci!.deployment!.env.includes(env)
-        )
+      environments = configs[0].ci!.deployment!.env.filter(
+        (env) =>
+          env === "online" &&
+          configs.every((candidate) =>
+            candidate.ci!.deployment!.env.includes(env)
+          )
       );
     }
     if (
       requestedEnvironment &&
       (noCd ||
         !environments.includes(
-          requestedEnvironment as typeof environments[number]
+          requestedEnvironment as (typeof environments)[number]
         ))
     ) {
       throw new Error(
@@ -223,14 +227,22 @@ export default class Devops extends Command {
     }
 
     const createTime = new Date().getTime();
-    await octokit.rest.actions.createWorkflowDispatch({
+    const dispatched = await octokit.rest.actions.createWorkflowDispatch({
       owner: "std4453",
       repo: "lani",
       workflow_id: workflow,
-      ref,
+      ref: coordinated ? "next" : ref,
       inputs,
     });
 
+    // Newer dispatch responses identify the exact run, avoiding concurrent-run ambiguity.
+    const dispatchedRun = dispatched.data as unknown as
+      | { html_url?: string }
+      | undefined;
+    if (dispatchedRun?.html_url) {
+      console.log(`Workflow URL: ${kleur.cyan(dispatchedRun.html_url)}`);
+      return;
+    }
     console.log(kleur.gray("Workflow triggered, waiting for run ID..."));
     let found = false;
     for (let i = 0; i < 10; ++i) {
@@ -243,6 +255,7 @@ export default class Devops extends Command {
         repo: "lani",
         workflow_id: workflow,
         event: "workflow_dispatch",
+        branch: coordinated ? "next" : ref,
       });
 
       if (run) {

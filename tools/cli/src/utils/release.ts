@@ -23,7 +23,8 @@ export function releaseInputs(
 ): Record<string, string> {
   if (!/^[a-f0-9]{40}$/.test(revision))
     throw new Error("Release source must be an immutable commit");
-  if (!environment) throw new Error("Release environment is required");
+  if (environment !== "online")
+    throw new Error("Private deployment currently supports online only");
   const apps = releaseApplications(selected.join(","));
   return { ref: revision, apps: apps.join(","), environment };
 }

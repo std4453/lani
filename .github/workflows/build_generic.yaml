@@ -64,6 +64,7 @@ jobs:
         name: Checkout
         with:
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@v3
         name: Setup Docker Buildx
@@ -155,7 +156,7 @@ jobs:
           BUILD_IMAGE: ${{ steps.result.outputs.image }}
           BUILD_REVISION: ${{ steps.build_info.outputs.revision }}
         run: |
-          node -e 'require("fs").writeFileSync("build-result.json", JSON.stringify({project: process.env.PROJECT_NAME, image: process.env.BUILD_IMAGE, revision: process.env.BUILD_REVISION}))'
+          node -e 'require("fs").writeFileSync("build-result.json", JSON.stringify({version: 1, repository: process.env.GITHUB_REPOSITORY, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, project: process.env.PROJECT_NAME, image: process.env.BUILD_IMAGE, revision: process.env.BUILD_REVISION}))'
 
       - name: Upload immutable build result
         if: inputs.artifact_name != ''
