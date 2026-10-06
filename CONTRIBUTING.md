@@ -95,11 +95,11 @@ git switch -c docs/commit-branch-guide origin/next
 
 ## 构建 manifest 与提交 hook
 
-新 clone/worktree 运行 `node common/scripts/install-git-hooks.cjs`；安装使用 worktree 独立配置，不改变其他工作树的 hook。已有自定义 hook 时安装命令会拒绝覆盖，请手动整合。
+执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
 
-先 `git add` 本次源码，再提交。pre-commit 只从暂存区生成和暂存 `build-manifest.json`，不包含未暂存源码，不改变其他路径的部分暂存。请勿手工修改 fingerprint；manifest 自身有未暂存修改或冲突时提交会阻断。
+Rush 5.58 会重建默认 hooks 目录；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
 
-需要手动生成时运行：
+先暂存本次源码再提交。hook 只生成并暂存 `build-manifest.json`，不改变其他文件的部分暂存；manifest 有人工未暂存修改或冲突时会报错，不覆盖内容。
 
 ```bash
 node common/scripts/build-fingerprints.cjs generate --staged
@@ -107,10 +107,12 @@ node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"
 node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)" --app admin
 ```
 
-`check` 校验指定完整提交；工作区尚未提交的 manifest 可用下一次提交的 CI 校验。CI 不自动提交修复。
+`manifest-check` 是 PR 的轻量一致性检查，用于发现忘记生成、跳过 hook 和 rebase 后的过期数据。CI 不自动提交修复。`next` 采用 squash/rebase 合入，避免改写已发布历史；维护者可在 GitHub 设置中将该检查设为必需检查，不需要额外运维脚本。
 
-`next` 新提交要求线性历史，使用 squash/rebase 合入。合入前更新到最新基线并通过 `manifest-check`；rebase 或绕过 hook 不免除校验。已有历史不重写。分支保护须在该检查首次运行成功后启用；本文件不表示远端设置已经生效。
+fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；显式排除文档和 hook。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
 
-fingerprint 覆盖应用及依赖的 Git 构建输入。相同输入复用 `fp-<fingerprint>` 镜像；更新外部基础镜像等输入时，修改对应 Dockerfile/构建配置形成新的 fingerprint，不覆盖已有 fingerprint 标签。
+主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
 
-其余提交规范继续通过自查和 PR 审查执行；没有新增 commitlint 或分支命名检查。
+不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。全部复用时不自动通知部署，需要补发时使用私有手动入口。
+
+其余提交规范通过自查和 PR 审查执行，不新增 commitlint 或分支命名检查。

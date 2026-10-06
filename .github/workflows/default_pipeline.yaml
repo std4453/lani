@@ -33,8 +33,6 @@ concurrency:
 permissions:
   contents: read
   packages: write
-  id-token: write
-  attestations: write
 
 jobs:
   plan:
@@ -47,8 +45,6 @@ jobs:
       apps: ${{ steps.plan.outputs.apps }}
       revision: ${{ steps.plan.outputs.revision }}
       matrix: ${{ steps.plan.outputs.matrix }}
-      images: ${{ steps.plan.outputs.images }}
-      reused: ${{ steps.plan.outputs.reused }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +61,6 @@ jobs:
       - name: Resolve source and plan missing images
         id: plan
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_APPS: ${{ inputs.apps || (!inputs.project_name && 'admin,api-server,data-server,gateway') || '' }}
           LEGACY_PROJECT: ${{ inputs.project_name }}
         working-directory: source
@@ -85,125 +80,14 @@ jobs:
     with:
       ref: ${{ needs.plan.outputs.revision }}
       project_name: ${{ format('@lani/{0}', matrix.app) }}
-      artifact_name: build-${{ matrix.app }}-${{ github.run_attempt }}
       fingerprint: ${{ matrix.fingerprint }}
-
-  publish:
-    needs: [plan, images]
-    if: needs.plan.outputs.matrix != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.workflow_sha }}
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.plan.outputs.revision }}
-          path: source
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-${{ matrix.app }}-${{ github.run_attempt }}
-          path: build-result
-      - name: Validate build result
-        id: digest
-        env:
-          APP: ${{ matrix.app }}
-          FINGERPRINT: ${{ matrix.fingerprint }}
-          SOURCE_SHA: ${{ needs.plan.outputs.revision }}
-        run: node common/scripts/fingerprint-images.cjs build-result "$APP" "$FINGERPRINT"
-      - name: Bind actual checked-out inputs to the image
-        env:
-          APP: ${{ matrix.app }}
-          FINGERPRINT: ${{ matrix.fingerprint }}
-        run: node common/scripts/fingerprint-images.cjs predicate "$APP" "$FINGERPRINT"
-      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
-        with:
-          subject-name: ${{ steps.digest.outputs.name }}
-          subject-digest: ${{ steps.digest.outputs.digest }}
-          predicate-type: https://lani.dev/build/v1
-          predicate-path: predicate.json
-          push-to-registry: true
-          create-storage-record: false
-      - name: Publish fingerprint only after provenance verification
-        env:
-          APP: ${{ matrix.app }}
-          FINGERPRINT: ${{ matrix.fingerprint }}
-          BUILD_IMAGE: ${{ steps.digest.outputs.image }}
-          GH_TOKEN: ${{ github.token }}
-        run: node common/scripts/fingerprint-images.cjs publish "$APP" "$FINGERPRINT"
-      - name: Export selected image
-        env:
-          APP: ${{ matrix.app }}
-          FINGERPRINT: ${{ matrix.fingerprint }}
-          IMAGE_BUILT: "true"
-          GH_TOKEN: ${{ github.token }}
-        run: node common/scripts/fingerprint-images.cjs result "$APP" "$FINGERPRINT"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: fingerprint-${{ matrix.app }}-${{ github.run_attempt }}
-          path: ${{ matrix.app }}.json
-          if-no-files-found: error
-          retention-days: 7
-
-  assembly:
-    needs: [plan, images, publish]
-    if: >-
-      ${{ !cancelled() && needs.plan.result == 'success' &&
-      ((needs.images.result == 'success' && needs.publish.result == 'success') ||
-      (needs.images.result == 'skipped' && needs.publish.result == 'skipped' &&
-      needs.plan.outputs.matrix == '[]')) }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      built: ${{ steps.assembly.outputs.built }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.workflow_sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - uses: actions/download-artifact@v4
-        if: needs.plan.outputs.matrix != '[]'
-        with:
-          pattern: fingerprint-*-${{ github.run_attempt }}
-          path: results
-          merge-multiple: true
-      - name: Assemble complete selected image set
-        id: assembly
-        env:
-          MATRIX: ${{ needs.plan.outputs.matrix }}
-          IMAGES: ${{ needs.plan.outputs.images }}
-          REUSED: ${{ needs.plan.outputs.reused }}
-        run: node .github/scripts/release-plan.cjs assemble
 
   notify:
     if: >-
       ${{ !cancelled() && github.ref == 'refs/heads/next' &&
-      needs.assembly.result == 'success' && needs.assembly.outputs.built == 'true' }}
-    needs: [plan, assembly]
+      needs.plan.result == 'success' && needs.images.result == 'success' &&
+      needs.plan.outputs.matrix != '[]' }}
+    needs: [plan, images]
     runs-on: ubuntu-latest
     permissions: {}
     environment: cd-notify
@@ -222,7 +106,6 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const inputs = {
-              protocolVersion: '2',
               sourceRepository: context.repo.owner + '/' + context.repo.repo,
               sourceSha: process.env.SOURCE_SHA,
               buildRunId: String(context.runId),
@@ -250,7 +133,7 @@ jobs:
                 if (!result.ok) throw new Error('Dispatch rejected');
                 message = 'Deployment request submitted. Build success does not mean deployment success; inspect the private workflow.';
               } catch {
-                core.setFailed('Build artifacts succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
+                core.setFailed('Image builds succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
               }
             }
             await core.summary.addRaw(message + '\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();

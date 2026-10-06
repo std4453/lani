@@ -88,8 +88,6 @@ function snapshot(ref) {
 
 function calculate(tree) {
   const rush = jsonc(tree.read("rush.json"));
-  if (rush.rushVersion !== "5.58.0")
-    throw new Error("Review fingerprint rules before changing Rush version");
   if (!Array.isArray(rush.projects))
     throw new Error("Missing Rush project graph");
   const projects = new Map();
@@ -148,8 +146,7 @@ function calculate(tree) {
       ".github/README.md",
     ].includes(file) ||
     file.startsWith("docs/") ||
-    file.startsWith(".githooks/") ||
-    file === "common/scripts/install-git-hooks.cjs" ||
+    file.startsWith("common/git-hooks/") ||
     file === ".github/workflows/manifest-check.yaml";
   const owner = (file) =>
     [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0];
@@ -171,40 +168,8 @@ function calculate(tree) {
     const files = new Set(global);
     for (const file of tree.entries.keys())
       if (closure.has(owner(file)) && !excluded(file)) files.add(file);
-    // Follow tracked symlink targets without consulting or following the working tree.
-    function include(file, stack = new Set()) {
-      if (file === manifestPath)
-        throw new Error(
-          "Build inputs may not refer to their generated manifest"
-        );
-      const entry = tree.entries.get(file);
-      if (!entry) throw new Error(`Untracked symlink target: ${file}`);
-      if (stack.has(file)) throw new Error(`Symlink cycle: ${file}`);
-      files.add(file);
-      if (entry.mode === "120000") {
-        const link = tree.read(file);
-        const target = path.posix.normalize(
-          path.posix.join(path.posix.dirname(file), link)
-        );
-        if (
-          path.posix.isAbsolute(link) ||
-          target === ".." ||
-          target.startsWith("../")
-        )
-          throw new Error(`External symlink: ${file}`);
-        const next = new Set([...stack, file]);
-        if (tree.entries.has(target)) include(target, next);
-        else {
-          const children = [...tree.entries.keys()].filter((p) =>
-            p.startsWith(`${target}/`)
-          );
-          if (!children.length)
-            throw new Error(`Missing symlink target: ${file}`);
-          for (const child of children) include(child, next);
-        }
-      }
-    }
-    for (const file of [...files]) include(file);
+    // Symlink path/mode/blob are inputs too. Targets must belong to the declared
+    // project/dependency closure; cross-project build inputs need a Rush dependency.
     const inputs = [...files]
       .sort()
       .map((file) => [

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+# Rush installs one hook for all worktrees; older branches may not have a manifest.
+cd "$(git rev-parse --show-toplevel)"
+if [ -f common/scripts/build-fingerprints.cjs ]; then
+  node common/scripts/build-fingerprints.cjs generate --staged
+fi

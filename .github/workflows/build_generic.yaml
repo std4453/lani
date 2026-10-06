@@ -143,6 +143,7 @@ jobs:
           platforms: linux/amd64
           file: ${{ steps.build_info.outputs.dockerfile_path }}
           labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ steps.build_info.outputs.revision }}
             dev.lani.fingerprint=${{ inputs.fingerprint }}
             dev.lani.build-run=${{ github.run_id }}
@@ -151,6 +152,7 @@ jobs:
             ${{ steps.build_info.outputs.image_name }}:${{ steps.build_info.outputs.revision }}
             ${{ steps.build_info.outputs.image_name }}:run-${{ github.run_id }}-${{ github.run_attempt }}
             ${{ steps.build_info.outputs.image_name }}:latest
+            ${{ inputs.fingerprint && format('{0}:fp-{1}', steps.build_info.outputs.image_name, inputs.fingerprint) || '' }}
 
       - name: Export immutable build result
         id: result
