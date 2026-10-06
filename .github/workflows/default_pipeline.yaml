@@ -24,60 +24,70 @@ on:
         required: true
         default: online
 
+# All fingerprint publishers enter this queue before planning.
+concurrency:
+  group: lani-fingerprint-pipeline
+  queue: max
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: write
 
 jobs:
   plan:
+    if: github.ref == 'refs/heads/next'
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     outputs:
       apps: ${{ steps.plan.outputs.apps }}
       revision: ${{ steps.plan.outputs.revision }}
-      backend: ${{ steps.plan.outputs.backend }}
+      matrix: ${{ steps.plan.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
           ref: ${{ inputs.ref || github.sha }}
+          path: source
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Resolve source revision and selected applications
+      - name: Resolve source and plan missing images
         id: plan
         env:
           RELEASE_APPS: ${{ inputs.apps || (!inputs.project_name && 'admin,api-server,data-server,gateway') || '' }}
           LEGACY_PROJECT: ${{ inputs.project_name }}
-        run: node .github/scripts/release-plan.cjs select
+        working-directory: source
+        run: node ../.github/scripts/release-plan.cjs select
 
-  applications:
+  images:
     needs: plan
+    if: needs.plan.outputs.matrix != '[]'
     strategy:
       fail-fast: false
       matrix:
-        app: ${{ fromJSON(needs.plan.outputs.apps) }}
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/build_generic.yaml
     with:
       ref: ${{ needs.plan.outputs.revision }}
       project_name: ${{ format('@lani/{0}', matrix.app) }}
-      artifact_name: release-build-${{ matrix.app }}-attempt-${{ github.run_attempt }}
-
-  migration:
-    needs: plan
-    if: needs.plan.outputs.backend == 'true'
-    uses: ./.github/workflows/build_generic.yaml
-    with:
-      ref: ${{ needs.plan.outputs.revision }}
-      project_name: "@lani/db"
-      artifact_name: release-build-db-attempt-${{ github.run_attempt }}
+      fingerprint: ${{ matrix.fingerprint }}
 
   notify:
     if: >-
       ${{ !cancelled() && github.ref == 'refs/heads/next' &&
-      needs.plan.result == 'success' && needs.applications.result == 'success' &&
-      (needs.migration.result == 'success' ||
-       (needs.plan.outputs.backend == 'false' && needs.migration.result == 'skipped')) }}
-    needs: [plan, applications, migration]
+      needs.plan.result == 'success' && needs.images.result == 'success' &&
+      needs.plan.outputs.matrix != '[]' }}
+    needs: [plan, images]
     runs-on: ubuntu-latest
     permissions: {}
     environment: cd-notify
@@ -123,7 +133,7 @@ jobs:
                 if (!result.ok) throw new Error('Dispatch rejected');
                 message = 'Deployment request submitted. Build success does not mean deployment success; inspect the private workflow.';
               } catch {
-                core.setFailed('Build artifacts succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
+                core.setFailed('Image builds succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
               }
             }
             await core.summary.addRaw(message + '\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();

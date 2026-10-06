@@ -93,4 +93,26 @@ git switch -c docs/commit-branch-guide origin/next
 - 检查分支名、提交信息及 PR 目标分支，执行 `git diff --check`，并运行与改动相关的测试或构建。仅文档变更无需运行应用测试。
 - 通过 `git diff --cached` 确认提交内容，不提交凭据、本机私有指南或生成的私有上下文。
 
-以上规范通过提交前自查和 PR 审查执行；仓库当前未配置 commitlint、Git hook 或分支命名 CI 检查。
+## 构建 manifest 与提交 hook
+
+执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
+
+Rush 5.58 会重建默认 hooks 目录；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
+
+先暂存本次源码再提交。hook 只生成并暂存 `build-manifest.json`，不改变其他文件的部分暂存；manifest 有人工未暂存修改或冲突时会报错，不覆盖内容。
+
+```bash
+node common/scripts/build-fingerprints.cjs generate --staged
+node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"
+node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)" --app admin
+```
+
+`manifest-check` 是 PR 的轻量一致性检查，用于发现忘记生成、跳过 hook 和 rebase 后的过期数据。CI 不自动提交修复。`next` 采用 squash/rebase 合入，避免改写已发布历史；维护者可在 GitHub 设置中将该检查设为必需检查，不需要额外运维脚本。
+
+fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；显式排除文档和 hook。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
+
+主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
+
+不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。全部复用时不自动通知部署，需要补发时使用私有手动入口。
+
+其余提交规范通过自查和 PR 审查执行，不新增 commitlint 或分支命名检查。
