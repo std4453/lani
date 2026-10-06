@@ -78,18 +78,100 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    uses: ./.github/workflows/build_fingerprint.yaml
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build_generic.yaml
     with:
       ref: ${{ needs.plan.outputs.revision }}
-      app: ${{ matrix.app }}
+      project_name: ${{ format('@lani/{0}', matrix.app) }}
+      artifact_name: build-${{ matrix.app }}-${{ github.run_attempt }}
       fingerprint: ${{ matrix.fingerprint }}
 
-  assembly:
+  publish:
     needs: [plan, images]
+    if: needs.plan.outputs.matrix != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.revision }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.app }}-${{ github.run_attempt }}
+          path: build-result
+      - name: Validate build result
+        id: digest
+        env:
+          APP: ${{ matrix.app }}
+          FINGERPRINT: ${{ matrix.fingerprint }}
+          SOURCE_SHA: ${{ needs.plan.outputs.revision }}
+        run: node common/scripts/fingerprint-images.cjs build-result "$APP" "$FINGERPRINT"
+      - name: Bind actual checked-out inputs to the image
+        env:
+          APP: ${{ matrix.app }}
+          FINGERPRINT: ${{ matrix.fingerprint }}
+        run: node common/scripts/fingerprint-images.cjs predicate "$APP" "$FINGERPRINT"
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ${{ steps.digest.outputs.name }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          predicate-type: https://lani.dev/build/v1
+          predicate-path: predicate.json
+          push-to-registry: true
+          create-storage-record: false
+      - name: Publish fingerprint only after provenance verification
+        env:
+          APP: ${{ matrix.app }}
+          FINGERPRINT: ${{ matrix.fingerprint }}
+          BUILD_IMAGE: ${{ steps.digest.outputs.image }}
+          GH_TOKEN: ${{ github.token }}
+        run: node common/scripts/fingerprint-images.cjs publish "$APP" "$FINGERPRINT"
+      - name: Export selected image
+        env:
+          APP: ${{ matrix.app }}
+          FINGERPRINT: ${{ matrix.fingerprint }}
+          IMAGE_BUILT: "true"
+          GH_TOKEN: ${{ github.token }}
+        run: node common/scripts/fingerprint-images.cjs result "$APP" "$FINGERPRINT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fingerprint-${{ matrix.app }}-${{ github.run_attempt }}
+          path: ${{ matrix.app }}.json
+          if-no-files-found: error
+          retention-days: 7
+
+  assembly:
+    needs: [plan, images, publish]
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' &&
-      (needs.images.result == 'success' ||
-      (needs.images.result == 'skipped' && needs.plan.outputs.matrix == '[]')) }}
+      ((needs.images.result == 'success' && needs.publish.result == 'success') ||
+      (needs.images.result == 'skipped' && needs.publish.result == 'skipped' &&
+      needs.plan.outputs.matrix == '[]')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

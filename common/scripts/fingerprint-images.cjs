@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 const { apps, sha256 } = require("./build-fingerprints.cjs");
 const predicateType = "https://lani.dev/build/v1";
-const signer = ".github/workflows/build_fingerprint.yaml";
+const signer = ".github/workflows/default_pipeline.yaml";
 const accept =
   "application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json";
 async function read(url, headers = {}) {
@@ -112,6 +112,37 @@ async function resolve(repository, app, fingerprint, get = read) {
   const found = await registry(repository, app, fingerprint, get);
   return found ? verify(found.image, repository, app, fingerprint) : null;
 }
+function buildResult(
+  result,
+  repository,
+  app,
+  fingerprint,
+  revision,
+  runId,
+  runAttempt
+) {
+  const name = identity(repository, app, fingerprint);
+  if (
+    result?.version !== 1 ||
+    result.repository !== repository ||
+    result.project !== `@lani/${app}` ||
+    result.revision !== revision ||
+    !/^[a-f0-9]{40}$/.test(revision) ||
+    result.runId !== runId ||
+    result.runAttempt !== runAttempt ||
+    typeof result.image !== "string" ||
+    !result.image.startsWith(`${name}@sha256:`) ||
+    !/^sha256:[a-f0-9]{64}$/.test(result.image.slice(name.length + 1))
+  )
+    throw new Error(
+      "Build result does not match the planned image and execution"
+    );
+  return {
+    image: result.image,
+    name,
+    digest: result.image.slice(name.length + 1),
+  };
+}
 async function main() {
   const [command, app, fingerprint] = process.argv.slice(2);
   const repository = process.env.GITHUB_REPOSITORY;
@@ -123,7 +154,19 @@ async function main() {
         .map(([k, v]) => `${k}=${v}\n`)
         .join("")
     );
-  if (command === "resolve") {
+  if (command === "build-result") {
+    output(
+      buildResult(
+        JSON.parse(fs.readFileSync("build-result/build-result.json", "utf8")),
+        repository,
+        app,
+        fingerprint,
+        process.env.SOURCE_SHA,
+        process.env.GITHUB_RUN_ID,
+        process.env.GITHUB_RUN_ATTEMPT
+      )
+    );
+  } else if (command === "resolve") {
     const result = await resolve(repository, app, fingerprint);
     output({ image: result?.image || "", missing: !result, name });
   } else if (command === "predicate") {
@@ -182,7 +225,14 @@ async function main() {
     );
   } else throw new Error("Unknown fingerprint image command");
 }
-module.exports = { registry, resolve, verify, predicateType, identity };
+module.exports = {
+  registry,
+  resolve,
+  verify,
+  predicateType,
+  identity,
+  buildResult,
+};
 if (require.main === module)
   main().catch(() => {
     console.error(
