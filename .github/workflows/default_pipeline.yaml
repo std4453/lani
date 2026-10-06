@@ -105,8 +105,9 @@ jobs:
               automatic: 'false'
             };
             let message = 'Deployment request not confirmed; dispatch the private release workflow manually with these inputs.';
-            if (process.env.NOTIFY_ENABLED === 'true' && process.env.SOURCE_EVENT === 'push' && process.env.PRIVATE_CD_TOKEN) {
+            if (process.env.NOTIFY_ENABLED === 'true' && process.env.SOURCE_EVENT === 'push') {
               try {
+                if (!process.env.PRIVATE_CD_TOKEN) throw new Error('Missing notification credential');
                 const target = process.env.TARGET_REPOSITORY || '';
                 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target)) throw new Error('Invalid target');
                 const result = await fetch(`https://api.github.com/repos/${target}/actions/workflows/release.yaml/dispatches`, {
@@ -122,7 +123,7 @@ jobs:
                 if (!result.ok) throw new Error('Dispatch rejected');
                 message = 'Deployment request submitted. Build success does not mean deployment success; inspect the private workflow.';
               } catch {
-                core.warning('Deployment request not confirmed. Manual resubmission uses the same request identity.');
+                core.setFailed('Build artifacts succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
               }
             }
             await core.summary.addRaw(message + '\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();
