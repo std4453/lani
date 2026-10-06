@@ -27,18 +27,27 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   plan:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       apps: ${{ steps.plan.outputs.apps }}
       revision: ${{ steps.plan.outputs.revision }}
-      backend: ${{ steps.plan.outputs.backend }}
+      matrix: ${{ steps.plan.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
           ref: ${{ inputs.ref || github.sha }}
+          path: source
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -48,36 +57,58 @@ jobs:
         env:
           RELEASE_APPS: ${{ inputs.apps || (!inputs.project_name && 'admin,api-server,data-server,gateway') || '' }}
           LEGACY_PROJECT: ${{ inputs.project_name }}
-        run: node .github/scripts/release-plan.cjs select
+        working-directory: source
+        run: node ../.github/scripts/release-plan.cjs select
 
-  applications:
+  images:
     needs: plan
     strategy:
       fail-fast: false
       matrix:
-        app: ${{ fromJSON(needs.plan.outputs.apps) }}
-    uses: ./.github/workflows/build_generic.yaml
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/build_fingerprint.yaml
     with:
       ref: ${{ needs.plan.outputs.revision }}
-      project_name: ${{ format('@lani/{0}', matrix.app) }}
-      artifact_name: release-build-${{ matrix.app }}-attempt-${{ github.run_attempt }}
+      app: ${{ matrix.app }}
+      fingerprint: ${{ matrix.fingerprint }}
 
-  migration:
-    needs: plan
-    if: needs.plan.outputs.backend == 'true'
-    uses: ./.github/workflows/build_generic.yaml
-    with:
-      ref: ${{ needs.plan.outputs.revision }}
-      project_name: "@lani/db"
-      artifact_name: release-build-db-attempt-${{ github.run_attempt }}
+  assembly:
+    needs: [plan, images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      built: ${{ steps.assembly.outputs.built }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fingerprint-*-${{ github.run_attempt }}
+          path: results
+          merge-multiple: true
+      - name: Assemble complete selected image set
+        id: assembly
+        env:
+          MATRIX: ${{ needs.plan.outputs.matrix }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const matrix = JSON.parse(process.env.MATRIX);
+          const files = fs.readdirSync('results').sort();
+          if (JSON.stringify(files) !== JSON.stringify(matrix.map(x => x.app + '.json').sort())) throw new Error('Missing or unexpected result');
+          const images = matrix.map(({app, fingerprint}) => {
+            const r = JSON.parse(fs.readFileSync('results/' + app + '.json'));
+            if (r.app !== app || r.fingerprint !== fingerprint || typeof r.built !== 'boolean') throw new Error('Invalid result');
+            return r;
+          });
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'built=' + images.some(r => r.built) + '\n');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, '```json\n' + JSON.stringify(images, null, 2) + '\n```\n');
+          NODE
 
   notify:
     if: >-
       ${{ !cancelled() && github.ref == 'refs/heads/next' &&
-      needs.plan.result == 'success' && needs.applications.result == 'success' &&
-      (needs.migration.result == 'success' ||
-       (needs.plan.outputs.backend == 'false' && needs.migration.result == 'skipped')) }}
-    needs: [plan, applications, migration]
+      needs.assembly.result == 'success' && needs.assembly.outputs.built == 'true' }}
+    needs: [plan, assembly]
     runs-on: ubuntu-latest
     permissions: {}
     environment: cd-notify
@@ -96,6 +127,7 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const inputs = {
+              protocolVersion: '2',
               sourceRepository: context.repo.owner + '/' + context.repo.repo,
               sourceSha: process.env.SOURCE_SHA,
               buildRunId: String(context.runId),

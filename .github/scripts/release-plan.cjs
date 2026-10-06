@@ -1,5 +1,6 @@
 const fs = require("node:fs/promises");
 const { execFileSync } = require("node:child_process");
+const { check } = require("../../common/scripts/build-fingerprints.cjs");
 const allowed = ["admin", "api-server", "data-server", "gateway"];
 
 function select(apps, legacy) {
@@ -24,9 +25,20 @@ async function main() {
     const revision = execFileSync("git", ["rev-parse", "HEAD"], {
       encoding: "utf8",
     }).trim();
+    const { manifest } = check(revision);
+    const images = [
+      ...apps,
+      ...(apps.some((app) => app !== "admin") ? ["db"] : []),
+    ];
+    const matrix = images.map((app) => ({
+      app,
+      fingerprint: manifest.images[app].fingerprint,
+    }));
     await fs.appendFile(
       process.env.GITHUB_OUTPUT,
-      `apps=${JSON.stringify(apps)}\nrevision=${revision}\nbackend=${apps.some(
+      `matrix=${JSON.stringify(matrix)}\napps=${JSON.stringify(
+        apps
+      )}\nrevision=${revision}\nbackend=${apps.some(
         (app) => app !== "admin"
       )}\n`
     );

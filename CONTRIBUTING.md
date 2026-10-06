@@ -93,4 +93,24 @@ git switch -c docs/commit-branch-guide origin/next
 - 检查分支名、提交信息及 PR 目标分支，执行 `git diff --check`，并运行与改动相关的测试或构建。仅文档变更无需运行应用测试。
 - 通过 `git diff --cached` 确认提交内容，不提交凭据、本机私有指南或生成的私有上下文。
 
-以上规范通过提交前自查和 PR 审查执行；仓库当前未配置 commitlint、Git hook 或分支命名 CI 检查。
+## 构建 manifest 与提交 hook
+
+新 clone/worktree 运行 `node common/scripts/install-git-hooks.cjs`；安装使用 worktree 独立配置，不改变其他工作树的 hook。已有自定义 hook 时安装命令会拒绝覆盖，请手动整合。
+
+先 `git add` 本次源码，再提交。pre-commit 只从暂存区生成和暂存 `build-manifest.json`，不包含未暂存源码，不改变其他路径的部分暂存。请勿手工修改 fingerprint；manifest 自身有未暂存修改或冲突时提交会阻断。
+
+需要手动生成时运行：
+
+```bash
+node common/scripts/build-fingerprints.cjs generate --staged
+node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"
+node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)" --app admin
+```
+
+`check` 校验指定完整提交；工作区尚未提交的 manifest 可用下一次提交的 CI 校验。CI 不自动提交修复。
+
+`next` 新提交要求线性历史，使用 squash/rebase 合入。合入前更新到最新基线并通过 `manifest-check`；rebase 或绕过 hook 不免除校验。已有历史不重写。分支保护须在该检查首次运行成功后启用；本文件不表示远端设置已经生效。
+
+fingerprint 覆盖应用及依赖的 Git 构建输入。相同输入复用 `fp-<fingerprint>` 镜像；更新外部基础镜像等输入时，修改对应 Dockerfile/构建配置形成新的 fingerprint，不覆盖已有 fingerprint 标签。
+
+其余提交规范继续通过自查和 PR 审查执行；没有新增 commitlint 或分支命名检查。

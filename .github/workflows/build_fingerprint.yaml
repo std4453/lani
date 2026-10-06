@@ -1,0 +1,145 @@
+name: Fingerprint image
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      app:
+        type: string
+        required: true
+      fingerprint:
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+concurrency:
+  group: fingerprint-${{ inputs.app }}-${{ inputs.fingerprint }}
+  cancel-in-progress: false
+jobs:
+  resolve:
+    if: github.ref == 'refs/heads/next'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      missing: ${{ steps.resolve.outputs.missing }}
+      name: ${{ steps.resolve.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate source with the trusted calculator
+        env:
+          SOURCE_SHA: ${{ inputs.ref }}
+        working-directory: source
+        run: node ../common/scripts/build-fingerprints.cjs check --ref "$SOURCE_SHA"
+      - name: Resolve verified fingerprint image
+        id: resolve
+        env:
+          APP: ${{ inputs.app }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+          GH_TOKEN: ${{ github.token }}
+        run: node common/scripts/fingerprint-images.cjs resolve "$APP" "$FINGERPRINT"
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.missing == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build_generic.yaml
+    with:
+      ref: ${{ inputs.ref }}
+      project_name: ${{ format('@lani/{0}', inputs.app) }}
+      fingerprint: ${{ inputs.fingerprint }}
+  publish:
+    needs: [resolve, build]
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Bind actual checked-out inputs to the image
+        env:
+          APP: ${{ inputs.app }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+        run: node common/scripts/fingerprint-images.cjs predicate "$APP" "$FINGERPRINT"
+      - name: Image digest
+        id: digest
+        env:
+          BUILD_IMAGE: ${{ needs.build.outputs.image }}
+        run: echo "digest=${BUILD_IMAGE#*@}" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ${{ needs.resolve.outputs.name }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          predicate-type: https://lani.dev/build/v1
+          predicate-path: predicate.json
+          push-to-registry: true
+          create-storage-record: false
+      - name: Publish fingerprint only after provenance verification
+        env:
+          APP: ${{ inputs.app }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+          BUILD_IMAGE: ${{ needs.build.outputs.image }}
+          GH_TOKEN: ${{ github.token }}
+        run: node common/scripts/fingerprint-images.cjs publish "$APP" "$FINGERPRINT"
+  result:
+    needs: [resolve, build, publish]
+    if: >-
+      ${{ !cancelled() && needs.resolve.result == 'success' &&
+      (needs.resolve.outputs.missing == 'false' || needs.publish.result == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Export selected image
+        env:
+          APP: ${{ inputs.app }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+          IMAGE_BUILT: ${{ needs.publish.result == 'success' }}
+          GH_TOKEN: ${{ github.token }}
+        run: node common/scripts/fingerprint-images.cjs result "$APP" "$FINGERPRINT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fingerprint-${{ inputs.app }}-${{ github.run_attempt }}
+          path: ${{ inputs.app }}.json
+          if-no-files-found: error
+          retention-days: 7

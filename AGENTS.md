@@ -40,6 +40,8 @@
 - `cd libs/parse-torrent-title && rushx test`：运行解析器 Jest 测试。
 - `cd apps/api-server && rushx test`：运行 API Jest 测试；`No tests found` 不是测试通过。
 
+新 clone/worktree 先运行 `node common/scripts/install-git-hooks.cjs`。提交前先暂存源码；pre-commit 会根据暂存区自动生成并暂存 `build-manifest.json`。不要手工编辑 fingerprint。手动补生成用 `node common/scripts/build-fingerprints.cjs generate --staged`；manifest 有未暂存修改或冲突时先处理，hook 不会覆盖。未安装 hook、`--no-verify`、rebase 后也必须保证最终提交通过 `manifest-check`。`next` 后续使用 squash/rebase 合入，禁止新增 merge commit 或改写发布历史。
+
 修改依赖后执行 `rush update`，同步 `common/config/rush/pnpm-lock.yaml`。行为变更应增加 `*.test.ts` 或 `*.spec.ts` 回归测试并覆盖失败路径。按变更范围验证；仅文档变更检查链接、命令和差异即可。
 
 不要运行 `start_tmux.sh`；按开发指南分别管理所需服务。API 开发模式仍可能写数据库、恢复下载任务和执行定时任务，启动前必须确认配置指向隔离的开发依赖。

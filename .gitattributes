@@ -12,3 +12,8 @@ yarn.lock                    merge=binary
 # For more information, see this issue: https://github.com/microsoft/rushstack/issues/1088
 #
 *.json                       linguist-language=JSON-with-Comments
+
+# Generated build identities must not acquire platform-specific line endings.
+/build-manifest.json text eol=lf merge=binary
+/common/scripts/*.cjs text eol=lf
+/.githooks/* text eol=lf

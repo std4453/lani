@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "algorithmVersion": 1,
+  "images": {
+    "admin": {
+      "fingerprint": "6496397a18dc2a44cb3e302386def07e823a93188d54adbcb7fa8bb31f42e2ab"
+    },
+    "api-server": {
+      "fingerprint": "9656b734c925c19a93292e24c008b2b420d19a147fae3cdda81f93b977230468"
+    },
+    "data-server": {
+      "fingerprint": "7d608a0a392867c6838d403be12399d7bf19c4e7760d2e7ae5a6a16252ce81c5"
+    },
+    "gateway": {
+      "fingerprint": "e9462841788e9437adf49eaddec4b17dbf6ec70a9f235102e905d25056bb7ac1"
+    },
+    "db": {
+      "fingerprint": "cbf5389281ee42d27ab1091e7be7b24400f2c39797f42a36353fe0eaa063becc"
+    }
+  }
+}
