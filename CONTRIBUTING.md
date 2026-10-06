@@ -113,6 +113,6 @@ fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、
 
 主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
 
-不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。全部复用时不自动通知部署，需要补发时使用私有手动入口。
+不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。所需镜像全部可用后会通知部署，包括全部复用的情况；实际部署范围由目标 manifest 与环境成功基线决定。
 
 其余提交规范通过自查和 PR 审查执行，不新增 commitlint 或分支命名检查。

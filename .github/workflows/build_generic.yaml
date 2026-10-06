@@ -28,11 +28,6 @@ on:
         description: Optional immutable build input identity
         default: ""
 
-      artifact_name:
-        type: string
-        description: Optional unique artifact name for a release build
-        default: ""
-
     outputs:
       image:
         description: Immutable image reference from this build
@@ -130,9 +125,11 @@ jobs:
         run: |
           app="${PROJECT_NAME##*/}"
           if [ "$app" = db ]; then directory=libs/db; else directory="apps/$app"; fi
-          echo "dockerfile_path=$directory/Dockerfile" >> "$GITHUB_OUTPUT"
-          echo "image_name=ghcr.io/${REPOSITORY_OWNER,,}/lani-$app" >> "$GITHUB_OUTPUT"
-          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          {
+            echo "dockerfile_path=$directory/Dockerfile"
+            echo "image_name=ghcr.io/${REPOSITORY_OWNER,,}/lani-$app"
+            echo "revision=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         id: docker_build
@@ -160,20 +157,3 @@ jobs:
           IMAGE_NAME: ${{ steps.build_info.outputs.image_name }}
           IMAGE_DIGEST: ${{ steps.docker_build.outputs.digest }}
         run: echo "image=$IMAGE_NAME@$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
-
-      - name: Write build result for release assembly
-        if: inputs.artifact_name != ''
-        env:
-          BUILD_IMAGE: ${{ steps.result.outputs.image }}
-          BUILD_REVISION: ${{ steps.build_info.outputs.revision }}
-        run: |
-          node -e 'require("fs").writeFileSync("build-result.json", JSON.stringify({version: 1, repository: process.env.GITHUB_REPOSITORY, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, project: process.env.PROJECT_NAME, image: process.env.BUILD_IMAGE, revision: process.env.BUILD_REVISION}))'
-
-      - name: Upload immutable build result
-        if: inputs.artifact_name != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact_name }}
-          path: build-result.json
-          if-no-files-found: error
-          retention-days: 7

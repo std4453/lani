@@ -85,8 +85,9 @@ jobs:
   notify:
     if: >-
       ${{ !cancelled() && github.ref == 'refs/heads/next' &&
-      needs.plan.result == 'success' && needs.images.result == 'success' &&
-      needs.plan.outputs.matrix != '[]' }}
+      needs.plan.result == 'success' &&
+      (needs.images.result == 'success' ||
+      (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) }}
     needs: [plan, images]
     runs-on: ubuntu-latest
     permissions: {}
@@ -97,7 +98,6 @@ jobs:
         uses: actions/github-script@v7
         env:
           NOTIFY_ENABLED: ${{ vars.PRIVATE_CD_ENABLED }}
-          SOURCE_EVENT: ${{ github.event_name }}
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
           RELEASE_APPS: ${{ join(fromJSON(needs.plan.outputs.apps), ',') }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
@@ -106,16 +106,13 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const inputs = {
-              sourceRepository: context.repo.owner + '/' + context.repo.repo,
               sourceSha: process.env.SOURCE_SHA,
-              buildRunId: String(context.runId),
-              buildRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
               applications: process.env.RELEASE_APPS,
               environment: 'online',
               automatic: 'false'
             };
             let message = 'Deployment request not confirmed; dispatch the private release workflow manually with these inputs.';
-            if (process.env.NOTIFY_ENABLED === 'true' && process.env.SOURCE_EVENT === 'push') {
+            if (process.env.NOTIFY_ENABLED === 'true') {
               try {
                 if (!process.env.PRIVATE_CD_TOKEN) throw new Error('Missing notification credential');
                 const target = process.env.TARGET_REPOSITORY || '';
@@ -133,7 +130,7 @@ jobs:
                 if (!result.ok) throw new Error('Dispatch rejected');
                 message = 'Deployment request submitted. Build success does not mean deployment success; inspect the private workflow.';
               } catch {
-                core.setFailed('Image builds succeeded, but deployment request submission is unconfirmed. Manual resubmission uses the same request identity.');
+                core.setFailed('Images are available, but deployment request submission is unconfirmed. Rerun this workflow or submit the target SHA manually.');
               }
             }
             await core.summary.addRaw(message + '\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();
