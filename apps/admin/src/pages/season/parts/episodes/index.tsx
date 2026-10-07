@@ -102,30 +102,31 @@ function useColumns({
         title: '#',
         dataIndex: 'index',
         align: 'center',
-        width: 48,
+        width: '5%',
       },
       {
         title: '标题',
         dataIndex: 'title',
+        width: '25%',
         copyable: true,
         ellipsis: false,
       },
       {
         title: '原始放送时间',
         dataIndex: 'rawAirTime',
-        width: 160,
+        width: '13%',
         valueType: 'dateTime',
       },
       {
         title: '开始下载时间',
         dataIndex: 'airTime',
-        width: 160,
+        width: '13%',
         valueType: 'dateTime',
       },
       {
         title: '下载状态',
         dataIndex: 'jobStatus',
-        width: 120,
+        width: '14%',
         render: (_, r) => (
           <EpisodeStatusTag
             episode={r}
@@ -149,11 +150,12 @@ function useColumns({
           ) : (
             '-'
           ),
-        width: 120,
+        width: '9%',
       },
       {
         title: '操作',
         valueType: 'option',
+        className: styles.optionCell,
         render: (_, r) => [
           <Typography.Link
             key={0}
@@ -289,7 +291,7 @@ function useColumns({
           </Dropdown>,
         ],
         search: false,
-        width: 360,
+        width: '21%',
       },
     ],
     [
@@ -526,6 +528,8 @@ export default function Episodes() {
           toolBarRender={false}
           search={false}
           defaultSize="middle"
+          tableLayout="fixed"
+          scroll={{ x: 900 }}
           actionRef={ref}
           className={styles.table}
         />
