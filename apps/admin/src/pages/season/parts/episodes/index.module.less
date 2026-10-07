@@ -8,8 +8,25 @@
 }
 
 .table {
+  // ProTable disables cell wrapping on small screens by default.
+  :global(.ant-table-tbody) > tr > :global(.ant-table-cell) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   @media @mobile {
     margin: 0 -24px;
+  }
+}
+
+.optionCell {
+  :global(.ant-space) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  :global(.ant-space-item) {
+    white-space: nowrap;
   }
 }
 
