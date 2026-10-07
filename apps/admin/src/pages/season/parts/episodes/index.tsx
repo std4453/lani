@@ -126,7 +126,8 @@ function useColumns({
       {
         title: '下载状态',
         dataIndex: 'jobStatus',
-        width: '14%',
+        width: '10%',
+        className: styles.statusCell,
         render: (_, r) => (
           <EpisodeStatusTag
             episode={r}
@@ -291,7 +292,7 @@ function useColumns({
           </Dropdown>,
         ],
         search: false,
-        width: '21%',
+        width: '25%',
       },
     ],
     [
