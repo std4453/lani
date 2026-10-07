@@ -28,6 +28,7 @@ import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useApolloClient, useQuery } from '@apollo/client';
+import { useSize } from 'ahooks';
 import {
   Alert,
   Button,
@@ -49,6 +50,9 @@ import {
   useSeasonPageContext,
 } from '../../help';
 import styles from './index.module.less';
+
+const fixedColumnWidths = { index: 48, status: 120, jellyfin: 96 };
+const minTableWidth = 900;
 
 const EpisodesStatusContext = createContext<
   Record<number, EpisodeStatusFields> | undefined
@@ -77,12 +81,14 @@ function EpisodeStatusTag({
 }
 
 function useColumns({
+  tableWidth,
   openDownloadMagnet,
   openEpisodeDetails,
   openSearchTorrent,
   openImportSingleDialog,
   refetchEpisodesStatus,
 }: {
+  tableWidth: number;
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
@@ -96,38 +102,44 @@ function useColumns({
   const config = useConfig();
 
   const client = useApolloClient();
+  const timeColumnWidth = Math.min(176, Math.max(104, tableWidth * 0.11));
+  const remainingColumnWidth =
+    tableWidth -
+    fixedColumnWidths.index -
+    fixedColumnWidths.status -
+    fixedColumnWidths.jellyfin -
+    timeColumnWidth * 2;
   return useMemo(
     (): ProColumns<Episode>[] => [
       {
         title: '#',
         dataIndex: 'index',
         align: 'center',
-        width: '5%',
+        width: fixedColumnWidths.index,
       },
       {
         title: '标题',
         dataIndex: 'title',
-        width: '25%',
+        width: remainingColumnWidth * 0.4,
         copyable: true,
         ellipsis: false,
       },
       {
         title: '原始放送时间',
         dataIndex: 'rawAirTime',
-        width: '13%',
+        width: timeColumnWidth,
         valueType: 'dateTime',
       },
       {
         title: '开始下载时间',
         dataIndex: 'airTime',
-        width: '13%',
+        width: timeColumnWidth,
         valueType: 'dateTime',
       },
       {
         title: '下载状态',
         dataIndex: 'jobStatus',
-        width: '10%',
-        className: styles.statusCell,
+        width: fixedColumnWidths.status,
         render: (_, r) => (
           <EpisodeStatusTag
             episode={r}
@@ -151,7 +163,7 @@ function useColumns({
           ) : (
             '-'
           ),
-        width: '9%',
+        width: fixedColumnWidths.jellyfin,
       },
       {
         title: '操作',
@@ -292,10 +304,12 @@ function useColumns({
           </Dropdown>,
         ],
         search: false,
-        width: '25%',
+        width: remainingColumnWidth * 0.6,
       },
     ],
     [
+      timeColumnWidth,
+      remainingColumnWidth,
       openDownloadMagnet,
       openEpisodeDetails,
       openSearchTorrent,
@@ -370,7 +384,10 @@ export default function Episodes() {
     useImportMultipleDialog();
   const { episodesStatus, refetchEpisodesStatus } = useEpisodeStatus(episodes);
 
+  const tableRef = useRef<HTMLDivElement>(null);
+  const tableSize = useSize(tableRef);
   const columns = useColumns({
+    tableWidth: Math.max(minTableWidth, tableSize?.width ?? 0),
     openDownloadMagnet,
     openEpisodeDetails,
     openSearchTorrent,
@@ -521,19 +538,20 @@ export default function Episodes() {
         </div>
       </Form.Item>
       <EpisodesStatusContext.Provider value={episodesStatus}>
-        <ProTable<Episode>
-          columns={columns}
-          dataSource={episodes}
-          rowKey="id"
-          pagination={false}
-          toolBarRender={false}
-          search={false}
-          defaultSize="middle"
-          tableLayout="fixed"
-          scroll={{ x: 900 }}
-          actionRef={ref}
-          className={styles.table}
-        />
+        <div ref={tableRef} className={styles.table}>
+          <ProTable<Episode>
+            columns={columns}
+            dataSource={episodes}
+            rowKey="id"
+            pagination={false}
+            toolBarRender={false}
+            search={false}
+            defaultSize="middle"
+            tableLayout="fixed"
+            scroll={{ x: minTableWidth }}
+            actionRef={ref}
+          />
+        </div>
       </EpisodesStatusContext.Provider>
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
