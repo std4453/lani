@@ -1,14 +1,14 @@
 import { Command, Flags } from "@oclif/core";
 import fs from "fs/promises";
+import path from "path";
 import * as inquirer from "inquirer";
 import * as yaml from "js-yaml";
 import kleur from "kleur";
 import { Octokit } from "octokit";
-import path from "path";
 import simpleGit, { SimpleGit } from "simple-git";
 import { loadLaniConfig } from "../../utils/laniconfig";
 import { resolveProjectConfig } from "../../utils/project";
-import { releaseApplications, releaseInputs } from "../../utils/release";
+import { releaseInputs } from "../../utils/release";
 
 export default class Devops extends Command {
   static description = "Trigger CI workflow";
@@ -18,10 +18,7 @@ export default class Devops extends Command {
     strict: Flags.boolean(),
     "log-git": Flags.boolean(),
     "no-cd": Flags.boolean(),
-    apps: Flags.string({
-      description:
-        "Release comma-separated apps together, e.g. api-server,data-server,gateway",
-    }),
+    ref: Flags.string({ description: "Deployment ref: next or pr/<number>" }),
     environment: Flags.string({
       description: "Deployment environment; otherwise choose interactively",
     }),
@@ -34,7 +31,7 @@ export default class Devops extends Command {
         strict,
         "log-git": logGit,
         "no-cd": noCd,
-        apps: appSelection,
+        ref: deploymentRef,
         environment: requestedEnvironment,
       },
     } = await this.parse(Devops);
@@ -47,61 +44,14 @@ export default class Devops extends Command {
       process.exit(1);
     }
 
-    if (appSelection && noCd)
-      throw new Error(
-        "--apps selects a coordinated release and cannot be combined with --no-cd"
-      );
-    const selected = appSelection
-      ? releaseApplications(appSelection)
-      : undefined;
-    let environments = (config.ci.deployment?.env || []).filter(
-      (environment) => environment === "online"
-    );
-    if (selected) {
-      const configs = await Promise.all(
-        selected.map((app) =>
-          loadLaniConfig({
-            ...project,
-            packageName: `@lani/${app}`,
-            path: path.join(project.monorepoRoot, "apps", app),
-          })
-        )
-      );
-      if (
-        configs.some(
-          (candidate) =>
-            !candidate.ci?.deployment ||
-            (candidate.ci.workflow &&
-              candidate.ci.workflow !== "default_pipeline.yaml")
-        )
-      ) {
-        throw new Error(
-          "Selected applications must use the coordinated deployment workflow"
-        );
-      }
-      environments = configs[0].ci!.deployment!.env.filter(
-        (env) =>
-          env === "online" &&
-          configs.every((candidate) =>
-            candidate.ci!.deployment!.env.includes(env)
-          )
-      );
-    }
+    const environments = ["online", "offline"];
     if (
       requestedEnvironment &&
-      (noCd ||
-        !environments.includes(
-          requestedEnvironment as (typeof environments)[number]
-        ))
-    ) {
-      throw new Error(
-        "Requested environment is not shared by the selected applications"
-      );
-    }
-    if (selected && environments.length === 0)
-      throw new Error(
-        "Selected applications have no common deployment environment"
-      );
+      (noCd || !environments.includes(requestedEnvironment))
+    )
+      throw new Error("Use online or offline for a deployment");
+    if (deploymentRef && noCd)
+      throw new Error("--ref is only used for deployment");
 
     console.log(
       kleur.gray(`Command \"devops\" requires \"git\" to be in $PATH`)
@@ -194,35 +144,29 @@ export default class Devops extends Command {
     // The tracking ref is the source actually present on the remote, including
     // --no-auto-push mode. Pin it before dispatch so all images use one commit.
     const revision = (await git.revparse([tracking])).trim();
-    const coordinated =
-      !noCd && (Boolean(selected) || Boolean(config.ci.deployment));
+    const coordinated = !noCd && Boolean(config.ci.deployment);
     let inputs: Record<string, string> = {
       ref: revision,
-      project_name: project.packageName,
+      app: project.packageName,
     };
     let workflow =
       config.ci.workflow ??
       (noCd ? "build_generic.yaml" : "default_pipeline.yaml");
+    if (workflow === "all_in_one_pipeline.yaml") inputs = { ref: revision };
     if (coordinated) {
-      if (!environments.length)
-        throw new Error("No available deployment environment");
-      let environment = requestedEnvironment || environments[0];
-      if (!requestedEnvironment && environments.length > 1) {
-        const result = await inquirer.prompt([
+      let environment = requestedEnvironment;
+      if (!environment) {
+        const answer = await inquirer.prompt([
           {
             name: "environment",
-            message: "Select deployment environment",
+            message: "Deployment environment",
             type: "list",
             choices: environments,
           },
         ]);
-        environment = result.environment;
+        environment = answer.environment as string;
       }
-      inputs = releaseInputs(
-        revision,
-        selected || releaseApplications(project.packageName),
-        environment
-      );
+      inputs = releaseInputs(revision, deploymentRef || "next", environment);
       workflow = "default_pipeline.yaml";
     }
 

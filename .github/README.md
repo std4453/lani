@@ -1,19 +1,29 @@
 # Build and deployment handoff
 
-Pushes to `next` run `default_pipeline.yaml`. The committed build manifest identifies
-all application and migration images; only missing fingerprints are built.
-Once the requested images are available, the workflow notifies the private deployment
-system, including when every image was reused. Deployment compares the complete target
-with its successful environment baseline, so later runs can include previously missed changes.
+`default_pipeline.yaml` builds the complete committed manifest for `next` pushes
+and same-repository PRs targeting `next`. It uses the PR head SHA, builds only
+missing fingerprints, and still notifies when every image is reused. Fork PRs
+retain the separate manifest check; they do not publish images through this workflow.
 
-For manual builds, select `ref` and optional `apps`. The CLI still supports coordinated
-builds and the independent build-only entry. The all-in-one workflow remains separate.
+PR deployment requires a repository owner or author with write access, an unchanged
+PR head, and `[deploy-test]` in that head commit's message. The marker applies to
+that commit only. `scope:ui` selects the shared test environment's preparation
+policy; it does not restrict which images the target manifest deploys.
 
-Maintainers configure `PRIVATE_CD_REPOSITORY`, `PRIVATE_CD_ENABLED`, and the
-`cd-notify` environment's `PRIVATE_CD_TOKEN` with target Actions write permission.
-Restrict that environment to `next`; the token belongs only to the notification job.
-Environment configuration and deployment credentials belong to the private system.
+For manual runs, select `environment` and `ref` (`next` or `pr/<number>`).
+`sourceSha` optionally pins a commit in next history; PR runs resolve the current
+head. Online only accepts next. The CLI supports `--environment` and `--ref`;
+deployments always reconcile the full manifest. `--no-cd` uses the separate
+single-app builder (`app` input). The all-in-one workflow has a fixed app target.
 
-Notification sends `sourceSha`, `applications`, `environment`, and `automatic`.
-A successful build or notification does not mean deployment succeeded. An unconfirmed
-notification fails the workflow; rerun it or use the manual inputs in its summary.
+Maintainers configure `PRIVATE_CD_REPOSITORY`, `PRIVATE_CD_ENABLED`, and
+`PRIVATE_CD_TOKEN` (target repository Actions write permission) in notification
+environments. Keep `cd-notify` restricted to next. `cd-notify-test` permits the
+same-repository PR merge refs and next for manually dispatched PR builds; configure
+its own token and keep notification disabled until the private test environment
+has been initialized. The notification job reads GitHub metadata only and does
+not check out candidate code.
+
+Notification sends `sourceSha`, `ref`, `environment`, and `automatic`. Build or
+notification success does not mean deployment succeeded. Failed notification can
+be retried by rerunning the whole workflow; fingerprint images are reused.

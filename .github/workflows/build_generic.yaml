@@ -7,7 +7,7 @@ on:
         description: "Ref to trigger workflow"
         required: false
         default: "master"
-      project_name:
+      app:
         description: "Project package name"
         required: true
 
@@ -18,7 +18,7 @@ on:
         description: "Ref to trigger workflow"
         required: false
         default: "master"
-      project_name:
+      app:
         type: string
         description: "Project package name"
         required: true
@@ -42,13 +42,13 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ inputs.project_name }}
+    name: Build ${{ inputs.app }}
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.result.outputs.image }}
       revision: ${{ steps.build_info.outputs.revision }}
     env:
-      PROJECT_NAME: ${{ inputs.project_name }}
+      PROJECT_NAME: ${{ inputs.app }}
       # Prisma 3 uses OpenSSL 1.1 in the migration runtime, independent of the runner.
       PRISMA_CLI_BINARY_TARGETS: debian-openssl-1.1.x
     steps:

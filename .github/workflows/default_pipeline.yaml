@@ -1,71 +1,97 @@
 name: "Default Pipeline"
-
 on:
   push:
     branches: [next]
+  pull_request:
+    branches: [next]
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
       ref:
-        description: Source ref (resolved once for the entire release)
+        description: "Deployment ref: next or pr/<number>"
         required: true
         default: next
-      apps:
-        description: "Comma-separated applications: admin,api-server,data-server,gateway"
+      sourceSha:
+        description: Optional complete source SHA (next history only)
         type: string
-        required: false
-      project_name:
-        description: Legacy single package; use either this input or apps
-        type: string
-        required: false
       environment:
         description: Deployment environment
         type: choice
-        options: [online]
+        options: [online, offline]
         required: true
         default: online
-
-# All fingerprint publishers enter this queue before planning.
 concurrency:
   group: lani-fingerprint-pipeline
   queue: max
   cancel-in-progress: false
-
 permissions:
   contents: read
   packages: write
-
+  pull-requests: read
 jobs:
   plan:
-    if: github.ref == 'refs/heads/next'
+    if: >-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name != 'pull_request' && github.ref == 'refs/heads/next')
     permissions:
       contents: read
       packages: read
+      pull-requests: read
     runs-on: ubuntu-latest
     outputs:
-      apps: ${{ steps.plan.outputs.apps }}
       revision: ${{ steps.plan.outputs.revision }}
       matrix: ${{ steps.plan.outputs.matrix }}
+      ref: ${{ steps.source.outputs.ref }}
+      environment: ${{ steps.source.outputs.environment }}
     steps:
+      - name: Resolve source once
+        id: source
+        uses: actions/github-script@v7
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          INPUT_SHA: ${{ inputs.sourceSha }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+        with:
+          script: |
+            const prEvent = context.eventName === 'pull_request';
+            const ref = prEvent ? `pr/${context.payload.pull_request.number}` : process.env.INPUT_REF || 'next';
+            const environment = prEvent ? 'offline' : process.env.INPUT_ENVIRONMENT || 'online';
+            if (!/^(next|pr\/[1-9][0-9]*)$/.test(ref) || (environment === 'online' && ref !== 'next'))
+              throw new Error('Use online/next, offline/next or offline/pr/<number>');
+            let revision;
+            if (ref !== 'next') {
+              if (process.env.INPUT_SHA) throw new Error('PR builds always use the current PR head');
+              const { data: pr } = await github.rest.pulls.get({...context.repo, pull_number: Number(ref.slice(3))});
+              if (pr.head.repo?.full_name !== context.payload.repository.full_name || pr.base.ref !== 'next' || pr.state !== 'open')
+                throw new Error('Expected an open same-repository PR targeting next');
+              revision = prEvent ? context.payload.pull_request.head.sha : pr.head.sha;
+            } else {
+              revision = process.env.INPUT_SHA || (context.eventName === 'push' ? context.sha :
+                (await github.rest.repos.getBranch({...context.repo, branch: 'next'})).data.commit.sha);
+              if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error('Expected a complete source SHA');
+              const {data: comparison} = await github.rest.repos.compareCommitsWithBasehead({...context.repo, basehead: `${revision}...next`});
+              if (!['ahead', 'identical'].includes(comparison.status)) throw new Error('Source is not in next history');
+            }
+            core.setOutput('revision', revision);
+            core.setOutput('ref', ref);
+            core.setOutput('environment', environment);
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          ref: ${{ steps.source.outputs.revision }}
           path: source
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Resolve source and plan missing images
+      - name: Plan missing fingerprint images
         id: plan
-        env:
-          RELEASE_APPS: ${{ inputs.apps || (!inputs.project_name && 'admin,api-server,data-server,gateway') || '' }}
-          LEGACY_PROJECT: ${{ inputs.project_name }}
         working-directory: source
         run: node ../.github/scripts/release-plan.cjs select
-
   images:
     needs: plan
     if: needs.plan.outputs.matrix != '[]'
@@ -79,58 +105,61 @@ jobs:
     uses: ./.github/workflows/build_generic.yaml
     with:
       ref: ${{ needs.plan.outputs.revision }}
-      project_name: ${{ format('@lani/{0}', matrix.app) }}
+      app: ${{ format('@lani/{0}', matrix.app) }}
       fingerprint: ${{ matrix.fingerprint }}
-
   notify:
     if: >-
-      ${{ !cancelled() && github.ref == 'refs/heads/next' &&
-      needs.plan.result == 'success' &&
+      ${{ !cancelled() && needs.plan.result == 'success' &&
       (needs.images.result == 'success' ||
       (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) }}
     needs: [plan, images]
     runs-on: ubuntu-latest
-    permissions: {}
-    environment: cd-notify
+    permissions:
+      contents: read
+      pull-requests: read
+    environment: ${{ startsWith(needs.plan.outputs.ref, 'pr/') && 'cd-notify-test' || 'cd-notify' }}
     steps:
-      # No checkout, artifact execution, or inherited build secrets in this job.
-      - name: Submit private deployment request or print manual handoff
+      # This job only reads GitHub metadata. It never executes the candidate tree.
+      - name: Check deployment intent and notify
         uses: actions/github-script@v7
         env:
           NOTIFY_ENABLED: ${{ vars.PRIVATE_CD_ENABLED }}
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
-          RELEASE_APPS: ${{ join(fromJSON(needs.plan.outputs.apps), ',') }}
+          RELEASE_REF: ${{ needs.plan.outputs.ref }}
+          RELEASE_ENVIRONMENT: ${{ needs.plan.outputs.environment }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
           PRIVATE_CD_TOKEN: ${{ secrets.PRIVATE_CD_TOKEN }}
         with:
-          github-token: ${{ github.token }}
           script: |
             const inputs = {
               sourceSha: process.env.SOURCE_SHA,
-              applications: process.env.RELEASE_APPS,
-              environment: 'online',
-              automatic: 'false'
+              ref: process.env.RELEASE_REF,
+              environment: process.env.RELEASE_ENVIRONMENT,
+              automatic: 'true'
             };
-            let message = 'Deployment request not confirmed; dispatch the private release workflow manually with these inputs.';
-            if (process.env.NOTIFY_ENABLED === 'true') {
-              try {
-                if (!process.env.PRIVATE_CD_TOKEN) throw new Error('Missing notification credential');
-                const target = process.env.TARGET_REPOSITORY || '';
-                if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target)) throw new Error('Invalid target');
-                const result = await fetch(`https://api.github.com/repos/${target}/actions/workflows/release.yaml/dispatches`, {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${process.env.PRIVATE_CD_TOKEN}`,
-                    Accept: 'application/vnd.github+json',
-                    'X-GitHub-Api-Version': '2022-11-28'
-                  },
-                  body: JSON.stringify({ref: 'main', inputs: {...inputs, automatic: 'true'}}),
-                  signal: AbortSignal.timeout(30000)
-                });
-                if (!result.ok) throw new Error('Dispatch rejected');
-                message = 'Deployment request submitted. Build success does not mean deployment success; inspect the private workflow.';
-              } catch {
-                core.setFailed('Images are available, but deployment request submission is unconfirmed. Rerun this workflow or submit the target SHA manually.');
+            const skip = async reason => core.summary.addRaw(`Deployment skipped: ${reason}\n`).write();
+            if (inputs.ref.startsWith('pr/')) {
+              const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: Number(inputs.ref.slice(3))});
+              const author = pr.user.login;
+              if (author !== context.repo.owner) {
+                const {data: access} = await github.rest.repos.getCollaboratorPermissionLevel({...context.repo, username: author});
+                if (!['write', 'maintain', 'admin'].includes(access.permission) && !access.user?.permissions?.push)
+                  return skip('PR author does not have repository write permission');
               }
+              if (pr.state !== 'open' || pr.head.repo?.full_name !== context.payload.repository.full_name || pr.head.sha !== inputs.sourceSha)
+                return skip('PR head changed or PR is no longer eligible');
+              const {data: commit} = await github.rest.repos.getCommit({...context.repo, ref: inputs.sourceSha});
+              if (!commit.commit.message.includes('[deploy-test]')) return skip('head commit has no [deploy-test] marker');
             }
-            await core.summary.addRaw(message + '\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();
+            if (process.env.NOTIFY_ENABLED !== 'true') return skip('notification is disabled');
+            const target = process.env.TARGET_REPOSITORY || '';
+            if (!process.env.PRIVATE_CD_TOKEN || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target))
+              throw new Error('Deployment notification is not configured');
+            const result = await fetch(`https://api.github.com/repos/${target}/actions/workflows/release.yaml/dispatches`, {
+              method: 'POST',
+              headers: {Authorization: `Bearer ${process.env.PRIVATE_CD_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'},
+              body: JSON.stringify({ref: 'main', inputs}),
+              signal: AbortSignal.timeout(30000)
+            });
+            if (!result.ok) throw new Error(`Images are available, but deployment notification failed (${result.status}); rerun this workflow`);
+            await core.summary.addRaw('Deployment requested; inspect the private workflow for its result.\n').addCodeBlock(JSON.stringify(inputs, null, 2), 'json').write();
