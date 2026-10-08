@@ -144,14 +144,20 @@ export default class Devops extends Command {
     // The tracking ref is the source actually present on the remote, including
     // --no-auto-push mode. Pin it before dispatch so all images use one commit.
     const revision = (await git.revparse([tracking])).trim();
-    const coordinated = !noCd && Boolean(config.ci.deployment);
+    let workflow =
+      config.ci.workflow ??
+      (!noCd && config.ci.deployment
+        ? "default_pipeline.yaml"
+        : "build_generic.yaml");
+    if (noCd && workflow === "default_pipeline.yaml")
+      workflow = "build_generic.yaml";
+    const coordinated =
+      !noCd &&
+      (Boolean(config.ci.deployment) || workflow === "default_pipeline.yaml");
     let inputs: Record<string, string> = {
       ref: revision,
       app: project.packageName,
     };
-    let workflow =
-      config.ci.workflow ??
-      (noCd ? "build_generic.yaml" : "default_pipeline.yaml");
     if (workflow === "all_in_one_pipeline.yaml") inputs = { ref: revision };
     if (coordinated) {
       let environment = requestedEnvironment;
