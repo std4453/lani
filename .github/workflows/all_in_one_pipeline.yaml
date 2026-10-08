@@ -7,9 +7,6 @@ on:
         description: "Ref to trigger workflow"
         required: false
         default: "master"
-      project_name:
-        description: "Project package name"
-        required: true
 
 permissions:
   contents: read
@@ -20,4 +17,4 @@ jobs:
     uses: ./.github/workflows/build_generic.yaml
     with:
       ref: ${{ inputs.ref }}
-      project_name: ${{ inputs.project_name }}
+      app: "@lani/all-in-one"

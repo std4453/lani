@@ -3,22 +3,6 @@ const { execFileSync } = require("node:child_process");
 const { check } = require("../../common/scripts/build-fingerprints.cjs");
 const allowed = ["admin", "api-server", "data-server", "gateway"];
 
-function select(apps, legacy) {
-  if (apps && legacy) throw new Error("Use apps or project_name, not both");
-  const selected = (apps || legacy || "")
-    .split(",")
-    .map((name) => name.trim().replace(/^@lani\//, ""));
-  if (
-    !selected.length ||
-    selected.some((app) => !allowed.includes(app)) ||
-    new Set(selected).size !== selected.length
-  )
-    throw new Error(
-      "Select unique application names: admin,api-server,data-server,gateway"
-    );
-  return selected.sort();
-}
-
 // A 404 is a missing image. Authentication, rate limits and network failures stop
 // planning rather than cause unnecessary builds. GHCR write access is maintainer-only.
 async function imageExists(name, fingerprint, request = fetch) {
@@ -66,7 +50,7 @@ async function planImages(owner, images, exists = imageExists) {
 async function main() {
   if (process.argv[2] !== "select")
     throw new Error("Usage: release-plan.cjs select");
-  const apps = select(process.env.RELEASE_APPS, process.env.LEGACY_PROJECT);
+  const apps = allowed;
   const revision = execFileSync("git", ["rev-parse", "HEAD"], {
     encoding: "utf8",
   }).trim();
@@ -92,7 +76,7 @@ async function main() {
       "\n```\n"
   );
 }
-module.exports = { select, imageExists, planImages };
+module.exports = { imageExists, planImages };
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);
