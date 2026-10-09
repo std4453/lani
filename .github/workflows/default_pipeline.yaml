@@ -169,10 +169,15 @@ jobs:
                 if (!['write', 'maintain', 'admin'].includes(access.permission) && !access.user?.permissions?.push)
                   return skip('PR author does not have repository write permission');
               }
-              if (pr.state !== 'open' || pr.head.repo?.full_name !== context.payload.repository.full_name || pr.head.sha !== inputs.sourceSha)
+              if (pr.state !== 'open' || pr.base.ref !== 'next' || pr.head.repo?.full_name !== context.payload.repository.full_name || pr.head.sha !== inputs.sourceSha)
                 return skip('PR head changed or PR is no longer eligible');
-              const {data: commit} = await github.rest.repos.getCommit({...context.repo, ref: inputs.sourceSha});
-              if (!commit.commit.message.includes('[deploy-test]')) return skip('head commit has no [deploy-test] marker');
+              if (context.eventName === 'pull_request') {
+                const {data: commit} = await github.rest.repos.getCommit({...context.repo, ref: inputs.sourceSha});
+                const reasons = [];
+                if (commit.commit.message.includes('[skip-cd]')) reasons.push('head commit message contains [skip-cd]');
+                if (pr.title.includes('[skip-cd]')) reasons.push('PR title contains [skip-cd]');
+                if (reasons.length) return skip(reasons.join('; '));
+              }
             }
             if (process.env.NOTIFY_ENABLED !== 'true') return skip('notification is disabled');
             const target = process.env.TARGET_REPOSITORY || '';
