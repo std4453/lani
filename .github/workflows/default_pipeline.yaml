@@ -5,9 +5,6 @@ on:
   pull_request:
     branches: [next]
     types: [opened, reopened, synchronize]
-  pull_request_target:
-    branches: [next]
-    types: [closed]
   workflow_dispatch:
     inputs:
       ref:
@@ -34,10 +31,6 @@ permissions:
 jobs:
   plan:
     if: >-
-      (github.event_name == 'pull_request_target' &&
-       github.event.action == 'closed' &&
-       github.event.pull_request.merged == true &&
-       github.event.pull_request.base.ref == 'next') ||
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository) ||
       ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
@@ -52,7 +45,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       ref: ${{ steps.source.outputs.ref }}
       environment: ${{ steps.source.outputs.environment }}
-      mergedPr: ${{ steps.source.outputs.mergedPr }}
+      notifyTargets: ${{ steps.source.outputs.notifyTargets }}
     steps:
       - name: Resolve source once
         id: source
@@ -64,9 +57,8 @@ jobs:
         with:
           script: |
             const prEvent = context.eventName === 'pull_request';
-            const mergedPrEvent = context.eventName === 'pull_request_target' && context.payload.action === 'closed' && context.payload.pull_request.merged === true;
-            const ref = mergedPrEvent ? 'next' : prEvent ? `pr/${context.payload.pull_request.number}` : process.env.INPUT_REF || 'next';
-            const environment = (prEvent || mergedPrEvent) ? 'offline' : process.env.INPUT_ENVIRONMENT || 'online';
+            const ref = prEvent ? `pr/${context.payload.pull_request.number}` : process.env.INPUT_REF || 'next';
+            const environment = prEvent ? 'offline' : process.env.INPUT_ENVIRONMENT || 'online';
             if (!/^(next|pr\/[1-9][0-9]*)$/.test(ref) || (environment === 'online' && ref !== 'next'))
               throw new Error('Use online/next, offline/next or offline/pr/<number>');
             let revision;
@@ -77,18 +69,30 @@ jobs:
                 throw new Error('Expected an open same-repository PR targeting next');
               revision = prEvent ? context.payload.pull_request.head.sha : pr.head.sha;
             } else {
-              revision = mergedPrEvent ? context.payload.pull_request.merge_commit_sha :
-                (process.env.INPUT_SHA || (context.eventName === 'push' ? context.sha :
-                  (await github.rest.repos.getBranch({...context.repo, branch: 'next'})).data.commit.sha));
+              revision = process.env.INPUT_SHA || (context.eventName === 'push' ? context.sha :
+                (await github.rest.repos.getBranch({...context.repo, branch: 'next'})).data.commit.sha);
               if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error('Expected a complete source SHA');
               const {data: comparison} = await github.rest.repos.compareCommitsWithBasehead({...context.repo, basehead: `${revision}...next`});
               if (!['ahead', 'identical'].includes(comparison.status)) throw new Error('Source is not in next history');
             }
-            const mergedPr = mergedPrEvent ? String(context.payload.pull_request.number) : '';
+            const notifyTargets = [{ref, environment, mergedPr: ''}];
+            if (context.eventName === 'push') {
+              const associatedPrs = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
+                ...context.repo,
+                commit_sha: revision,
+                per_page: 100
+              });
+              const mergedPrs = associatedPrs.filter(pr => pr.merged_at && pr.base.ref === 'next' &&
+                pr.base.repo?.full_name === context.payload.repository.full_name && pr.merge_commit_sha === revision);
+              if (mergedPrs.length > 1) throw new Error('Multiple merged PRs match this next commit');
+              if (mergedPrs.length === 1) {
+                notifyTargets.push({ref: 'next', environment: 'offline', mergedPr: String(mergedPrs[0].number)});
+              }
+            }
             core.setOutput('revision', revision);
             core.setOutput('ref', ref);
             core.setOutput('environment', environment);
-            core.setOutput('mergedPr', mergedPr);
+            core.setOutput('notifyTargets', JSON.stringify(notifyTargets));
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
@@ -127,10 +131,14 @@ jobs:
       (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) }}
     needs: [plan, images]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.notifyTargets) }}
     permissions:
       contents: read
       pull-requests: read
-    environment: ${{ (needs.plan.outputs.mergedPr != '' || startsWith(needs.plan.outputs.ref, 'pr/')) && 'cd-notify-test' || 'cd-notify' }}
+    environment: ${{ matrix.environment == 'offline' && 'cd-notify-test' || 'cd-notify' }}
     steps:
       # This job only reads GitHub metadata. It never executes the candidate tree.
       - name: Check deployment intent and notify
@@ -138,9 +146,9 @@ jobs:
         env:
           NOTIFY_ENABLED: ${{ vars.PRIVATE_CD_ENABLED }}
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
-          RELEASE_REF: ${{ needs.plan.outputs.ref }}
-          RELEASE_ENVIRONMENT: ${{ needs.plan.outputs.environment }}
-          MERGED_PR: ${{ needs.plan.outputs.mergedPr }}
+          RELEASE_REF: ${{ matrix.ref }}
+          RELEASE_ENVIRONMENT: ${{ matrix.environment }}
+          MERGED_PR: ${{ matrix.mergedPr }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
           PRIVATE_CD_TOKEN: ${{ secrets.PRIVATE_CD_TOKEN }}
         with:

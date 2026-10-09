@@ -5,14 +5,14 @@ and same-repository PRs targeting `next`. It uses the PR head SHA, builds only
 missing fingerprints, and still notifies when every image is reused. Open fork
 PRs retain the separate manifest check; they do not publish images through this workflow.
 
-When a PR targeting `next` is merged, `pull_request_target` handles its closed
-event using the base workflow and builds/notifies the immutable merge commit SHA
-as an offline `next` baseline, with `mergedPr` set to the PR number. This path
-uses the existing `next` ancestry check; it does not resolve the current branch
-head. Merged fork PRs are eligible only after their merge commit is in trusted
-`next` history. Unmerged close events are skipped. GitHub sets `GITHUB_REF` to
-`refs/heads/next` for this event; configure `cd-notify-test` to allow `next` as
-well as its existing manually dispatched PR refs.
+On a `next` push, the workflow asks GitHub for PRs associated with that exact
+commit. It adds an offline `next` notification target with `mergedPr` only when
+exactly one merged PR targets `next` in this repository and its merge SHA equals
+the pushed SHA. It builds the manifest once, then runs independent online and
+offline notifications. A direct push has only the existing online target;
+ambiguous matches fail instead of guessing. This also supports merged fork PRs
+without running a privileged workflow on unmerged fork code. The merge commit is
+already in trusted `next` history, checked by the existing ancestry validation.
 
 Pre-merge PR deployment requires a repository owner or author with write access,
 an unchanged PR head, and `[deploy-test]` in that head commit's message. The marker
@@ -27,12 +27,14 @@ single-app builder (`app` input). The all-in-one workflow has a fixed app target
 
 Maintainers configure `PRIVATE_CD_REPOSITORY`, `PRIVATE_CD_ENABLED`, and
 `PRIVATE_CD_TOKEN` (target repository Actions write permission) in notification
-environments. Keep `cd-notify` restricted to next. `cd-notify-test` must permit
-same-repository pre-merge PR refs and `next` for manually dispatched PR builds
-and merged-PR target events; configure its own token and keep notification
-disabled until the private test environment has been initialized. The notification
-job reads GitHub metadata only and does not check out candidate code.
+environments. Keep `cd-notify` restricted to next. `cd-notify-test` handles
+offline targets: same-repository pre-merge PR refs, manual offline refs, and
+`next` for merged-PR notifications associated with a `next` push. Configure its
+own token and keep notification disabled until the private test environment has
+been initialized. The notification job reads GitHub metadata only and does not
+check out candidate code.
 
-Notification sends `sourceSha`, `ref`, `environment`, and `automatic`. Build or
-notification success does not mean deployment succeeded. Failed notification can
-be retried by rerunning the whole workflow; fingerprint images are reused.
+Notification sends `sourceSha`, `ref`, `environment`, and `automatic`; only the
+merged-PR notification adds `mergedPr`. Build or notification success does not
+mean deployment succeeded. Failed notification can be retried by rerunning the
+whole workflow; fingerprint images are reused.
