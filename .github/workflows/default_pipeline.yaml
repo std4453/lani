@@ -33,7 +33,8 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event_name != 'pull_request' && github.ref == 'refs/heads/next')
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+       github.ref == 'refs/heads/next')
     permissions:
       contents: read
       packages: read
@@ -44,6 +45,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       ref: ${{ steps.source.outputs.ref }}
       environment: ${{ steps.source.outputs.environment }}
+      notifyTargets: ${{ steps.source.outputs.notifyTargets }}
     steps:
       - name: Resolve source once
         id: source
@@ -73,9 +75,24 @@ jobs:
               const {data: comparison} = await github.rest.repos.compareCommitsWithBasehead({...context.repo, basehead: `${revision}...next`});
               if (!['ahead', 'identical'].includes(comparison.status)) throw new Error('Source is not in next history');
             }
+            const notifyTargets = [{ref, environment, mergedPr: ''}];
+            if (context.eventName === 'push') {
+              const associatedPrs = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
+                ...context.repo,
+                commit_sha: revision,
+                per_page: 100
+              });
+              const mergedPrs = associatedPrs.filter(pr => pr.merged_at && pr.base.ref === 'next' &&
+                pr.base.repo?.full_name === context.payload.repository.full_name && pr.merge_commit_sha === revision);
+              if (mergedPrs.length > 1) throw new Error('Multiple merged PRs match this next commit');
+              if (mergedPrs.length === 1) {
+                notifyTargets.push({ref: 'next', environment: 'offline', mergedPr: String(mergedPrs[0].number)});
+              }
+            }
             core.setOutput('revision', revision);
             core.setOutput('ref', ref);
             core.setOutput('environment', environment);
+            core.setOutput('notifyTargets', JSON.stringify(notifyTargets));
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
@@ -114,10 +131,14 @@ jobs:
       (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) }}
     needs: [plan, images]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.notifyTargets) }}
     permissions:
       contents: read
       pull-requests: read
-    environment: ${{ startsWith(needs.plan.outputs.ref, 'pr/') && 'cd-notify-test' || 'cd-notify' }}
+    environment: ${{ matrix.environment == 'offline' && 'cd-notify-test' || 'cd-notify' }}
     steps:
       # This job only reads GitHub metadata. It never executes the candidate tree.
       - name: Check deployment intent and notify
@@ -125,8 +146,9 @@ jobs:
         env:
           NOTIFY_ENABLED: ${{ vars.PRIVATE_CD_ENABLED }}
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
-          RELEASE_REF: ${{ needs.plan.outputs.ref }}
-          RELEASE_ENVIRONMENT: ${{ needs.plan.outputs.environment }}
+          RELEASE_REF: ${{ matrix.ref }}
+          RELEASE_ENVIRONMENT: ${{ matrix.environment }}
+          MERGED_PR: ${{ matrix.mergedPr }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
           PRIVATE_CD_TOKEN: ${{ secrets.PRIVATE_CD_TOKEN }}
         with:
@@ -137,6 +159,7 @@ jobs:
               environment: process.env.RELEASE_ENVIRONMENT,
               automatic: 'true'
             };
+            if (process.env.MERGED_PR) inputs.mergedPr = process.env.MERGED_PR;
             const skip = async reason => core.summary.addRaw(`Deployment skipped: ${reason}\n`).write();
             if (inputs.ref.startsWith('pr/')) {
               const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: Number(inputs.ref.slice(3))});
