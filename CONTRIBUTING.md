@@ -114,7 +114,7 @@ node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)"
 
 `manifest-check` 是 PR 的轻量一致性检查，用于发现忘记生成、跳过 hook 和 rebase 后的过期数据。CI 不自动提交修复。`next` 采用 squash/rebase 合入，避免改写已发布历史；维护者可在 GitHub 设置中将该检查设为必需检查，不需要额外运维脚本。
 
-fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；显式排除文档和 hook。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
+fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；排除根目录指定文档、`.github/README.md`、`docs/`、hook 和 manifest 检查 workflow；包内 README、文档和配置示例仍属于输入，修改它们也可能改变镜像 fingerprint。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
 
 主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
 

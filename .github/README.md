@@ -39,14 +39,9 @@ Online only accepts next. The CLI supports `--environment` and `--ref`;
 deployments always reconcile the full manifest. `--no-cd` uses the separate
 single-app builder (`app` input). The all-in-one workflow has a fixed app target.
 
-Maintainers configure `PRIVATE_CD_REPOSITORY`, `PRIVATE_CD_ENABLED`, and
-`PRIVATE_CD_TOKEN` (target repository Actions write permission) in notification
-environments. Keep `cd-notify` restricted to next. `cd-notify-test` handles
-offline targets: same-repository pre-merge PR refs, manual offline refs, and
-`next` for merged-PR notifications associated with a `next` push. Configure its
-own token and keep notification disabled until the private test environment has
-been initialized. The notification job reads GitHub metadata only and does not
-check out candidate code.
+The notification job reads GitHub metadata only and does not check out candidate
+code. Notification credentials, Environment access rules, and initial test
+baseline setup are maintained in the private deployment runbook.
 
 Notification sends `sourceSha`, `ref`, `environment`, and `automatic`; only the
 merged-PR notification adds `mergedPr`. Build or notification success does not

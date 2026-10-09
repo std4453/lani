@@ -6,15 +6,15 @@ sidebar_position: 10
 
 lani 运行在 64 位 Linux 系统上，在使用基于容器的部署方案时也可以在 Windows 和 MacOS 上使用。M1 Mac 等其他非 amd64 架构的设备暂不支持。
 
-lani 需要互联网连接，其访问的部分服务（如 [TheTVDB](https://thetvdb.com/)）位于中国大陆之外，你可以配置 [代理](#TBA) 来防止请求失败。
+lani 需要互联网连接，其访问的部分服务（如 [TheTVDB](https://thetvdb.com/)）位于中国大陆之外，你可以配置 API Server 的 `network.proxy`（如 `http://proxy-host:8080`） 来防止请求失败。
 
 ### Jellyfin
 
-lani 依赖 [Jellyfin](https://jellyfin.org/)，你需要拥有此服务器的管理员权限。此外还需要进行额外配置，详见 [Jellyfin 配置](#TBA)。
+lani 依赖 [Jellyfin](https://jellyfin.org/)，你需要拥有此服务器的管理员权限。此外还需要进行额外配置，详见 [Jellyfin 配置](./configuration/jellyfin)。
 
 ### 下载器
 
-lani 使用 BT 下载动画，目前仅支持 [qBittorrent](https://www.qbittorrent.org/) 作为下载器，未来可能会支持其他下载器。具体配置详见 [qBittorrent 配置](#TBA)。
+lani 使用 BT 下载动画，目前仅支持 [qBittorrent](https://www.qbittorrent.org/) 作为下载器，未来可能会支持其他下载器。具体配置详见 [qBittorrent 配置](./configuration/qbittorrent)。
 
 :::info
 
@@ -32,4 +32,4 @@ lani 使用兼容 [AWS S3](https://aws.amazon.com/cn/s3/) 的对象存储来存�
 
 别担心！lani 对存储的消耗量很低，几乎不会有任何花费。
 
-在使用 [docker 一体机容器](#TBA) 时，会自动在本地部署 MinIO，无需独立部署。
+在使用 [docker 一体机容器](./deployment/docker-all-in-one) 时，会自动在本地部署 MinIO，无需独立部署。

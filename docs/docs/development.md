@@ -20,7 +20,7 @@ node common/scripts/install-run-rush.js build --to @lani/gateway
 后端通过 `CONFIG_FILENAME` 指定配置文件，未设置时默认读取进程工作目录下的 `config.yaml`。配置结构以代码为准：
 
 - API Server：`apps/api-server/src/config/types.ts`，由 `apps/api-server/src/config/index.ts` 加载。
-- Gateway：`apps/gateway/src/config.ts`；鉴权配置使用 `authority`、`clientId` 和 `authz`，旧的 `example.config.yaml` 不应直接照抄。
+- Gateway：`apps/gateway/src/config.ts`；鉴权配置使用 `authority`、`clientId` 和 `authz`，可从 `apps/gateway/example.config.yaml` 准备自己的配置。
 - Data Server：`apps/data-server/src/config.ts`；需要 `postgresUrl` 和 `postgraphile`，没有额外选项时也应提供 `postgraphile: {}`。
 - Admin：`apps/admin/src/store/config.ts` 通过 GraphQL 获取配置，登录设置来自 Gateway；只启动 Umi 不代表整个应用已就绪。
 

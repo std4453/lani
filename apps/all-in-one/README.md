@@ -6,11 +6,11 @@
 
 ## 实现细节
 
-`@lani/all-in-one` 不包含任何代码，主要提供构建 image 用的 Dockerfile。
+`@lani/all-in-one` 提供 Dockerfile、启动脚本和默认配置，将各服务装入同一个容器。
 
 运行时，使用 `nginx` 部署静态前端文件，并反代后端接口。后端各服务通过 `pm2` 运行并 daemonize，崩溃时自动重启。由于 `@lani/gateway` 启动时需要 introspect 各微服务，在其他服务尚未完成启动时会崩溃重启，这是预期行为。
 
-image 启动时，会运行 [`start.sh`](/start.sh)。其同时启动 `nginx` 和 `pm2-runtime`，并在收到 `SIGINT` 或 `SIGTERM` 时停止已启动的服务，因此可在 `docker run` 的时候使用 `ctrl+c` 退出。
+image 启动时运行 [`start.sh`](start.sh)，完成配置和数据库 migration 后，以 `exec pm2-runtime` 接管进程；nginx、MinIO 和三个后端服务由 [PM2 配置](ecosystem.config.js) 统一管理。
 
 `@lani/all-in-one` 将所依赖的各服务设置为自身的 `devDependencies`，因此在 `rush build` 时会自动构建其他服务，而 `deploy` 时不会创建 `node_modules`。在 [`deploy.json`](../../common/config/rush/deploy.json) 中，将其他服务设置为 [`additionalProjectsToInclude`](https://rushjs.io/pages/maintainer/deploying/#including-additional-projects)。新增微服务时，需要将新服务加进去。
 
@@ -49,4 +49,6 @@ common/deploy/
 
 `docker build` 时会将该目录复制到 `/deploy`。
 
-`COPY_CONFIG` 环境变量为 `true` 时，会将 `/config` 下各服务的配置文件软链到各服务的目录下，添加新服务时需要新增复制代码。
+启动必须挂载 `/config/config.yaml`。脚本将该文件覆盖合并到 [`defaults.yaml`](defaults.yaml)，把结果复制到三个后端的 `config.yaml`，再使用合并配置中的 `postgresUrl` 执行 `npm run migrate:deploy`。迁移失败会终止启动；启动脚本不负责数据库备份。持久化对象存储使用 `/storage`。
+
+这是独立自托管容器的启动方式；维护者按 manifest 发布多个独立应用的 CI/CD 入口见 [工作流说明](../../.github/README.md)。
