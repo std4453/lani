@@ -4,7 +4,9 @@ sidebar_position: 10
 
 # 一体机容器
 
-[lani 一体机容器](https://github.com/std4453/lani/pkgs/container/lani-all-in-one) 包含了运行所需的各种服务，可以在任何支持 docker 的机器上运行。
+[lani 一体机容器](https://github.com/std4453/lani/pkgs/container/lani-all-in-one) 包含了运行所需的各种服务，面向运行 linux/amd64 容器的 Docker 环境。
+
+该容器启动时会执行数据库 migration，升级或重新启动前应自行备份数据库；它不执行维护者私有 CD 的快照和占用流程。
 
 在此之前，你需要 [安装 docker](https://docs.docker.com/get-docker/)。
 

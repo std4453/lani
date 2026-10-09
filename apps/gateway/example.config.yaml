@@ -1,21 +1,25 @@
-# 在本地开发时，复制本文件到 config.yaml，在 config.yaml 中填充内容
-
-# subgraph，应当指向 data 和 api
+# 本地开发时复制到 config.yaml，按自己的依赖填写；不要提交实际凭据。
 subgraphs:
   - name: data
-    url: http://data-server:8080/graphql
+    url: http://localhost:8083/graphql
   - name: api
-    url: http://api-server:8080/graphql
+    url: http://localhost:3000/graphql
 
-# 自动刷新间隔，不填则不会自动刷新，建议只在开发环境启用自动刷新
-pollIntervalInMs: 3000
+# 可选：轮询 subgraph schema；生产是否启用由部署配置决定。
+debug:
+  pollIntervalInMs: 3000
 
-# 接入 OIDC 认证，满足条件的请求才允许执行（introspection请求除外）
+# OIDC discovery 地址和浏览器公开客户端 ID。
 auth:
   enabled: true
-  issuer: https://your_oidc_issuer
-  audience: <your_audience>
-  role: <your_role>
-# 或者使用下面的配置取消鉴权功能
-# auth:
-#   enabled: false
+  authority: https://your_oidc_authority
+  clientId: your_public_client_id
+  # 按需用 JMESPath 检查 JWT claims；仅 issuer 校验不等于业务授权。
+  authz:
+    enabled: true
+    query: "contains(groups, 'your_admin_group')"
+    result: true
+  clientConfig:
+    scope: openid profile
+
+# 隔离开发环境可用 auth: { enabled: false } 关闭鉴权。
