@@ -96,15 +96,7 @@ git switch -c docs/commit-branch-guide origin/next
 
 ## PR 测试部署
 
-面向 `next` 的本仓库 PR 默认自动构建；作者为仓库 owner 或有 write/maintain/admin 权限，且 PR 仍打开、head SHA 未变化时，自动通知测试部署。外部 fork 不走这条构建发布链。
-
-- 正常部署：`git commit -m "fix(admin): 修正筛选"`。
-- 跳过当前提交的自动测试部署：`git commit -m "fix(admin): 调整筛选 [skip-cd]"`。检查当前 head 的完整 message，正文也有效；后续提交重新判断。
-- 持续跳过该 PR：将标题设为 `feat(admin): 新筛选 [skip-cd]`。移除标题标记本身不触发部署，下一次提交或 **Re-run all jobs** 才重新判断。
-
-两处标记大小写敏感，任一包含字面量 `[skip-cd]` 即正常跳过通知，并在 workflow 摘要说明原因；构建、manifest 检查和镜像准备继续执行，不取消已经发出的请求。不新增跳过 label。
-
-手动运行 Default Pipeline（例如 `environment=offline`、`ref=pr/123`）是显式部署请求，不受标记限制，其余校验保留。标记仅影响合并前 PR 的自动测试部署；合并到 next 仍发布 online 与 offline/next，直接 push next 仍按原行为发布，不检查合并提交消息中的标记。更多入口说明见 [.github/README.md](.github/README.md)。
+自动测试部署与 `[skip-cd]` 规则见 [.github/README.md](.github/README.md)。
 
 ## 构建 manifest 与提交 hook
 

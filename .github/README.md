@@ -53,13 +53,6 @@ merged-PR notification adds `mergedPr`. Build or notification success does not
 mean deployment succeeded. Failed notification can be retried by rerunning the
 whole workflow; fingerprint images are reused.
 
-## 中文操作示例
-
-- 正常提交：`git commit -m "fix(admin): 修正筛选"`，满足权限条件后自动部署测试环境。
-- 仅跳过这次提交：`git commit -m "fix(admin): 调整筛选 [skip-cd]"`；标记也可放在正文，下一次提交重新判断。
-- 持续暂停该 PR：标题改为 `feat(admin): 新筛选 [skip-cd]`。移除标记后，推送新提交或选择 **Re-run all jobs**；仅改标题不会部署。
-- 显式部署：手动运行 Default Pipeline，选择 `offline`、`pr/123`，即使标题或提交有标记也会部署，其他校验仍然生效。
-
 向 `next` 合入要求分支 up to date，目标分支保持 linear history。同步工作分支可
 merge `origin/next` 或 rebase；不强制用 rebase 同步。最终使用 squash/rebase
 merge 保持 `next` 线性，详见 [贡献指南](../CONTRIBUTING.md)。
