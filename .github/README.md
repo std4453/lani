@@ -14,14 +14,28 @@ ambiguous matches fail instead of guessing. This also supports merged fork PRs
 without running a privileged workflow on unmerged fork code. The merge commit is
 already in trusted `next` history, checked by the existing ancestry validation.
 
-Pre-merge PR deployment requires a repository owner or author with write access,
-an unchanged PR head, and `[deploy-test]` in that head commit's message. The marker
-applies to that commit only. `scope:ui` selects the shared test environment's
+Pre-merge same-repository PRs targeting next deploy to the test environment by
+default after building. Notification requires an open PR, a repository owner or
+author with write/maintain/admin access, and an unchanged current head SHA.
+Automatic PR notification is skipped if the current head commit's full message
+**or the current PR title** contains the case-sensitive literal `[skip-cd]`.
+The commit marker applies only to that head; the title marker persists until
+removed. Skips succeed with the reason in the workflow summary. Neither marker
+skips builds, manifest validation, or image preparation. Editing the title alone
+does not trigger deployment: the next commit or **Re-run all jobs** rechecks the
+latest title and head. Already dispatched requests are not cancelled.
+
+Markers only affect automatic pre-merge PR notifications. Merged-PR next pushes
+still notify online and offline/next, and direct next pushes still notify online;
+merge commit messages are never scanned for skip markers.
+`scope:ui` selects the shared test environment's
 preparation policy; it does not restrict which images the target manifest deploys.
 
 For manual runs, select `environment` and `ref` (`next` or `pr/<number>`).
 `sourceSha` optionally pins a commit in next history; PR runs resolve the current
-head. Online only accepts next. The CLI supports `--environment` and `--ref`;
+head. Manual dispatch is an explicit deployment request and ignores both skip
+markers, while retaining author, PR eligibility, and current-head checks.
+Online only accepts next. The CLI supports `--environment` and `--ref`;
 deployments always reconcile the full manifest. `--no-cd` uses the separate
 single-app builder (`app` input). The all-in-one workflow has a fixed app target.
 
@@ -38,3 +52,14 @@ Notification sends `sourceSha`, `ref`, `environment`, and `automatic`; only the
 merged-PR notification adds `mergedPr`. Build or notification success does not
 mean deployment succeeded. Failed notification can be retried by rerunning the
 whole workflow; fingerprint images are reused.
+
+## 中文操作示例
+
+- 正常提交：`git commit -m "fix(admin): 修正筛选"`，满足权限条件后自动部署测试环境。
+- 仅跳过这次提交：`git commit -m "fix(admin): 调整筛选 [skip-cd]"`；标记也可放在正文，下一次提交重新判断。
+- 持续暂停该 PR：标题改为 `feat(admin): 新筛选 [skip-cd]`。移除标记后，推送新提交或选择 **Re-run all jobs**；仅改标题不会部署。
+- 显式部署：手动运行 Default Pipeline，选择 `offline`、`pr/123`，即使标题或提交有标记也会部署，其他校验仍然生效。
+
+向 `next` 合入要求分支 up to date，目标分支保持 linear history。同步工作分支可
+merge `origin/next` 或 rebase；不强制用 rebase 同步。最终使用 squash/rebase
+merge 保持 `next` 线性，详见 [贡献指南](../CONTRIBUTING.md)。
