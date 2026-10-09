@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [next]
     types: [opened, reopened, synchronize]
+  pull_request_target:
+    branches: [next]
+    types: [closed]
   workflow_dispatch:
     inputs:
       ref:
@@ -31,9 +34,14 @@ permissions:
 jobs:
   plan:
     if: >-
+      (github.event_name == 'pull_request_target' &&
+       github.event.action == 'closed' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'next') ||
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event_name != 'pull_request' && github.ref == 'refs/heads/next')
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+       github.ref == 'refs/heads/next')
     permissions:
       contents: read
       packages: read
@@ -44,6 +52,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       ref: ${{ steps.source.outputs.ref }}
       environment: ${{ steps.source.outputs.environment }}
+      mergedPr: ${{ steps.source.outputs.mergedPr }}
     steps:
       - name: Resolve source once
         id: source
@@ -55,8 +64,9 @@ jobs:
         with:
           script: |
             const prEvent = context.eventName === 'pull_request';
-            const ref = prEvent ? `pr/${context.payload.pull_request.number}` : process.env.INPUT_REF || 'next';
-            const environment = prEvent ? 'offline' : process.env.INPUT_ENVIRONMENT || 'online';
+            const mergedPrEvent = context.eventName === 'pull_request_target' && context.payload.action === 'closed' && context.payload.pull_request.merged === true;
+            const ref = mergedPrEvent ? 'next' : prEvent ? `pr/${context.payload.pull_request.number}` : process.env.INPUT_REF || 'next';
+            const environment = (prEvent || mergedPrEvent) ? 'offline' : process.env.INPUT_ENVIRONMENT || 'online';
             if (!/^(next|pr\/[1-9][0-9]*)$/.test(ref) || (environment === 'online' && ref !== 'next'))
               throw new Error('Use online/next, offline/next or offline/pr/<number>');
             let revision;
@@ -67,15 +77,18 @@ jobs:
                 throw new Error('Expected an open same-repository PR targeting next');
               revision = prEvent ? context.payload.pull_request.head.sha : pr.head.sha;
             } else {
-              revision = process.env.INPUT_SHA || (context.eventName === 'push' ? context.sha :
-                (await github.rest.repos.getBranch({...context.repo, branch: 'next'})).data.commit.sha);
+              revision = mergedPrEvent ? context.payload.pull_request.merge_commit_sha :
+                (process.env.INPUT_SHA || (context.eventName === 'push' ? context.sha :
+                  (await github.rest.repos.getBranch({...context.repo, branch: 'next'})).data.commit.sha));
               if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error('Expected a complete source SHA');
               const {data: comparison} = await github.rest.repos.compareCommitsWithBasehead({...context.repo, basehead: `${revision}...next`});
               if (!['ahead', 'identical'].includes(comparison.status)) throw new Error('Source is not in next history');
             }
+            const mergedPr = mergedPrEvent ? String(context.payload.pull_request.number) : '';
             core.setOutput('revision', revision);
             core.setOutput('ref', ref);
             core.setOutput('environment', environment);
+            core.setOutput('mergedPr', mergedPr);
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
@@ -117,7 +130,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    environment: ${{ startsWith(needs.plan.outputs.ref, 'pr/') && 'cd-notify-test' || 'cd-notify' }}
+    environment: ${{ (needs.plan.outputs.mergedPr != '' || startsWith(needs.plan.outputs.ref, 'pr/')) && 'cd-notify-test' || 'cd-notify' }}
     steps:
       # This job only reads GitHub metadata. It never executes the candidate tree.
       - name: Check deployment intent and notify
@@ -127,6 +140,7 @@ jobs:
           SOURCE_SHA: ${{ needs.plan.outputs.revision }}
           RELEASE_REF: ${{ needs.plan.outputs.ref }}
           RELEASE_ENVIRONMENT: ${{ needs.plan.outputs.environment }}
+          MERGED_PR: ${{ needs.plan.outputs.mergedPr }}
           TARGET_REPOSITORY: ${{ vars.PRIVATE_CD_REPOSITORY }}
           PRIVATE_CD_TOKEN: ${{ secrets.PRIVATE_CD_TOKEN }}
         with:
@@ -137,6 +151,7 @@ jobs:
               environment: process.env.RELEASE_ENVIRONMENT,
               automatic: 'true'
             };
+            if (process.env.MERGED_PR) inputs.mergedPr = process.env.MERGED_PR;
             const skip = async reason => core.summary.addRaw(`Deployment skipped: ${reason}\n`).write();
             if (inputs.ref.startsWith('pr/')) {
               const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: Number(inputs.ref.slice(3))});
