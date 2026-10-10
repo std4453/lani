@@ -66,11 +66,14 @@ export class AxiosService extends Axios {
   ): Promise<R> {
     return new Promise((resolve, reject) => {
       const timeout = config.timeout ?? this.requestConfig.timeout ?? 0;
-      const controller = new AbortController();
-      const signal = config.signal ?? this.defaults.signal;
-      const abort = () => controller.abort();
-      signal?.addEventListener('abort', abort);
-      if (signal?.aborted) abort();
+      // 部署镜像使用 Node 14，不能依赖全局 AbortController。
+      const cancellation = axios.CancelToken.source();
+      const callerToken = config.cancelToken ?? this.defaults.cancelToken;
+      if (callerToken?.reason) cancellation.cancel(callerToken.reason.message);
+      // Axios 0.26 的 promise.then 返回可取消订阅的 Promise。
+      const subscription = callerToken?.promise.then((reason) => {
+        cancellation.cancel(reason.message);
+      }) as (Promise<void> & { cancel?: () => void }) | undefined;
       let timeoutRejected = false;
       const timer =
         timeout > 0
@@ -83,11 +86,11 @@ export class AxiosService extends Axios {
                   'ETIMEDOUT',
                 ),
               );
-              controller.abort();
+              cancellation.cancel('Request timed out');
             }, timeout)
           : undefined;
       this.instance
-        .request<T, R, D>({ ...config, signal: controller.signal })
+        .request<T, R, D>({ ...config, cancelToken: cancellation.token })
         .then(resolve, (error: unknown) => {
           // 如果已经超时了，这里就不再抛错
           if (timeoutRejected) {
@@ -115,7 +118,7 @@ export class AxiosService extends Axios {
         .catch(reject)
         .finally(() => {
           if (timer) clearTimeout(timer);
-          signal?.removeEventListener('abort', abort);
+          subscription?.cancel?.();
         });
     });
   }
