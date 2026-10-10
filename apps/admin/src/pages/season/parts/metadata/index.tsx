@@ -29,14 +29,12 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 function ImageDisplay({
   src,
   className,
-  imageType,
+  reload,
 }: {
   src: string | undefined | null;
   className?: string;
-  imageType: 'poster' | 'banner' | 'fanart';
+  reload: () => Promise<string | null | undefined>;
 }) {
-  const { id } = useSeasonPageContext();
-  const client = useApolloClient();
   return (
     <div
       className={clsx(
@@ -47,24 +45,23 @@ function ImageDisplay({
         className,
       )}
     >
-      {src ? (
-        <StoredImage
-          src={src}
-          reload={async () => {
-            const { data } = await client.query({
-              query: GetSeasonByIdDocument,
-              variables: { id, withConfig: true, withEpisodes: false },
-              fetchPolicy: 'no-cache',
-            });
-            return data.seasonById?.[imageType]?.downloadPath;
-          }}
-        />
-      ) : null}
+      {src ? <StoredImage src={src} reload={reload} /> : null}
     </div>
   );
 }
 
 export default function Metadata() {
+  const { id } = useSeasonPageContext();
+  const client = useApolloClient();
+  const reloadImages = async () => {
+    const { data } = await client.query({
+      query: GetSeasonByIdDocument,
+      variables: { id, withConfig: true, withEpisodes: false },
+      fetchPolicy: 'no-cache',
+    });
+    return data.seasonById;
+  };
+
   return (
     <Section title="元数据">
       <FormDependency<FormValues> name={['infoSource']}>
@@ -248,18 +245,18 @@ export default function Metadata() {
           {({ poster, fanart, banner }) => (
             <div className={styles.images}>
               <ImageDisplay
-                imageType="poster"
+                reload={async () => (await reloadImages())?.poster?.downloadPath}
                 src={poster?.downloadPath}
                 className={styles.posterContainer}
               />
               <div className={styles.rightColumn}>
                 <ImageDisplay
-                  imageType="banner"
+                  reload={async () => (await reloadImages())?.banner?.downloadPath}
                   src={banner?.downloadPath}
                   className={styles.bannerContainer}
                 />
                 <ImageDisplay
-                  imageType="fanart"
+                  reload={async () => (await reloadImages())?.fanart?.downloadPath}
                   src={fanart?.downloadPath}
                   className={styles.fanartContainer}
                 />
