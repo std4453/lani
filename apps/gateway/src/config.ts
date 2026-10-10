@@ -45,6 +45,7 @@ const schema = root({
   subgraphs,
   debug,
   auth,
+  imageProxy: opt(obj({ upstream: opt(str()) }), {}),
 });
 
 type ConfigType = T<typeof schema>;

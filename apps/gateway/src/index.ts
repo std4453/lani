@@ -14,6 +14,7 @@ import {
 } from "apollo-server-core";
 import express from "express";
 import http from "http";
+import { createImageProxy } from "./image-proxy";
 
 (async () => {
   const gateway = new ApolloGateway({
@@ -56,6 +57,7 @@ import http from "http";
   }
 
   const app = express();
+  app.use("/storage", createImageProxy(config.imageProxy.upstream));
   const httpServer = http.createServer(app);
   const server = new ApolloServer({
     gateway,

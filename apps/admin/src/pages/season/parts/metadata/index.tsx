@@ -1,6 +1,8 @@
 import FormDependency from '@/components/FormDependency';
+import StoredImage from '@/components/StoredImage';
 import { weekdayToText, weekdayToValueEnum } from '@/constants';
-import { MetadataSource } from '@/generated/types';
+import { GetSeasonByIdDocument, MetadataSource } from '@/generated/types';
+import { useApolloClient } from '@apollo/client';
 import {
   ProFormDependency,
   ProFormDigit,
@@ -20,16 +22,18 @@ import {
 } from 'antd';
 import clsx from 'clsx';
 import Section from '../../components/section';
-import { formItemProps, FormValues } from '../../help';
+import { formItemProps, FormValues, useSeasonPageContext } from '../../help';
 import styles from './index.module.less';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 function ImageDisplay({
   src,
   className,
+  reload,
 }: {
   src: string | undefined | null;
   className?: string;
+  reload: () => Promise<string | null | undefined>;
 }) {
   return (
     <div
@@ -41,12 +45,23 @@ function ImageDisplay({
         className,
       )}
     >
-      {src ? <img className={styles.image} src={src} /> : null}
+      {src ? <StoredImage src={src} reload={reload} /> : null}
     </div>
   );
 }
 
 export default function Metadata() {
+  const { id } = useSeasonPageContext();
+  const client = useApolloClient();
+  const reloadImages = async () => {
+    const { data } = await client.query({
+      query: GetSeasonByIdDocument,
+      variables: { id, withConfig: true, withEpisodes: false },
+      fetchPolicy: 'no-cache',
+    });
+    return data.seasonById;
+  };
+
   return (
     <Section title="元数据">
       <FormDependency<FormValues> name={['infoSource']}>
@@ -230,15 +245,18 @@ export default function Metadata() {
           {({ poster, fanart, banner }) => (
             <div className={styles.images}>
               <ImageDisplay
+                reload={async () => (await reloadImages())?.poster?.downloadPath}
                 src={poster?.downloadPath}
                 className={styles.posterContainer}
               />
               <div className={styles.rightColumn}>
                 <ImageDisplay
+                  reload={async () => (await reloadImages())?.banner?.downloadPath}
                   src={banner?.downloadPath}
                   className={styles.bannerContainer}
                 />
                 <ImageDisplay
+                  reload={async () => (await reloadImages())?.fanart?.downloadPath}
                   src={fanart?.downloadPath}
                   className={styles.fanartContainer}
                 />

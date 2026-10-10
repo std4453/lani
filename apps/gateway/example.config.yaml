@@ -5,6 +5,12 @@ subgraphs:
   - name: api
     url: http://localhost:3000/graphql
 
+# 图片存储源站的桶根地址，必须与 API Server 的 S3 签名地址匹配。
+# 不配置时 Gateway 仍启动，/storage/ 请求返回 503；无需 S3 密钥。
+# 开关在 API Server 的 s3.proxyEnabled（默认 true）。
+imageProxy:
+  upstream: http://storage:9000/images/
+
 # 可选：轮询 subgraph schema；生产是否启用由部署配置决定。
 debug:
   pollIntervalInMs: 3000
