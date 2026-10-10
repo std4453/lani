@@ -25,6 +25,7 @@ import {
 } from '@/generated/types';
 import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
+import { useAppSelector } from '@/store/hooks';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
@@ -48,6 +49,7 @@ import {
 } from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
+import TestRoutingTitle from './TestRoutingTitle';
 
 type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
 
@@ -707,6 +709,9 @@ function useSeasonsStatus(seasonIds: number[]) {
 
 export default withAntdSearch(function MetadataPage() {
   const client = useApolloClient();
+  const testRoutingEnabled = useAppSelector(
+    (state) => state.auth.config?.testRoutingEnabled === true,
+  );
 
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
@@ -754,7 +759,15 @@ export default withAntdSearch(function MetadataPage() {
         columns={columns}
         rowKey="id"
         {...props}
-        headerTitle={<TableTitle>元数据</TableTitle>}
+        headerTitle={
+          <TableTitle>
+            {testRoutingEnabled ? (
+              <TestRoutingTitle>元数据</TestRoutingTitle>
+            ) : (
+              '元数据'
+            )}
+          </TableTitle>
+        }
         actionRef={ref}
         toolBarRender={() => [
           <Button

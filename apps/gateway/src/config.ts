@@ -1,6 +1,7 @@
 import {
   any,
   arr,
+  bool,
   enabled,
   loadConfigSync,
   num,
@@ -21,6 +22,8 @@ const subgraphs = arr(
 const debug = opt(
   obj({
     pollIntervalInMs: opt(num()),
+    // 仅供测试的管理端路由切换入口，不作为权限控制。
+    testRoutingEnabled: opt(bool()),
   }),
   {}
 );

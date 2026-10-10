@@ -15,7 +15,10 @@ interface AuthConfig {
   config: Omit<UserManagerSettings, 'redirect_uri'>;
 }
 
-type AuthConfigConditional = WithEnabled<AuthConfig>;
+type AuthConfigConditional = WithEnabled<AuthConfig> & {
+  // 仅供测试；旧 Gateway 未返回此字段时保持关闭。
+  testRoutingEnabled?: boolean;
+};
 
 export interface AuthState {
   userManager: UserManager | undefined;
@@ -128,7 +131,7 @@ function hasAuthParams(location = window.location) {
 }
 
 async function fetchAuthConfig() {
-  const resp = await fetch('/api/gateway/auth_config');
+  const resp = await fetch('/api/gateway/auth_config', { cache: 'no-store' });
   const data = await resp.json();
   return data as AuthConfigConditional;
 }
