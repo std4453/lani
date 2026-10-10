@@ -72,8 +72,10 @@ import { createImageProxy } from "./image-proxy";
   server.applyMiddleware({ app });
 
   app.get("/auth_config", (_req, res) => {
+    res.set("Cache-Control", "no-store");
     res.send({
       enabled: config.auth.enabled,
+      testRoutingEnabled: config.debug.testRoutingEnabled === true,
       ...(config.auth.enabled
         ? {
             config: {

@@ -68,7 +68,6 @@
   },
   "files": [
     "/dist",
-    "/docker-entrypoint.d",
     "/nginx.conf"
   ]
 }

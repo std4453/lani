@@ -25,6 +25,7 @@ import {
 } from '@/generated/types';
 import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
+import { useAppSelector } from '@/store/hooks';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
@@ -708,6 +709,9 @@ function useSeasonsStatus(seasonIds: number[]) {
 
 export default withAntdSearch(function MetadataPage() {
   const client = useApolloClient();
+  const testRoutingEnabled = useAppSelector(
+    (state) => state.auth.config?.testRoutingEnabled === true,
+  );
 
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
@@ -757,7 +761,11 @@ export default withAntdSearch(function MetadataPage() {
         {...props}
         headerTitle={
           <TableTitle>
-            <TestRoutingTitle />
+            {testRoutingEnabled ? (
+              <TestRoutingTitle>元数据</TestRoutingTitle>
+            ) : (
+              '元数据'
+            )}
           </TableTitle>
         }
         actionRef={ref}

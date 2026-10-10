@@ -1,7 +1,7 @@
 import { Form, Input, message, Modal, Typography } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 
-// 仅供测试：由前端实例的运行配置开启，不作为正式产品功能或权限控制。
+// 仅供测试：提供手动切换路由的调试入口，不作为正式产品功能或权限控制。
 const FRONTEND_COOKIE = 'lani_frontend';
 const BACKEND_COOKIE = 'lani_backend';
 const CLICK_INTERVAL_MS = 1000;
@@ -25,30 +25,14 @@ function writeCookie(name: string, value: string): void {
   }`;
 }
 
-export default function TestRoutingTitle() {
-  const [enabled, setEnabled] = useState(false);
+export default function TestRoutingTitle({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [visible, setVisible] = useState(false);
   const clicks = useRef({ count: 0, last: 0 });
   const [form] = Form.useForm<{ frontend: string; backend: string }>();
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetch('/test-routing.json', {
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const config = (await response.json()) as { enabled?: boolean };
-        setEnabled(config.enabled === true);
-      })
-      .catch(() => {
-        // 配置缺失、无效或请求失败时保持关闭。
-      });
-    return () => controller.abort();
-  }, []);
-
-  if (!enabled) return <>元数据</>;
 
   return (
     <>
@@ -83,7 +67,7 @@ export default function TestRoutingTitle() {
           setVisible(true);
         }}
       >
-        元数据
+        {children}
       </button>
       <Modal
         title="测试路由"
