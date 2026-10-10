@@ -72,6 +72,7 @@ export default function TestRoutingTitle({
       <Modal
         title="测试路由"
         visible={visible}
+        maskClosable={false}
         forceRender
         okText="保存并刷新"
         cancelText="取消"
