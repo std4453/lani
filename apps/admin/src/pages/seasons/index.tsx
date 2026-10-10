@@ -48,6 +48,7 @@ import {
 } from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
+import TestRoutingTitle from './TestRoutingTitle';
 
 type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
 
@@ -754,7 +755,11 @@ export default withAntdSearch(function MetadataPage() {
         columns={columns}
         rowKey="id"
         {...props}
-        headerTitle={<TableTitle>元数据</TableTitle>}
+        headerTitle={
+          <TableTitle>
+            <TestRoutingTitle />
+          </TableTitle>
+        }
         actionRef={ref}
         toolBarRender={() => [
           <Button
