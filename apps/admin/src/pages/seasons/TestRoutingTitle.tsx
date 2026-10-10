@@ -86,7 +86,7 @@ export default function TestRoutingTitle() {
         元数据
       </button>
       <Modal
-        title="测试路由（仅供测试）"
+        title="测试路由"
         visible={visible}
         forceRender
         okText="保存并刷新"
@@ -116,7 +116,7 @@ export default function TestRoutingTitle() {
         >
           <Form.Item
             name="frontend"
-            label="前端路由 Cookie"
+            label="前端"
             normalize={(value: string) => value.trim()}
             rules={[
               {
@@ -129,7 +129,7 @@ export default function TestRoutingTitle() {
           </Form.Item>
           <Form.Item
             name="backend"
-            label="后端路由 Cookie"
+            label="后端"
             normalize={(value: string) => value.trim()}
             rules={[
               {
@@ -140,10 +140,7 @@ export default function TestRoutingTitle() {
           >
             <Input placeholder="online / offline" allowClear />
           </Form.Item>
-          <Typography.Text type="secondary">
-            留空恢复域名默认路由。Cookie 在同域标签页间共享；前端 PR
-            需已部署。若设置了路由 Header，Header 优先。
-          </Typography.Text>
+          <Typography.Text type="secondary">留空恢复默认路由</Typography.Text>
         </Form>
       </Modal>
     </>
