@@ -1,4 +1,9 @@
-import { AxiosService, getAxiosConfig } from '@/common/axios.service';
+import {
+  AxiosService,
+  getAxiosConfig,
+  HttpRequestError,
+} from '@/common/axios.service';
+import { LaniError } from '@/utils/error';
 import config from '@/config';
 import { QBittorrentConfig } from '@/config/types';
 import { QBTFiles, QBTTorrent, QBTTorrents } from '@/download-job/types';
@@ -7,8 +12,6 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import cookie from 'cookie';
-import dayjs from 'dayjs';
-import { inspect } from 'util';
 
 export type TorrentStateFilter =
   | 'all'
@@ -47,6 +50,7 @@ function getQBittorrentConfig() {
 export class QBittorrentService extends AxiosService {
   private SID = '';
   private loginTime = 0;
+  private authVersion = 0;
   private authPromise: Promise<void> | null = null;
   private qbtConfig: QBittorrentConfig;
 
@@ -58,117 +62,106 @@ export class QBittorrentService extends AxiosService {
       ...getAxiosConfig('local'),
     });
     this.qbtConfig = getQBittorrentConfig();
-    this.interceptors.request.use((config) => {
-      return {
-        ...config,
-        headers: {
-          ...config.headers,
-          ...(this.SID ? { cookie: `SID=${this.SID}` } : undefined),
-        },
-      };
-    });
   }
 
-  /**
-   * 实际进行登录，成功则会写入 SID
-   */
+  /** 登录请求不携带旧 SID，避免把失效凭据误当成会话复用。 */
   private async doLogin() {
-    this.logger.verbose('Logging into qBittorrent...');
     const params = new URLSearchParams();
     params.append('username', this.qbtConfig.username);
     params.append('password', this.qbtConfig.password);
-    // 使用 super.request，因为这次接口调用不需要拦截
-    const response = await super.request({
-      method: 'post',
-      url: '/auth/login',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      data: params.toString(),
-    });
-    const cookies = cookie.parse(response.headers?.['set-cookie']?.[0] ?? '');
-    this.loginTime = new Date().getTime();
-    if (cookies.SID) {
-      this.SID = cookies.SID;
-      this.logger.log(`Logged into qBittorrent, SID=${this.SID}`);
-    } else {
-      this.logger.log(
-        `Logged into qBittorrent, session reused (SID=${this.SID})`,
-      );
+    try {
+      const response = await super.request<string>({
+        method: 'post',
+        url: '/auth/login',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        data: params.toString(),
+      });
+      if (response.data === 'Fails.') {
+        throw new LaniError('用户名或密码被拒绝');
+      }
+      if (response.data !== 'Ok.' && response.status !== 204) {
+        throw new LaniError('登录接口返回了非预期响应');
+      }
+      const setCookie = response.headers['set-cookie'];
+      const cookies =
+        typeof setCookie === 'string' ? [setCookie] : setCookie ?? [];
+      const sid = cookies.map((value) => cookie.parse(value).SID).find(Boolean);
+      if (!sid) {
+        throw new LaniError('登录响应缺少 SID，无法建立会话');
+      }
+      this.SID = sid;
+      this.loginTime = Date.now();
+      ++this.authVersion;
+      this.logger.log('Logged into qBittorrent');
+    } catch (error) {
+      throw this.requestError('登录', error);
     }
   }
 
-  /**
-   * 调用登陆函数，保证登录过程中存在 authPromise，登录完成后清空 authPromise
-   * 没有并发检查，也不检查是否已经登录
-   */
   private loginNoCheck() {
+    this.SID = '';
+    this.loginTime = 0;
     const promise = this.doLogin().finally(() => {
       this.authPromise = null;
     });
     return (this.authPromise = promise);
   }
 
-  /**
-   * 保证存在 Cookie 后返回，调接口之前使用，如果登录失败则会报错
-   * 并发调用时只会触发一次请求，已登录时不会重复登录
-   */
   async ensureCredentials() {
-    // 登录中，等登录完成才知道结果
-    if (this.authPromise) {
-      return this.authPromise;
-    }
-    // 已经登录，直接返回
-    // qbt cookie会过期，过期（超过1小时）的话不等到请求失败直接刷新
-    if (this.SID && new Date().getTime() - this.loginTime <= 60 * 60 * 1000) {
-      return;
-    } else {
-      this.logger.verbose(
-        `qBittorrent credentials expired (${
-          this.loginTime
-            ? `last login at ${dayjs(this.loginTime).format(
-                'YYYY-MM-DD HH:mm:ss',
-              )}`
-            : 'never logged in'
-        }), refreshing credentials...`,
-      );
-      return this.loginNoCheck();
-    }
+    if (this.authPromise) return this.authPromise;
+    // 定期更新会话；实际失效仍由 401/403 恢复处理。
+    if (this.SID && Date.now() - this.loginTime <= 60 * 60 * 1000) return;
+    return this.loginNoCheck();
   }
 
-  /**
-   * 重置鉴权信息，强制重新登陆，并发调用时只会触发一次请求
-   */
-  async refreshCredentials() {
-    // 登录中，等登录完成才知道结果
-    if (this.authPromise) {
-      return this.authPromise;
-    }
+  async refreshCredentials(failedVersion = this.authVersion) {
+    if (this.authPromise) return this.authPromise;
+    // 旧请求的 403 可能晚于其他请求的重登完成，直接使用新会话。
+    if (this.SID && failedVersion !== this.authVersion) return;
     return this.loginNoCheck();
+  }
+
+  private requestError(operation: string, error: unknown, retried = false) {
+    const detail = error instanceof Error ? error.message : '未知错误';
+    return new HttpRequestError(
+      `qBittorrent ${operation}失败${
+        retried ? '（重新登录后重试）' : ''
+      }：${detail}`,
+      error instanceof HttpRequestError ? error.status : undefined,
+      error instanceof HttpRequestError ? error.code : undefined,
+    );
+  }
+
+  private requestWithSID<T, R, D>(config: AxiosRequestConfig<D>): Promise<R> {
+    // 固定本次请求的凭据，与 request 中记录的 authVersion 保持一致。
+    return super.request<T, R, D>({
+      ...config,
+      headers: { ...config.headers, cookie: `SID=${this.SID}` },
+    });
   }
 
   override async request<T = any, R = AxiosResponse<T, any>, D = any>(
     config: AxiosRequestConfig<D>,
   ): Promise<R> {
-    // 如果登录失败直接抛出去
     await this.ensureCredentials();
+    const version = this.authVersion;
+    const operation = config.url === '/torrents/add' ? '提交种子' : '查询';
     try {
-      return super.request<T, R, D>(config);
+      return await this.requestWithSID<T, R, D>(config);
     } catch (error) {
-      // 401/403 报错（如cookie过期）时，尝试一次重新登陆
       if (
-        error['isAxiosError'] &&
-        error.response?.status === 401 &&
-        error.response?.status === 403
+        !(error instanceof HttpRequestError) ||
+        (error.status !== 401 && error.status !== 403)
       ) {
-        this.logger.verbose(
-          `Got ${error.response?.status} status from qBittorrent, refreshing credentials...`,
-        );
-        await this.refreshCredentials();
-        return super.request<T, R, D>(config);
+        throw this.requestError(operation, error);
       }
-
-      throw error;
+      await this.refreshCredentials(version);
+      try {
+        // 只重放一次，不把第二次失败再次送入鉴权恢复。
+        return await this.requestWithSID<T, R, D>(config);
+      } catch (retryError) {
+        throw this.requestError(operation, retryError, true);
+      }
     }
   }
 
@@ -180,6 +173,9 @@ export class QBittorrentService extends AxiosService {
       },
       responseType: 'json',
     });
+    if (!Array.isArray(resp.data)) {
+      throw new LaniError('qBittorrent 查询失败：种子列表响应格式无效');
+    }
     const obj = plainToClass(QBTTorrents, { torrents: resp.data });
     try {
       await validateOrReject(obj);
