@@ -1,4 +1,5 @@
-import { GlobalAxiosService } from '@/common/axios.service';
+import { GlobalAxiosService, HttpRequestError } from '@/common/axios.service';
+import { LaniError } from '@/utils/error';
 import {
   IDownloadClient,
   TorrentInfo,
@@ -27,53 +28,152 @@ export class QBittorrentClient implements IDownloadClient {
     }));
   }
 
-  async submitTorrentLink(torrentLink: string) {
-    // 判断磁力链
-    if (torrentLink.startsWith('magnet:')) {
-      this.logger.verbose(`Torrent link ${torrentLink} is a magnet link`);
+  private async pause(ms: number) {
+    await new Promise<void>((resolve) => setTimeout(resolve, ms));
+  }
 
-      const magnet = parseTorrent(torrentLink);
-      if (!magnet.infoHash) {
-        throw new Error('磁力链接无效');
+  private isTransientError(error: unknown): error is HttpRequestError {
+    return (
+      error instanceof HttpRequestError &&
+      ([408, 429, 500, 502, 503, 504, 520, 522, 524].includes(
+        error.status ?? 0,
+      ) ||
+        [
+          'ETIMEDOUT',
+          'ECONNABORTED',
+          'ECONNRESET',
+          'ECONNREFUSED',
+          'EAI_AGAIN',
+          'ENOTFOUND',
+          'EPIPE',
+        ].includes(error.code ?? ''))
+    );
+  }
+
+  private async fetchTorrent(torrentLink: string) {
+    let host: string;
+    try {
+      const url = new URL(torrentLink);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:')
+        throw new Error();
+      host = url.host;
+    } catch {
+      throw new LaniError('获取种子文件失败：下载地址无效');
+    }
+    for (let attempt = 0; ; ++attempt) {
+      try {
+        const { data } = await this.global.get<Buffer>(torrentLink, {
+          responseType: 'arraybuffer',
+        });
+        return data;
+      } catch (error) {
+        if (attempt < 2 && this.isTransientError(error)) {
+          await this.pause(1000 * 2 ** attempt);
+          continue;
+        }
+        const detail = error instanceof Error ? error.message : '未知错误';
+        throw new LaniError(`获取种子文件失败（${host}）：${detail}`);
       }
-      const params = new FormData();
-      params.append('urls', torrentLink);
-      if (!(await this.qbt.getTorrent(magnet.infoHash))) {
-        await this.qbt.post('/torrents/add', params.getBuffer(), {
+    }
+  }
+
+  private parseTorrentInput(input: string | Buffer) {
+    try {
+      const torrent = parseTorrent(input);
+      const { infoHash } = torrent;
+      if (!infoHash || (Buffer.isBuffer(input) && !torrent.name)) {
+        throw new Error();
+      }
+      return { ...torrent, infoHash };
+    } catch {
+      throw new LaniError(
+        typeof input === 'string'
+          ? '解析磁力链接失败：链接无效或缺少 info hash'
+          : '解析种子文件失败：内容不是有效的 torrent 文件',
+      );
+    }
+  }
+
+  /** 添加接口先受理，再异步加入列表；仍留在当前的提交阶段等待确认。 */
+  private async waitForTorrent(hash: string) {
+    const deadline = Date.now() + 30000;
+    let lastError: unknown;
+    for (;;) {
+      try {
+        if (await this.qbt.getTorrent(hash)) return true;
+        lastError = undefined;
+      } catch (error) {
+        if (!this.isTransientError(error)) throw error;
+        lastError = error;
+      }
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      await this.pause(Math.min(1000, remaining));
+    }
+    if (lastError) throw lastError;
+    return false;
+  }
+
+  private async addAndConfirm(hash: string, params: FormData) {
+    // Buffer 可在鉴权恢复后重放；不重放已经消费过的 FormData 流。
+    const data = params.getBuffer();
+    for (let attempt = 0; ; ++attempt) {
+      try {
+        if (await this.qbt.getTorrent(hash)) return;
+      } catch (error) {
+        if (attempt >= 2 || !this.isTransientError(error)) throw error;
+        await this.pause(1000 * 2 ** attempt);
+        continue;
+      }
+      let submissionError: HttpRequestError | undefined;
+      let rejected = false;
+      try {
+        const response = await this.qbt.post<string>('/torrents/add', data, {
           headers: params.getHeaders(),
         });
-        this.logger.log(`Torrent ${magnet.xt} (${magnet.infoHash}) submitted`);
+        if (response.data !== 'Ok.' && response.data !== 'Fails.') {
+          throw new LaniError('qBittorrent 提交种子失败：接口返回了非预期响应');
+        }
+        rejected = response.data === 'Fails.';
+      } catch (error) {
+        if (!this.isTransientError(error)) throw error;
+        submissionError = error;
       }
-      return {
-        hash: magnet.infoHash,
-        name: magnet.name instanceof Array ? magnet.name[0] : magnet.name,
-      };
-    } else {
-      const { data } = await this.global.get<Buffer>(torrentLink, {
-        responseType: 'arraybuffer',
-      });
-      const torrent = parseTorrent(data);
-      if (!torrent.name || !torrent.infoHash) {
-        throw new Error('种子文件无效或已损坏');
-      }
-      const params = new FormData();
-      params.append('torrents', data, {
-        filename: torrent.name as string | undefined,
-      });
-      // 为了幂等，如果已经存在种子，就不再提交，也无需报错，相信hash不会碰撞
-      if (!(await this.qbt.getTorrent(torrent.infoHash))) {
-        await this.qbt.post('/torrents/add', params.getBuffer(), {
-          headers: params.getHeaders(),
-        });
-        this.logger.log(
-          `Torrent ${torrent.name} (${torrent.infoHash}) submitted`,
+      // Fails. 可能是同 hash 已存在/正在添加；超时也可能已被下载器受理。
+      // 两者都先查询确认，不能直接失败或盲目重复提交。
+      if (await this.waitForTorrent(hash)) return;
+      if (submissionError) {
+        if (attempt < 2) {
+          await this.pause(1000 * 2 ** attempt);
+          continue;
+        }
+        throw new LaniError(
+          `${submissionError.message}；按 hash 核对仍未找到种子（${hash}）`,
         );
       }
-      return {
-        hash: torrent.infoHash,
-        name: torrent.name instanceof Array ? torrent.name[0] : torrent.name,
-      };
+      throw new LaniError(
+        rejected
+          ? `qBittorrent 提交种子失败：返回 Fails.，等待确认后仍未找到种子（${hash}）`
+          : `qBittorrent 提交确认超时：已受理，但等待后仍未找到种子（${hash}）`,
+      );
     }
+  }
+
+  async submitTorrentLink(torrentLink: string) {
+    const isMagnet = torrentLink.startsWith('magnet:');
+    const input = isMagnet ? torrentLink : await this.fetchTorrent(torrentLink);
+    const torrent = this.parseTorrentInput(input);
+    const hash = torrent.infoHash;
+    const name = Array.isArray(torrent.name) ? torrent.name[0] : torrent.name;
+    const params = new FormData();
+    if (isMagnet) {
+      params.append('urls', torrentLink);
+    } else {
+      params.append('torrents', input, { filename: name });
+    }
+    await this.addAndConfirm(hash, params);
+    this.logger.log(`Torrent ${hash} submission confirmed`);
+    return { hash, name };
   }
 
   async lookupTorrents(hashes: string[]) {

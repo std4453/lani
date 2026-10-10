@@ -9,6 +9,17 @@ import axios, {
 } from 'axios';
 import createHttpsProxyAgent from 'https-proxy-agent';
 
+// 保留机器可判断的错误信息，供下载器鉴权恢复和有限网络重试使用。
+export class HttpRequestError extends LaniError {
+  constructor(
+    message: string,
+    public readonly status?: number,
+    public readonly code?: string,
+  ) {
+    super(message, { status, code });
+  }
+}
+
 export function getAxiosConfig(
   key: 'global' | 'hk' | 'local' | 'china',
 ): AxiosRequestConfig {
@@ -55,17 +66,28 @@ export class AxiosService extends Axios {
   ): Promise<R> {
     return new Promise((resolve, reject) => {
       const timeout = config.timeout ?? this.requestConfig.timeout ?? 0;
+      const controller = new AbortController();
+      const signal = config.signal ?? this.defaults.signal;
+      const abort = () => controller.abort();
+      signal?.addEventListener('abort', abort);
+      if (signal?.aborted) abort();
       let timeoutRejected = false;
-      setTimeout(() => {
-        timeoutRejected = true;
-        reject(
-          new LaniError(`请求超时 (${(timeout / 1000).toFixed(1)}秒)`, {
-            config,
-          }),
-        );
-      }, timeout);
+      const timer =
+        timeout > 0
+          ? setTimeout(() => {
+              timeoutRejected = true;
+              reject(
+                new HttpRequestError(
+                  `请求超时 (${(timeout / 1000).toFixed(1)}秒)`,
+                  undefined,
+                  'ETIMEDOUT',
+                ),
+              );
+              controller.abort();
+            }, timeout)
+          : undefined;
       this.instance
-        .request<T, R, D>(config)
+        .request<T, R, D>({ ...config, signal: controller.signal })
         .then(resolve, (error: unknown) => {
           // 如果已经超时了，这里就不再抛错
           if (timeoutRejected) {
@@ -74,27 +96,27 @@ export class AxiosService extends Axios {
           if (axios.isAxiosError(error)) {
             // 如果是Axios报错，展示相关数据
             if (error.response) {
-              throw new LaniError(
-                `响应错误 (${error.response.status}), data = ${error.response.data}`,
-                {
-                  headers: error.response.headers,
-                  data: error.response.data,
-                },
+              throw new HttpRequestError(
+                `HTTP ${error.response.status}`,
+                error.response.status,
+                error.code,
               );
             } else if (error.request) {
-              throw new LaniError(
-                `请求错误`,
-                {
-                  request: error.request,
-                },
-                error,
+              throw new HttpRequestError(
+                `请求错误${error.code ? ` (${error.code})` : ''}`,
+                undefined,
+                error.code,
               );
             }
           }
           // 其他情况下，原封不动抛出
           throw error;
         })
-        .catch(reject);
+        .catch(reject)
+        .finally(() => {
+          if (timer) clearTimeout(timer);
+          signal?.removeEventListener('abort', abort);
+        });
     });
   }
 }
