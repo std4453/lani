@@ -1,31 +1,44 @@
-# 本地开发时复制到 config.yaml，按自己的依赖填写；不要提交实际凭据。
 subgraphs:
   - name: data
     url: http://localhost:8083/graphql
   - name: api
     url: http://localhost:3000/graphql
 
-# 图片存储源站的桶根地址，必须与 API Server 的 S3 签名地址匹配。
-# 不配置时 Gateway 仍启动，/storage/ 请求返回 503；无需 S3 密钥。
-# 开关在 API Server 的 s3.proxyEnabled（默认 true）。
-imageProxy:
-  upstream: http://storage:9000/images/
+# 仅开发时需要定时刷新子图 schema
+# debug:
+#   pollIntervalInMs: 3000
 
-# 可选：轮询 subgraph schema；生产是否启用由部署配置决定。
-debug:
-  pollIntervalInMs: 3000
-
-# OIDC discovery 地址和浏览器公开客户端 ID。
 auth:
   enabled: true
-  authority: https://your_oidc_authority
-  clientId: your_public_client_id
-  # 按需用 JMESPath 检查 JWT claims；仅 issuer 校验不等于业务授权。
+  # Keycloak realm 的规范 issuer，必须与 token 的 iss 一致
+  authority: https://accounts.example.com/auth/realms/apps
+  # 同一 realm 的内网地址；token/JWKS/revoke 都使用这个地址
+  backchannelAuthority: http://keycloak:8080/auth/realms/apps
+  # 浏览器访问前端的 origin；不包含路径。仅 localhost/127.0.0.1 可使用 HTTP
+  publicOrigin: https://lani.example.com
+  # Keycloak confidential client；回调注册为：
+  # https://lani.example.com/api/gateway/auth/callback
+  clientId: lani-web
+  # Keycloak access token 必须包含此 audience，通常需要配置 audience mapper
+  audience: lani-api
+  scope: openid profile email
+  # 会话绝对寿命上限（秒），还会受 Keycloak refresh token 寿命限制
+  sessionMaxAge: 604800
+  # 凭据仅从环境变量读取，不经 /auth_config 返回给浏览器
+  clientSecretEnv: LANI_OIDC_CLIENT_SECRET
+  # 逗号分隔的 base64 32-byte 密钥；首个用于加密，其他用于轮换期间解密
+  cookieKeysEnv: LANI_AUTH_COOKIE_KEYS
   authz:
-    enabled: true
-    query: "contains(groups, 'your_admin_group')"
-    result: true
-  clientConfig:
-    scope: openid profile
+    enabled: false
+    # 开启时保留原来的 JMESPath 权限规则，例如：
+    # enabled: true
+    # query: contains(realm_access.roles, 'lani')
+    # result: true
+# 不需要鉴权的独立部署可改成：
+# auth:
+#   enabled: false
 
-# 隔离开发环境可用 auth: { enabled: false } 关闭鉴权。
+# 图片存储桶根地址；不配置时 /storage/ 返回 503，不影响启动。
+imageProxy:
+  upstream: http://storage:9000/images/
+# 测试路由入口可通过 debug.testRoutingEnabled: true 开启。

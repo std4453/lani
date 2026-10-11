@@ -35,7 +35,7 @@ export default defineConfig({
         {
           path: '/',
           exact: true,
-          redirect: '/seasons',
+          component: '@/pages/index',
           wrappers: ['@/wrappers/auth'],
         },
         {
@@ -86,7 +86,7 @@ export default defineConfig({
   mfsu: {},
   proxy: {
     '/api/gateway': {
-      target: 'http://localhost:8080/',
+      target: process.env.LANI_GATEWAY_URL || 'http://127.0.0.1:8080',
       changeOrigin: true,
       pathRewrite: { '^/api/gateway': '' },
     },

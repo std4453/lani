@@ -14,8 +14,8 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['auth/setUserManager', 'config/loadConfigError'],
-        ignoredPaths: ['auth.userManager', 'config.error'],
+        ignoredActions: ['config/loadConfigError'],
+        ignoredPaths: ['config.error'],
       },
     }),
 });
