@@ -193,7 +193,7 @@ function useColumns({
     useMemo(
       (): TableColumns<RowType>[] => [
         {
-          title: '',
+          title: 'ID',
           dataIndex: 'id',
           align: 'center',
           search: false,
