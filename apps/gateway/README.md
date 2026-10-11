@@ -7,7 +7,7 @@
 参考 `example.config.yaml`。这是原 SPA OAuth 配置的替换方案，需要前后端配套更新；旧 `clientConfig` 不再支持，已有浏览器登录在迁移后需要重新建立一次 Cookie。从本 PR 早期的自定义 Cookie 实现升级也需要重新登录一次；SDK 使用新的 Cookie 名称，成功登录时清理旧会话 Cookie。运行时要求 Node 20.19+ 或 22.12+。
 
 - `authority` 是 realm 的公开 issuer，保持与 JWT `iss` 一致。
-- `backchannelAuthority` 是同一 realm 的内网 URL。Keycloak 15.0.2 可用；保留 `/auth/realms/...` 路径。gateway 根据 Keycloak 的固定端点构造 metadata，启动不请求 discovery。
+- `backchannelAuthority` 是同一 realm 的内网 URL。使用 `client_secret_post` 兼容 Keycloak 15 的 client ID 编码行为；保留 `/auth/realms/...` 路径。gateway 根据 Keycloak 的固定端点构造 metadata，启动不请求 discovery。
 - `publicOrigin` 是浏览器前端 origin，回调固定为 `${publicOrigin}/api/gateway/auth/callback`。反向代理继续剥离 `/api/gateway` 前缀。不要根据请求 Host 拼接回调。
 - 使用开启 Standard Flow 的 **confidential client**。精确注册固定回调，不使用通配符。在服务端配置中填写 `auth.clientSecret` 和 `auth.cookieKeys`，启动时直接读取；这些值不会经 `/auth_config` 或 `/auth/session` 返回给浏览器。实际凭据只保存在私有部署配置中，公共示例使用占位值。
 - `audience` 是 **access token** 中预期的 `aud`，不一定等于 client ID。需要在 Keycloak 配置相应 audience mapper；不要通过关闭校验迁就缺失的 audience。

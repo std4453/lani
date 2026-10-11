@@ -103,7 +103,8 @@ export function createAuth(options: AuthOptions) {
     baseURL: origin.origin,
     clientID: options.clientId,
     clientSecret: options.clientSecret,
-    clientAuthMethod: "client_secret_basic",
+    // Keycloak 15 does not decode percent-encoded IDs in OAuth Basic auth.
+    clientAuthMethod: "client_secret_post",
     secret: options.cookieKeys,
     authRequired: false,
     idpLogout: false,
@@ -136,7 +137,7 @@ export function createAuth(options: AuthOptions) {
             response_types_supported: ["code"],
             subject_types_supported: ["public"],
             id_token_signing_alg_values_supported: ["RS256"],
-            token_endpoint_auth_methods_supported: ["client_secret_basic"],
+            token_endpoint_auth_methods_supported: ["client_secret_post"],
             code_challenge_methods_supported: ["S256"],
           }),
           { headers: { "content-type": "application/json" } }
@@ -390,14 +391,9 @@ export function createAuth(options: AuthOptions) {
         try {
           await fetch(endpoint(backend, "revoke"), {
             method: "POST",
-            headers: {
-              authorization: `Basic ${Buffer.from(
-                `${encodeURIComponent(options.clientId)}:${encodeURIComponent(
-                  options.clientSecret
-                )}`
-              ).toString("base64")}`,
-            },
             body: new URLSearchParams({
+              client_id: options.clientId,
+              client_secret: options.clientSecret,
               token: current.refresh_token,
               token_type_hint: "refresh_token",
             }),

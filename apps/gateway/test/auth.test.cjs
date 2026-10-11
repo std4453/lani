@@ -147,12 +147,9 @@ before(async () => {
     async (req, res) => {
       tokenRequests++;
       if (unavailable) return res.sendStatus(503);
-      assert.equal(
-        decodeURIComponent(
-          Buffer.from(req.headers.authorization.slice(6), "base64").toString()
-        ),
-        "lani-web:secret"
-      );
+      assert.equal(req.headers.authorization, undefined);
+      assert.equal(req.body.client_id, "lani-web");
+      assert.equal(req.body.client_secret, "secret");
       if (req.body.grant_type === "authorization_code") {
         const data = codes.get(req.body.code);
         codes.delete(req.body.code);
