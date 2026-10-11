@@ -10,6 +10,7 @@ import { QBTTorrentState } from '@/download-job/types';
 import { Injectable, Logger } from '@nestjs/common';
 import FormData from 'form-data';
 import parseTorrent from 'parse-torrent';
+import { inspect } from 'util';
 
 @Injectable()
 export class QBittorrentClient implements IDownloadClient {
@@ -32,6 +33,7 @@ export class QBittorrentClient implements IDownloadClient {
     await new Promise<void>((resolve) => setTimeout(resolve, ms));
   }
 
+  /** 只对可能短暂恢复的 HTTP/网络错误重试，不重试鉴权失败或输入错误。 */
   private isTransientError(error: unknown): error is HttpRequestError {
     return (
       error instanceof HttpRequestError &&
@@ -50,6 +52,7 @@ export class QBittorrentClient implements IDownloadClient {
     );
   }
 
+  /** 获取种子文件；暂时性错误最多尝试三次，两次重试分别等待一秒、两秒。 */
   private async fetchTorrent(torrentLink: string) {
     let host: string;
     try {
@@ -57,35 +60,68 @@ export class QBittorrentClient implements IDownloadClient {
       if (url.protocol !== 'http:' && url.protocol !== 'https:')
         throw new Error();
       host = url.host;
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Invalid torrent download URL: ${torrentLink}, error=${inspect(error)}`,
+      );
       throw new LaniError('获取种子文件失败：下载地址无效');
     }
     for (let attempt = 0; ; ++attempt) {
       try {
+        this.logger.verbose(
+          `Fetching torrent file: url=${torrentLink}, attempt=${attempt + 1}/3`,
+        );
         const { data } = await this.global.get<Buffer>(torrentLink, {
           responseType: 'arraybuffer',
         });
+        this.logger.verbose(
+          `Torrent file fetched: url=${torrentLink}, bytes=${
+            data.length
+          }, attempt=${attempt + 1}/3`,
+        );
         return data;
       } catch (error) {
         if (attempt < 2 && this.isTransientError(error)) {
-          await this.pause(1000 * 2 ** attempt);
+          const delay = 1000 * 2 ** attempt;
+          this.logger.warn(
+            `Torrent file fetch failed: url=${torrentLink}, attempt=${
+              attempt + 1
+            }/3; retrying in ${delay}ms, error=${inspect(error)}`,
+          );
+          await this.pause(delay);
           continue;
         }
+        this.logger.error(
+          `Torrent file fetch failed without further retries: url=${torrentLink}, attempt=${
+            attempt + 1
+          }/3, error=${inspect(error)}`,
+        );
         const detail = error instanceof Error ? error.message : '未知错误';
         throw new LaniError(`获取种子文件失败（${host}）：${detail}`);
       }
     }
   }
 
+  /** 解析磁力链接或种子文件，在提交前检查 info hash 和文件元数据。 */
   private parseTorrentInput(input: string | Buffer) {
     try {
       const torrent = parseTorrent(input);
       const { infoHash } = torrent;
       if (!infoHash || (Buffer.isBuffer(input) && !torrent.name)) {
-        throw new Error();
+        throw new Error('Missing info hash or torrent file name');
       }
+      this.logger.verbose(
+        `Torrent input parsed: hash=${infoHash}, name=${inspect(torrent.name)}`,
+      );
       return { ...torrent, infoHash };
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Torrent input parsing failed: ${
+          typeof input === 'string'
+            ? `magnet=${input}`
+            : `fileBytes=${input.length}`
+        }, error=${inspect(error)}`,
+      );
       throw new LaniError(
         typeof input === 'string'
           ? '解析磁力链接失败：链接无效或缺少 info hash'
@@ -94,63 +130,179 @@ export class QBittorrentClient implements IDownloadClient {
     }
   }
 
-  /** 添加接口先受理，再异步加入列表；仍留在当前的提交阶段等待确认。 */
+  /**
+   * 添加接口先受理，再异步加入列表；在当前提交阶段最多等待约 30 秒确认 hash 可见。
+   * qBittorrent 将任务记入 m_loadingTorrents 后调用 async_add_torrent，并立即返回 true：
+   * https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/base/bittorrent/sessionimpl.cpp#L2959-L2965
+   */
   private async waitForTorrent(hash: string) {
-    const deadline = Date.now() + 30000;
+    const startedAt = Date.now();
+    const deadline = startedAt + 30000;
+    let polls = 0;
+    this.logger.verbose(
+      `Waiting for torrent visibility: hash=${hash}, timeout=30000ms`,
+    );
     let lastError: unknown;
     for (;;) {
+      ++polls;
       try {
-        if (await this.qbt.getTorrent(hash)) return true;
+        if (await this.qbt.getTorrent(hash)) {
+          this.logger.log(
+            `Torrent visibility confirmed: hash=${hash}, polls=${polls}, elapsed=${
+              Date.now() - startedAt
+            }ms`,
+          );
+          return true;
+        }
+        this.logger.verbose(
+          `Torrent not yet visible: hash=${hash}, poll=${polls}, elapsed=${
+            Date.now() - startedAt
+          }ms`,
+        );
         lastError = undefined;
       } catch (error) {
-        if (!this.isTransientError(error)) throw error;
+        if (!this.isTransientError(error)) {
+          this.logger.error(
+            `Torrent confirmation query failed without retry: hash=${hash}, poll=${polls}, error=${inspect(
+              error,
+            )}`,
+          );
+          throw error;
+        }
+        this.logger.warn(
+          `Transient torrent confirmation query failure: hash=${hash}, poll=${polls}; polling will continue while time remains, error=${inspect(
+            error,
+          )}`,
+        );
         lastError = error;
       }
       const remaining = deadline - Date.now();
       if (remaining <= 0) break;
       await this.pause(Math.min(1000, remaining));
     }
+    this.logger.warn(
+      `Torrent visibility wait expired: hash=${hash}, polls=${polls}, elapsed=${
+        Date.now() - startedAt
+      }ms, lastError=${inspect(lastError)}`,
+    );
     if (lastError) throw lastError;
     return false;
   }
 
+  /**
+   * 按 hash 保证幂等：已存在则复用，否则提交并等待可查询后才算成功。
+   * 提交遇到暂时性错误时先查询确认，仍不存在才允许有限重试，避免重复提交。
+   */
   private async addAndConfirm(hash: string, params: FormData) {
     // Buffer 可在鉴权恢复后重放；不重放已经消费过的 FormData 流。
     const data = params.getBuffer();
     for (let attempt = 0; ; ++attempt) {
       try {
-        if (await this.qbt.getTorrent(hash)) return;
+        this.logger.verbose(
+          `Checking torrent before submission: hash=${hash}, attempt=${
+            attempt + 1
+          }/3`,
+        );
+        // 已存在时无需重复提交，相信 hash 不会碰撞。
+        if (await this.qbt.getTorrent(hash)) {
+          this.logger.log(`Torrent already exists; reusing it: hash=${hash}`);
+          return;
+        }
       } catch (error) {
-        if (attempt >= 2 || !this.isTransientError(error)) throw error;
-        await this.pause(1000 * 2 ** attempt);
+        if (attempt >= 2 || !this.isTransientError(error)) {
+          this.logger.error(
+            `Pre-submission torrent query failed without further retries: hash=${hash}, attempt=${
+              attempt + 1
+            }/3, error=${inspect(error)}`,
+          );
+          throw error;
+        }
+        const delay = 1000 * 2 ** attempt;
+        this.logger.warn(
+          `Pre-submission torrent query failed: hash=${hash}, attempt=${
+            attempt + 1
+          }/3; retrying in ${delay}ms, error=${inspect(error)}`,
+        );
+        await this.pause(delay);
         continue;
       }
       let submissionError: HttpRequestError | undefined;
       let rejected = false;
       try {
+        this.logger.verbose(
+          `Submitting torrent to qBittorrent: hash=${hash}, attempt=${
+            attempt + 1
+          }/3, bytes=${data.length}`,
+        );
         const response = await this.qbt.post<string>('/torrents/add', data, {
           headers: params.getHeaders(),
         });
+        this.logger.verbose(
+          `qBittorrent torrent submission response: hash=${hash}, attempt=${
+            attempt + 1
+          }/3, status=${response.status}, body=${inspect(response.data)}`,
+        );
         if (response.data !== 'Ok.' && response.data !== 'Fails.') {
           throw new LaniError('qBittorrent 提交种子失败：接口返回了非预期响应');
         }
         rejected = response.data === 'Fails.';
       } catch (error) {
-        if (!this.isTransientError(error)) throw error;
+        if (!this.isTransientError(error)) {
+          this.logger.error(
+            `Torrent submission failed without retry: hash=${hash}, attempt=${
+              attempt + 1
+            }/3, error=${inspect(error)}`,
+          );
+          throw error;
+        }
+        this.logger.warn(
+          `Torrent submission outcome is uncertain: hash=${hash}, attempt=${
+            attempt + 1
+          }/3; checking visibility before any retry, error=${inspect(error)}`,
+        );
         submissionError = error;
       }
-      // Fails. 可能是同 hash 已存在/正在添加；超时也可能已被下载器受理。
-      // 两者都先查询确认，不能直接失败或盲目重复提交。
+      // 添加接口在本次所有 addTorrent 调用都返回 false 时返回 Fails.，不是登录失败：
+      // https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/webui/api/torrentscontroller.cpp#L733-L760
+      // 原因包括启动时尚未恢复完成（!isRestored）、无效输入、同 hash 已在
+      // m_loadingTorrents 中等待异步添加，或已存在（可能合并 trackers 后仍返回 false）。
+      // https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/base/bittorrent/sessionimpl.cpp#L2616-L2668
+      // https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/base/bittorrent/sessionimpl.cpp#L2733-L2790
+      // 因此 Fails. 不等于种子不存在；提交超时也可能已被受理。先按 hash 确认，
+      // 未确认的 Fails. 最终报错，只有暂时性提交异常才允许有限重试。
+      if (rejected) {
+        this.logger.warn(
+          `qBittorrent returned Fails. for torrent submission: hash=${hash}; checking whether it already exists or is still being added`,
+        );
+      }
       if (await this.waitForTorrent(hash)) return;
       if (submissionError) {
         if (attempt < 2) {
-          await this.pause(1000 * 2 ** attempt);
+          const delay = 1000 * 2 ** attempt;
+          this.logger.warn(
+            `Torrent still absent after submission error: hash=${hash}, attempt=${
+              attempt + 1
+            }/3; retrying submission in ${delay}ms, error=${inspect(
+              submissionError,
+            )}`,
+          );
+          await this.pause(delay);
           continue;
         }
+        this.logger.error(
+          `Torrent submission retries exhausted and hash remains absent: hash=${hash}, attempts=${
+            attempt + 1
+          }, error=${inspect(submissionError)}`,
+        );
         throw new LaniError(
           `${submissionError.message}；按 hash 核对仍未找到种子（${hash}）`,
         );
       }
+      this.logger.error(
+        `Torrent submission could not be confirmed: hash=${hash}, response=${
+          rejected ? 'Fails.' : 'Ok.'
+        }, attempt=${attempt + 1}/3`,
+      );
       throw new LaniError(
         rejected
           ? `qBittorrent 提交种子失败：返回 Fails.，等待确认后仍未找到种子（${hash}）`
@@ -161,6 +313,11 @@ export class QBittorrentClient implements IDownloadClient {
 
   async submitTorrentLink(torrentLink: string) {
     const isMagnet = torrentLink.startsWith('magnet:');
+    this.logger.verbose(
+      `Submitting torrent link: type=${
+        isMagnet ? 'magnet' : 'file'
+      }, url=${torrentLink}`,
+    );
     const input = isMagnet ? torrentLink : await this.fetchTorrent(torrentLink);
     const torrent = this.parseTorrentInput(input);
     const hash = torrent.infoHash;
@@ -172,7 +329,9 @@ export class QBittorrentClient implements IDownloadClient {
       params.append('torrents', input, { filename: name });
     }
     await this.addAndConfirm(hash, params);
-    this.logger.log(`Torrent ${hash} submission confirmed`);
+    this.logger.log(
+      `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed`,
+    );
     return { hash, name };
   }
 
