@@ -29,11 +29,6 @@ import { createImageProxy } from "./image-proxy";
     const auth = createAuth({
       ...config.auth,
       testRoutingEnabled: config.debug.testRoutingEnabled === true,
-      clientSecret: process.env[config.auth.clientSecretEnv] || "",
-      cookieKeys: (process.env[config.auth.cookieKeysEnv] || "")
-        .split(",")
-        .map((key) => key.trim())
-        .filter(Boolean),
     });
     app.use("/auth", auth.router);
     const introspectionQuery = print(parse(getIntrospectionQuery()));

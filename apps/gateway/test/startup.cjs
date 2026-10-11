@@ -43,6 +43,8 @@ const { randomBytes } = require("node:crypto");
               publicOrigin: origin,
               clientId: "local",
               audience: "local-api",
+              clientSecret: "local-secret",
+              cookieKeys: [randomBytes(32).toString("base64")],
             }
           : { enabled: false },
       };
@@ -57,8 +59,6 @@ const { randomBytes } = require("node:crypto");
             ...process.env,
             CONFIG_FILENAME: filename,
             PORT: String(port),
-            LANI_OIDC_CLIENT_SECRET: "local-secret",
-            LANI_AUTH_COOKIE_KEYS: randomBytes(32).toString("base64"),
           },
           stdio: ["ignore", "pipe", "pipe"],
         }

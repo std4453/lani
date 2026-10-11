@@ -24,10 +24,12 @@ auth:
   scope: openid profile email
   # 会话绝对寿命上限（秒），还会受 Keycloak refresh token 寿命限制
   sessionMaxAge: 604800
-  # 凭据仅从环境变量读取，不经 /auth_config 返回给浏览器
-  clientSecretEnv: LANI_OIDC_CLIENT_SECRET
-  # 逗号分隔的 base64 32-byte 密钥；首个用于加密，其他用于轮换期间解密
-  cookieKeysEnv: LANI_AUTH_COOKIE_KEYS
+  # 服务端配置，不经 /auth_config 返回给浏览器；替换为实际 client secret
+  clientSecret: replace-with-client-secret
+  # base64 32-byte 密钥列表；首个用于加密，其他用于轮换期间解密
+  # 示例仅为占位；每个部署自行生成，并在所有副本之间共享、跨重启保留
+  cookieKeys:
+    - replace-with-generated-base64-32-byte-key
   authz:
     enabled: false
     # 开启时保留原来的 JMESPath 权限规则，例如：

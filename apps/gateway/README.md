@@ -9,7 +9,7 @@
 - `authority` 是 realm 的公开 issuer，保持与 JWT `iss` 一致。
 - `backchannelAuthority` 是同一 realm 的内网 URL。Keycloak 15.0.2 可用；保留 `/auth/realms/...` 路径。gateway 根据 Keycloak 的固定端点构造 metadata，启动不请求 discovery。
 - `publicOrigin` 是浏览器前端 origin，回调固定为 `${publicOrigin}/api/gateway/auth/callback`。反向代理继续剥离 `/api/gateway` 前缀。不要根据请求 Host 拼接回调。
-- 使用开启 Standard Flow 的 **confidential client**。精确注册固定回调，不使用通配符。client secret 通过 `LANI_OIDC_CLIENT_SECRET` 注入；不需要把 secret 交给浏览器。
+- 使用开启 Standard Flow 的 **confidential client**。精确注册固定回调，不使用通配符。在服务端配置中填写 `auth.clientSecret` 和 `auth.cookieKeys`，启动时直接读取；这些值不会经 `/auth_config` 或 `/auth/session` 返回给浏览器。实际凭据只保存在私有部署配置中，公共示例使用占位值。
 - `audience` 是 **access token** 中预期的 `aud`，不一定等于 client ID。需要在 Keycloak 配置相应 audience mapper；不要通过关闭校验迁就缺失的 audience。
 - 保留原 `authz` 规则；Cookie 和 Bearer 请求都校验权限。ID token 只提供显示信息，不能代替 access token 授权。
 - `scope` 默认 `openid profile email`。用户名、头像等来自 ID token；需要的 mapper 应启用 Add to ID token。正常页面加载不请求 userinfo。
@@ -20,7 +20,7 @@
 node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("base64"))'
 ```
 
-把结果放入 `LANI_AUTH_COOKIE_KEYS`，所有 gateway 副本共享。滚动轮换时先让所有副本同时接受新旧密钥，再将新密钥放在首位用于加密；旧 Cookie 的最长寿命过去后再删除旧密钥。不要每次重启随机生成。
+把结果作为一项放入 `auth.cookieKeys` 数组，所有 gateway 副本共享。滚动轮换时先让所有副本同时接受新旧密钥，再将新密钥放在首位用于加密；旧 Cookie 的最长寿命过去后再删除旧密钥。不要每次重启随机生成。
 
 ## 凭据与故障行为
 

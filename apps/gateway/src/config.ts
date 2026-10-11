@@ -6,13 +6,7 @@ export interface Config {
   subgraphs: { name: string; url: string }[];
   debug: { pollIntervalInMs?: number; testRoutingEnabled?: boolean };
   imageProxy: { upstream?: string };
-  auth:
-    | { enabled: false }
-    | (Omit<AuthOptions, "clientSecret" | "cookieKeys"> & {
-        enabled: true;
-        clientSecretEnv: string;
-        cookieKeysEnv: string;
-      });
+  auth: { enabled: false } | (AuthOptions & { enabled: true });
 }
 
 export const schema = Joi.object({
@@ -53,8 +47,8 @@ export const schema = Joi.object({
           .min(60)
           .max(2592000)
           .default(604800),
-        clientSecretEnv: Joi.string().default("LANI_OIDC_CLIENT_SECRET"),
-        cookieKeysEnv: Joi.string().default("LANI_AUTH_COOKIE_KEYS"),
+        clientSecret: Joi.string().required(),
+        cookieKeys: Joi.array().items(Joi.string().required()).min(1).required(),
         authz: Joi.alternatives()
           .try(
             Joi.object({ enabled: Joi.valid(false).required() }),
