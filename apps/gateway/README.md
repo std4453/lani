@@ -53,15 +53,4 @@ npm test
 
 前端开发默认代理到本机 `http://127.0.0.1:8080`，可用 `LANI_GATEWAY_URL` 修改；`publicOrigin` 应配置成前端 dev server 的 origin。只有显式配置代理目标才会访问远程 gateway。
 
-完整浏览器测试先构建前端和 gateway 测试模块，再运行 `test/browser.cjs`：
-
-```sh
-# 在仓库根目录
-(cd apps/admin && NODE_OPTIONS=--openssl-legacy-provider node node_modules/umi/bin/umi.js build)
-npm test --prefix apps/gateway
-PLAYWRIGHT_MODULE=/absolute/path/to/playwright node apps/gateway/test/browser.cjs
-```
-
-Playwright 需已安装 Chromium。`NODE_OPTIONS` 仅用于旧版 Umi/Webpack 在较新 Node/OpenSSL 上构建，生产代码不依赖此设置。浏览器测试使用本地模拟 OIDC/API，并阻止所有非 loopback 网络请求；不会使用真实账号或改动共享数据库。
-
-正常构建 gateway 后，可运行 `node apps/gateway/test/startup.cjs` 验证实际进程在 Keycloak 不可达时仍可启动，以及关闭鉴权的配置。
+`npm test` 使用统一的 `tests/tsconfig.json` 编译全部 `tests/*.test.ts`，再由 Node 测试运行器一次执行；认证测试与图片代理、路由测试共用 `.test-dist` 产物。只启动本地 HTTP 模拟服务，不需要浏览器、前端构建或外部服务。

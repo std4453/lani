@@ -1,39 +1,65 @@
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const http = require("node:http");
-const { randomBytes } = require("node:crypto");
-const express = require("express");
-const { generateKeyPair, exportJWK, SignJWT, compactDecrypt } = require("jose");
-const { createAuth, safeReturnTo } = require("../dist/auth-tests/index");
+import assert from "assert/strict";
+import http, { RequestListener, Server } from "http";
+import { AddressInfo } from "net";
+import { randomBytes } from "crypto";
+import express, { Request } from "express";
+import {
+  generateKeyPair,
+  exportJWK,
+  SignJWT,
+  compactDecrypt,
+  KeyLike,
+  JWTPayload,
+} from "jose";
+import { createAuth, safeReturnTo, AuthOptions, AuthError } from "../src/auth";
 
-let provider,
-  server,
-  replica,
-  base,
-  issuer,
-  privateKey,
-  publicKey,
-  options,
-  auth;
+// Match the existing tests: Node 17 types predate the runtime's test/fetch APIs.
+type Run = () => Promise<void> | void;
+const {
+  test,
+  before,
+  after,
+}: {
+  test: (name: string, run: Run) => void;
+  before: (run: Run) => void;
+  after: (run: Run) => void;
+} = require("node:test");
+type TestServer = Server & { closeAllConnections(): void };
+type TestResponse = Response & {
+  headers: Headers & { getSetCookie(): string[] };
+};
+
+let provider: TestServer, server: TestServer, replica: TestServer;
+let base: string, issuer: string;
+let privateKey: KeyLike, publicKey: KeyLike;
+let options: AuthOptions;
 let tokenRequests = 0,
   discoveryRequests = 0,
   jwksRequests = 0,
   unavailable = false;
 let lifetime = 300,
   idLifetime = 300,
-  roles = ["user"],
-  idClaims = {},
-  accessClaims = {};
-const codes = new Map();
+  roles = ["user"];
+let idClaims: JWTPayload = {};
+const accessClaims: JWTPayload = {};
+const codes = new Map<
+  string,
+  { nonce: string | null; challenge: string | null }
+>();
 const key = randomBytes(32).toString("base64");
-const listen = (app) =>
-  new Promise((resolve) => {
+const listen = (app: RequestListener) =>
+  new Promise<TestServer>((resolve) => {
     const server = http
       .createServer(app)
-      .listen(0, "127.0.0.1", () => resolve(server));
+      .listen(0, "127.0.0.1", () => resolve(server as TestServer));
   });
-const address = (server) => `http://127.0.0.1:${server.address().port}`;
-async function token(claims = {}, ttl = lifetime, audience = "lani-api") {
+const address = (server: Server) =>
+  `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+async function token(
+  claims: JWTPayload = {},
+  ttl = lifetime,
+  audience = "lani-api"
+) {
   return new SignJWT({ sub: "alice", roles, ...claims })
     .setProtectedHeader({ alg: "RS256", kid: "test-key" })
     .setIssuer(issuer)
@@ -42,7 +68,7 @@ async function token(claims = {}, ttl = lifetime, audience = "lani-api") {
     .setExpirationTime(Math.floor(Date.now() / 1000) + ttl)
     .sign(privateKey);
 }
-async function tokenSet(nonce) {
+async function tokenSet(nonce: string | null) {
   const rt = randomBytes(20).toString("hex");
   return {
     access_token: await token(accessClaims),
@@ -57,17 +83,23 @@ async function tokenSet(nonce) {
     ),
   };
 }
-class Browser {
-  cookies = new Map();
+// HTTP client with a cookie jar; no browser process is involved.
+class CookieClient {
+  target?: string;
+  cookies = new Map<string, string>();
   header() {
     return [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
   }
-  async request(path, init = {}, target = this.target || base) {
-    const response = await fetch(`${target}${path}`, {
+  async request(
+    path: string,
+    init: RequestInit = {},
+    target = this.target || base
+  ) {
+    const response = (await fetch(`${target}${path}`, {
       ...init,
       redirect: "manual",
       headers: { cookie: this.header(), ...init.headers },
-    });
+    })) as TestResponse;
     for (const item of response.headers.getSetCookie()) {
       const pair = item.split(";")[0],
         at = pair.indexOf("=");
@@ -76,7 +108,7 @@ class Browser {
     }
     return response;
   }
-  post(path, target) {
+  post(path: string, target?: string) {
     return this.request(
       path,
       { method: "POST", headers: { origin: base, "x-lani-csrf": "1" } },
@@ -94,13 +126,15 @@ function gateway(config = options) {
       const claims = await instance.authenticate(req);
       res.json({ sub: claims.sub });
     } catch (e) {
-      res.status(e.status || 500).json({ error: e.code });
+      res.status(e instanceof AuthError ? e.status : 500).json({
+        error: e instanceof AuthError ? e.code : "TEST_FAILURE",
+      });
     }
   });
   return { app, instance };
 }
 async function login(
-  browser = new Browser(),
+  browser = new CookieClient(),
   returnTo = "/seasons?q=test#list",
   expected = { status: 302, location: returnTo }
 ) {
@@ -108,7 +142,7 @@ async function login(
     `/api/gateway/auth/login?returnTo=${encodeURIComponent(returnTo)}`
   );
   assert.equal(start.status, 302);
-  const url = new URL(start.headers.get("location"));
+  const url = new URL(start.headers.get("location")!);
   assert.equal(url.origin, new URL(issuer).origin);
   assert.equal(url.searchParams.get("code_challenge_method"), "S256");
   const code = randomBytes(12).toString("hex");
@@ -189,7 +223,6 @@ before(async () => {
     authz: { enabled: true, query: "contains(roles, 'user')", result: true },
   };
   const built = gateway();
-  auth = built.instance;
   placeholder.use(built.app);
   replica = await listen(gateway().app);
 });
@@ -197,8 +230,8 @@ after(async () => {
   await Promise.all(
     [provider, server, replica].map(
       (s) =>
-        new Promise((resolve) => {
-          s.close(resolve);
+        new Promise<void>((resolve) => {
+          s.close(() => resolve());
           s.closeAllConnections();
         })
     )
@@ -208,7 +241,7 @@ after(async () => {
 test("startup and anonymous session need no discovery or JWKS", async () => {
   assert.equal(discoveryRequests, 0);
   assert.equal(jwksRequests, 0);
-  const response = await new Browser().request("/api/gateway/auth/session");
+  const response = await new CookieClient().request("/api/gateway/auth/session");
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal((await response.json()).authenticated, false);
@@ -247,7 +280,7 @@ test("refreshing an already-consumed callback does not exchange code again", asy
 
 test("missing state and copied callback cannot log another browser in", async () => {
   const { callback } = await login();
-  const response = await new Browser().request(callback);
+  const response = await new CookieClient().request(callback);
   assert.equal(response.headers.get("location"), "/?auth_error=login_failed");
 });
 
@@ -277,7 +310,7 @@ test("cookie requests reject CSRF; bearer API clients remain supported", async (
   );
   assert.equal(
     (
-      await new Browser().request("/graphql", {
+      await new CookieClient().request("/graphql", {
         method: "POST",
         headers: { authorization: `Bearer ${await token()}` },
       })
@@ -294,7 +327,7 @@ test("audience, expiry, signature and permissions are enforced", async () => {
   ]) {
     assert.equal(
       (
-        await new Browser().request("/graphql", {
+        await new CookieClient().request("/graphql", {
           method: "POST",
           headers: { authorization: `Bearer ${jwt}` },
         })
@@ -305,7 +338,7 @@ test("audience, expiry, signature and permissions are enforced", async () => {
   const forbidden = await token({ roles: [] });
   assert.equal(
     (
-      await new Browser().request("/graphql", {
+      await new CookieClient().request("/graphql", {
         method: "POST",
         headers: { authorization: `Bearer ${forbidden}` },
       })
@@ -339,13 +372,13 @@ test("expired provider tokens and accounts outage do not affect a session, even 
     assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 404);
   } finally {
     unavailable = false;
-    await new Promise((resolve) => cold.close(resolve));
+    await new Promise<void>((resolve) => cold.close(() => resolve()));
   }
 });
 
 test("fixed session expiry rejects access and cannot be extended by activity", async () => {
   const short = await listen(gateway({ ...options, sessionMaxAge: 1 }).app);
-  const browser = new Browser();
+  const browser = new CookieClient();
   browser.target = address(short);
   try {
     await login(browser);
@@ -368,13 +401,13 @@ test("fixed session expiry rejects access and cannot be extended by activity", a
       302
     );
   } finally {
-    await new Promise((resolve) => short.close(resolve));
+    await new Promise<void>((resolve) => short.close(() => resolve()));
   }
 });
 
 test("login checks authorization and token identity before issuing a session", async () => {
   for (const failure of ["permissions", "audience", "expiry", "identity"]) {
-    const browser = new Browser();
+    const browser = new CookieClient();
     try {
       if (failure === "permissions") roles = [];
       if (failure === "audience") options.audience = "wrong-api";
@@ -396,7 +429,7 @@ test("login checks authorization and token identity before issuing a session", a
         assert.equal((await browser.post("/graphql")).status, 401);
         assert.ok(!browser.cookies.has("lani-local-gateway"));
       } finally {
-        await new Promise((resolve) => isolated.close(resolve));
+        await new Promise<void>((resolve) => isolated.close(() => resolve()));
       }
     } finally {
       roles = ["user"];
@@ -412,7 +445,7 @@ test("issued session keeps its authorization snapshot; new login and Bearer enfo
   roles = [];
   try {
     assert.equal((await browser.post("/graphql")).status, 200);
-    await login(new Browser(), "/", {
+    await login(new CookieClient(), "/", {
       status: 303,
       location: "/?auth_error=login_failed",
     });
@@ -450,7 +483,7 @@ test("tampering and key rotation", async () => {
   for (const [cookieKeys, expected] of [
     [[randomBytes(32).toString("base64"), key], true],
     [[randomBytes(32).toString("base64")], false],
-  ]) {
+  ] as [string[], boolean][]) {
     const rotated = await listen(gateway({ ...options, cookieKeys }).app);
     try {
       const response = await browser.request(
@@ -461,7 +494,7 @@ test("tampering and key rotation", async () => {
       assert.equal((await response.json()).authenticated, expected);
       assert.equal(response.headers.get("set-cookie"), null);
     } finally {
-      await new Promise((resolve) => rotated.close(resolve));
+      await new Promise<void>((resolve) => rotated.close(() => resolve()));
     }
   }
   for (const [name, value] of browser.cookies)
@@ -494,10 +527,12 @@ test("cold JWKS outage fails closed without taking down session endpoint", async
   unavailable = true;
   try {
     await assert.rejects(
-      cold.authenticate({ headers: { authorization: `Bearer ${jwt}` } }),
-      (error) => error.status === 503
+      cold.authenticate({
+        headers: { authorization: `Bearer ${jwt}` },
+      } as Request),
+      (error: unknown) => error instanceof AuthError && error.status === 503
     );
-    const response = await new Browser().request("/api/gateway/auth/session");
+    const response = await new CookieClient().request("/api/gateway/auth/session");
     assert.equal(response.status, 200);
   } finally {
     unavailable = false;
@@ -509,24 +544,24 @@ test("HTTPS login cookies are host-only and oversized sessions fail closed", asy
     gateway({ ...options, publicOrigin: "https://lani.example" }).app
   );
   try {
-    const start = await new Browser().request(
+    const start = await new CookieClient().request(
       "/api/gateway/auth/login",
       {},
       address(secure)
     );
-    const cookie = start.headers.get("set-cookie");
+    const cookie = start.headers.get("set-cookie")!;
     assert.ok(cookie.startsWith("__Host-lani-gateway-login="));
     for (const attr of ["Secure", "HttpOnly", "SameSite=Lax", "Path=/"])
       assert.ok(cookie.includes(attr));
     assert.ok(!cookie.includes("Domain="));
   } finally {
-    await new Promise((resolve) => secure.close(resolve));
+    await new Promise<void>((resolve) => secure.close(() => resolve()));
   }
   idClaims = { name: "x".repeat(6000) };
-  const browser = new Browser();
+  const browser = new CookieClient();
   try {
     const start = await browser.request("/api/gateway/auth/login");
-    const url = new URL(start.headers.get("location"));
+    const url = new URL(start.headers.get("location")!);
     codes.set("oversized", {
       nonce: url.searchParams.get("nonce"),
       challenge: url.searchParams.get("code_challenge"),
@@ -548,7 +583,7 @@ test("session contains no provider tokens and reads cannot restore a logged-out 
   const { getKeyStore } = require("express-openid-connect/lib/crypto");
   const [encryptionKey] = getKeyStore([key], true);
   const { plaintext } = await compactDecrypt(
-    browser.cookies.get("lani-local-gateway"),
+    browser.cookies.get("lani-local-gateway")!,
     encryptionKey
   );
   const stored = JSON.parse(new TextDecoder().decode(plaintext));
@@ -558,7 +593,7 @@ test("session contains no provider tokens and reads cannot restore a logged-out 
     "profile",
     "sub",
   ]);
-  const stale = new Browser();
+  const stale = new CookieClient();
   stale.cookies = new Map(browser.cookies);
   await browser.post("/api/gateway/auth/logout");
   for (const response of [
@@ -571,9 +606,9 @@ test("session contains no provider tokens and reads cannot restore a logged-out 
 });
 
 test("mismatched nonce is rejected and large provider claims do not bloat session cookies", async () => {
-  const browser = new Browser();
+  const browser = new CookieClient();
   const start = await browser.request("/api/gateway/auth/login");
-  const url = new URL(start.headers.get("location"));
+  const url = new URL(start.headers.get("location")!);
   codes.set("wrong-nonce", {
     nonce: "wrong",
     challenge: url.searchParams.get("code_challenge"),
