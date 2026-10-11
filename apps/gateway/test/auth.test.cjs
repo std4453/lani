@@ -5,7 +5,6 @@ const { randomBytes } = require("node:crypto");
 const express = require("express");
 const { generateKeyPair, exportJWK, SignJWT } = require("jose");
 const { createAuth, safeReturnTo } = require("../dist/auth-tests/index");
-const { AuthCookies } = require("../dist/auth-tests/cookies");
 
 let provider,
   server,
@@ -85,9 +84,10 @@ class Browser {
     );
   }
 }
-function gateway() {
+function gateway(config = options) {
   const app = express();
-  const instance = createAuth(options);
+  const instance = createAuth(config);
+  app.use(instance.middleware);
   app.use("/api/gateway/auth", instance.router);
   app.post("/graphql", async (req, res) => {
     try {
@@ -119,7 +119,7 @@ async function login(
     "state"
   )}`;
   const response = await browser.request(callback);
-  assert.equal(response.status, 303);
+  assert.equal(response.status, 302);
   assert.equal(response.headers.get("location"), returnTo);
   return { browser, callback, response };
 }
@@ -148,8 +148,10 @@ before(async () => {
       tokenRequests++;
       if (unavailable) return res.sendStatus(503);
       assert.equal(
-        req.headers.authorization,
-        `Basic ${Buffer.from("lani-web:secret").toString("base64")}`
+        decodeURIComponent(
+          Buffer.from(req.headers.authorization.slice(6), "base64").toString()
+        ),
+        "lani-web:secret"
       );
       if (req.body.grant_type === "authorization_code") {
         const data = codes.get(req.body.code);
@@ -228,6 +230,7 @@ test("login, clean redirect, encrypted cookie and cross-replica recovery", async
   assert.ok(
     response.headers
       .getSetCookie()
+      .filter((c) => !c.split(";")[0].endsWith("="))
       .every((c) => c.includes("HttpOnly") && c.includes("SameSite=Lax"))
   );
   assert.ok(!browser.header().includes("Alice"));
@@ -373,23 +376,23 @@ test("logout removes local credentials and cannot silently restore them", async 
 
 test("tampering and key rotation", async () => {
   const { browser } = await login();
-  const cookies = new AuthCookies(
-    [randomBytes(32).toString("base64"), key],
-    base,
-    false
-  );
-  assert.ok(
-    await cookies.read({ headers: { cookie: browser.header() } }, "session")
-  );
-  const retired = new AuthCookies(
-    [randomBytes(32).toString("base64")],
-    base,
-    false
-  );
-  assert.equal(
-    await retired.read({ headers: { cookie: browser.header() } }, "session"),
-    undefined
-  );
+  for (const [cookieKeys, expected] of [
+    [[randomBytes(32).toString("base64"), key], true],
+    [[randomBytes(32).toString("base64")], false],
+  ]) {
+    const rotated = await listen(gateway({ ...options, cookieKeys }).app);
+    try {
+      const response = await browser.request(
+        "/api/gateway/auth/session",
+        {},
+        address(rotated)
+      );
+      assert.equal((await response.json()).authenticated, expected);
+      assert.equal(response.headers.get("set-cookie"), null);
+    } finally {
+      await new Promise((resolve) => rotated.close(resolve));
+    }
+  }
   for (const [name, value] of browser.cookies)
     browser.cookies.set(name, value.slice(0, 25) + "x" + value.slice(26));
   assert.equal(
@@ -430,59 +433,98 @@ test("cold JWKS outage fails closed without taking down session endpoint", async
   }
 });
 
-test("HTTPS cookies are host-only and oversized payloads fail before writing", async () => {
-  const cookies = new AuthCookies([key], "https://lani.example", true);
-  const writes = [];
-  const res = {
-    cookie: (...args) => writes.push(args),
-    clearCookie: (...args) => writes.push(args),
-  };
-  await cookies.write(
-    res,
-    "session",
-    { at: "test" },
-    Math.floor(Date.now() / 1000) + 60
+test("HTTPS login cookies are host-only and oversized sessions fail closed", async () => {
+  const secure = await listen(
+    gateway({ ...options, publicOrigin: "https://lani.example" }).app
   );
-  assert.ok(
-    writes.every(
-      ([name, , opts]) =>
-        name.startsWith("__Host-") &&
-        (!opts ||
-          (opts.secure && opts.httpOnly && opts.path === "/" && !opts.domain))
-    )
-  );
-  assert.equal(writes[0][2].secure, true);
-  writes.length = 0;
-  await assert.rejects(
-    cookies.write(
-      res,
-      "session",
-      { at: "x".repeat(6000) },
-      Math.floor(Date.now() / 1000) + 60
-    ),
-    /size limit/
-  );
-  assert.equal(writes.length, 0);
+  try {
+    const start = await new Browser().request(
+      "/api/gateway/auth/login",
+      {},
+      address(secure)
+    );
+    const cookie = start.headers.get("set-cookie");
+    assert.ok(cookie.startsWith("__Host-lani-oidc-login="));
+    for (const attr of ["Secure", "HttpOnly", "SameSite=Lax", "Path=/"])
+      assert.ok(cookie.includes(attr));
+    assert.ok(!cookie.includes("Domain="));
+  } finally {
+    await new Promise((resolve) => secure.close(resolve));
+  }
+  roles = ["user", "x".repeat(6000)];
+  const browser = new Browser();
+  try {
+    const start = await browser.request("/api/gateway/auth/login");
+    const url = new URL(start.headers.get("location"));
+    codes.set("oversized", {
+      nonce: url.searchParams.get("nonce"),
+      challenge: url.searchParams.get("code_challenge"),
+    });
+    const response = await browser.request(
+      `/api/gateway/auth/callback?code=oversized&state=${url.searchParams.get(
+        "state"
+      )}`
+    );
+    assert.equal(response.headers.get("location"), "/?auth_error=login_failed");
+    assert.equal(browser.cookies.size, 0);
+  } finally {
+    roles = ["user"];
+  }
 });
 
-test("refresh slides the idle timeout but preserves the absolute session lifetime", async () => {
+test("refresh preserves the absolute cookie expiry; ordinary reads never overwrite rotated tokens", async () => {
   lifetime = 10;
-  refreshLifetime = 60;
-  const { browser } = await login();
+  const { browser, response } = await login();
   lifetime = 300;
-  refreshLifetime = 3600;
-  const cookies = new AuthCookies([key], base, false);
-  const first = await cookies.read(
-    { headers: { cookie: browser.header() } },
-    "session"
+  const expiry = (res) =>
+    res.headers
+      .getSetCookie()
+      .find((c) => c.startsWith("lani-local-oidc="))
+      ?.match(/Expires=([^;]+)/)[1];
+  const original = browser.header();
+  const stale = new Browser();
+  stale.cookies = new Map(browser.cookies);
+  const refreshed = await browser.post("/api/gateway/auth/refresh");
+  assert.equal(expiry(refreshed), expiry(response));
+  assert.notEqual(browser.header(), original);
+  for (const res of [
+    await stale.request("/api/gateway/auth/session"),
+    await stale.post("/graphql"),
+    await stale.post("/api/gateway/auth/refresh"),
+  ])
+    assert.equal(res.headers.get("set-cookie"), null);
+  const rejected = await stale.post("/api/gateway/auth/refresh");
+  assert.equal(rejected.status, 401);
+  assert.equal((await browser.post("/graphql")).status, 200);
+});
+
+test("mismatched nonce is rejected and chunked sessions survive a replica change", async () => {
+  const browser = new Browser();
+  const start = await browser.request("/api/gateway/auth/login");
+  const url = new URL(start.headers.get("location"));
+  codes.set("wrong-nonce", {
+    nonce: "wrong",
+    challenge: url.searchParams.get("code_challenge"),
+  });
+  const failed = await browser.request(
+    `/api/gateway/auth/callback?code=wrong-nonce&state=${url.searchParams.get(
+      "state"
+    )}`
   );
-  await browser.post("/api/gateway/auth/refresh");
-  const second = await cookies.read(
-    { headers: { cookie: browser.header() } },
-    "session"
-  );
-  assert.equal(second.absoluteUntil, first.absoluteUntil);
-  assert.ok(second.exp > first.exp);
-  assert.ok(second.exp <= first.absoluteUntil);
-  assert.notEqual(second.rt, first.rt);
+  assert.equal(failed.headers.get("location"), "/?auth_error=login_failed");
+  assert.equal(browser.cookies.size, 0);
+  roles = ["user", "x".repeat(800)];
+  try {
+    const { browser: chunked } = await login();
+    assert.ok(chunked.cookies.has("lani-local-oidc.1"));
+    assert.ok(
+      [...chunked.cookies.values()].every((value) => value.length < 4096)
+    );
+    assert.equal(
+      (await chunked.post("/graphql", address(replica))).status,
+      200
+    );
+  } finally {
+    roles = ["user"];
+  }
 });

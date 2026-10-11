@@ -127,6 +127,9 @@ exports.start = async function start() {
   };
   const instances = [createAuth(options), createAuth(options)];
   let request = 0;
+  app.use((req, res, next) =>
+    instances[request % 2].middleware(req, res, next)
+  );
   // Alternate independent gateway instances for every request.
   app.use("/api/gateway/auth", (req, res, next) =>
     instances[request++ % 2].router(req, res, next)

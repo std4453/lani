@@ -11,21 +11,20 @@ const test: (name: string, run: () => Promise<void>) => void =
 test("cookie session preserves the test-routing feature flag without exposing OIDC configuration", async () => {
   for (const enabled of [true, false]) {
     const app = express();
-    app.use(
-      "/auth",
-      createAuth({
-        authority: "http://127.0.0.1:1/realms/test",
-        backchannelAuthority: "http://127.0.0.1:1/realms/test",
-        publicOrigin: "http://localhost:8000",
-        clientId: "local",
-        clientSecret: "local-secret",
-        audience: "api",
-        cookieKeys: [randomBytes(32).toString("base64")],
-        scope: "openid",
-        sessionMaxAge: 3600,
-        testRoutingEnabled: enabled,
-      }).router
-    );
+    const auth = createAuth({
+      authority: "http://127.0.0.1:1/realms/test",
+      backchannelAuthority: "http://127.0.0.1:1/realms/test",
+      publicOrigin: "http://localhost:8000",
+      clientId: "local",
+      clientSecret: "local-secret",
+      audience: "api",
+      cookieKeys: [randomBytes(32).toString("base64")],
+      scope: "openid",
+      sessionMaxAge: 3600,
+      testRoutingEnabled: enabled,
+    });
+    app.use(auth.middleware);
+    app.use("/auth", auth.router);
     const server = http.createServer(app);
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
@@ -47,6 +46,25 @@ test("cookie session preserves the test-routing feature flag without exposing OI
           )
           .on("error", reject);
       });
+      // SDK callback errors use its middleware's next(), which must still clean
+      // the browser URL instead of falling through to Express's error page.
+      const callback = await new Promise<http.IncomingMessage>(
+        (resolve, reject) => {
+          http
+            .get(
+              `http://127.0.0.1:${
+                (server.address() as AddressInfo).port
+              }/auth/callback?code=used&state=copied`,
+              { agent: false },
+              resolve
+            )
+            .on("error", reject);
+        }
+      );
+      callback.resume();
+      assert.equal(callback.statusCode, 303);
+      assert.equal(callback.headers.location, "/?auth_error=login_failed");
+      assert.equal(callback.headers["cache-control"], "no-store");
       const result = JSON.parse(body);
       assert.equal(result.testRoutingEnabled, enabled);
       assert.equal(result.authenticated, false);

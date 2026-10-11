@@ -30,6 +30,7 @@ import { createImageProxy } from "./image-proxy";
       ...config.auth,
       testRoutingEnabled: config.debug.testRoutingEnabled === true,
     });
+    app.use(auth.middleware);
     app.use("/auth", auth.router);
     const introspectionQuery = print(parse(getIntrospectionQuery()));
     context = async ({ req }) => {
