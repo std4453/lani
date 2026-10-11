@@ -1,6 +1,6 @@
 import config from '@/config';
 import { LaniError } from '@/utils/error';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import axios, {
   Axios,
   AxiosInstance,
@@ -8,7 +8,6 @@ import axios, {
   AxiosResponse,
 } from 'axios';
 import createHttpsProxyAgent from 'https-proxy-agent';
-import { inspect } from 'util';
 
 // 保留机器可判断的错误信息，供下载器鉴权恢复和有限网络重试使用。
 export class HttpRequestError extends LaniError {
@@ -54,7 +53,6 @@ export class AxiosService extends Axios {
   protected instance: AxiosInstance;
   defaults: Axios['defaults'];
   interceptors: Axios['interceptors'];
-  private httpLogger = new Logger(AxiosService.name);
 
   protected constructor(private requestConfig: AxiosRequestConfig) {
     super();
@@ -65,16 +63,13 @@ export class AxiosService extends Axios {
 
   /**
    * 代理 Axios 请求，并用外层超时覆盖连接建立阶段；超时后取消底层请求。
-   * 日志记录请求及响应详情，用户错误只携带简明中文说明、HTTP 状态和网络错误码。
+   * 保留 HTTP 状态和网络错误码，由业务调用方记录具体操作的失败上下文。
    */
   request<T = any, R = AxiosResponse<T>, D = any>(
     config: AxiosRequestConfig<D>,
   ): Promise<R> {
     return new Promise((resolve, reject) => {
       const timeout = config.timeout ?? this.requestConfig.timeout ?? 0;
-      const request = `${config.method ?? 'get'} ${
-        config.baseURL ?? this.defaults.baseURL ?? ''
-      }${config.url ?? ''}`;
       // 部署镜像使用 Node 14，不能依赖全局 AbortController。
       const cancellation = axios.CancelToken.source();
       const callerToken = config.cancelToken ?? this.defaults.cancelToken;
@@ -88,11 +83,6 @@ export class AxiosService extends Axios {
         timeout > 0
           ? setTimeout(() => {
               timeoutRejected = true;
-              this.httpLogger.warn(
-                `HTTP request timed out after ${timeout}ms; cancelling request: ${request}, params=${inspect(
-                  config.params,
-                )}`,
-              );
               reject(
                 new HttpRequestError(
                   `请求超时 (${(timeout / 1000).toFixed(1)}秒)`,
@@ -111,16 +101,7 @@ export class AxiosService extends Axios {
             return;
           }
           if (axios.isAxiosError(error)) {
-            // Axios 响应详情写入日志；供用户展示的报错保留状态/错误码。
-            this.httpLogger.warn(
-              `HTTP request failed: ${request}, params=${inspect(
-                config.params,
-              )}, status=${error.response?.status}, code=${
-                error.code
-              }, message=${error.message}, response=${inspect(
-                error.response?.data,
-              )}`,
-            );
+            // 供用户展示的报错保留状态/错误码。
             if (error.response) {
               throw new HttpRequestError(
                 `HTTP ${error.response.status}`,
@@ -136,11 +117,6 @@ export class AxiosService extends Axios {
             }
           }
           // 其他情况下，原封不动抛出
-          this.httpLogger.error(
-            `Unexpected HTTP request failure: ${request}, error=${inspect(
-              error,
-            )}`,
-          );
           throw error;
         })
         .catch(reject)

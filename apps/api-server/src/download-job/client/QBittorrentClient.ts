@@ -12,6 +12,9 @@ import FormData from 'form-data';
 import parseTorrent from 'parse-torrent';
 import { inspect } from 'util';
 
+// 单次获取或提交流程的最大尝试次数，包含首次请求。
+const MAX_ATTEMPTS = 3;
+
 @Injectable()
 export class QBittorrentClient implements IDownloadClient {
   private logger = new Logger(QBittorrentClient.name);
@@ -52,7 +55,7 @@ export class QBittorrentClient implements IDownloadClient {
     );
   }
 
-  /** 获取种子文件；暂时性错误最多尝试三次，两次重试分别等待一秒、两秒。 */
+  /** 获取种子文件；暂时性错误按 MAX_ATTEMPTS 限制次数，并使用指数退避。 */
   private async fetchTorrent(torrentLink: string) {
     let host: string;
     try {
@@ -68,25 +71,17 @@ export class QBittorrentClient implements IDownloadClient {
     }
     for (let attempt = 0; ; ++attempt) {
       try {
-        this.logger.verbose(
-          `Fetching torrent file: url=${torrentLink}, attempt=${attempt + 1}/3`,
-        );
         const { data } = await this.global.get<Buffer>(torrentLink, {
           responseType: 'arraybuffer',
         });
-        this.logger.verbose(
-          `Torrent file fetched: url=${torrentLink}, bytes=${
-            data.length
-          }, attempt=${attempt + 1}/3`,
-        );
         return data;
       } catch (error) {
-        if (attempt < 2 && this.isTransientError(error)) {
+        if (attempt < MAX_ATTEMPTS - 1 && this.isTransientError(error)) {
           const delay = 1000 * 2 ** attempt;
           this.logger.warn(
             `Torrent file fetch failed: url=${torrentLink}, attempt=${
               attempt + 1
-            }/3; retrying in ${delay}ms, error=${inspect(error)}`,
+            }/${MAX_ATTEMPTS}; retrying in ${delay}ms, error=${inspect(error)}`,
           );
           await this.pause(delay);
           continue;
@@ -94,7 +89,7 @@ export class QBittorrentClient implements IDownloadClient {
         this.logger.error(
           `Torrent file fetch failed without further retries: url=${torrentLink}, attempt=${
             attempt + 1
-          }/3, error=${inspect(error)}`,
+          }/${MAX_ATTEMPTS}, error=${inspect(error)}`,
         );
         const detail = error instanceof Error ? error.message : '未知错误';
         throw new LaniError(`获取种子文件失败（${host}）：${detail}`);
@@ -110,9 +105,6 @@ export class QBittorrentClient implements IDownloadClient {
       if (!infoHash || (Buffer.isBuffer(input) && !torrent.name)) {
         throw new Error('Missing info hash or torrent file name');
       }
-      this.logger.verbose(
-        `Torrent input parsed: hash=${infoHash}, name=${inspect(torrent.name)}`,
-      );
       return { ...torrent, infoHash };
     } catch (error) {
       this.logger.error(
@@ -139,26 +131,13 @@ export class QBittorrentClient implements IDownloadClient {
     const startedAt = Date.now();
     const deadline = startedAt + 30000;
     let polls = 0;
-    this.logger.verbose(
-      `Waiting for torrent visibility: hash=${hash}, timeout=30000ms`,
-    );
     let lastError: unknown;
     for (;;) {
       ++polls;
       try {
         if (await this.qbt.getTorrent(hash)) {
-          this.logger.log(
-            `Torrent visibility confirmed: hash=${hash}, polls=${polls}, elapsed=${
-              Date.now() - startedAt
-            }ms`,
-          );
           return true;
         }
-        this.logger.verbose(
-          `Torrent not yet visible: hash=${hash}, poll=${polls}, elapsed=${
-            Date.now() - startedAt
-          }ms`,
-        );
         lastError = undefined;
       } catch (error) {
         if (!this.isTransientError(error)) {
@@ -198,22 +177,16 @@ export class QBittorrentClient implements IDownloadClient {
     const data = params.getBuffer();
     for (let attempt = 0; ; ++attempt) {
       try {
-        this.logger.verbose(
-          `Checking torrent before submission: hash=${hash}, attempt=${
-            attempt + 1
-          }/3`,
-        );
         // 已存在时无需重复提交，相信 hash 不会碰撞。
         if (await this.qbt.getTorrent(hash)) {
-          this.logger.log(`Torrent already exists; reusing it: hash=${hash}`);
           return;
         }
       } catch (error) {
-        if (attempt >= 2 || !this.isTransientError(error)) {
+        if (attempt >= MAX_ATTEMPTS - 1 || !this.isTransientError(error)) {
           this.logger.error(
             `Pre-submission torrent query failed without further retries: hash=${hash}, attempt=${
               attempt + 1
-            }/3, error=${inspect(error)}`,
+            }/${MAX_ATTEMPTS}, error=${inspect(error)}`,
           );
           throw error;
         }
@@ -221,7 +194,7 @@ export class QBittorrentClient implements IDownloadClient {
         this.logger.warn(
           `Pre-submission torrent query failed: hash=${hash}, attempt=${
             attempt + 1
-          }/3; retrying in ${delay}ms, error=${inspect(error)}`,
+          }/${MAX_ATTEMPTS}; retrying in ${delay}ms, error=${inspect(error)}`,
         );
         await this.pause(delay);
         continue;
@@ -229,21 +202,17 @@ export class QBittorrentClient implements IDownloadClient {
       let submissionError: HttpRequestError | undefined;
       let rejected = false;
       try {
-        this.logger.verbose(
-          `Submitting torrent to qBittorrent: hash=${hash}, attempt=${
-            attempt + 1
-          }/3, bytes=${data.length}`,
-        );
         const response = await this.qbt.post<string>('/torrents/add', data, {
           headers: params.getHeaders(),
         });
-        this.logger.verbose(
-          `qBittorrent torrent submission response: hash=${hash}, attempt=${
-            attempt + 1
-          }/3, status=${response.status}, body=${inspect(response.data)}`,
-        );
         if (response.data !== 'Ok.' && response.data !== 'Fails.') {
-          throw new LaniError('qBittorrent 提交种子失败：接口返回了非预期响应');
+          throw new LaniError(
+            'qBittorrent 提交种子失败：接口返回了非预期响应',
+            {
+              status: response.status,
+              response: response.data,
+            },
+          );
         }
         rejected = response.data === 'Fails.';
       } catch (error) {
@@ -251,14 +220,16 @@ export class QBittorrentClient implements IDownloadClient {
           this.logger.error(
             `Torrent submission failed without retry: hash=${hash}, attempt=${
               attempt + 1
-            }/3, error=${inspect(error)}`,
+            }/${MAX_ATTEMPTS}, error=${inspect(error)}`,
           );
           throw error;
         }
         this.logger.warn(
           `Torrent submission outcome is uncertain: hash=${hash}, attempt=${
             attempt + 1
-          }/3; checking visibility before any retry, error=${inspect(error)}`,
+          }/${MAX_ATTEMPTS}; checking visibility before any retry, error=${inspect(
+            error,
+          )}`,
         );
         submissionError = error;
       }
@@ -277,12 +248,12 @@ export class QBittorrentClient implements IDownloadClient {
       }
       if (await this.waitForTorrent(hash)) return;
       if (submissionError) {
-        if (attempt < 2) {
+        if (attempt < MAX_ATTEMPTS - 1) {
           const delay = 1000 * 2 ** attempt;
           this.logger.warn(
             `Torrent still absent after submission error: hash=${hash}, attempt=${
               attempt + 1
-            }/3; retrying submission in ${delay}ms, error=${inspect(
+            }/${MAX_ATTEMPTS}; retrying submission in ${delay}ms, error=${inspect(
               submissionError,
             )}`,
           );
@@ -301,7 +272,7 @@ export class QBittorrentClient implements IDownloadClient {
       this.logger.error(
         `Torrent submission could not be confirmed: hash=${hash}, response=${
           rejected ? 'Fails.' : 'Ok.'
-        }, attempt=${attempt + 1}/3`,
+        }, attempt=${attempt + 1}/${MAX_ATTEMPTS}`,
       );
       throw new LaniError(
         rejected
@@ -313,11 +284,6 @@ export class QBittorrentClient implements IDownloadClient {
 
   async submitTorrentLink(torrentLink: string) {
     const isMagnet = torrentLink.startsWith('magnet:');
-    this.logger.verbose(
-      `Submitting torrent link: type=${
-        isMagnet ? 'magnet' : 'file'
-      }, url=${torrentLink}`,
-    );
     const input = isMagnet ? torrentLink : await this.fetchTorrent(torrentLink);
     const torrent = this.parseTorrentInput(input);
     const hash = torrent.infoHash;

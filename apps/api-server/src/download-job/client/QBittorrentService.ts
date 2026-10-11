@@ -70,9 +70,6 @@ export class QBittorrentService extends AxiosService {
    * 使用 super.request 跳过鉴权恢复；不携带旧 SID，确保获取新的会话。
    */
   private async doLogin() {
-    this.logger.verbose(
-      `Logging into qBittorrent at ${this.qbtConfig.apiEndpoint} as ${this.qbtConfig.username}...`,
-    );
     const params = new URLSearchParams();
     params.append('username', this.qbtConfig.username);
     params.append('password', this.qbtConfig.password);
@@ -83,25 +80,26 @@ export class QBittorrentService extends AxiosService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         data: params.toString(),
       });
-      this.logger.verbose(
-        `qBittorrent login response: status=${response.status}, body=${inspect(
-          response.data,
-        )}, setCookie=${inspect(response.headers['set-cookie'])}`,
-      );
       // 登录接口用 HTTP 200 + Fails. 表示用户名/密码校验失败；IP 被封禁则返回 403。
       // https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/webui/api/authcontroller.cpp#L68-L96
       if (response.data === 'Fails.') {
         throw new LaniError('用户名或密码被拒绝');
       }
       if (response.data !== 'Ok.' && response.status !== 204) {
-        throw new LaniError('登录接口返回了非预期响应');
+        throw new LaniError('登录接口返回了非预期响应', {
+          status: response.status,
+          response: response.data,
+        });
       }
       const setCookie = response.headers['set-cookie'];
       const cookies =
         typeof setCookie === 'string' ? [setCookie] : setCookie ?? [];
       const sid = cookies.map((value) => cookie.parse(value).SID).find(Boolean);
       if (!sid) {
-        throw new LaniError('登录响应缺少 SID，无法建立会话');
+        throw new LaniError('登录响应缺少 SID，无法建立会话', {
+          status: response.status,
+          setCookie,
+        });
       }
       this.SID = sid;
       this.loginTime = Date.now();
@@ -110,7 +108,11 @@ export class QBittorrentService extends AxiosService {
         `Logged into qBittorrent, SID=${this.SID}, authVersion=${this.authVersion}`,
       );
     } catch (error) {
-      this.logger.error(`qBittorrent login failed: ${inspect(error)}`);
+      this.logger.error(
+        `qBittorrent login failed: endpoint=${
+          this.qbtConfig.apiEndpoint
+        }, username=${this.qbtConfig.username}, error=${inspect(error)}`,
+      );
       throw this.requestError('登录', error);
     }
   }
@@ -120,9 +122,6 @@ export class QBittorrentService extends AxiosService {
    * 本方法不检查并发或登录状态，由调用者决定是否需要发起新的登录。
    */
   private loginNoCheck() {
-    this.logger.verbose(
-      `Resetting qBittorrent credentials, previous SID=${this.SID}, authVersion=${this.authVersion}`,
-    );
     this.SID = '';
     this.loginTime = 0;
     const promise = this.doLogin().finally(() => {
@@ -137,16 +136,10 @@ export class QBittorrentService extends AxiosService {
    */
   async ensureCredentials() {
     if (this.authPromise) {
-      this.logger.verbose('Waiting for the ongoing qBittorrent login');
       return this.authPromise;
     }
     // 定期更新会话；实际失效仍由 401/403 恢复处理。
     if (this.SID && Date.now() - this.loginTime <= 60 * 60 * 1000) return;
-    this.logger.verbose(
-      `qBittorrent credentials missing or expired (last login: ${
-        this.loginTime ? new Date(this.loginTime).toISOString() : 'never'
-      }, SID=${this.SID}); refreshing credentials`,
-    );
     return this.loginNoCheck();
   }
 
