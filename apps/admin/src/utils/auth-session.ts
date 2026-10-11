@@ -15,7 +15,6 @@ export interface Session {
   authorized?: boolean;
   profile?: Profile;
   expiresAt?: number;
-  refreshRequired?: boolean;
 }
 
 export class AuthRequestError extends Error {
@@ -30,10 +29,6 @@ export class AuthRequestError extends Error {
     this.status = status;
   }
 }
-
-let cached: Session | undefined;
-let pending: Promise<Session> | undefined;
-let refreshRetryAfter = 0;
 
 export async function authRequest(path: string, method: string = 'GET') {
   const controller = new AbortController();
@@ -53,68 +48,6 @@ export async function authRequest(path: string, method: string = 'GET') {
   } finally {
     window.clearTimeout(timeout);
   }
-}
-
-export function forgetSession() {
-  cached = undefined;
-}
-
-export function withAuthLock<T>(callback: () => Promise<T>): Promise<T> {
-  const locks = (
-    navigator as Navigator & {
-      locks?: {
-        request<R>(name: string, callback: () => Promise<R>): Promise<R>;
-      };
-    }
-  ).locks;
-  return locks ? locks.request('lani-auth-refresh', callback) : callback();
-}
-
-// Serialize refresh across tabs; the endpoint checks the latest cookie again.
-async function refreshSession(): Promise<Session> {
-  let session: Session = await authRequest('session');
-  if (session.refreshRequired) {
-    try {
-      session = await authRequest('refresh', 'POST');
-      refreshRetryAfter = 0;
-    } catch (error) {
-      if (
-        error instanceof AuthRequestError &&
-        error.status === 503 &&
-        session.authenticated &&
-        (session.expiresAt || 0) > Date.now() / 1000 + 5
-      ) {
-        // A temporary refresh outage must not discard a still-valid access token.
-        refreshRetryAfter = Date.now() + 5000;
-        cached = session;
-        return session;
-      }
-      if (!(error instanceof AuthRequestError) || error.status !== 401)
-        throw error;
-      session = await authRequest('session');
-      if (!session.authenticated || session.refreshRequired) throw error;
-    }
-  }
-  cached = session;
-  return session;
-}
-
-export function ensureSession(): Promise<Session> {
-  const remaining = (cached?.expiresAt || 0) - Date.now() / 1000;
-  if (
-    cached &&
-    (!cached.enabled ||
-      (cached.authenticated &&
-        (remaining > 30 || (remaining > 5 && Date.now() < refreshRetryAfter))))
-  ) {
-    return Promise.resolve(cached);
-  }
-  if (!pending) {
-    pending = withAuthLock(refreshSession).finally(() => {
-      pending = undefined;
-    });
-  }
-  return pending;
 }
 
 export function loginURL() {

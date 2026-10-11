@@ -12,7 +12,7 @@ auth:
   enabled: true
   # Keycloak realm 的规范 issuer，必须与 token 的 iss 一致
   authority: https://accounts.example.com/auth/realms/apps
-  # 同一 realm 的内网地址；token/JWKS/revoke 都使用这个地址
+  # 同一 realm 的内网地址；token/JWKS 都使用这个地址
   backchannelAuthority: http://keycloak:8080/auth/realms/apps
   # 浏览器访问前端的 origin；不包含路径。仅 localhost/127.0.0.1 可使用 HTTP
   publicOrigin: https://lani.example.com
@@ -22,8 +22,8 @@ auth:
   # Keycloak access token 必须包含此 audience，通常需要配置 audience mapper
   audience: lani-api
   scope: openid profile email
-  # 会话绝对寿命上限（秒），还会受 Keycloak refresh token 寿命限制
-  sessionMaxAge: 604800
+  # 独立的会话绝对寿命（秒），不滚动续期；权限变更在下次登录时生效
+  sessionMaxAge: 28800
   # 服务端配置，不经 /auth_config 返回给浏览器；替换为实际 client secret
   clientSecret: replace-with-client-secret
   # base64 32-byte 密钥列表；首个用于加密，其他用于轮换期间解密

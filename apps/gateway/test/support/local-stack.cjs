@@ -23,8 +23,7 @@ exports.start = async function start() {
     alg: "RS256",
     use: "sig",
   };
-  const codes = new Map(),
-    refreshTokens = new Set();
+  const codes = new Map();
   const state = {
     exchanges: 0,
     refreshes: 0,
@@ -90,11 +89,9 @@ exports.start = async function start() {
         state.exchanges++;
       } else {
         state.refreshes++;
-        if (!refreshTokens.delete(req.body.refresh_token))
-          return res.status(400).json({ error: "invalid_grant" });
+        return res.status(400).json({ error: "unsupported_grant_type" });
       }
       const rt = randomBytes(20).toString("hex");
-      refreshTokens.add(rt);
       const tokens = {
         access_token: await jwt("lani-api", {}, state.lifetime),
         refresh_token: rt,
@@ -102,15 +99,9 @@ exports.start = async function start() {
         refresh_expires_in: 3600,
         token_type: "Bearer",
       };
-      if (nonce) tokens.id_token = await jwt("lani-web", { nonce }, 120);
+      if (nonce)
+        tokens.id_token = await jwt("lani-web", { nonce }, state.lifetime);
       res.json(tokens);
-    }
-  );
-  idp.post(
-    "/internal/realms/apps/protocol/openid-connect/revoke",
-    (req, res) => {
-      refreshTokens.delete(req.body.token);
-      res.sendStatus(200);
     }
   );
   const options = {

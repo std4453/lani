@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { randomBytes } = require("node:crypto");
 const express = require("express");
-const { generateKeyPair, exportJWK, SignJWT } = require("jose");
+const { generateKeyPair, exportJWK, SignJWT, compactDecrypt } = require("jose");
 const { createAuth, safeReturnTo } = require("../dist/auth-tests/index");
 
 let provider,
@@ -20,10 +20,11 @@ let tokenRequests = 0,
   jwksRequests = 0,
   unavailable = false;
 let lifetime = 300,
-  refreshLifetime = 3600,
-  roles = ["user"];
-const codes = new Map(),
-  refreshTokens = new Map();
+  idLifetime = 300,
+  roles = ["user"],
+  idClaims = {},
+  accessClaims = {};
+const codes = new Map();
 const key = randomBytes(32).toString("base64");
 const listen = (app) =>
   new Promise((resolve) => {
@@ -43,16 +44,15 @@ async function token(claims = {}, ttl = lifetime, audience = "lani-api") {
 }
 async function tokenSet(nonce) {
   const rt = randomBytes(20).toString("hex");
-  refreshTokens.set(rt, true);
   return {
-    access_token: await token(),
+    access_token: await token(accessClaims),
     refresh_token: rt,
-    refresh_expires_in: refreshLifetime,
+    refresh_expires_in: 3600,
     expires_in: lifetime,
     token_type: "Bearer",
     id_token: await token(
-      { nonce, preferred_username: "Alice" },
-      300,
+      { nonce, preferred_username: "Alice", ...idClaims },
+      idLifetime,
       "lani-web"
     ),
   };
@@ -62,7 +62,7 @@ class Browser {
   header() {
     return [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
   }
-  async request(path, init = {}, target = base) {
+  async request(path, init = {}, target = this.target || base) {
     const response = await fetch(`${target}${path}`, {
       ...init,
       redirect: "manual",
@@ -101,7 +101,8 @@ function gateway(config = options) {
 }
 async function login(
   browser = new Browser(),
-  returnTo = "/seasons?q=test#list"
+  returnTo = "/seasons?q=test#list",
+  expected = { status: 302, location: returnTo }
 ) {
   const start = await browser.request(
     `/api/gateway/auth/login?returnTo=${encodeURIComponent(returnTo)}`
@@ -119,8 +120,8 @@ async function login(
     "state"
   )}`;
   const response = await browser.request(callback);
-  assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), returnTo);
+  assert.equal(response.status, expected.status);
+  assert.equal(response.headers.get("location"), expected.location);
   return { browser, callback, response };
 }
 
@@ -165,18 +166,10 @@ before(async () => {
         );
         res.json(await tokenSet(data.nonce));
       } else {
-        if (!refreshTokens.delete(req.body.refresh_token))
-          return res.status(400).json({ error: "invalid_grant" });
-        const data = await tokenSet();
-        delete data.id_token;
-        res.json(data);
+        res.status(400).json({ error: "unsupported_grant_type" });
       }
     }
   );
-  app.post("/auth/realms/apps/protocol/openid-connect/revoke", (req, res) => {
-    refreshTokens.delete(req.body.token);
-    res.sendStatus(200);
-  });
   provider = await listen(app);
   issuer = `${address(provider)}/auth/realms/apps`;
   // Reserve the public origin before installing auth routes.
@@ -266,7 +259,7 @@ test("cookie requests reject CSRF; bearer API clients remain supported", async (
   );
   assert.equal(
     (
-      await browser.request("/api/gateway/auth/refresh", {
+      await browser.request("/api/gateway/auth/logout", {
         method: "POST",
         headers: { origin: "https://evil.example", "x-lani-csrf": "1" },
       })
@@ -321,48 +314,129 @@ test("audience, expiry, signature and permissions are enforced", async () => {
   );
 });
 
-test("refresh rotates cookie once; following requests on another replica reuse it", async () => {
-  lifetime = 10;
-  const { browser } = await login();
-  lifetime = 300;
-  const before = tokenRequests;
-  assert.equal(
-    (await (await browser.request("/api/gateway/auth/session")).json())
-      .refreshRequired,
-    true
-  );
-  assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 200);
-  assert.equal(
-    (await browser.post("/api/gateway/auth/refresh", address(replica))).status,
-    200
-  );
-  assert.equal(tokenRequests, before + 1);
-});
-
-test("accounts outage keeps valid sessions usable and preserves refresh cookie for retry", async () => {
-  const valid = await login();
-  lifetime = 10;
-  const expiring = await login();
-  lifetime = 300;
+test("expired provider tokens and accounts outage do not affect a session, even on a cold replica", async () => {
+  lifetime = idLifetime = 1;
+  const { browser, callback } = await login();
+  lifetime = idLifetime = 300;
+  const cookie = browser.header();
+  const requests = [tokenRequests, jwksRequests];
   unavailable = true;
+  const cold = await listen(gateway().app);
   try {
-    assert.equal((await valid.browser.post("/graphql")).status, 200);
-    const cookie = expiring.browser.header();
-    const result = await expiring.browser.post("/api/gateway/auth/refresh");
-    assert.equal(result.status, 503);
-    assert.equal(expiring.browser.header(), cookie);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    for (const target of [base, address(cold)]) {
+      const info = await (
+        await browser.request("/api/gateway/auth/session", {}, target)
+      ).json();
+      assert.equal(info.authenticated, true);
+      assert.ok(info.expiresAt > Date.now() / 1000 + 3500);
+      assert.equal(info.refreshRequired, undefined);
+      assert.equal((await browser.post("/graphql", target)).status, 200);
+      assert.equal((await browser.request(callback, {}, target)).status, 303);
+    }
+    assert.equal(browser.header(), cookie);
+    assert.deepEqual([tokenRequests, jwksRequests], requests);
+    assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 404);
   } finally {
     unavailable = false;
+    await new Promise((resolve) => cold.close(resolve));
   }
-  assert.equal(
-    (await expiring.browser.post("/api/gateway/auth/refresh")).status,
-    200
-  );
+});
+
+test("fixed session expiry rejects access and cannot be extended by activity", async () => {
+  const short = await listen(gateway({ ...options, sessionMaxAge: 1 }).app);
+  const browser = new Browser();
+  browser.target = address(short);
+  try {
+    await login(browser);
+    const first = await (
+      await browser.request("/api/gateway/auth/session")
+    ).json();
+    const read = await browser.post("/graphql");
+    assert.equal(read.status, 200);
+    assert.equal(read.headers.get("set-cookie"), null);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    assert.equal(
+      (await (await browser.request("/api/gateway/auth/session")).json())
+        .authenticated,
+      false
+    );
+    assert.equal((await browser.post("/graphql")).status, 401);
+    assert.ok(first.expiresAt <= Date.now() / 1000);
+    assert.equal(
+      (await browser.request("/api/gateway/auth/login")).status,
+      302
+    );
+  } finally {
+    await new Promise((resolve) => short.close(resolve));
+  }
+});
+
+test("login checks authorization and token identity before issuing a session", async () => {
+  for (const failure of ["permissions", "audience", "expiry", "identity"]) {
+    const browser = new Browser();
+    try {
+      if (failure === "permissions") roles = [];
+      if (failure === "audience") options.audience = "wrong-api";
+      if (failure === "expiry") lifetime = -1;
+      if (failure === "identity") idClaims = { sub: "someone-else" };
+      // Each instance snapshots configuration, including the audience.
+      const isolated = await listen(gateway().app);
+      browser.target = address(isolated);
+      try {
+        await login(browser, "/", {
+          status: 303,
+          location: "/?auth_error=login_failed",
+        });
+        assert.equal(
+          (await (await browser.request("/api/gateway/auth/session")).json())
+            .authenticated,
+          false
+        );
+        assert.equal((await browser.post("/graphql")).status, 401);
+        assert.ok(!browser.cookies.has("lani-local-gateway"));
+      } finally {
+        await new Promise((resolve) => isolated.close(resolve));
+      }
+    } finally {
+      roles = ["user"];
+      options.audience = "lani-api";
+      lifetime = 300;
+      idClaims = {};
+    }
+  }
+});
+
+test("issued session keeps its authorization snapshot; new login and Bearer enforce current claims", async () => {
+  const { browser } = await login();
+  roles = [];
+  try {
+    assert.equal((await browser.post("/graphql")).status, 200);
+    await login(new Browser(), "/", {
+      status: 303,
+      location: "/?auth_error=login_failed",
+    });
+    const denied = await browser.request("/graphql", {
+      method: "POST",
+      headers: { authorization: `Bearer ${await token()}` },
+    });
+    assert.equal(denied.status, 403);
+  } finally {
+    roles = ["user"];
+  }
 });
 
 test("logout removes local credentials and cannot silently restore them", async () => {
   const { browser } = await login();
-  const response = await browser.post("/api/gateway/auth/logout");
+  const requests = tokenRequests;
+  unavailable = true;
+  let response;
+  try {
+    response = await browser.post("/api/gateway/auth/logout");
+  } finally {
+    unavailable = false;
+  }
+  assert.equal(tokenRequests, requests);
   assert.equal((await response.json()).redirectTo, "/?signed_out=1");
   assert.equal(
     (await (await browser.request("/api/gateway/auth/session")).json())
@@ -441,14 +515,14 @@ test("HTTPS login cookies are host-only and oversized sessions fail closed", asy
       address(secure)
     );
     const cookie = start.headers.get("set-cookie");
-    assert.ok(cookie.startsWith("__Host-lani-oidc-login="));
+    assert.ok(cookie.startsWith("__Host-lani-gateway-login="));
     for (const attr of ["Secure", "HttpOnly", "SameSite=Lax", "Path=/"])
       assert.ok(cookie.includes(attr));
     assert.ok(!cookie.includes("Domain="));
   } finally {
     await new Promise((resolve) => secure.close(resolve));
   }
-  roles = ["user", "x".repeat(6000)];
+  idClaims = { name: "x".repeat(6000) };
   const browser = new Browser();
   try {
     const start = await browser.request("/api/gateway/auth/login");
@@ -465,37 +539,38 @@ test("HTTPS login cookies are host-only and oversized sessions fail closed", asy
     assert.equal(response.headers.get("location"), "/?auth_error=login_failed");
     assert.equal(browser.cookies.size, 0);
   } finally {
-    roles = ["user"];
+    idClaims = {};
   }
 });
 
-test("refresh preserves the absolute cookie expiry; ordinary reads never overwrite rotated tokens", async () => {
-  lifetime = 10;
-  const { browser, response } = await login();
-  lifetime = 300;
-  const expiry = (res) =>
-    res.headers
-      .getSetCookie()
-      .find((c) => c.startsWith("lani-local-oidc="))
-      ?.match(/Expires=([^;]+)/)[1];
-  const original = browser.header();
+test("session contains no provider tokens and reads cannot restore a logged-out cookie", async () => {
+  const { browser } = await login();
+  const { getKeyStore } = require("express-openid-connect/lib/crypto");
+  const [encryptionKey] = getKeyStore([key], true);
+  const { plaintext } = await compactDecrypt(
+    browser.cookies.get("lani-local-gateway"),
+    encryptionKey
+  );
+  const stored = JSON.parse(new TextDecoder().decode(plaintext));
+  assert.deepEqual(Object.keys(stored).sort(), [
+    "authorized",
+    "expiresAt",
+    "profile",
+    "sub",
+  ]);
   const stale = new Browser();
   stale.cookies = new Map(browser.cookies);
-  const refreshed = await browser.post("/api/gateway/auth/refresh");
-  assert.equal(expiry(refreshed), expiry(response));
-  assert.notEqual(browser.header(), original);
-  for (const res of [
+  await browser.post("/api/gateway/auth/logout");
+  for (const response of [
     await stale.request("/api/gateway/auth/session"),
     await stale.post("/graphql"),
-    await stale.post("/api/gateway/auth/refresh"),
-  ])
-    assert.equal(res.headers.get("set-cookie"), null);
-  const rejected = await stale.post("/api/gateway/auth/refresh");
-  assert.equal(rejected.status, 401);
-  assert.equal((await browser.post("/graphql")).status, 200);
+  ]) {
+    assert.equal(response.headers.get("set-cookie"), null);
+  }
+  assert.equal((await browser.post("/graphql")).status, 401);
 });
 
-test("mismatched nonce is rejected and chunked sessions survive a replica change", async () => {
+test("mismatched nonce is rejected and large provider claims do not bloat session cookies", async () => {
   const browser = new Browser();
   const start = await browser.request("/api/gateway/auth/login");
   const url = new URL(start.headers.get("location"));
@@ -510,10 +585,12 @@ test("mismatched nonce is rejected and chunked sessions survive a replica change
   );
   assert.equal(failed.headers.get("location"), "/?auth_error=login_failed");
   assert.equal(browser.cookies.size, 0);
-  roles = ["user", "x".repeat(800)];
+  roles = ["user", "x".repeat(6000)];
   try {
     const { browser: chunked } = await login();
-    assert.ok(chunked.cookies.has("lani-local-oidc.1"));
+    assert.ok(chunked.cookies.has("lani-local-gateway"));
+    assert.ok(!chunked.cookies.has("lani-local-gateway.1"));
+    assert.ok(chunked.header().length < 1000);
     assert.ok(
       [...chunked.cookies.values()].every((value) => value.length < 4096)
     );

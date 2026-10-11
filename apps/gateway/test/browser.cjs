@@ -47,7 +47,7 @@ const { start } = require("./support/local-stack.cjs");
     assert.equal(stack.state.exchanges, 1);
     console.log("PASS old SPA callback bookmarks recover");
 
-    // Use a separate context and a near-expiry token to test actual cross-tab Web Locks.
+    // Both tabs use the same independent gateway session after provider tokens expire.
     const second = await browser.newContext();
     await second.route("**/*", (route) =>
       new URL(route.request().url()).hostname === "127.0.0.1"
@@ -56,13 +56,15 @@ const { start } = require("./support/local-stack.cjs");
     );
     const a = await second.newPage(),
       b = await second.newPage();
-    // Login via HTTP avoids the app's proactive refresh before both tabs are ready.
-    stack.state.lifetime = 10;
+    // Establish the session before loading either tab.
+    stack.state.lifetime = 1;
     await second.request.get(
       `${stack.origin}/api/gateway/auth/login?returnTo=/seasons`
     );
     stack.state.lifetime = 120;
     const before = stack.state.refreshes;
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    stack.state.unavailable = true;
     await Promise.all([
       a.goto(`${stack.origin}/seasons`),
       b.goto(`${stack.origin}/seasons`),
@@ -71,9 +73,9 @@ const { start } = require("./support/local-stack.cjs");
       a.getByText("Local User", { exact: true }).first().waitFor(),
       b.getByText("Local User", { exact: true }).first().waitFor(),
     ]);
-    assert.equal(stack.state.refreshes, before + 1);
+    assert.equal(stack.state.refreshes, before);
     console.log(
-      "PASS concurrent tabs perform one strict-rotation refresh across gateway instances"
+      "PASS concurrent tabs use expired provider tokens without any refresh or accounts access"
     );
 
     stack.state.unavailable = true;
@@ -113,30 +115,34 @@ const { start } = require("./support/local-stack.cjs");
       "PASS invalid callback gives a clean retry page and login recovers"
     );
 
-    const nearExpiry = await browser.newContext();
-    await nearExpiry.route("**/*", (route) =>
-      new URL(route.request().url()).hostname === "127.0.0.1"
-        ? route.continue()
-        : route.abort()
-    );
-    stack.state.lifetime = 25;
-    await nearExpiry.request.get(
-      `${stack.origin}/api/gateway/auth/login?returnTo=/seasons`
-    );
-    stack.state.lifetime = 120;
-    stack.state.unavailable = true;
-    const active = await nearExpiry.newPage();
-    await active.goto(`${stack.origin}/seasons`);
-    await active.getByText("Local User", { exact: true }).first().waitFor();
-    stack.state.unavailable = false;
-    const count = stack.state.refreshes;
-    await active.reload();
-    await active.getByText("Local User", { exact: true }).first().waitFor();
-    assert.equal(stack.state.refreshes, count + 1);
+    // A gateway rejection must reach the existing login UI, with no automatic replay.
+    let rejected = 0;
+    await page.route("**/api/gateway/graphql", async (route) => {
+      rejected++;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          errors: [
+            {
+              message: "Session expired",
+              extensions: { code: "UNAUTHENTICATED" },
+            },
+          ],
+        }),
+      });
+    });
+    const loginCount = stack.state.exchanges;
+    await page.reload();
+    await page.getByRole("button", { name: "重试登录", exact: true }).waitFor();
+    const rejectionCount = rejected;
+    await page.waitForTimeout(500);
+    assert.equal(rejected, rejectionCount);
+    assert.equal(stack.state.exchanges, loginCount);
+    assert.equal(stack.state.refreshes, 0);
+    assert.ok(!page.url().includes("code="));
     console.log(
-      "PASS transient proactive-refresh failure retains usable token and recovers"
+      "PASS expired gateway session shows login without token refresh, redirect loops or operation replay"
     );
-    await nearExpiry.close();
     assert.deepEqual(errors, []);
     await second.close();
   } catch (error) {

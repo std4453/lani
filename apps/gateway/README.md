@@ -1,17 +1,17 @@
 # Gateway authentication
 
-浏览器登录使用 Keycloak Authorization Code + PKCE。gateway 使用 [express-openid-connect](https://github.com/auth0/express-openid-connect) 处理授权码、PKCE/state/nonce、回调、token 续期及加密 Cookie；前端只调用同源 `/api/gateway/auth/*` 和 GraphQL。gateway 不保存用户会话表，不依赖 Redis，也不需要粘性会话。
+浏览器登录使用 Keycloak Authorization Code + PKCE。gateway 使用 [express-openid-connect](https://github.com/auth0/express-openid-connect) 处理授权码、PKCE/state/nonce、回调及加密 Cookie；前端只调用同源 `/api/gateway/auth/*` 和 GraphQL。gateway 不保存用户会话表，不依赖 Redis，也不需要粘性会话。
 
 ## 配置与迁移
 
-参考 `example.config.yaml`。这是原 SPA OAuth 配置的替换方案，需要前后端配套更新；旧 `clientConfig` 不再支持，已有浏览器登录在迁移后需要重新建立一次 Cookie。从本 PR 早期的自定义 Cookie 实现升级也需要重新登录一次；SDK 使用新的 Cookie 名称，成功登录时清理旧会话 Cookie。运行时要求 Node 20.19+ 或 22.12+。
+参考 `example.config.yaml`。这是原 SPA OAuth 配置的替换方案，需要前后端配套更新；旧 `clientConfig` 不再支持，已有浏览器登录在迁移后需要重新建立一次 Cookie。从此前保存 OAuth token 的 Cookie 实现升级也需要重新登录一次；新 Cookie 名为 `__Host-lani-gateway`（本地 HTTP 为 `lani-local-gateway`），成功登录时清理旧会话 Cookie。运行时要求 Node 20.19+ 或 22.12+。
 
 - `authority` 是 realm 的公开 issuer，保持与 JWT `iss` 一致。
 - `backchannelAuthority` 是同一 realm 的内网 URL。使用 `client_secret_post` 兼容 Keycloak 15 的 client ID 编码行为；保留 `/auth/realms/...` 路径。gateway 根据 Keycloak 的固定端点构造 metadata，启动不请求 discovery。
 - `publicOrigin` 是浏览器前端 origin，回调固定为 `${publicOrigin}/api/gateway/auth/callback`。反向代理继续剥离 `/api/gateway` 前缀。不要根据请求 Host 拼接回调。
 - 使用开启 Standard Flow 的 **confidential client**。精确注册固定回调，不使用通配符。在服务端配置中填写 `auth.clientSecret` 和 `auth.cookieKeys`，启动时直接读取；这些值不会经 `/auth_config` 或 `/auth/session` 返回给浏览器。实际凭据只保存在私有部署配置中，公共示例使用占位值。
 - `audience` 是 **access token** 中预期的 `aud`，不一定等于 client ID。需要在 Keycloak 配置相应 audience mapper；不要通过关闭校验迁就缺失的 audience。
-- 保留原 `authz` 规则；Cookie 和 Bearer 请求都校验权限。ID token 只提供显示信息，不能代替 access token 授权。
+- 保留原 `authz` 规则：浏览器登录时验证 access token 的签名、issuer、audience、有效期和权限，通过后才签发 gateway session；Bearer 请求仍逐次验证。ID token 由 OIDC SDK 验证并提供身份资料，其 subject 必须与 access token 一致。
 - `scope` 默认 `openid profile email`。用户名、头像等来自 ID token；需要的 mapper 应启用 Add to ID token。正常页面加载不请求 userinfo。
 
 生成 Cookie 密钥：
@@ -24,24 +24,25 @@ node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("base64
 
 ## 凭据与故障行为
 
-Cookie 使用 JWE `dir` + `A256GCM`，由 SDK 派生密钥并加解密，包含原始 access token、refresh token、ID token 和少量显示字段。HTTPS 下使用 `__Host-` 前缀、HttpOnly、Secure、SameSite=Lax、Path=/，无 Domain。Lax 允许外部登录页回调携带短期事务 Cookie。仅本地 loopback HTTP 使用非 Secure 开发 Cookie。
+Cookie 使用 JWE `dir` + `A256GCM`，由 SDK 派生密钥并加解密，仅包含已授权用户的 subject、显示资料、授权标记和固定到期时间；不保存 access token、refresh token 或 ID token。HTTPS 下使用 `__Host-` 前缀、HttpOnly、Secure、SameSite=Lax、Path=/，无 Domain。Lax 允许外部登录页回调携带短期事务 Cookie。仅本地 loopback HTTP 使用非 Secure 开发 Cookie。
 
-会话 JSON 限制为 4200 字节，SDK 自动分块以满足每个 Cookie 的 4096 字节限制；超限会拒绝写入。避免将大型 group 列表和不需要的 claims 加入 token，部署前应使用真实用户检查 Cookie/代理请求头限制。登录事务由 SDK 保存在独立的签名 HttpOnly Cookie 中，包含 state、nonce 和 PKCE verifier，回调额外检查事务不超过 10 分钟并限制站内返回路径。同一浏览器同时发起多个登录时，最新事务覆盖旧事务；旧回调会回到干净的重试页面。
+会话 JSON 限制为 4200 字节，SDK 自动分块以满足每个 Cookie 的 4096 字节限制；超限会拒绝写入。group 列表及其他不需要的 token claims 不写入 Cookie。登录事务由 SDK 保存在独立的签名 HttpOnly Cookie 中，包含 state、nonce 和 PKCE verifier，回调额外检查事务不超过 10 分钟并限制站内返回路径。同一浏览器同时发起多个登录时，最新事务覆盖旧事务；旧回调会回到干净的重试页面。
 
-- `/auth/session` 不返回 token、不自动跳转。有效会话直接恢复；接近过期或已过期时，前端调用 `/auth/refresh`。
-- 同一标签页合并续期请求，支持 Web Locks 的浏览器在同源标签页间串行续期和退出。服务端收到 refresh 请求后再次检查最新 Cookie，避免重复轮换。无 Web Locks 的浏览器只有标签页内合并和失败后重读 Cookie 的恢复；严格轮换下的跨标签页竞争不能保证消除。非浏览器调用者也必须自行串行续期。
-- gateway 不自动重放 GraphQL 操作，避免重复执行 mutation。
+- `/auth/session` 只返回登录状态、用户资料和 gateway session 到期时间，不返回 token、不自动跳转。前端在初始化或主动登录时查询；普通 GraphQL 请求直接携带 Cookie，不做会话预检。
+- gateway session 独立于 Keycloak token，使用 `sessionMaxAge` 控制绝对有效期，默认 8 小时。不滚动续期，无 `/auth/refresh`，不保存或使用 refresh token。已有配置显式指定的 `sessionMaxAge` 继续生效，升级时应检查是否符合新的独立会话期限。
+- session 有效期间只校验 Cookie 和本地有效期，不访问 Keycloak/JWKS。即使 accounts 不可达、token 过期或 gateway 冷启动，有效 session 仍可用。到期后重新登录；Keycloak SSO 仍有效时通常无需再次输入密码。
+- 登录后的 group 变化、账号禁用、Keycloak SSO 退出不会立即撤销已签发 session；在下一次登录时重新评估。纯无状态模式不提供逐会话的即时撤销。不要仅凭旧 session 无限延长有效期。
+- GraphQL 返回 `UNAUTHENTICATED` 后前端显示登录入口，不自动重放 query/mutation，也不进行 token 续期。其他业务权限规则仍由业务层执行。
 - 已有有效 Cookie 时，重复访问已消费 callback 会直接返回业务页；失败 callback 跳到干净地址并显示重试入口，不进入自动登录循环。
-- 所有 Cookie 鉴权 GraphQL 请求及 refresh/logout POST 都要求精确匹配 `publicOrigin` 的 Origin 和 `X-Lani-CSRF: 1`。不开放跨域 CORS；SameSite 不能代替对同站点其他子域的防护。
-- 命令行/其他客户端可继续使用 Bearer JWT，不需要 Cookie/CSRF header。原来用于 schema/codegen 的完整标准 introspection 查询仍保留免鉴权行为。
-- JWKS 按需获取并在进程内缓存，这是可丢弃的公钥缓存，不是用户会话状态。Keycloak 不可达时，有效凭据且公钥缓存可用的请求继续工作；冷启动/缓存需要重新获取时，受影响请求返回 `AUTH_UNAVAILABLE`，不能绕过验签。
-- 网络故障或暂时不可用不会主动删除凭据。refresh 被明确拒绝时，用户可以重新登录；普通读取和失败响应不重写或清空会话 Cookie，避免覆盖另一个成功续期响应。
-- 退出清除本地 Cookie，并尽力通过内网撤销 refresh token；不跳公网 SSO 退出页。它是此应用的退出，不保证退出其他应用。下一次主动登录可能利用仍有效的 Keycloak SSO。
-- 无状态本地验签不能即时撤销已经签发的 access token；保留短期 access token，依赖 Keycloak 控制后续刷新。绝对会话寿命默认 7 天，刷新不延长这个上限。Keycloak 的 idle timeout 在 refresh grant 时由身份服务执行，不再复制 `refresh_expires_in` 到 Cookie 寿命。
+- 所有 Cookie 鉴权 GraphQL 请求及 logout POST 都要求精确匹配 `publicOrigin` 的 Origin 和 `X-Lani-CSRF: 1`。不开放跨域 CORS；SameSite 不能代替对同站点其他子域的防护。
+- MCP/命令行/其他客户端可继续使用 Bearer JWT，不需要 Cookie/CSRF header，仍校验签名、issuer、有效期、audience 和 authz。显式无效 Bearer 不回退到 Cookie。原来用于 schema/codegen 的完整标准 introspection 查询仍保留免鉴权行为。
+- JWKS 按需获取并在进程内缓存，这是可丢弃的公钥缓存，不是用户会话状态。新登录或 Bearer 请求需要公钥且无法获取时返回认证错误，不能绕过验签；不影响已有浏览器 session。
+- 普通读取和失败响应不重写或清空 Cookie，防止延迟返回的响应在退出后重新写回会话。会话 Cookie 只在成功登录、退出时写入。
+- 退出仅清除 gateway Cookie，不请求 accounts、不跳公网 SSO 退出页，不影响其他应用。下一次主动登录可能利用仍有效的 Keycloak SSO。
 
 ## 本地验证
 
-不需要修改或占用测试环境。可复用已有只读业务子图；认证测试使用本地模拟 Keycloak，覆盖严格 refresh token 轮换、两个独立 gateway 实例和身份服务故障。
+不需要修改或占用测试环境。可复用已有只读业务子图；认证测试使用本地模拟 Keycloak，覆盖固定会话到期、token 过期后的访问、冷启动副本、登录授权及身份服务故障。
 
 在安装项目依赖后运行（测试运行器要求 Node 22+）：
 

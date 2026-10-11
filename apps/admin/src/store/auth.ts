@@ -1,14 +1,6 @@
 import { AppDispatch, AppGetState, RootState } from '@/store';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {
-  authRequest,
-  ensureSession,
-  forgetSession,
-  loginURL,
-  Profile,
-  Session,
-  withAuthLock,
-} from '@/utils/auth-session';
+import { authRequest, loginURL, Profile, Session } from '@/utils/auth-session';
 
 export interface AuthState {
   authorized: boolean;
@@ -63,8 +55,7 @@ export const { sessionLoaded, loginError, setAuthorized } = authSlice.actions;
 async function loadSession(dispatch: AppDispatch, initial: boolean) {
   dispatch(authSlice.actions.loginStarted());
   try {
-    forgetSession();
-    const session = await ensureSession();
+    const session: Session = await authRequest('session');
     dispatch(sessionLoaded(session));
     const params = new URLSearchParams(window.location.search);
     if (session.authenticated) {
@@ -111,8 +102,7 @@ export async function initAuth(dispatch: AppDispatch) {
 
 export async function logout(dispatch: AppDispatch) {
   try {
-    const result = await withAuthLock(() => authRequest('logout', 'POST'));
-    forgetSession();
+    const result = await authRequest('logout', 'POST');
     window.location.replace(result.redirectTo);
   } catch {
     dispatch(loginError('退出登录未完成，请重试'));

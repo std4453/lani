@@ -35,6 +35,13 @@ export class AuthError extends Error {
   }
 }
 
+interface GatewaySession {
+  sub: string;
+  profile: Record<string, string>;
+  authorized: true;
+  expiresAt: number;
+}
+
 export function safeReturnTo(value: unknown, origin: string) {
   if (
     typeof value !== "string" ||
@@ -82,7 +89,7 @@ export function createAuth(options: AuthOptions) {
   const endpoint = (base: string, name: string) =>
     `${base}/protocol/openid-connect/${name}`;
   const callbackURL = `${origin.origin}/api/gateway/auth/callback`;
-  const sessionName = secure ? "__Host-lani-oidc" : "lani-local-oidc";
+  const sessionName = secure ? "__Host-lani-gateway" : "lani-local-gateway";
   const transactionName = `${sessionName}-login`;
   const jwks = createRemoteJWKSet(new URL(endpoint(backend, "certs")), {
     timeoutDuration: 5000,
@@ -96,8 +103,20 @@ export function createAuth(options: AuthOptions) {
     )
   )
     throw new Error("auth.cookieKeys must contain base64-encoded 32-byte keys");
-  const session = (req: Request): Session | undefined =>
-    (req as Request & Record<string, Session>)[sessionName];
+  const now = () => Math.floor(Date.now() / 1000);
+  // The SDK authenticates/decrypts the cookie and enforces its absolute lifetime.
+  // Only sessions issued after the login authorization check are accepted.
+  const session = (req: Request): GatewaySession | undefined => {
+    const value = (req as Request & Record<string, GatewaySession>)[
+      sessionName
+    ];
+    return value?.authorized === true &&
+      typeof value.sub === "string" &&
+      typeof value.expiresAt === "number" &&
+      value.expiresAt > now()
+      ? value
+      : undefined;
+  };
   const sdk = oidcAuth({
     issuerBaseURL: authority,
     baseURL: origin.origin,
@@ -158,36 +177,39 @@ export function createAuth(options: AuthOptions) {
         throw new AuthError(401, "INVALID_CALLBACK");
       state.returnTo = safeReturnTo(state.returnTo, origin.origin);
       const claims = await verify(updated.access_token);
-      const { payload: identity } = await jwtVerify(updated.id_token, jwks, {
-        issuer: authority,
-        audience: options.clientId,
-        algorithms: ["RS256"],
-      });
+      if (!authorized(claims)) throw new AuthError(403, "FORBIDDEN");
+      // OIDC has already verified the ID token, including audience and nonce.
+      const identity = req.oidc.idTokenClaims!;
       if (identity.sub !== claims.sub)
         throw new AuthError(401, "UNAUTHENTICATED");
-      updated.sub = claims.sub;
-      updated.profile = profile(identity);
-      checkSize(updated);
+      // Tokens are used only to establish identity and authorization at login.
+      const gatewaySession: GatewaySession = {
+        sub: claims.sub!,
+        profile: profile(identity),
+        authorized: true,
+        expiresAt: now() + options.sessionMaxAge,
+      };
+      if (Buffer.byteLength(JSON.stringify(gatewaySession)) > 4200)
+        throw new Error("Auth session exceeds cookie size limit");
       (res as unknown as Response).locals.writeAuthSession = true;
-      // Retire cookies issued by the previous implementation during migration.
-      for (const suffix of [".0", ".1"]) {
-        (res as unknown as Response).clearCookie(
-          `${secure ? "__Host-lani-session" : "lani-local-session"}${suffix}`,
-          {
-            secure,
-            httpOnly: true,
-            sameSite: "lax",
-            path: "/",
-          }
-        );
+      // Retire earlier token-bearing cookies on the first successful login.
+      for (const name of ["oidc", "session"]) {
+        for (const suffix of ["", ".0", ".1"]) {
+          (res as unknown as Response).clearCookie(
+            `${secure ? "__Host-lani" : "lani-local"}-${name}${suffix}`,
+            { secure, httpOnly: true, sameSite: "lax", path: "/" }
+          );
+        }
       }
-      return updated;
+      // The SDK's hook supports custom session data, although its types require
+      // token fields. We use its cookie storage, not req.oidc token helpers.
+      return gatewaySession as unknown as Session;
     },
   });
   const middleware: RequestHandler = (req, res, next) => {
     const cookie = res.cookie.bind(res);
-    // The SDK rewrites even non-rolling sessions. A stale read/failed refresh
-    // must not overwrite a concurrently rotated refresh token in the browser.
+    // The SDK rewrites even non-rolling sessions. Only login/logout may write:
+    // a delayed read must not restore a cookie after the user has logged out.
     res.cookie = ((name: string, value: string, opts: unknown) => {
       if (
         (name === sessionName || name.startsWith(`${sessionName}.`)) &&
@@ -205,13 +227,7 @@ export function createAuth(options: AuthOptions) {
     });
   };
 
-  function checkSize(value: Session) {
-    // Leave room for JWE expansion, cookie attributes and the login transaction.
-    if (Buffer.byteLength(JSON.stringify(value)) > 4200)
-      throw new Error("Auth session exceeds cookie size limit");
-  }
   const router = Router();
-  const now = () => Math.floor(Date.now() / 1000);
 
   async function verify(token: string) {
     try {
@@ -272,36 +288,15 @@ export function createAuth(options: AuthOptions) {
     return result;
   }
 
-  async function sessionInfo(session: Session | undefined) {
-    if (!session || typeof session.access_token !== "string")
-      return {
-        enabled: true,
-        testRoutingEnabled: options.testRoutingEnabled === true,
-        authenticated: false,
-        refreshRequired: false,
-      };
-    try {
-      const claims = await verify(session.access_token);
-      return {
-        enabled: true,
-        testRoutingEnabled: options.testRoutingEnabled === true,
-        authenticated: true,
-        authorized: authorized(claims),
-        profile: session.profile,
-        expiresAt: claims.exp,
-        refreshRequired:
-          claims.exp! <= now() + 30 &&
-          typeof session.refresh_token === "string",
-      };
-    } catch (error) {
-      if (!(error instanceof AuthError) || error.status !== 401) throw error;
-      return {
-        enabled: true,
-        testRoutingEnabled: options.testRoutingEnabled === true,
-        authenticated: false,
-        refreshRequired: typeof session.refresh_token === "string",
-      };
-    }
+  function sessionInfo(current: GatewaySession | undefined) {
+    return {
+      enabled: true,
+      testRoutingEnabled: options.testRoutingEnabled === true,
+      authenticated: !!current,
+      authorized: !!current,
+      profile: current?.profile,
+      expiresAt: current?.expiresAt,
+    };
   }
 
   const route =
@@ -322,7 +317,7 @@ export function createAuth(options: AuthOptions) {
   router.get(
     "/session",
     route(async (req, res) => {
-      res.json(await sessionInfo(session(req)));
+      res.json(sessionInfo(session(req)));
     })
   );
 
@@ -330,7 +325,7 @@ export function createAuth(options: AuthOptions) {
     "/login",
     route(async (req, res) => {
       const returnTo = safeReturnTo(req.query.returnTo, origin.origin);
-      const current = await sessionInfo(session(req));
+      const current = sessionInfo(session(req));
       if (current.authenticated) return res.redirect(303, returnTo);
       await res.oidc.login({
         returnTo,
@@ -342,38 +337,9 @@ export function createAuth(options: AuthOptions) {
   router.get(
     "/callback",
     route(async (req, res) => {
-      const current = await sessionInfo(session(req));
+      const current = sessionInfo(session(req));
       if (current.authenticated) return res.redirect(303, "/");
       await res.oidc.callback({ redirectUri: callbackURL });
-    })
-  );
-
-  router.post(
-    "/refresh",
-    route(async (req, res) => {
-      csrf(req);
-      const current = session(req);
-      const info = await sessionInfo(current);
-      if (info.authenticated && !info.refreshRequired) return res.json(info);
-      if (!current || typeof current.refresh_token !== "string")
-        throw new AuthError(401, "UNAUTHENTICATED");
-      try {
-        const previousSub = current.sub;
-        await req.oidc.accessToken!.refresh();
-        const updated = session(req)!;
-        const claims = await verify(updated.access_token);
-        if (claims.sub !== previousSub)
-          throw new AuthError(401, "UNAUTHENTICATED");
-        checkSize(updated);
-        res.locals.writeAuthSession = true;
-        res.json(await sessionInfo(updated));
-      } catch (error) {
-        // Leave cookies intact: a concurrent successful response may already have replaced them.
-        if ((error as { error?: string }).error === "invalid_grant")
-          throw new AuthError(401, "UNAUTHENTICATED");
-        if (error instanceof AuthError) throw error;
-        throw new AuthError(503, "AUTH_UNAVAILABLE");
-      }
     })
   );
 
@@ -381,30 +347,8 @@ export function createAuth(options: AuthOptions) {
     "/logout",
     route(async (req, res) => {
       csrf(req);
-      const current = session(req);
       (req as Request & Record<string, unknown>)[sessionName] = undefined;
       res.locals.writeAuthSession = true;
-      // Local logout remains available during an accounts outage.
-      if (typeof current?.refresh_token === "string") {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        try {
-          await fetch(endpoint(backend, "revoke"), {
-            method: "POST",
-            body: new URLSearchParams({
-              client_id: options.clientId,
-              client_secret: options.clientSecret,
-              token: current.refresh_token,
-              token_type_hint: "refresh_token",
-            }),
-            signal: controller.signal,
-          });
-        } catch {
-          /* Revocation is best effort; local logout must still succeed. */
-        } finally {
-          clearTimeout(timeout);
-        }
-      }
       res.json({ redirectTo: "/?signed_out=1" });
     })
   );
@@ -422,23 +366,17 @@ export function createAuth(options: AuthOptions) {
   );
 
   async function authenticate(req: Request) {
-    let token: string | undefined;
     if (req.headers.authorization) {
       const match = /^Bearer (\S+)$/i.exec(req.headers.authorization);
       if (!match) throw new AuthError(401, "UNAUTHENTICATED");
-      token = match[1];
-    } else {
-      csrf(req);
-      const current = session(req);
-      token =
-        typeof current?.access_token === "string"
-          ? current.access_token
-          : undefined;
+      const claims = await verify(match[1]);
+      if (!authorized(claims)) throw new AuthError(403, "FORBIDDEN");
+      return claims;
     }
-    if (!token) throw new AuthError(401, "UNAUTHENTICATED");
-    const claims = await verify(token);
-    if (!authorized(claims)) throw new AuthError(403, "FORBIDDEN");
-    return claims;
+    csrf(req);
+    const current = session(req);
+    if (!current) throw new AuthError(401, "UNAUTHENTICATED");
+    return { sub: current.sub };
   }
 
   return { middleware, router, authenticate };
