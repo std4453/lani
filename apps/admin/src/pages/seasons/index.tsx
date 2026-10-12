@@ -1,5 +1,7 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { TableTitle } from '@/components/Layout';
+import MainTable from '@/components/MainTable';
+import tableStyles from '@/components/MainTable/index.module.less';
 import { seasonToText } from '@/constants';
 import {
   calcEpisodeStatus,
@@ -33,7 +35,7 @@ import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
-import ProTable, { ActionType } from '@ant-design/pro-table';
+import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
 import { Button, message, Popconfirm, Space, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
@@ -207,11 +209,12 @@ function useColumns({
         },
         {
           title: '季度标题',
+          // 固定列需要显式 auto，避免 ProTable 自动补上 200px。
+          width: 'auto',
           dataIndex: 'title',
           copyable: true,
           ellipsis: false,
           sorter: true,
-          width: 400,
           stateKey: {
             sort: 'title',
           },
@@ -220,7 +223,8 @@ function useColumns({
         {
           title: '季度',
           dataIndex: 'yearAndSemester',
-          width: 180,
+          width: 96,
+          className: tableStyles.compactCell,
           search: false,
           render: (_, r) =>
             r.yearAndSemester ? (
@@ -242,7 +246,8 @@ function useColumns({
         {
           title: '首播时间',
           dataIndex: 'firstAired',
-          width: 160,
+          width: 112,
+          className: tableStyles.compactCell,
           search: false,
           render: (_, r) => {
             const firstAir = r.firstEpisode.edges[0]?.node?.airTime;
@@ -270,7 +275,8 @@ function useColumns({
               status: 'Default',
             },
           },
-          width: 160,
+          width: 108,
+          className: tableStyles.compactCell,
           filters: true,
           stateKey: {
             filter: 'isMonitoring',
@@ -304,7 +310,8 @@ function useColumns({
           title: '最新集',
           tooltip: '季度最新一集的下载状态',
           key: 'latestEpisode',
-          width: 120,
+          width: 126,
+          className: clsx(tableStyles.compactCell, styles.latestEpisodeCell),
           render: (_, r) => (
             <SeasonStatusTag
               season={r}
@@ -316,11 +323,18 @@ function useColumns({
           title: '集数',
           tooltip: '可用集数 / 已放送集数 / 总集数',
           dataIndex: 'episodes',
-          width: 144,
+          width: 116,
           className: styles.numberCell,
           render: (_, r) => (
             <ColoredCell
-              className={styles.episodesCell}
+              className={clsx(styles.episodesCell, {
+                [styles.longEpisodesCell]:
+                  Math.max(
+                    r.availableEpisodes.totalCount,
+                    r.airedEpisodes.totalCount,
+                    r.allEpisodes.totalCount,
+                  ) >= 100,
+              })}
               status={
                 r.isMonitoring && r.allEpisodes.totalCount > 0
                   ? r.availableEpisodes.totalCount < r.airedEpisodes.totalCount
@@ -441,8 +455,9 @@ function useColumns({
             </Popconfirm>,
           ],
           search: false,
-          width: 140,
-          fixed: mobile ? undefined : 'right',
+          width: 104,
+          className: tableStyles.compactCell,
+          fixed: 'right',
         },
       ],
       [
@@ -755,7 +770,7 @@ export default withAntdSearch(function MetadataPage() {
 
   return (
     <SeasonsStatusContext.Provider value={seasonsStatus}>
-      <ProTable<RowType>
+      <MainTable<RowType>
         columns={columns}
         rowKey="id"
         {...props}
@@ -803,7 +818,7 @@ export default withAntdSearch(function MetadataPage() {
         search={false}
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
-          x: 1400,
+          x: 1440,
           // 工具栏 64 + 表头 55 + 分页及外边距 64 + 卡片底部 padding 24。
           y: mobile ? undefined : 'calc(100vh - 207px)',
           scrollToFirstRowOnChange: true,

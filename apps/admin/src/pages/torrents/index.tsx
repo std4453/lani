@@ -1,5 +1,7 @@
 import AsyncButton from '@/components/AsyncButton';
 import { TableTitle } from '@/components/Layout';
+import MainTable from '@/components/MainTable';
+import tableStyles from '@/components/MainTable/index.module.less';
 import {
   BigIntFilter,
   ListTorrentsDocument,
@@ -19,7 +21,7 @@ import {
 } from '@/utils/search';
 import useMobile from '@/utils/useMobile';
 import { HistoryOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import ProTable, { ActionType } from '@ant-design/pro-table';
+import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { message, Space, Tag, TagProps, Tooltip, Typography } from 'antd';
 import { useTheme } from '@/theme';
@@ -79,7 +81,6 @@ function useColumns() {
           title: '种子标题',
           dataIndex: 'title',
           copyable: true,
-          width: 450,
           render: (_, r) => (
             <Typography.Text className={styles.title} copyable>
               {r.title}
@@ -267,7 +268,9 @@ function useColumns() {
               </Typography.Link>
             </Space>
           ),
-          width: 120,
+          width: 88,
+          className: tableStyles.compactCell,
+          fixed: 'right',
         },
       ],
       [mobile, update],
@@ -429,7 +432,7 @@ export default withAntdSearch(function Torrents() {
 
   return (
     <>
-      <ProTable<TorrentTableRow>
+      <MainTable<TorrentTableRow>
         columns={columns}
         rowKey="id"
         {...props}
@@ -467,7 +470,7 @@ export default withAntdSearch(function Torrents() {
         search={false}
         className={styles.root}
         scroll={{
-          x: 1300,
+          x: mobile ? 1486 : 1586,
         }}
       />
     </>
