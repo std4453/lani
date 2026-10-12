@@ -11,7 +11,12 @@ export default function MainTable<RowType extends object>({
 }: ProTableProps<RowType, Record<string, unknown>>) {
   return (
     <ConfigProvider
-      getPopupContainer={(trigger) => trigger?.parentElement ?? document.body}
+      // 仅列设置挂载在列表内，确认框等仍挂到 body，避免被滚动容器裁剪。
+      getPopupContainer={(trigger) =>
+        trigger?.closest('[aria-label="setting"]')
+          ? trigger.parentElement ?? document.body
+          : document.body
+      }
     >
       <ProTable<RowType>
         {...props}
