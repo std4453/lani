@@ -1,16 +1,23 @@
 @import "~@/styles/index.less";
 
 .root {
+  :global(.ant-pro-table-list-toolbar-container) {
+    // 与包含 32px 按钮的其他首页列表保持相同的标题栏高度。
+    min-height: 64px;
+    align-items: center;
+  }
+
   @media @mobile {
     :global {
+      .ant-pro-table-list-toolbar-container {
+        align-items: stretch;
+      }
       .ant-table-wrapper {
         margin: 0 -24px;
         max-width: calc(100% + 48px);
       }
       .ant-pro-table-list-toolbar-left {
-        margin-bottom: -26px;
-        z-index: 10;
-        pointer-events: none;
+        margin-bottom: 0;
       }
     }
   }
