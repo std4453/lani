@@ -36,7 +36,7 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
     useMemo(
       (): TableColumns<RowType>[] => [
         {
-          title: '',
+          title: 'ID',
           dataIndex: 'id',
           align: 'center',
           search: false,
