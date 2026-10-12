@@ -1,4 +1,4 @@
-import { BangumiAPIService, EpType } from '@/api/bangumi';
+import { BangumiAPIService, Episode, EpType } from '@/api/bangumi';
 import { DateFormat } from '@/constants/date-format';
 import { decomposeAirDate } from '@/season-scrape/help';
 import {
@@ -34,12 +34,31 @@ export class BangumiSeasonService {
   }
 
   private async fetchEpisodes(result: PartialSeason, bangumiId: number) {
-    const { data: episodes = [] } = await BangumiAPIService.getEpisodes(
-      bangumiId,
-      EpType.MainStory, // 本篇
-      100,
-      0,
-    );
+    const pageSize = 100;
+    const episodes: Episode[] = [];
+    while (true) {
+      const { data = [], total } = await BangumiAPIService.getEpisodes(
+        bangumiId,
+        EpType.MainStory, // 本篇
+        pageSize,
+        episodes.length,
+      );
+      if (data.length === 0) {
+        if (total !== undefined && episodes.length < total) {
+          throw new Error(
+            'Bangumi returned an empty page before all episodes were fetched',
+          );
+        }
+        break;
+      }
+      episodes.push(...data);
+      if (
+        total !== undefined ? episodes.length >= total : data.length < pageSize
+      ) {
+        break;
+      }
+    }
+
     result.episodes = episodes
       // 因为过滤了本篇，应当总有ep字段，为了避免类似 https://github.com/bangumi/api/issues/146
       // 这样的事故造成的数据错误，且episode的逻辑是只增不删，因此进行额外的检查保证不录入错误数据
