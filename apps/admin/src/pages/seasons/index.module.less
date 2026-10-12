@@ -89,7 +89,7 @@
     background-color: var(--lani-status-inactive);
   }
 
-  @media (max-width: 1500px) {
+  @media @mobile {
     :global {
       .ant-table-wrapper {
         margin: 0 -24px;
@@ -108,9 +108,6 @@
         pointer-events: none;
       }
     }
-  }
-  @media @pc {
-    min-height: 100vh;
   }
 }
 

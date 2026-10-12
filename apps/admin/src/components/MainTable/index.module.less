@@ -1,3 +1,65 @@
+@import '~@/styles/index.less';
+
+// Pair with scroll.y on desktop so Ant Design renders a separate table header.
+.root {
+  @media @pc {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    :global {
+      .ant-card,
+      .ant-card-body,
+      .ant-table-wrapper,
+      .ant-spin-nested-loading,
+      .ant-spin-container,
+      .ant-table,
+      .ant-table-container {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+      }
+
+      .ant-card-body {
+        padding: 0;
+      }
+
+      .ant-pro-table-list-toolbar {
+        flex-shrink: 0;
+        padding: 0 24px;
+      }
+
+      .ant-table-header {
+        flex-shrink: 0;
+      }
+
+      // Ant Design omits pagination when total is zero. Reserve its space
+      // before the first response as well, so the body never changes height.
+      .ant-spin-container {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) 64px;
+      }
+
+      .ant-table-body {
+        flex: 1;
+        min-height: 0;
+      }
+
+      // Keep the footer at the bottom even while rows are loading or empty.
+      .ant-table-pagination.ant-pagination {
+        flex-shrink: 0;
+        min-height: 32px;
+        margin: 16px 0;
+        padding: 0 24px;
+      }
+    }
+  }
+}
+
 .compactCell {
   && {
     padding-left: 8px;

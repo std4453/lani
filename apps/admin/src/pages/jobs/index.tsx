@@ -27,10 +27,11 @@ function useColumns({
   return useMemo(
     (): ProColumns<ListDownloadJobsFieldsFragment>[] => [
       {
-        title: '',
+        title: 'ID',
         dataIndex: 'id',
         align: 'center',
-        width: 48,
+        width: 96,
+        className: tableStyles.compactCell,
       },
       {
         title: '剧集',

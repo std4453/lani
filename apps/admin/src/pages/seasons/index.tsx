@@ -819,8 +819,6 @@ export default withAntdSearch(function MetadataPage() {
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
           x: 1440,
-          // 工具栏 64 + 表头 55 + 分页及外边距 64 + 卡片底部 padding 24。
-          y: mobile ? undefined : 'calc(100vh - 207px)',
           scrollToFirstRowOnChange: true,
         }}
         className={styles.root}

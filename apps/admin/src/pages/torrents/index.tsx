@@ -72,7 +72,7 @@ function useColumns() {
     useMemo(
       (): TableColumns<TorrentTableRow>[] => [
         {
-          title: '序号',
+          title: 'ID',
           dataIndex: 'sequenceNumber',
           align: 'center',
           width: 96,
