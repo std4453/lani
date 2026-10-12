@@ -2,6 +2,14 @@
 
 // Pair with scroll.y on desktop so Ant Design renders a separate table header.
 .root {
+  @media @mobile {
+    :global(.ant-table-pagination.ant-pagination) {
+      justify-content: center;
+      padding-right: 0;
+      padding-left: 0;
+    }
+  }
+
   @media @pc {
     height: 100vh;
     min-height: 0;

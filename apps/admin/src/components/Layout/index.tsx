@@ -21,14 +21,23 @@ import {
   MenuUnfoldOutlined,
   NodeExpandOutlined,
   UserOutlined,
+  VerticalAlignTopOutlined,
 } from '@ant-design/icons';
 import ProLayout from '@ant-design/pro-layout';
-import { Avatar, Button, Popover, Tooltip, Typography } from 'antd';
+import { Avatar, BackTop, Button, Popover, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import { ElementType, ReactNode } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
 import ThemeButton from './ThemeButton';
+
+// 页面滚动发生在 ProLayout 的内容区域，而不是 window。
+function getScrollContainer() {
+  return (
+    document.querySelector<HTMLElement>('.ant-pro-basicLayout-content') ||
+    window
+  );
+}
 
 const pathToIcon: { [x: string]: ElementType } = {
   '/': HomeOutlined,
@@ -237,7 +246,24 @@ export default function Layout(props: any) {
           )}
         </>
       )}
-    />
+    >
+      {props.children}
+      {mobile && (
+        <BackTop
+          target={getScrollContainer}
+          visibilityHeight={400}
+          className={styles.backTop}
+        >
+          <Button
+            type="primary"
+            shape="circle"
+            icon={<VerticalAlignTopOutlined />}
+            aria-label="回到顶部"
+            title="回到顶部"
+          />
+        </BackTop>
+      )}
+    </ProLayout>
   );
 }
 

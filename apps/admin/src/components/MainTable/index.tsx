@@ -8,6 +8,7 @@ export default function MainTable<RowType extends object>({
   options,
   className,
   scroll,
+  pagination,
   ...props
 }: ProTableProps<RowType, Record<string, unknown>>) {
   const mobile = useMobile();
@@ -17,6 +18,14 @@ export default function MainTable<RowType extends object>({
       {...props}
       className={clsx(styles.root, className)}
       scroll={{ ...scroll, y: mobile ? undefined : '100%' }}
+      pagination={
+        pagination === false
+          ? false
+          : {
+              ...pagination,
+              ...(mobile ? { showTotal: undefined } : {}),
+            }
+      }
       tableLayout="fixed"
       options={{
         ...options,

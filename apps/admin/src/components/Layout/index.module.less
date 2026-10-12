@@ -54,6 +54,28 @@
   }
 }
 
+.backTop {
+  && {
+    right: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 48px;
+    height: 48px;
+    pointer-events: none;
+  }
+
+  :global(.ant-btn) {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    pointer-events: auto;
+  }
+
+  @media @pc {
+    display: none;
+  }
+}
+
 // 移动端侧栏通过 Drawer 的 Portal 渲染在 .layout 外，因此使用全局选择器。
 :global {
   html[data-theme='dark'] .ant-pro-sider.ant-layout-sider {
