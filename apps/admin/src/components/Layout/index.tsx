@@ -170,7 +170,9 @@ export default function Layout(props: any) {
         <Link
           to="/"
           onClick={() => {
-            dispatch(setCollapsed({ collapsed: true }));
+            if (mobile) {
+              dispatch(setCollapsed({ collapsed: true }));
+            }
           }}
         >
           <div
