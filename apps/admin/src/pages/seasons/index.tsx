@@ -193,12 +193,12 @@ function useColumns({
     useMemo(
       (): TableColumns<RowType>[] => [
         {
-          title: '',
+          title: 'ID',
           dataIndex: 'id',
           align: 'center',
           search: false,
           width: 64,
-          className: styles.numberCell,
+          className: clsx(styles.numberCell, styles.idColumn),
           sorter: true,
           stateKey: {
             sort: 'id',
