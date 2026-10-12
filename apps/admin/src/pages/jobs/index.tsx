@@ -1,5 +1,7 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { Hamburger } from '@/components/Layout';
+import MainTable from '@/components/MainTable';
+import tableStyles from '@/components/MainTable/index.module.less';
 import { DownloadStatusTag } from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
@@ -9,7 +11,7 @@ import {
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import useMobile from '@/utils/useMobile';
-import ProTable, { ActionType, ProColumns } from '@ant-design/pro-table';
+import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { Typography } from 'antd';
 import { useMemo, useRef } from 'react';
@@ -33,7 +35,6 @@ function useColumns({
       {
         title: '剧集',
         key: 'episode',
-        width: 450,
         render: (_, r) => {
           const episode = r.episodeByEpisodeId;
           if (!episode) {
@@ -123,7 +124,9 @@ function useColumns({
             详情
           </Typography.Link>,
         ],
-        width: 120,
+        width: 52,
+        className: tableStyles.compactCell,
+        fixed: 'right',
       },
     ],
     [openEpisodeDetails],
@@ -197,7 +200,7 @@ export default function JobsPage() {
 
   return (
     <>
-      <ProTable<ListDownloadJobsFieldsFragment>
+      <MainTable<ListDownloadJobsFieldsFragment>
         columns={columns}
         rowKey="id"
         request={(params, sort, filter) =>
@@ -224,7 +227,7 @@ export default function JobsPage() {
         defaultSize="middle"
         className={styles.root}
         scroll={{
-          x: 1000,
+          x: 1334,
         }}
       />
       {episodeDetailsDiglog}

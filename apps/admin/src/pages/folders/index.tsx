@@ -1,5 +1,7 @@
 import AsyncButton from '@/components/AsyncButton';
 import { TableTitle } from '@/components/Layout';
+import MainTable from '@/components/MainTable';
+import tableStyles from '@/components/MainTable/index.module.less';
 import { jellyfinFolderLink } from '@/constants/link';
 import {
   Folders_ListFoldersDocument,
@@ -19,7 +21,7 @@ import {
   withAntdSearch,
 } from '@/utils/search';
 import { HistoryOutlined } from '@ant-design/icons';
-import ProTable, { ActionType } from '@ant-design/pro-table';
+import { ActionType } from '@ant-design/pro-table';
 import { useApolloClient } from '@apollo/client';
 import { Typography, message } from 'antd';
 import { MutableRefObject, useMemo, useRef } from 'react';
@@ -45,7 +47,6 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
           tooltip: '创建新季度时会自动选中默认媒体库',
           dataIndex: 'name',
           ellipsis: false,
-          width: 240,
           sorter: true,
           stateKey: {
             sort: 'name',
@@ -179,7 +180,9 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
             </Typography.Link>,
           ],
           search: false,
-          width: 180,
+          width: 168,
+          className: tableStyles.compactCell,
+          fixed: 'right',
         },
       ],
       [client],
@@ -223,13 +226,14 @@ function FoldersPage() {
   );
 
   return (
-    <ProTable<RowType>
+    <MainTable<RowType>
       columns={columns}
       rowKey="id"
       actionRef={action}
       {...props}
       headerTitle={<TableTitle>媒体库管理</TableTitle>}
       search={false}
+      scroll={{ x: 1536 }}
       toolBarRender={() => [
         <AsyncButton
           key={0}

@@ -1,0 +1,14 @@
+.root {
+  // 此版本 ProTable 没有单独关闭固定按钮的 API；弹层挂载在列表内。
+  :global(.ant-pro-table-column-setting-list-item-option) {
+    display: none;
+  }
+}
+
+.compactCell {
+  && {
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+  }
+}
