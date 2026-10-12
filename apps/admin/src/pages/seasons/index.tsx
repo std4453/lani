@@ -756,14 +756,7 @@ export default withAntdSearch(function MetadataPage() {
     {
       hasKeyword: true,
       pagination: {
-        pageSizeOptions: [10, 30, 50],
-        defaultPageSize: 30,
-        className: styles.pagination,
-        ...(mobile
-          ? {
-              showTotal: () => null,
-            }
-          : {}),
+          pageSize: 30,
       },
     },
   );
@@ -819,9 +812,6 @@ export default withAntdSearch(function MetadataPage() {
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
           x: 1440,
-          // 工具栏 64 + 表头 55 + 分页及外边距 64 + 卡片底部 padding 24。
-          y: mobile ? undefined : 'calc(100vh - 207px)',
-          scrollToFirstRowOnChange: true,
         }}
         className={styles.root}
       />

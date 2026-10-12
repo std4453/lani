@@ -72,7 +72,7 @@ function useColumns() {
     useMemo(
       (): TableColumns<TorrentTableRow>[] => [
         {
-          title: '序号',
+          title: 'ID',
           dataIndex: 'sequenceNumber',
           align: 'center',
           width: 96,
@@ -418,14 +418,7 @@ export default withAntdSearch(function Torrents() {
     {
       hasKeyword: true,
       pagination: {
-        pageSizeOptions: [50, 100, 200],
-        defaultPageSize: 100,
-        className: styles.pagination,
-        ...(mobile
-          ? {
-              showTotal: () => null,
-            }
-          : {}),
+          pageSize: 100,
       },
     },
   );
@@ -468,7 +461,6 @@ export default withAntdSearch(function Torrents() {
           </Tooltip>,
         ]}
         search={false}
-        className={styles.root}
         scroll={{
           x: mobile ? 1486 : 1586,
         }}

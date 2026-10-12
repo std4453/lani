@@ -10,13 +10,11 @@ import {
   ListDownloadJobsFieldsFragment,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import useMobile from '@/utils/useMobile';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import { Typography } from 'antd';
 import { useMemo, useRef } from 'react';
 import { Link } from 'umi';
-import styles from './index.module.less';
 import { handleError } from '@/utils/error';
 
 function useColumns({
@@ -27,10 +25,11 @@ function useColumns({
   return useMemo(
     (): ProColumns<ListDownloadJobsFieldsFragment>[] => [
       {
-        title: '',
+        title: 'ID',
         dataIndex: 'id',
         align: 'center',
-        width: 48,
+        width: 96,
+        className: tableStyles.compactCell,
       },
       {
         title: '剧集',
@@ -196,7 +195,6 @@ export default function JobsPage() {
     useEpisodeDetailsDialog();
   const columns = useColumns({ openEpisodeDetails });
   const actionRef = useRef<ActionType>();
-  const mobile = useMobile();
 
   return (
     <>
@@ -207,14 +205,7 @@ export default function JobsPage() {
           queryDownloadJobs(client, params, sort, filter)
         }
         pagination={{
-          pageSizeOptions: [30, 50, 100],
-          defaultPageSize: 30,
-          className: styles.pagination,
-          ...(mobile
-            ? {
-                showTotal: () => null,
-              }
-            : {}),
+          pageSize: 30,
         }}
         headerTitle={
           <>
@@ -225,7 +216,6 @@ export default function JobsPage() {
         actionRef={actionRef}
         search={false}
         defaultSize="middle"
-        className={styles.root}
         scroll={{
           x: 1342,
         }}
