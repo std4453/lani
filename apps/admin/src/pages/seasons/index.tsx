@@ -223,7 +223,7 @@ function useColumns({
         {
           title: '季度',
           dataIndex: 'yearAndSemester',
-          width: 88,
+          width: 96,
           className: tableStyles.compactCell,
           search: false,
           render: (_, r) =>
@@ -246,7 +246,7 @@ function useColumns({
         {
           title: '首播时间',
           dataIndex: 'firstAired',
-          width: 104,
+          width: 112,
           className: tableStyles.compactCell,
           search: false,
           render: (_, r) => {
@@ -275,7 +275,7 @@ function useColumns({
               status: 'Default',
             },
           },
-          width: 100,
+          width: 108,
           className: tableStyles.compactCell,
           filters: true,
           stateKey: {
@@ -310,7 +310,7 @@ function useColumns({
           title: '最新集',
           tooltip: '季度最新一集的下载状态',
           key: 'latestEpisode',
-          width: 118,
+          width: 126,
           className: clsx(tableStyles.compactCell, styles.latestEpisodeCell),
           render: (_, r) => (
             <SeasonStatusTag
@@ -455,7 +455,7 @@ function useColumns({
             </Popconfirm>,
           ],
           search: false,
-          width: 96,
+          width: 104,
           className: tableStyles.compactCell,
           fixed: 'right',
         },
@@ -818,7 +818,7 @@ export default withAntdSearch(function MetadataPage() {
         search={false}
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
-          x: 1400,
+          x: 1440,
           // 工具栏 64 + 表头 55 + 分页及外边距 64 + 卡片底部 padding 24。
           y: mobile ? undefined : 'calc(100vh - 207px)',
           scrollToFirstRowOnChange: true,

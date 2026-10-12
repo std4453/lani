@@ -180,7 +180,7 @@ function useColumns(action: MutableRefObject<ActionType | undefined>) {
             </Typography.Link>,
           ],
           search: false,
-          width: 168,
+          width: 176,
           className: tableStyles.compactCell,
           fixed: 'right',
         },
@@ -233,7 +233,7 @@ function FoldersPage() {
       {...props}
       headerTitle={<TableTitle>媒体库管理</TableTitle>}
       search={false}
-      scroll={{ x: 1536 }}
+      scroll={{ x: 1544 }}
       toolBarRender={() => [
         <AsyncButton
           key={0}

@@ -268,7 +268,7 @@ function useColumns() {
               </Typography.Link>
             </Space>
           ),
-          width: 80,
+          width: 88,
           className: tableStyles.compactCell,
           fixed: 'right',
         },
@@ -470,7 +470,7 @@ export default withAntdSearch(function Torrents() {
         search={false}
         className={styles.root}
         scroll={{
-          x: mobile ? 1478 : 1578,
+          x: mobile ? 1486 : 1586,
         }}
       />
     </>

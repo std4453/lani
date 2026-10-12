@@ -124,7 +124,7 @@ function useColumns({
             详情
           </Typography.Link>,
         ],
-        width: 52,
+        width: 60,
         className: tableStyles.compactCell,
         fixed: 'right',
       },
@@ -227,7 +227,7 @@ export default function JobsPage() {
         defaultSize="middle"
         className={styles.root}
         scroll={{
-          x: 1334,
+          x: 1342,
         }}
       />
       {episodeDetailsDiglog}
