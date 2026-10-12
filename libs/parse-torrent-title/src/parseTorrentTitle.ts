@@ -1,4 +1,6 @@
 import escapeStringRegexp from "@/escapeStringRegexp";
+import matchEpisode from "@/matchEpisode";
+import { parseSubtitleInfo, toLegacySubtitle } from "@/parseSubtitleInfo";
 import {
   Index,
   KeywordMap,
@@ -62,12 +64,12 @@ function extractPair(
   }
   return [
     {
-      index: 1,
+      index: content.index + 1,
       length: endIndex - 1,
       content: content.content.substring(1, endIndex),
     },
     {
-      index: endIndex + 1,
+      index: content.index + endIndex + 1,
       length: content.content.length - endIndex - 1,
       content: content.content.substring(endIndex + 1),
     },
@@ -79,6 +81,16 @@ function matchOrganization(
   { separatorPairs, organizationSeparators }: DefaultedOptions
 ): [Positional<Organization> | undefined, Positional<string>] {
   const [orgnization, rest] = extractPair(content, separatorPairs);
+  // Some releases start with [Title][Episode], without a release-group tag.
+  if (
+    orgnization &&
+    !/字幕[组組社]|发布|發佈|搬运|搬運|\b(?:group|raws?|subs?|studio)\b/i.test(
+      orgnization.content
+    ) &&
+    /^\s*[\[【](?:第)?\d/.test(rest.content)
+  ) {
+    return [undefined, content];
+  }
   return [
     orgnization
       ? {
@@ -97,7 +109,7 @@ function matchOrganization(
 function positionalTrimStart(content: Positional<string>): Positional<string> {
   const trimStart = content.content.trimStart();
   return {
-    index: content.length - trimStart.length,
+    index: content.index + content.length - trimStart.length,
     length: trimStart.length,
     content: trimStart,
   };
@@ -107,7 +119,7 @@ function positionalTrim(content: Positional<string>): Positional<string> {
   const trimStart = content.content.trimStart();
   const trim = trimStart.trimEnd();
   return {
-    index: content.length - trimStart.length,
+    index: content.index + content.length - trimStart.length,
     length: trim.length,
     content: trim,
   };
@@ -147,7 +159,8 @@ function parseIndex(content: string, options: DefaultedOptions): Index {
 
 function matchIndex(
   content: Positional<string>,
-  options: DefaultedOptions
+  options: DefaultedOptions,
+  useDefaultMatcher: boolean
 ): [Positional<string>, Positional<Index>, Positional<string>] | undefined {
   const { episodePrefixSeparators, episodeRegexes, fixUnmatchedEpisodePrefix } =
     options;
@@ -164,6 +177,27 @@ function matchIndex(
     content = skipMatch(content, /^★\d+月新番/);
   }
   content = positionalTrimStart(content);
+
+  if (useDefaultMatcher) {
+    const match = matchEpisode(content.content);
+    if (!match) return undefined;
+    const before = content.content
+      .substring(0, match.start)
+      .replace(/[\s._-]+$/, "");
+    return [
+      { index: content.index, length: before.length, content: before },
+      {
+        index: content.index + match.start,
+        length: match.end - match.start,
+        content: match.value,
+      },
+      {
+        index: content.index + match.end,
+        length: content.length - match.end,
+        content: content.content.substring(match.end),
+      },
+    ];
+  }
 
   for (const regex of episodeRegexes) {
     const result = content.content.match(regex);
@@ -188,12 +222,12 @@ function matchIndex(
         content: content.content.substring(0, totalIndex),
       },
       {
-        index: totalIndex + deltaIndex,
+        index: content.index + totalIndex + deltaIndex,
         length: groupMatch.length,
         content: parseIndex(groupMatch, options),
       },
       {
-        index: totalIndex + totalMatch.length,
+        index: content.index + totalIndex + totalMatch.length,
         length: content.length - totalIndex - totalMatch.length,
         content: content.content.substring(totalIndex + totalMatch.length),
       },
@@ -255,7 +289,7 @@ function matchTitle(
     } else {
       // 没有找到其他括号，移除左右两个括号，继续解析
       content = {
-        index: 1,
+        index: content.index + 1,
         length: content.content.length - 2,
         content: content.content.substring(1, content.content.length - 1),
       };
@@ -476,7 +510,7 @@ function parseSubtitle(content: string): Subtitle {
     subtitle.type = "内嵌";
   }
   if (content.indexOf("内封") >= 0) {
-    subtitle.type = "内嵌";
+    subtitle.type = "内挂";
   }
   if (content.indexOf("内挂") >= 0) {
     subtitle.type = "内挂";
@@ -573,7 +607,7 @@ function matchKeywords(
         matchOneKeyword(
           {
             content: content.content.substring(startIndex, i),
-            index: startIndex,
+            index: content.index + startIndex,
             length: i - startIndex,
           },
           entries,
@@ -588,7 +622,7 @@ function matchKeywords(
     matchOneKeyword(
       {
         content: content.content.substring(startIndex, i),
-        index: startIndex,
+        index: content.index + startIndex,
         length: i - startIndex,
       },
       entries,
@@ -732,7 +766,13 @@ export default function parseTorrentTitle(
     });
   }
 
-  const indexResult = matchIndex(rest, options);
+  const indexResult = matchIndex(
+    rest,
+    options,
+    !inputOptions?.episodeRegexes &&
+      !inputOptions?.episodeInnerRegex &&
+      !inputOptions?.episodeConnectorRegex
+  );
   if (!indexResult) {
     return undefined;
   }
@@ -764,6 +804,13 @@ export default function parseTorrentTitle(
   };
 
   matchKeywords(afterIndex, result, options);
+
+  result.subtitleInfo = parseSubtitleInfo(input);
+  // Keep the legacy shape for existing consumers; custom keyword rules can
+  // still supply fields which the standard subtitle parser does not know.
+  result.subtitle = inputOptions?.subtitleKeywords
+    ? { ...result.subtitle, ...toLegacySubtitle(result.subtitleInfo) }
+    : toLegacySubtitle(result.subtitleInfo);
 
   return result;
 }
