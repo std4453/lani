@@ -1,25 +1,17 @@
 import { store } from '@/store';
-import { selectToken, setAuthorized } from '@/store/auth';
+import { loginError, setAuthorized } from '@/store/auth';
 import {
   ApolloClient,
   createHttpLink,
   InMemoryCache,
   from,
 } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
 const httpLink = createHttpLink({
   uri: '/api/gateway/graphql',
-});
-const authLink = setContext((_, { headers }) => {
-  const token = selectToken(store.getState());
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '',
-    },
-  };
+  credentials: 'same-origin',
+  headers: { 'X-Lani-CSRF': '1' },
 });
 const errorLink = onError(({ graphQLErrors }) => {
   if (
@@ -27,12 +19,19 @@ const errorLink = onError(({ graphQLErrors }) => {
       ({ extensions }) => extensions.code === 'UNAUTHENTICATED',
     )
   ) {
+    store.dispatch(loginError('登录已过期，请重新登录'));
+  }
+  if (
+    (graphQLErrors ?? []).some(
+      ({ extensions }) => extensions.code === 'FORBIDDEN',
+    )
+  ) {
     store.dispatch(setAuthorized({ authorized: false }));
   }
 });
 
 export const client = new ApolloClient({
-  link: from([authLink, errorLink, httpLink]),
+  link: from([errorLink, httpLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     query: {
