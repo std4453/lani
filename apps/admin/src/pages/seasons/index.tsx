@@ -756,14 +756,7 @@ export default withAntdSearch(function MetadataPage() {
     {
       hasKeyword: true,
       pagination: {
-        pageSizeOptions: [10, 30, 50],
-        defaultPageSize: 30,
-        className: styles.pagination,
-        ...(mobile
-          ? {
-              showTotal: () => null,
-            }
-          : {}),
+          pageSize: 30,
       },
     },
   );
@@ -819,7 +812,6 @@ export default withAntdSearch(function MetadataPage() {
         defaultSize={mobile ? 'middle' : 'large'}
         scroll={{
           x: 1440,
-          scrollToFirstRowOnChange: true,
         }}
         className={styles.root}
       />

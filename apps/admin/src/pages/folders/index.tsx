@@ -221,19 +221,19 @@ function FoldersPage() {
       }
     },
     {
-      hasKeyword: false,
+      pagination: { pageSize: 30 },
     },
   );
 
   return (
     <MainTable<RowType>
-      className={styles.root}
       columns={columns}
       rowKey="id"
       actionRef={action}
       {...props}
       headerTitle={<TableTitle>媒体库管理</TableTitle>}
       search={false}
+      defaultSize="middle"
       scroll={{ x: 1544 }}
       toolBarRender={() => [
         <AsyncButton

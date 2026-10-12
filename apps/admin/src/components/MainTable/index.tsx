@@ -16,13 +16,16 @@ export default function MainTable<RowType extends object>({
   return (
     <ProTable<RowType>
       {...props}
-      className={clsx(styles.root, className)}
+      className={clsx(styles.root, className, {
+        [styles.withSearch]: options && options.search,
+      })}
       scroll={{ ...scroll, y: mobile ? undefined : '100%' }}
       pagination={
         pagination === false
           ? false
           : {
               ...pagination,
+              showSizeChanger: false,
               ...(mobile ? { showTotal: undefined } : {}),
             }
       }
