@@ -1,3 +1,30 @@
+@import "~@/styles/index.less";
+
+.root {
+  @media @mobile {
+    :global {
+      .ant-pro-table-list-toolbar-container {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ant-pro-table-list-toolbar-left {
+        margin-bottom: 0;
+      }
+
+      .ant-pro-table-list-toolbar-title {
+        white-space: nowrap;
+      }
+
+      .ant-pro-table-list-toolbar-right {
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
 .default {
   color: var(--lani-primary);
 }

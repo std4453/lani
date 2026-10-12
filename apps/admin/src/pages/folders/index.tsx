@@ -227,6 +227,7 @@ function FoldersPage() {
 
   return (
     <MainTable<RowType>
+      className={styles.root}
       columns={columns}
       rowKey="id"
       actionRef={action}
