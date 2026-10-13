@@ -11,6 +11,8 @@ import { useMount } from 'ahooks';
 import { Provider } from 'react-redux';
 import './global.less';
 
+// Build-only acceptance marker; runtime behavior is unchanged.
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function App(props: any) {
   return (
