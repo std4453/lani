@@ -106,7 +106,13 @@ export default function DownloadSources() {
       let minimumOffset = Number.MAX_VALUE;
 
       for (const torrent of torrents) {
-        const { title, episodeIndex, publishDate } = torrent;
+        const { title, episodeInfo, publishDate } = torrent;
+        const episodeIndex =
+          episodeInfo?.type === 'episode' &&
+          (typeof episodeInfo.index === 'string' ||
+            typeof episodeInfo.index === 'number')
+            ? Number(episodeInfo.index)
+            : undefined;
         if (!title || typeof episodeIndex !== 'number') {
           // 非常特殊的情况，一般是 SP，忽略这条种子
           continue;
@@ -131,7 +137,9 @@ export default function DownloadSources() {
         const { offset } = matchedSource;
         const realEpisodeIndex = episodeIndex - offset;
         const matchedEpisode = episodes.find(
-          ({ index }) => index === realEpisodeIndex,
+          ({ numbering }) =>
+            numbering?.type === 'episode' &&
+            Number(numbering.number) === realEpisodeIndex,
         );
         if (!matchedEpisode) {
           // 比如某条规则匹配到了 1~24，但我们需要的只有第二季的 13~24，属于正常情况，可以直接

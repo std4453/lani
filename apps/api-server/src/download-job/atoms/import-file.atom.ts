@@ -1,3 +1,4 @@
+import { jellyfinNumber } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { AsyncAtom, StepInput } from '@/download-job/atoms';
@@ -80,10 +81,7 @@ export class ImportFileAtom extends AsyncAtom<
     if (!episodeId) {
       throw new Error('剧集已被删除');
     }
-    const {
-      index,
-      season: { title: seasonTitle, jellyfinFolder },
-    } = await this.prisma.episode.findUnique({
+    const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: {
         season: {
@@ -93,6 +91,10 @@ export class ImportFileAtom extends AsyncAtom<
         },
       },
     });
+    const {
+      season: { title: seasonTitle, jellyfinFolder },
+    } = episode;
+    const { season: mediaSeason, index } = jellyfinNumber(episode);
     const jellyfinFolderRoot = jellyfinFolder.location;
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
 
@@ -104,10 +106,10 @@ export class ImportFileAtom extends AsyncAtom<
       seasonRoot,
       seasonTitle,
       // 不加这个 jellyfin识别就会很成问题，还是加上
-      'Season 1',
-      `Episode - S01E${index.toString().padStart(2, '0')}${path.extname(
-        steps.findVideoFile.importPath,
-      )}`,
+      `Season ${mediaSeason}`,
+      `Episode - S${String(mediaSeason).padStart(2, '0')}E${index
+        .toString()
+        .padStart(2, '0')}${path.extname(steps.findVideoFile.importPath)}`,
     );
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
 

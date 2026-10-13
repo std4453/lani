@@ -1,12 +1,39 @@
 import { PrismaService } from '@/common/prisma.service';
-import { Prisma, Torrent, TorrentPlatform, TorrentSourceType } from '@lani/db';
+import {
+  EpisodeType,
+  Prisma,
+  Torrent,
+  TorrentPlatform,
+  TorrentSourceType,
+} from '@lani/db';
 import parseTorrentTitle, {
-  Platform,
-  SourceType,
+  parseSubtitleInfo,
 } from '@lani/parse-torrent-title';
 import { Injectable, Logger } from '@nestjs/common';
+import { isDeepStrictEqual } from 'util';
+
+// 持久化结果的版本包含解析器输出与本适配层的映射规则。
+const TORRENT_PARSE_VERSION = 1;
+
+class InvalidEpisodeNumberError extends Error {}
+
+// 拒绝数据库无法精确存储的编号，避免舍入后混淆剧集身份。
+function decimalNumber(value: number): string {
+  const text = String(value);
+  if (!/^\d+(?:\.\d{1,3})?$/.test(text) || value >= 10000000) {
+    throw new InvalidEpisodeNumberError(`Invalid episode number: ${text}`);
+  }
+  return text;
+}
 
 const keyToColumnName = {
+  parseResult: 'parse_result',
+  parseVersion: 'parse_version',
+  parsedAt: 'parsed_at',
+  episodeType: 'episode_type',
+  episodeNumber: 'episode_number',
+  episodeNumberFrom: 'episode_number_from',
+  episodeNumberTo: 'episode_number_to',
   organizationRaw: 'organization_raw',
   organizationParts: 'organization_parts',
   seasonTitleRaw: 'season_title_raw',
@@ -27,6 +54,13 @@ const keyToColumnName = {
   subtitleType: 'subtitle_type',
 } as const;
 const keyToDataType = {
+  parseResult: 'jsonb',
+  parseVersion: 'int',
+  parsedAt: 'timestamptz',
+  episodeType: 'episode_type',
+  episodeNumber: 'text::numeric',
+  episodeNumberFrom: 'text::numeric',
+  episodeNumberTo: 'text::numeric',
   organizationRaw: 'text',
   organizationParts: 'text[]',
   seasonTitleRaw: 'text',
@@ -60,49 +94,85 @@ export class ParseTorrentService {
 
   private titleToFields(title: string) {
     const result = parseTorrentTitle(title);
+    const number = result?.episodeInfo.index;
+    const parsedFields = {
+      parseResult: JSON.parse(
+        JSON.stringify(result ?? { subtitleInfo: parseSubtitleInfo(title) }),
+      ),
+      parseVersion: TORRENT_PARSE_VERSION,
+      parsedAt: new Date(),
+      episodeType:
+        (result?.episodeInfo.type.toUpperCase() as EpisodeType) ?? null,
+      episodeNumber: typeof number === 'number' ? decimalNumber(number) : null,
+      episodeNumberFrom:
+        typeof number === 'object' ? decimalNumber(number.from) : null,
+      episodeNumberTo:
+        typeof number === 'object' ? decimalNumber(number.to) : null,
+    };
     if (!result) {
-      return null;
+      return {
+        ...parsedFields,
+        index: null,
+        indexFrom: null,
+        indexTo: null,
+        organizationRaw: null,
+        organizationParts: [],
+        seasonTitleRaw: null,
+        seasonTitleAliases: [],
+        sourceType: null,
+        sourcePlatform: null,
+        formatResolution: null,
+        formatVideoEncoding: null,
+        formatAudioEncoding: null,
+        formatColorDepth: null,
+        formatContainer: null,
+        subtitleHasCHS: false,
+        subtitleHasCHT: false,
+        subtitleHasJP: false,
+        subtitleType: null,
+      };
     }
+    const indexFields =
+      result.index === undefined
+        ? { index: null, indexFrom: null, indexTo: null }
+        : typeof result.index === 'number'
+        ? Number.isInteger(result.index)
+          ? {
+              index: result.index,
+              indexFrom: null,
+              indexTo: null,
+            }
+          : { index: null, indexFrom: null, indexTo: null }
+        : Number.isInteger(result.index.from) &&
+          Number.isInteger(result.index.to)
+        ? {
+            index: null,
+            indexFrom: result.index.from,
+            indexTo: result.index.to,
+          }
+        : { index: null, indexFrom: null, indexTo: null };
     return {
-      organizationRaw: result.organization?.raw,
-      organizationParts: result.organization?.parts,
+      ...parsedFields,
+      organizationRaw: result.organization?.raw ?? null,
+      organizationParts: result.organization?.parts ?? [],
       seasonTitleRaw: result.title.raw,
       seasonTitleAliases: result.title.aliases,
-      index: typeof result.index === 'number' ? result.index : undefined,
-      indexFrom:
-        typeof result.index === 'number' ? undefined : result.index.from,
-      indexTo: typeof result.index === 'number' ? undefined : result.index.to,
-      sourceType: result.source.type
-        ? (
-            {
-              [TorrentSourceType.BD]: 'BD',
-              [TorrentSourceType.BDRIP]: 'BDRip',
-              [TorrentSourceType.DONGHUA]: 'Donghua',
-              [TorrentSourceType.WEBDL]: 'WebDL',
-              [TorrentSourceType.WEBRIP]: 'WebRip',
-            } as Record<TorrentSourceType, SourceType>
-          )[result.source.type]
-        : undefined,
-      sourcePlatform: result.source.platform
-        ? (
-            {
-              [TorrentPlatform.BAHA]: 'Baha',
-              [TorrentPlatform.BILIBILI]: 'Bilibili',
-              [TorrentPlatform.B_GLOBAL]: 'B-Global',
-              [TorrentPlatform.B_THM]: 'B-THM',
-              [TorrentPlatform.VIUTV]: 'ViuTV',
-            } as Record<TorrentPlatform, Platform>
-          )[result.source.platform]
-        : undefined,
-      formatResolution: result.format.resolution,
-      formatVideoEncoding: result.format.videoEncoding,
-      formatAudioEncoding: result.format.audioEncoding,
-      formatColorDepth: result.format.colorDepth,
-      formatContainer: result.format.container,
+      ...indexFields,
+      sourceType:
+        (result.source.type?.toUpperCase() as TorrentSourceType) ?? null,
+      sourcePlatform:
+        (result.source.platform
+          ?.replace(/-/g, '_')
+          .toUpperCase() as TorrentPlatform) ?? null,
+      formatResolution: result.format.resolution ?? null,
+      formatVideoEncoding: result.format.videoEncoding ?? null,
+      formatAudioEncoding: result.format.audioEncoding ?? null,
+      formatColorDepth: result.format.colorDepth ?? null,
+      formatContainer: result.format.container ?? null,
       subtitleHasCHS: result.subtitle?.hasCHS ?? false,
       subtitleHasCHT: result.subtitle?.hasCHT ?? false,
       subtitleHasJP: result.subtitle?.hasJP ?? false,
-      subtitleType: result.subtitle?.type,
+      subtitleType: result.subtitle?.type ?? null,
     };
   }
 
@@ -125,12 +195,16 @@ export class ParseTorrentService {
     }
     let different = false;
     for (const key in data) {
+      if (key === 'parsedAt') continue;
+      if (key === 'parseResult') {
+        if (!isDeepStrictEqual(torrent[key], data[key])) return true;
+        continue;
+      }
       if (
         (data[key] === undefined && torrent[key] !== null) ||
         (data[key] !== undefined &&
           JSON.stringify(torrent[key]) !== JSON.stringify(data[key]))
       ) {
-        console.log(`key=${key}, ${torrent.title}`);
         different = true;
         break;
       }
@@ -144,7 +218,14 @@ export class ParseTorrentService {
   ): ParsedTorrentUpdate[] {
     return torrents
       .map((torrent) => {
-        const data = this.titleToUpdateInput(torrent.title);
+        let data: Prisma.TorrentUpdateInput | null;
+        try {
+          data = this.titleToUpdateInput(torrent.title);
+        } catch (error) {
+          if (!(error instanceof InvalidEpisodeNumberError)) throw error;
+          this.logger.warn(`Skipping torrent ${torrent.id}: ${error.message}`);
+          return null;
+        }
         if (
           !ignoreUnchanged ||
           (data && this.shouldUpdateTorrent(torrent, data))
@@ -192,7 +273,11 @@ export class ParseTorrentService {
     const sqlTemplate = this.constructSqlTemplate(data.length);
     const parameters = data.flatMap((d) => [
       d.id,
-      ...columnNameKeys.map((column) => d[column]),
+      ...columnNameKeys.map((column) =>
+        column === 'parseResult'
+          ? JSON.stringify(d[column])
+          : d[column] ?? null,
+      ),
     ]);
     await this.prisma.$executeRaw(sqlTemplate, ...parameters);
   }

@@ -3,7 +3,7 @@ import { ParseTorrentTitleResult } from "@/types";
 
 type ResultForTesting = Omit<
   ParseTorrentTitleResult,
-  "raw" | "positionalItems"
+  "raw" | "positionalItems" | "episodeInfo"
 >;
 
 describe("test parseTorrentTitle with title", () => {
@@ -26,7 +26,7 @@ describe("test parseTorrentTitle with title", () => {
         },
         subtitle: {
           hasCHS: true,
-          type: "内嵌",
+          type: "内挂",
         },
       },
     ],
@@ -107,7 +107,7 @@ describe("test parseTorrentTitle with title", () => {
         subtitle: {
           hasCHS: true,
           hasCHT: true,
-          type: "内嵌",
+          type: "内挂",
         },
       },
     ],

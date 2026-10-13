@@ -1,3 +1,5 @@
+import { formatEpisode } from '@/utils/episode';
+import TorrentSubtitle from '@/components/TorrentSubtitle';
 import AsyncButton from '@/components/AsyncButton';
 import { TableTitle } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
@@ -154,12 +156,7 @@ function useColumns() {
         {
           title: '集数',
           dataIndex: 'episode',
-          render: (_, r) =>
-            typeof r.index === 'number'
-              ? `${r.index}`
-              : typeof r.indexFrom === 'number' && typeof r.indexTo === 'number'
-              ? `${r.indexFrom}-${r.indexTo}`
-              : '-',
+          render: (_, r) => formatEpisode(r.episodeInfo),
           width: 72,
           sorter: true,
           stateKey: {
@@ -170,12 +167,7 @@ function useColumns() {
           title: '字幕',
           key: 'subtitles',
           width: 100,
-          render: (_, r) =>
-            r.subtitleHasChs || r.subtitleHasCht || r.subtitleHasJp
-              ? `${r.subtitleHasChs ? '简' : ''}${
-                  r.subtitleHasCht ? '繁' : ''
-                }${r.subtitleHasJp ? '日' : ''}${r.subtitleType || ''}`
-              : '-',
+          render: (_, r) => <TorrentSubtitle info={r.subtitleInfo} />,
         },
         {
           title: '发布时间',
@@ -362,8 +354,8 @@ async function queryTorrents(
       : []),
     ...(episodeSort
       ? episodeSort === 'ascend'
-        ? [TorrentsOrderBy.IndexAsc, TorrentsOrderBy.IndexFromAsc]
-        : [TorrentsOrderBy.IndexDesc, TorrentsOrderBy.IndexFromDesc]
+        ? [TorrentsOrderBy.EpisodeSortAsc]
+        : [TorrentsOrderBy.EpisodeSortDesc]
       : []),
   ];
   try {
@@ -418,7 +410,7 @@ export default withAntdSearch(function Torrents() {
     {
       hasKeyword: true,
       pagination: {
-          pageSize: 100,
+        pageSize: 100,
       },
     },
   );

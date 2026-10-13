@@ -11,10 +11,12 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  BigFloat: any;
   BigInt: any;
   Cursor: any;
   DateTime: string;
   Datetime: any;
+  JSON: any;
 };
 
 export type AdminConfig = {
@@ -23,6 +25,32 @@ export type AdminConfig = {
   features: FeaturesConfig;
   jellyfin?: Maybe<JellyfinConfig>;
   lania?: Maybe<LaniaConfig>;
+};
+
+/** A filter to be used against BigFloat fields. All fields are combined with a logical ‘and.’ */
+export type BigFloatFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Scalars['BigFloat']>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Scalars['BigFloat']>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Scalars['BigFloat']>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Scalars['BigFloat']>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<Scalars['BigFloat']>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Scalars['BigFloat']>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Scalars['BigFloat']>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Scalars['BigFloat']>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Scalars['BigFloat']>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<Scalars['BigFloat']>>;
 };
 
 /** A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’ */
@@ -406,10 +434,18 @@ export enum DownloadJobsOrderBy {
   DownloadPathDesc = 'DOWNLOAD_PATH_DESC',
   EpisodeByEpisodeIdAirTimeAsc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_ASC',
   EpisodeByEpisodeIdAirTimeDesc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_DESC',
+  EpisodeByEpisodeIdBangumiEpisodeIdAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_ASC',
+  EpisodeByEpisodeIdBangumiEpisodeIdDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_DESC',
+  EpisodeByEpisodeIdBangumiSortAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_ASC',
+  EpisodeByEpisodeIdBangumiSortDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_DESC',
   EpisodeByEpisodeIdCreatedAtAsc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_ASC',
   EpisodeByEpisodeIdCreatedAtDesc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_DESC',
   EpisodeByEpisodeIdDescriptionAsc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_ASC',
   EpisodeByEpisodeIdDescriptionDesc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_DESC',
+  EpisodeByEpisodeIdEpisodeNumberAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_ASC',
+  EpisodeByEpisodeIdEpisodeNumberDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_DESC',
+  EpisodeByEpisodeIdEpisodeTypeAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_ASC',
+  EpisodeByEpisodeIdEpisodeTypeDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_DESC',
   EpisodeByEpisodeIdIdAsc = 'EPISODE_BY_EPISODE_ID__ID_ASC',
   EpisodeByEpisodeIdIdDesc = 'EPISODE_BY_EPISODE_ID__ID_DESC',
   EpisodeByEpisodeIdIndexAsc = 'EPISODE_BY_EPISODE_ID__INDEX_ASC',
@@ -422,6 +458,8 @@ export enum DownloadJobsOrderBy {
   EpisodeByEpisodeIdRawAirTimeDesc = 'EPISODE_BY_EPISODE_ID__RAW_AIR_TIME_DESC',
   EpisodeByEpisodeIdSeasonIdAsc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_ASC',
   EpisodeByEpisodeIdSeasonIdDesc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_DESC',
+  EpisodeByEpisodeIdSourceDataAsc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_ASC',
+  EpisodeByEpisodeIdSourceDataDesc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_DESC',
   EpisodeByEpisodeIdTitleAsc = 'EPISODE_BY_EPISODE_ID__TITLE_ASC',
   EpisodeByEpisodeIdTitleDesc = 'EPISODE_BY_EPISODE_ID__TITLE_DESC',
   EpisodeIdAsc = 'EPISODE_ID_ASC',
@@ -675,20 +713,26 @@ export type DownloadStatusFilter = {
 export type Episode = Node & {
   __typename?: 'Episode';
   airTime?: Maybe<Scalars['Datetime']>;
+  bangumiEpisodeId?: Maybe<Scalars['Int']>;
+  bangumiSort?: Maybe<Scalars['BigFloat']>;
   createdAt: Scalars['Datetime'];
   description: Scalars['String'];
   /** Reads and enables pagination through a set of `DownloadJob`. */
   downloadJobsByEpisodeId: DownloadJobsConnection;
+  episodeNumber?: Maybe<Scalars['BigFloat']>;
+  episodeType: EpisodeType;
   id: Scalars['Int'];
-  index: Scalars['Int'];
+  index?: Maybe<Scalars['Int']>;
   jellyfinEpisodeId?: Maybe<Scalars['String']>;
   lastMissingNotifyTime?: Maybe<Scalars['Datetime']>;
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
+  numbering?: Maybe<Scalars['JSON']>;
   rawAirTime?: Maybe<Scalars['Datetime']>;
   /** Reads a single `Season` that is related to this `Episode`. */
   seasonBySeasonId?: Maybe<Season>;
   seasonId: Scalars['Int'];
+  sourceData?: Maybe<Scalars['JSON']>;
   title: Scalars['String'];
 };
 
@@ -708,10 +752,18 @@ export type EpisodeDownloadJobsByEpisodeIdArgs = {
 export type EpisodeCondition = {
   /** Checks for equality with the object’s `airTime` field. */
   airTime?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `bangumiEpisodeId` field. */
+  bangumiEpisodeId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `bangumiSort` field. */
+  bangumiSort?: InputMaybe<Scalars['BigFloat']>;
   /** Checks for equality with the object’s `createdAt` field. */
   createdAt?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `description` field. */
   description?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `episodeNumber` field. */
+  episodeNumber?: InputMaybe<Scalars['BigFloat']>;
+  /** Checks for equality with the object’s `episodeType` field. */
+  episodeType?: InputMaybe<EpisodeType>;
   /** Checks for equality with the object’s `id` field. */
   id?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `index` field. */
@@ -724,6 +776,8 @@ export type EpisodeCondition = {
   rawAirTime?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `seasonId` field. */
   seasonId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `sourceData` field. */
+  sourceData?: InputMaybe<Scalars['JSON']>;
   /** Checks for equality with the object’s `title` field. */
   title?: InputMaybe<Scalars['String']>;
 };
@@ -734,6 +788,10 @@ export type EpisodeFilter = {
   airTime?: InputMaybe<DatetimeFilter>;
   /** Checks for all expressions in this list. */
   and?: InputMaybe<Array<EpisodeFilter>>;
+  /** Filter by the object’s `bangumiEpisodeId` field. */
+  bangumiEpisodeId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `bangumiSort` field. */
+  bangumiSort?: InputMaybe<BigFloatFilter>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `description` field. */
@@ -742,6 +800,10 @@ export type EpisodeFilter = {
   downloadJobsByEpisodeId?: InputMaybe<EpisodeToManyDownloadJobFilter>;
   /** Some related `downloadJobsByEpisodeId` exist. */
   downloadJobsByEpisodeIdExist?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `episodeNumber` field. */
+  episodeNumber?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `episodeType` field. */
+  episodeType?: InputMaybe<EpisodeTypeFilter>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<IntFilter>;
   /** Filter by the object’s `index` field. */
@@ -752,6 +814,8 @@ export type EpisodeFilter = {
   lastMissingNotifyTime?: InputMaybe<DatetimeFilter>;
   /** Negates the expression. */
   not?: InputMaybe<EpisodeFilter>;
+  /** Filter by the object’s `numbering` field. */
+  numbering?: InputMaybe<JsonFilter>;
   /** Checks for any expressions in this list. */
   or?: InputMaybe<Array<EpisodeFilter>>;
   /** Filter by the object’s `rawAirTime` field. */
@@ -760,6 +824,8 @@ export type EpisodeFilter = {
   seasonBySeasonId?: InputMaybe<SeasonFilter>;
   /** Filter by the object’s `seasonId` field. */
   seasonId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `sourceData` field. */
+  sourceData?: InputMaybe<JsonFilter>;
   /** Filter by the object’s `title` field. */
   title?: InputMaybe<StringFilter>;
 };
@@ -767,14 +833,19 @@ export type EpisodeFilter = {
 /** Represents an update to a `Episode`. Fields that are set will be updated. */
 export type EpisodePatch = {
   airTime?: InputMaybe<Scalars['Datetime']>;
+  bangumiEpisodeId?: InputMaybe<Scalars['Int']>;
+  bangumiSort?: InputMaybe<Scalars['BigFloat']>;
   createdAt?: InputMaybe<Scalars['Datetime']>;
   description?: InputMaybe<Scalars['String']>;
+  episodeNumber?: InputMaybe<Scalars['BigFloat']>;
+  episodeType?: InputMaybe<EpisodeType>;
   id?: InputMaybe<Scalars['Int']>;
   index?: InputMaybe<Scalars['Int']>;
   jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
   lastMissingNotifyTime?: InputMaybe<Scalars['Datetime']>;
   rawAirTime?: InputMaybe<Scalars['Datetime']>;
   seasonId?: InputMaybe<Scalars['Int']>;
+  sourceData?: InputMaybe<Scalars['JSON']>;
   title?: InputMaybe<Scalars['String']>;
 };
 
@@ -786,6 +857,39 @@ export type EpisodeToManyDownloadJobFilter = {
   none?: InputMaybe<DownloadJobFilter>;
   /** Some related `DownloadJob` matches the filter criteria. All fields are combined with a logical ‘and.’ */
   some?: InputMaybe<DownloadJobFilter>;
+};
+
+export enum EpisodeType {
+  Episode = 'EPISODE',
+  Oad = 'OAD',
+  Ova = 'OVA',
+  Sp = 'SP'
+}
+
+/** A filter to be used against EpisodeType fields. All fields are combined with a logical ‘and.’ */
+export type EpisodeTypeFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<EpisodeType>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<EpisodeType>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<EpisodeType>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<EpisodeType>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<EpisodeType>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<EpisodeType>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<EpisodeType>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<EpisodeType>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<EpisodeType>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<EpisodeType>>;
 };
 
 /** A connection to a list of `Episode` values. */
@@ -814,6 +918,10 @@ export type EpisodesEdge = {
 export enum EpisodesOrderBy {
   AirTimeAsc = 'AIR_TIME_ASC',
   AirTimeDesc = 'AIR_TIME_DESC',
+  BangumiEpisodeIdAsc = 'BANGUMI_EPISODE_ID_ASC',
+  BangumiEpisodeIdDesc = 'BANGUMI_EPISODE_ID_DESC',
+  BangumiSortAsc = 'BANGUMI_SORT_ASC',
+  BangumiSortDesc = 'BANGUMI_SORT_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
   DescriptionAsc = 'DESCRIPTION_ASC',
@@ -892,6 +1000,10 @@ export enum EpisodesOrderBy {
   DownloadJobsByEpisodeIdMinTorrentLinkDesc = 'DOWNLOAD_JOBS_BY_EPISODE_ID__MIN_TORRENT_LINK_DESC',
   DownloadJobsByEpisodeIdMinTorrentTitleAsc = 'DOWNLOAD_JOBS_BY_EPISODE_ID__MIN_TORRENT_TITLE_ASC',
   DownloadJobsByEpisodeIdMinTorrentTitleDesc = 'DOWNLOAD_JOBS_BY_EPISODE_ID__MIN_TORRENT_TITLE_DESC',
+  EpisodeNumberAsc = 'EPISODE_NUMBER_ASC',
+  EpisodeNumberDesc = 'EPISODE_NUMBER_DESC',
+  EpisodeTypeAsc = 'EPISODE_TYPE_ASC',
+  EpisodeTypeDesc = 'EPISODE_TYPE_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
   IndexAsc = 'INDEX_ASC',
@@ -971,6 +1083,8 @@ export enum EpisodesOrderBy {
   SeasonBySeasonIdYearAndSemesterDesc = 'SEASON_BY_SEASON_ID__YEAR_AND_SEMESTER_DESC',
   SeasonIdAsc = 'SEASON_ID_ASC',
   SeasonIdDesc = 'SEASON_ID_DESC',
+  SourceDataAsc = 'SOURCE_DATA_ASC',
+  SourceDataDesc = 'SOURCE_DATA_DESC',
   TitleAsc = 'TITLE_ASC',
   TitleDesc = 'TITLE_DESC'
 }
@@ -1589,6 +1703,42 @@ export type IntFilter = {
   notIn?: InputMaybe<Array<Scalars['Int']>>;
 };
 
+/** A filter to be used against JSON fields. All fields are combined with a logical ‘and.’ */
+export type JsonFilter = {
+  /** Contained by the specified JSON. */
+  containedBy?: InputMaybe<Scalars['JSON']>;
+  /** Contains the specified JSON. */
+  contains?: InputMaybe<Scalars['JSON']>;
+  /** Contains all of the specified keys. */
+  containsAllKeys?: InputMaybe<Array<Scalars['String']>>;
+  /** Contains any of the specified keys. */
+  containsAnyKeys?: InputMaybe<Array<Scalars['String']>>;
+  /** Contains the specified key. */
+  containsKey?: InputMaybe<Scalars['String']>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Scalars['JSON']>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Scalars['JSON']>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Scalars['JSON']>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Scalars['JSON']>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<Scalars['JSON']>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Scalars['JSON']>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Scalars['JSON']>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Scalars['JSON']>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Scalars['JSON']>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<Scalars['JSON']>>;
+};
+
 export type JellyfinConfig = {
   __typename?: 'JellyfinConfig';
   publicHost: Scalars['String'];
@@ -1913,7 +2063,6 @@ export type Mutation = {
   enqueueDownloadJobs: Scalars['Int'];
   importMultiple: Scalars['ID'];
   importSingle: Scalars['ID'];
-  larkSendTestMessage: Scalars['ID'];
   mockEpisodePublish: Scalars['ID'];
   notifyMissingEpisodes: Scalars['Int'];
   parseTorrentTitleForAll: Scalars['ID'];
@@ -1934,6 +2083,10 @@ export type Mutation = {
   updateEpisode?: Maybe<UpdateEpisodePayload>;
   /** Updates a single `Episode` using a unique key and a patch. */
   updateEpisodeById?: Maybe<UpdateEpisodePayload>;
+  /** Updates a single `Episode` using a unique key and a patch. */
+  updateEpisodeBySeasonIdAndBangumiEpisodeId?: Maybe<UpdateEpisodePayload>;
+  /** Updates a single `Episode` using a unique key and a patch. */
+  updateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumber?: Maybe<UpdateEpisodePayload>;
   /** Updates a single `Episode` using a unique key and a patch. */
   updateEpisodeBySeasonIdAndIndex?: Maybe<UpdateEpisodePayload>;
   /** Updates a single `Image` using its globally unique id and a patch. */
@@ -2056,6 +2209,16 @@ export type MutationUpdateEpisodeByIdArgs = {
 };
 
 
+export type MutationUpdateEpisodeBySeasonIdAndBangumiEpisodeIdArgs = {
+  input: UpdateEpisodeBySeasonIdAndBangumiEpisodeIdInput;
+};
+
+
+export type MutationUpdateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberArgs = {
+  input: UpdateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberInput;
+};
+
+
 export type MutationUpdateEpisodeBySeasonIdAndIndexArgs = {
   input: UpdateEpisodeBySeasonIdAndIndexInput;
 };
@@ -2165,6 +2328,8 @@ export type Query = {
   /** Reads a single `Episode` using its globally unique `ID`. */
   episode?: Maybe<Episode>;
   episodeById?: Maybe<Episode>;
+  episodeBySeasonIdAndBangumiEpisodeId?: Maybe<Episode>;
+  episodeBySeasonIdAndEpisodeTypeAndEpisodeNumber?: Maybe<Episode>;
   episodeBySeasonIdAndIndex?: Maybe<Episode>;
   fetchBangumiSeason: PartialSeason;
   fetchSkyhookSeason: PartialSeason;
@@ -2308,6 +2473,19 @@ export type QueryEpisodeArgs = {
 
 export type QueryEpisodeByIdArgs = {
   id: Scalars['Int'];
+};
+
+
+export type QueryEpisodeBySeasonIdAndBangumiEpisodeIdArgs = {
+  bangumiEpisodeId: Scalars['Int'];
+  seasonId: Scalars['Int'];
+};
+
+
+export type QueryEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberArgs = {
+  episodeNumber: Scalars['BigFloat'];
+  episodeType: EpisodeType;
+  seasonId: Scalars['Int'];
 };
 
 
@@ -2486,6 +2664,9 @@ export type Season = Node & {
   jellyfinId: Scalars['String'];
   lastWriteTitle?: Maybe<Scalars['String']>;
   lastWriteToDisk?: Maybe<Scalars['Datetime']>;
+  latestMainEpisode?: Maybe<Episode>;
+  /** Reads and enables pagination through a set of `Episode`. */
+  mainEpisodes: EpisodesConnection;
   mikanAnimeId: Scalars['String'];
   needDownloadCc: Scalars['Boolean'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -2527,6 +2708,21 @@ export type SeasonEpisodesBySeasonIdArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<EpisodesOrderBy>>;
+};
+
+
+export type SeasonLatestMainEpisodeArgs = {
+  atTime?: InputMaybe<Scalars['Datetime']>;
+};
+
+
+export type SeasonMainEpisodesArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<EpisodeFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
 };
 
 export type SeasonCharacter = {
@@ -2608,8 +2804,12 @@ export type SeasonCondition = {
 export type SeasonEpisode = {
   __typename?: 'SeasonEpisode';
   airDate?: Maybe<Scalars['String']>;
+  bangumiEpisodeId?: Maybe<Scalars['Int']>;
+  bangumiSort?: Maybe<Scalars['String']>;
   description?: Maybe<Scalars['String']>;
-  index: Scalars['Int'];
+  episodeNumber?: Maybe<Scalars['String']>;
+  episodeType?: Maybe<Scalars['String']>;
+  index?: Maybe<Scalars['Int']>;
   title: Scalars['String'];
 };
 
@@ -2923,10 +3123,18 @@ export enum SeasonsOrderBy {
   EpisodesBySeasonIdCountDesc = 'EPISODES_BY_SEASON_ID__COUNT_DESC',
   EpisodesBySeasonIdMaxAirTimeAsc = 'EPISODES_BY_SEASON_ID__MAX_AIR_TIME_ASC',
   EpisodesBySeasonIdMaxAirTimeDesc = 'EPISODES_BY_SEASON_ID__MAX_AIR_TIME_DESC',
+  EpisodesBySeasonIdMaxBangumiEpisodeIdAsc = 'EPISODES_BY_SEASON_ID__MAX_BANGUMI_EPISODE_ID_ASC',
+  EpisodesBySeasonIdMaxBangumiEpisodeIdDesc = 'EPISODES_BY_SEASON_ID__MAX_BANGUMI_EPISODE_ID_DESC',
+  EpisodesBySeasonIdMaxBangumiSortAsc = 'EPISODES_BY_SEASON_ID__MAX_BANGUMI_SORT_ASC',
+  EpisodesBySeasonIdMaxBangumiSortDesc = 'EPISODES_BY_SEASON_ID__MAX_BANGUMI_SORT_DESC',
   EpisodesBySeasonIdMaxCreatedAtAsc = 'EPISODES_BY_SEASON_ID__MAX_CREATED_AT_ASC',
   EpisodesBySeasonIdMaxCreatedAtDesc = 'EPISODES_BY_SEASON_ID__MAX_CREATED_AT_DESC',
   EpisodesBySeasonIdMaxDescriptionAsc = 'EPISODES_BY_SEASON_ID__MAX_DESCRIPTION_ASC',
   EpisodesBySeasonIdMaxDescriptionDesc = 'EPISODES_BY_SEASON_ID__MAX_DESCRIPTION_DESC',
+  EpisodesBySeasonIdMaxEpisodeNumberAsc = 'EPISODES_BY_SEASON_ID__MAX_EPISODE_NUMBER_ASC',
+  EpisodesBySeasonIdMaxEpisodeNumberDesc = 'EPISODES_BY_SEASON_ID__MAX_EPISODE_NUMBER_DESC',
+  EpisodesBySeasonIdMaxEpisodeTypeAsc = 'EPISODES_BY_SEASON_ID__MAX_EPISODE_TYPE_ASC',
+  EpisodesBySeasonIdMaxEpisodeTypeDesc = 'EPISODES_BY_SEASON_ID__MAX_EPISODE_TYPE_DESC',
   EpisodesBySeasonIdMaxIdAsc = 'EPISODES_BY_SEASON_ID__MAX_ID_ASC',
   EpisodesBySeasonIdMaxIdDesc = 'EPISODES_BY_SEASON_ID__MAX_ID_DESC',
   EpisodesBySeasonIdMaxIndexAsc = 'EPISODES_BY_SEASON_ID__MAX_INDEX_ASC',
@@ -2939,14 +3147,24 @@ export enum SeasonsOrderBy {
   EpisodesBySeasonIdMaxRawAirTimeDesc = 'EPISODES_BY_SEASON_ID__MAX_RAW_AIR_TIME_DESC',
   EpisodesBySeasonIdMaxSeasonIdAsc = 'EPISODES_BY_SEASON_ID__MAX_SEASON_ID_ASC',
   EpisodesBySeasonIdMaxSeasonIdDesc = 'EPISODES_BY_SEASON_ID__MAX_SEASON_ID_DESC',
+  EpisodesBySeasonIdMaxSourceDataAsc = 'EPISODES_BY_SEASON_ID__MAX_SOURCE_DATA_ASC',
+  EpisodesBySeasonIdMaxSourceDataDesc = 'EPISODES_BY_SEASON_ID__MAX_SOURCE_DATA_DESC',
   EpisodesBySeasonIdMaxTitleAsc = 'EPISODES_BY_SEASON_ID__MAX_TITLE_ASC',
   EpisodesBySeasonIdMaxTitleDesc = 'EPISODES_BY_SEASON_ID__MAX_TITLE_DESC',
   EpisodesBySeasonIdMinAirTimeAsc = 'EPISODES_BY_SEASON_ID__MIN_AIR_TIME_ASC',
   EpisodesBySeasonIdMinAirTimeDesc = 'EPISODES_BY_SEASON_ID__MIN_AIR_TIME_DESC',
+  EpisodesBySeasonIdMinBangumiEpisodeIdAsc = 'EPISODES_BY_SEASON_ID__MIN_BANGUMI_EPISODE_ID_ASC',
+  EpisodesBySeasonIdMinBangumiEpisodeIdDesc = 'EPISODES_BY_SEASON_ID__MIN_BANGUMI_EPISODE_ID_DESC',
+  EpisodesBySeasonIdMinBangumiSortAsc = 'EPISODES_BY_SEASON_ID__MIN_BANGUMI_SORT_ASC',
+  EpisodesBySeasonIdMinBangumiSortDesc = 'EPISODES_BY_SEASON_ID__MIN_BANGUMI_SORT_DESC',
   EpisodesBySeasonIdMinCreatedAtAsc = 'EPISODES_BY_SEASON_ID__MIN_CREATED_AT_ASC',
   EpisodesBySeasonIdMinCreatedAtDesc = 'EPISODES_BY_SEASON_ID__MIN_CREATED_AT_DESC',
   EpisodesBySeasonIdMinDescriptionAsc = 'EPISODES_BY_SEASON_ID__MIN_DESCRIPTION_ASC',
   EpisodesBySeasonIdMinDescriptionDesc = 'EPISODES_BY_SEASON_ID__MIN_DESCRIPTION_DESC',
+  EpisodesBySeasonIdMinEpisodeNumberAsc = 'EPISODES_BY_SEASON_ID__MIN_EPISODE_NUMBER_ASC',
+  EpisodesBySeasonIdMinEpisodeNumberDesc = 'EPISODES_BY_SEASON_ID__MIN_EPISODE_NUMBER_DESC',
+  EpisodesBySeasonIdMinEpisodeTypeAsc = 'EPISODES_BY_SEASON_ID__MIN_EPISODE_TYPE_ASC',
+  EpisodesBySeasonIdMinEpisodeTypeDesc = 'EPISODES_BY_SEASON_ID__MIN_EPISODE_TYPE_DESC',
   EpisodesBySeasonIdMinIdAsc = 'EPISODES_BY_SEASON_ID__MIN_ID_ASC',
   EpisodesBySeasonIdMinIdDesc = 'EPISODES_BY_SEASON_ID__MIN_ID_DESC',
   EpisodesBySeasonIdMinIndexAsc = 'EPISODES_BY_SEASON_ID__MIN_INDEX_ASC',
@@ -2959,6 +3177,8 @@ export enum SeasonsOrderBy {
   EpisodesBySeasonIdMinRawAirTimeDesc = 'EPISODES_BY_SEASON_ID__MIN_RAW_AIR_TIME_DESC',
   EpisodesBySeasonIdMinSeasonIdAsc = 'EPISODES_BY_SEASON_ID__MIN_SEASON_ID_ASC',
   EpisodesBySeasonIdMinSeasonIdDesc = 'EPISODES_BY_SEASON_ID__MIN_SEASON_ID_DESC',
+  EpisodesBySeasonIdMinSourceDataAsc = 'EPISODES_BY_SEASON_ID__MIN_SOURCE_DATA_ASC',
+  EpisodesBySeasonIdMinSourceDataDesc = 'EPISODES_BY_SEASON_ID__MIN_SOURCE_DATA_DESC',
   EpisodesBySeasonIdMinTitleAsc = 'EPISODES_BY_SEASON_ID__MIN_TITLE_ASC',
   EpisodesBySeasonIdMinTitleDesc = 'EPISODES_BY_SEASON_ID__MIN_TITLE_DESC',
   EpisodesLastSyncAsc = 'EPISODES_LAST_SYNC_ASC',
@@ -3176,6 +3396,12 @@ export type Torrent = Node & {
   __typename?: 'Torrent';
   createdAt: Scalars['Datetime'];
   episodeIndex?: Maybe<Scalars['Int']>;
+  episodeInfo?: Maybe<Scalars['JSON']>;
+  episodeNumber?: Maybe<Scalars['BigFloat']>;
+  episodeNumberFrom?: Maybe<Scalars['BigFloat']>;
+  episodeNumberTo?: Maybe<Scalars['BigFloat']>;
+  episodeSort?: Maybe<Scalars['BigFloat']>;
+  episodeType?: Maybe<EpisodeType>;
   formatAudioEncoding?: Maybe<Scalars['String']>;
   formatColorDepth?: Maybe<Scalars['String']>;
   formatContainer?: Maybe<Scalars['String']>;
@@ -3190,6 +3416,9 @@ export type Torrent = Node & {
   nodeId: Scalars['ID'];
   organizationParts?: Maybe<Array<Maybe<Scalars['String']>>>;
   organizationRaw?: Maybe<Scalars['String']>;
+  parseResult?: Maybe<Scalars['JSON']>;
+  parseVersion?: Maybe<Scalars['Int']>;
+  parsedAt?: Maybe<Scalars['Datetime']>;
   publishDate: Scalars['Datetime'];
   seasonTitleAliases?: Maybe<Array<Maybe<Scalars['String']>>>;
   seasonTitleRaw?: Maybe<Scalars['String']>;
@@ -3199,6 +3428,7 @@ export type Torrent = Node & {
   subtitleHasChs: Scalars['Boolean'];
   subtitleHasCht: Scalars['Boolean'];
   subtitleHasJp: Scalars['Boolean'];
+  subtitleInfo?: Maybe<Scalars['JSON']>;
   subtitleType?: Maybe<Scalars['String']>;
   title: Scalars['String'];
   /** Link used to download */
@@ -3211,6 +3441,14 @@ export type TorrentCondition = {
   createdAt?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `episodeIndex` field. */
   episodeIndex?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `episodeNumber` field. */
+  episodeNumber?: InputMaybe<Scalars['BigFloat']>;
+  /** Checks for equality with the object’s `episodeNumberFrom` field. */
+  episodeNumberFrom?: InputMaybe<Scalars['BigFloat']>;
+  /** Checks for equality with the object’s `episodeNumberTo` field. */
+  episodeNumberTo?: InputMaybe<Scalars['BigFloat']>;
+  /** Checks for equality with the object’s `episodeType` field. */
+  episodeType?: InputMaybe<EpisodeType>;
   /** Checks for equality with the object’s `formatAudioEncoding` field. */
   formatAudioEncoding?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `formatColorDepth` field. */
@@ -3235,6 +3473,12 @@ export type TorrentCondition = {
   organizationParts?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
   /** Checks for equality with the object’s `organizationRaw` field. */
   organizationRaw?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `parseResult` field. */
+  parseResult?: InputMaybe<Scalars['JSON']>;
+  /** Checks for equality with the object’s `parseVersion` field. */
+  parseVersion?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `parsedAt` field. */
+  parsedAt?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `publishDate` field. */
   publishDate?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `seasonTitleAliases` field. */
@@ -3269,6 +3513,18 @@ export type TorrentFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `episodeIndex` field. */
   episodeIndex?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `episodeInfo` field. */
+  episodeInfo?: InputMaybe<JsonFilter>;
+  /** Filter by the object’s `episodeNumber` field. */
+  episodeNumber?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `episodeNumberFrom` field. */
+  episodeNumberFrom?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `episodeNumberTo` field. */
+  episodeNumberTo?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `episodeSort` field. */
+  episodeSort?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `episodeType` field. */
+  episodeType?: InputMaybe<EpisodeTypeFilter>;
   /** Filter by the object’s `formatAudioEncoding` field. */
   formatAudioEncoding?: InputMaybe<StringFilter>;
   /** Filter by the object’s `formatColorDepth` field. */
@@ -3297,6 +3553,12 @@ export type TorrentFilter = {
   organizationParts?: InputMaybe<StringListFilter>;
   /** Filter by the object’s `organizationRaw` field. */
   organizationRaw?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `parseResult` field. */
+  parseResult?: InputMaybe<JsonFilter>;
+  /** Filter by the object’s `parseVersion` field. */
+  parseVersion?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `parsedAt` field. */
+  parsedAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `publishDate` field. */
   publishDate?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `seasonTitleAliases` field. */
@@ -3315,6 +3577,8 @@ export type TorrentFilter = {
   subtitleHasCht?: InputMaybe<BooleanFilter>;
   /** Filter by the object’s `subtitleHasJp` field. */
   subtitleHasJp?: InputMaybe<BooleanFilter>;
+  /** Filter by the object’s `subtitleInfo` field. */
+  subtitleInfo?: InputMaybe<JsonFilter>;
   /** Filter by the object’s `subtitleType` field. */
   subtitleType?: InputMaybe<StringFilter>;
   /** Filter by the object’s `title` field. */
@@ -3419,6 +3683,16 @@ export enum TorrentsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   EpisodeIndexAsc = 'EPISODE_INDEX_ASC',
   EpisodeIndexDesc = 'EPISODE_INDEX_DESC',
+  EpisodeNumberAsc = 'EPISODE_NUMBER_ASC',
+  EpisodeNumberDesc = 'EPISODE_NUMBER_DESC',
+  EpisodeNumberFromAsc = 'EPISODE_NUMBER_FROM_ASC',
+  EpisodeNumberFromDesc = 'EPISODE_NUMBER_FROM_DESC',
+  EpisodeNumberToAsc = 'EPISODE_NUMBER_TO_ASC',
+  EpisodeNumberToDesc = 'EPISODE_NUMBER_TO_DESC',
+  EpisodeSortAsc = 'EPISODE_SORT_ASC',
+  EpisodeSortDesc = 'EPISODE_SORT_DESC',
+  EpisodeTypeAsc = 'EPISODE_TYPE_ASC',
+  EpisodeTypeDesc = 'EPISODE_TYPE_DESC',
   FormatAudioEncodingAsc = 'FORMAT_AUDIO_ENCODING_ASC',
   FormatAudioEncodingDesc = 'FORMAT_AUDIO_ENCODING_DESC',
   FormatColorDepthAsc = 'FORMAT_COLOR_DEPTH_ASC',
@@ -3444,6 +3718,12 @@ export enum TorrentsOrderBy {
   OrganizationPartsDesc = 'ORGANIZATION_PARTS_DESC',
   OrganizationRawAsc = 'ORGANIZATION_RAW_ASC',
   OrganizationRawDesc = 'ORGANIZATION_RAW_DESC',
+  ParsedAtAsc = 'PARSED_AT_ASC',
+  ParsedAtDesc = 'PARSED_AT_DESC',
+  ParseResultAsc = 'PARSE_RESULT_ASC',
+  ParseResultDesc = 'PARSE_RESULT_DESC',
+  ParseVersionAsc = 'PARSE_VERSION_ASC',
+  ParseVersionDesc = 'PARSE_VERSION_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   PublishDateAsc = 'PUBLISH_DATE_ASC',
@@ -3482,6 +3762,33 @@ export type UpdateEpisodeByIdInput = {
   /** An object where the defined keys will be set on the `Episode` being updated. */
   episodePatch: EpisodePatch;
   id: Scalars['Int'];
+};
+
+/** All input for the `updateEpisodeBySeasonIdAndBangumiEpisodeId` mutation. */
+export type UpdateEpisodeBySeasonIdAndBangumiEpisodeIdInput = {
+  bangumiEpisodeId: Scalars['Int'];
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** An object where the defined keys will be set on the `Episode` being updated. */
+  episodePatch: EpisodePatch;
+  seasonId: Scalars['Int'];
+};
+
+/** All input for the `updateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumber` mutation. */
+export type UpdateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  episodeNumber: Scalars['BigFloat'];
+  /** An object where the defined keys will be set on the `Episode` being updated. */
+  episodePatch: EpisodePatch;
+  episodeType: EpisodeType;
+  seasonId: Scalars['Int'];
 };
 
 /** All input for the `updateEpisodeBySeasonIdAndIndex` mutation. */
@@ -3724,7 +4031,7 @@ export type GetEpisodeByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetEpisodeByIdQuery = { __typename?: 'Query', episodeById?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index: number, jellyfinEpisodeId?: string | null, title: string, downloadJobsByEpisodeId: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, nfoPath?: string | null, qbtTorrentHash?: string | null, status: DownloadStatus, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null };
+export type GetEpisodeByIdQuery = { __typename?: 'Query', episodeById?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, downloadJobsByEpisodeId: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, nfoPath?: string | null, qbtTorrentHash?: string | null, status: DownloadStatus, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null };
 
 export type RetryJobStepMutationVariables = Exact<{
   jobId: Scalars['Int'];
@@ -3769,7 +4076,7 @@ export type SearchTorrentQueryVariables = Exact<{
 }>;
 
 
-export type SearchTorrentQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeIndex?: number | null } | null }> } | null };
+export type SearchTorrentQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null } | null }> } | null };
 
 export type DownloadJobStatusFieldsFragment = { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean };
 
@@ -3807,7 +4114,7 @@ export type Folders_SyncJellyfinFoldersMutationVariables = Exact<{ [key: string]
 
 export type Folders_SyncJellyfinFoldersMutation = { __typename?: 'Mutation', syncJellyfinFolders: string };
 
-export type ListDownloadJobsFieldsFragment = { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index: number, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null };
+export type ListDownloadJobsFieldsFragment = { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null };
 
 export type ListDownloadJobsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -3816,7 +4123,7 @@ export type ListDownloadJobsQueryVariables = Exact<{
 }>;
 
 
-export type ListDownloadJobsQuery = { __typename?: 'Query', allDownloadJobs?: { __typename?: 'DownloadJobsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'DownloadJobsEdge', cursor?: any | null, node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index: number, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null }> } | null };
+export type ListDownloadJobsQuery = { __typename?: 'Query', allDownloadJobs?: { __typename?: 'DownloadJobsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'DownloadJobsEdge', cursor?: any | null, node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null }> } | null };
 
 export type GetEpisodesStatusQueryVariables = Exact<{
   episodeIds: Array<Scalars['Int']> | Scalars['Int'];
@@ -3834,7 +4141,7 @@ export type MockEpisodePublishMutation = { __typename?: 'Mutation', mockEpisodeP
 
 export type DisplayImageFieldsFragment = { __typename?: 'Image', id: number, downloadPath?: string | null };
 
-export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index: number, jellyfinEpisodeId?: string | null, title: string, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } };
+export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } };
 
 export type SeasonConfigFieldsFragment = { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null };
 
@@ -3845,7 +4152,7 @@ export type GetSeasonByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index: number, jellyfinEpisodeId?: string | null, title: string, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } } | null };
+export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } } | null };
 
 export type UpdateSeasonByIdMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -3916,7 +4223,7 @@ export type GetMatchingTorrentsQueryVariables = Exact<{
 }>;
 
 
-export type GetMatchingTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', edges: Array<{ __typename?: 'TorrentsEdge', node?: { __typename?: 'Torrent', id: number, title: string, episodeIndex?: number | null, publishDate: any } | null }> } | null };
+export type GetMatchingTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', edges: Array<{ __typename?: 'TorrentsEdge', node?: { __typename?: 'Torrent', id: number, title: string, episodeInfo?: any | null, publishDate: any } | null }> } | null };
 
 export type SaveSeasonMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -3926,7 +4233,7 @@ export type SaveSeasonMutationVariables = Exact<{
 
 export type SaveSeasonMutation = { __typename?: 'Mutation', saveSeason: string };
 
-export type ListSeasonsFieldsFragment = { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } };
+export type ListSeasonsFieldsFragment = { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null };
 
 export type ListSeasonsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -3937,7 +4244,7 @@ export type ListSeasonsQueryVariables = Exact<{
 }>;
 
 
-export type ListSeasonsQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'SeasonsEdge', cursor?: any | null, node?: { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } } | null }> } | null };
+export type ListSeasonsQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'SeasonsEdge', cursor?: any | null, node?: { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null } | null }> } | null };
 
 export type CreateSeasonMutationVariables = Exact<{
   season: SeasonInput;
@@ -3986,11 +4293,11 @@ export type GetSeasonsStatusQueryVariables = Exact<{
 }>;
 
 
-export type GetSeasonsStatusQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', edges: Array<{ __typename?: 'SeasonsEdge', node?: { __typename?: 'Season', id: number, latestEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null }> } } | null }> } | null };
+export type GetSeasonsStatusQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', edges: Array<{ __typename?: 'SeasonsEdge', node?: { __typename?: 'Season', id: number, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, jobs: { __typename?: 'DownloadJobsConnection', edges: Array<{ __typename?: 'DownloadJobsEdge', node?: { __typename?: 'DownloadJob', id: number, status: DownloadStatus, isFailed: boolean } | null }> } } | null } | null }> } | null };
 
-export type TorrentFieldsFragment = { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeIndex?: number | null };
+export type TorrentFieldsFragment = { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null };
 
-export type TorrentParseFieldsFragment = { __typename?: 'Torrent', index?: number | null, indexFrom?: number | null, indexTo?: number | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null, subtitleHasChs: boolean, subtitleHasCht: boolean, subtitleHasJp: boolean, subtitleType?: string | null };
+export type TorrentParseFieldsFragment = { __typename?: 'Torrent', organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null };
 
 export type ListTorrentsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -4000,7 +4307,7 @@ export type ListTorrentsQueryVariables = Exact<{
 }>;
 
 
-export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeIndex?: number | null, index?: number | null, indexFrom?: number | null, indexTo?: number | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null, subtitleHasChs: boolean, subtitleHasCht: boolean, subtitleHasJp: boolean, subtitleType?: string | null } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
+export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
 
 export type SyncMikanHistoryMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -4013,17 +4320,17 @@ export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 export type GetConfigQuery = { __typename?: 'Query', config: { __typename?: 'AdminConfig', env: string, jellyfin?: { __typename?: 'JellyfinConfig', publicHost: string } | null, lania?: { __typename?: 'LaniaConfig', publicHost: string } | null, features: { __typename?: 'FeaturesConfig', lania: boolean } } };
 
 export const Folders_ListFoldersFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"folders_listFoldersFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"mappedLocation"}}]}}]} as unknown as DocumentNode<Folders_ListFoldersFieldsFragment, unknown>;
-export const ListDownloadJobsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listDownloadJobsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}}]}}]} as unknown as DocumentNode<ListDownloadJobsFieldsFragment, unknown>;
+export const ListDownloadJobsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listDownloadJobsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}}]}}]} as unknown as DocumentNode<ListDownloadJobsFieldsFragment, unknown>;
 export const DownloadJobStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"downloadJobStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DownloadJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}}]}}]} as unknown as DocumentNode<DownloadJobStatusFieldsFragment, unknown>;
 export const EpisodeStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"episodeStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Episode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"jobs"},"name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"downloadJobStatusFields"}}]}}]}}]}}]}},...DownloadJobStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<EpisodeStatusFieldsFragment, unknown>;
-export const SeasonEpisodesFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonEpisodes"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodesLastSync"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<SeasonEpisodesFragment, unknown>;
+export const SeasonEpisodesFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonEpisodes"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodesLastSync"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<SeasonEpisodesFragment, unknown>;
 export const DisplayImageFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"displayImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}}]}}]} as unknown as DocumentNode<DisplayImageFieldsFragment, unknown>;
 export const SeasonConfigFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonConfigFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"infoSource"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"episodesSource"}},{"kind":"Field","name":{"kind":"Name","value":"downloadSourcesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"offset"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"poster"},"name":{"kind":"Name","value":"imageByPosterImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"banner"},"name":{"kind":"Name","value":"imageByBannerImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"fanart"},"name":{"kind":"Name","value":"imageByFanartImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"needDownloadCc"}},{"kind":"Field","alias":{"kind":"Name","value":"jellyfinFolder"},"name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}}]}},{"kind":"Field","name":{"kind":"Name","value":"notifyMissing"}},{"kind":"Field","name":{"kind":"Name","value":"notifyPublish"}},{"kind":"Field","name":{"kind":"Name","value":"episodesAutoSync"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}},{"kind":"Field","name":{"kind":"Name","value":"integrationsLaniaSync"}}]}},...DisplayImageFieldsFragmentDoc.definitions]} as unknown as DocumentNode<SeasonConfigFieldsFragment, unknown>;
-export const ListSeasonsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listSeasonsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","alias":{"kind":"Name","value":"allEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"airedEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"availableEpisodes"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"jellyfinEpisodeId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isNull"},"value":{"kind":"BooleanValue","value":false}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"firstEpisode"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"nextEpisode"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"greaterThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_DESC"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListSeasonsFieldsFragment, unknown>;
+export const ListSeasonsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listSeasonsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","alias":{"kind":"Name","value":"allEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"airedEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"availableEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"jellyfinEpisodeId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isNull"},"value":{"kind":"BooleanValue","value":false}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"firstEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"nextEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"greaterThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListSeasonsFieldsFragment, unknown>;
 export const JellyfinFolderFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"jellyfinFolderFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}}]}}]} as unknown as DocumentNode<JellyfinFolderFieldsFragment, unknown>;
-export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"episodeIndex"}}]}}]} as unknown as DocumentNode<TorrentFieldsFragment, unknown>;
-export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"indexFrom"}},{"kind":"Field","name":{"kind":"Name","value":"indexTo"}},{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleHasChs"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleHasCht"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleHasJp"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleType"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
-export const GetEpisodeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]} as unknown as DocumentNode<GetEpisodeByIdQuery, GetEpisodeByIdQueryVariables>;
+export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"episodeInfo"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleInfo"}}]}}]} as unknown as DocumentNode<TorrentFieldsFragment, unknown>;
+export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
+export const GetEpisodeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"downloadJobsByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]} as unknown as DocumentNode<GetEpisodeByIdQuery, GetEpisodeByIdQueryVariables>;
 export const RetryJobStepDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RetryJobStep"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"jobId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"retryJobStep"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"jobId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"jobId"}}}]}]}}]} as unknown as DocumentNode<RetryJobStepMutation, RetryJobStepMutationVariables>;
 export const GetActiveDownloadJobStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveDownloadJobStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"jobIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getActiveDownloadJobStatus"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"jobIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"jobIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloaded"}},{"kind":"Field","name":{"kind":"Name","value":"eta"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"peers"}},{"kind":"Field","name":{"kind":"Name","value":"speed"}},{"kind":"Field","name":{"kind":"Name","value":"total"}}]}}]}}]} as unknown as DocumentNode<GetActiveDownloadJobStatusQuery, GetActiveDownloadJobStatusQueryVariables>;
 export const ListFilesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListFiles"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"path"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"listFiles"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"path"},"value":{"kind":"Variable","name":{"kind":"Name","value":"path"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lastModified"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"path"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<ListFilesQuery, ListFilesQueryVariables>;
@@ -4047,7 +4354,7 @@ export const AllJellyfinFoldersDocument = {"kind":"Document","definitions":[{"ki
 export const SyncJellyfinSeriesIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncJellyfinSeriesId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncJellyfinSeriesId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}}}]}]}}]} as unknown as DocumentNode<SyncJellyfinSeriesIdMutation, SyncJellyfinSeriesIdMutationVariables>;
 export const DownloadBilibiliCcDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DownloadBilibiliCC"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadBilibiliCC"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"episodeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}}}]}]}}]} as unknown as DocumentNode<DownloadBilibiliCcMutation, DownloadBilibiliCcMutationVariables>;
 export const GetJellyfinIdByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetJellyfinIdById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"seasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}}]}}]}}]} as unknown as DocumentNode<GetJellyfinIdByIdQuery, GetJellyfinIdByIdQueryVariables>;
-export const GetMatchingTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMatchingTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"PUBLISH_DATE_ASC"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"episodeIndex"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMatchingTorrentsQuery, GetMatchingTorrentsQueryVariables>;
+export const GetMatchingTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMatchingTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"PUBLISH_DATE_ASC"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"episodeInfo"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMatchingTorrentsQuery, GetMatchingTorrentsQueryVariables>;
 export const SaveSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SaveSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"patch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SaveSeasonPatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveSeason"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"patch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"patch"}}}]}]}}]} as unknown as DocumentNode<SaveSeasonMutation, SaveSeasonMutationVariables>;
 export const ListSeasonsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListSeasons"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonFilter"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"listSeasonsFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}},...ListSeasonsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListSeasonsQuery, ListSeasonsQueryVariables>;
 export const CreateSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"season"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSeason"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"season"},"value":{"kind":"Variable","name":{"kind":"Name","value":"season"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"season"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<CreateSeasonMutation, CreateSeasonMutationVariables>;
@@ -4056,7 +4363,7 @@ export const GetMetadataPageOptionsDocument = {"kind":"Document","definitions":[
 export const DeleteSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteSeasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteSeasonByIdMutation, DeleteSeasonByIdMutationVariables>;
 export const ListJellyfinFoldersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListJellyfinFolders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allJellyfinFolders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"jellyfinFolderFields"}}]}}]}}]}}]}},...JellyfinFolderFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListJellyfinFoldersQuery, ListJellyfinFoldersQueryVariables>;
 export const WriteSeasonMetadataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"WriteSeasonMetadata"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"writeMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<WriteSeasonMetadataMutation, WriteSeasonMetadataMutationVariables>;
-export const GetSeasonsStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonsStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_DESC"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetSeasonsStatusQuery, GetSeasonsStatusQueryVariables>;
+export const GetSeasonsStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonsStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetSeasonsStatusQuery, GetSeasonsStatusQueryVariables>;
 export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentParseFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions,...TorrentParseFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
 export const SyncMikanHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncMikanHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncMikanHistory"}}]}}]} as unknown as DocumentNode<SyncMikanHistoryMutation, SyncMikanHistoryMutationVariables>;
 export const GetConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetConfig"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfin"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lania"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"features"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lania"}}]}},{"kind":"Field","name":{"kind":"Name","value":"env"}}]}}]}}]} as unknown as DocumentNode<GetConfigQuery, GetConfigQueryVariables>;

@@ -14,29 +14,28 @@ fragment listSeasonsFields on Season {
   bilibiliThmId
   bilibiliMainlandId
   jellyfinId
-  allEpisodes: episodesBySeasonId {
+  allEpisodes: mainEpisodes {
     totalCount
   }
-  airedEpisodes: episodesBySeasonId(
+  airedEpisodes: mainEpisodes(
     filter: { airTime: { lessThanOrEqualTo: $now } }
   ) {
     totalCount
   }
-  availableEpisodes: episodesBySeasonId(
+  availableEpisodes: mainEpisodes(
     filter: { jellyfinEpisodeId: { isNull: false } }
   ) {
     totalCount
   }
-  firstEpisode: episodesBySeasonId(first: 1, orderBy: INDEX_ASC) {
+  firstEpisode: mainEpisodes(first: 1) {
     edges {
       node {
         airTime
       }
     }
   }
-  nextEpisode: episodesBySeasonId(
+  nextEpisode: mainEpisodes(
     first: 1
-    orderBy: INDEX_ASC
     filter: { airTime: { greaterThanOrEqualTo: $now } }
   ) {
     edges {
@@ -45,16 +44,8 @@ fragment listSeasonsFields on Season {
       }
     }
   }
-  latestEpisode: episodesBySeasonId(
-    first: 1
-    orderBy: INDEX_DESC
-    filter: { airTime: { lessThanOrEqualTo: $now } }
-  ) {
-    edges {
-      node {
-        ...episodeStatusFields
-      }
-    }
+  latestEpisode: latestMainEpisode(atTime: $now) {
+    ...episodeStatusFields
   }
 }
 
@@ -147,16 +138,8 @@ query GetSeasonsStatus($seasonIds: [Int!]!, $now: Datetime!) {
     edges {
       node {
         id
-        latestEpisode: episodesBySeasonId(
-          first: 1
-          orderBy: INDEX_DESC
-          filter: { airTime: { lessThanOrEqualTo: $now } }
-        ) {
-          edges {
-            node {
-              ...episodeStatusFields
-            }
-          }
+        latestEpisode: latestMainEpisode(atTime: $now) {
+          ...episodeStatusFields
         }
       }
     }

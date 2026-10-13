@@ -8,6 +8,7 @@ fragment listDownloadJobsFields on DownloadJob {
     airTime
     title
     index
+    numbering
     seasonBySeasonId {
       id
       title

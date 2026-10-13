@@ -1,3 +1,4 @@
+import { episodeLabel } from '@/utils/episode-number';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
 import { LarkConfig } from '@/config/types';
@@ -137,7 +138,9 @@ export class LarkBot
         header: {
           template: 'turquoise',
           title: {
-            content: `【动画更新】 ${episode.season.title} #${episode.index}`,
+            content: `【动画更新】 ${episode.season.title} #${episodeLabel(
+              episode,
+            )}`,
             tag: 'plain_text',
           },
         },
@@ -188,9 +191,9 @@ export class LarkBot
                 },
             {
               tag: 'text',
-              text: ` #${episode.index} (发布于 ${dayjs(episode.airTime).format(
-                DateFormat.DateTime,
-              )}${
+              text: ` #${episodeLabel(episode)} (发布于 ${dayjs(
+                episode.airTime,
+              ).format(DateFormat.DateTime)}${
                 episode.downloadJobs.length > 0
                   ? `，下载状态：${this.getDownloadJobState(
                       episode.downloadJobs[0],

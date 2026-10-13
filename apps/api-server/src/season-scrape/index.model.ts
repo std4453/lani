@@ -1,4 +1,4 @@
-import { InputType, ObjectType } from '@nestjs/graphql';
+import { HideField, InputType, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class SeasonInfo {
@@ -23,7 +23,13 @@ export class SeasonEpisode {
   /**
    * starting from 1
    */
-  index: number;
+  index?: number;
+  episodeNumber?: string;
+  episodeType?: string;
+  bangumiEpisodeId?: number;
+  bangumiSort?: string;
+  @HideField()
+  sourceData?: any;
   title: string;
   description?: string;
   /**

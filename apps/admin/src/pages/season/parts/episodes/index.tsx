@@ -1,3 +1,4 @@
+import { formatNumbering } from '@/utils/episode';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import {
@@ -51,7 +52,7 @@ import {
 } from '../../help';
 import styles from './index.module.less';
 
-const fixedColumnWidths = { index: 48, status: 120, jellyfin: 96 };
+const fixedColumnWidths = { index: 80, status: 120, jellyfin: 96 };
 const minTableWidth = 900;
 
 const EpisodesStatusContext = createContext<
@@ -113,7 +114,8 @@ function useColumns({
     (): ProColumns<Episode>[] => [
       {
         title: '#',
-        dataIndex: 'index',
+        dataIndex: 'numbering',
+        render: (_, episode) => formatNumbering(episode.numbering),
         align: 'center',
         width: fixedColumnWidths.index,
       },

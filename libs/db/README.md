@@ -16,7 +16,7 @@
 
 将 `@lani/db` 添加为依赖后，通过 `node_modules/@lani/db/prisma/schema.prisma` 引用 prisma schema。
 
-### 数据库 migration
+### 数据库迁移
 
 `@lani/db` 也可以直接通过 `rush deploy` 部署，部署之后在包目录下运行 `npm run migrate:deploy` 会在 `DATABASE_URL` 指向的数据库中执行 migration。
 

@@ -1,3 +1,4 @@
+import { episodeLabel } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import {
   EpisodePublishEvent,
@@ -70,7 +71,11 @@ export class NotificationService {
         );
       } else {
         this.logger.verbose(
-          `Sending episode publish notification for episode #${event.episode.id} (${event.episode.season.title} / #${event.episode.index})...`,
+          `Sending episode publish notification for episode #${
+            event.episode.id
+          } (${event.episode.season.title} / #${episodeLabel(
+            event.episode,
+          )})...`,
         );
         await this.user?.onEpisodePublish(event.episode);
       }
@@ -91,6 +96,7 @@ export class NotificationService {
   private async notifyMissingEpisodesInternal() {
     const episodes = await this.prisma.episode.findMany({
       where: {
+        episodeType: 'EPISODE',
         jellyfinEpisodeId: null,
         season: {
           isMonitoring: true,

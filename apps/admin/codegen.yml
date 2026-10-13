@@ -1,14 +1,14 @@
 overwrite: true
 schema: http://localhost:8080/graphql
 generates:
- # Creates the TypeScript types from the schema and any .graphql file
- src/generated/types.ts:
-   documents: "src/**/*.graphql"
-   plugins:
-     - typescript
-     - typescript-operations
-     - typed-document-node
+  # Creates the TypeScript types from the schema and any .graphql file
+  src/generated/types.ts:
+    documents: 'src/**/*.graphql'
+    plugins:
+      - typescript
+      - typescript-operations
+      - typed-document-node
 config:
- scalars:
-   DateTime: "string"
-   JSON: "{ [key: string]: any }"
+  scalars:
+    DateTime: 'string'
+    JSON: 'any'

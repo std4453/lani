@@ -22,6 +22,13 @@ export type Index =
       to: number;
     };
 
+/** Release-title numbering, not an automatic mapping to a metadata provider. */
+export interface EpisodeInfo {
+  type: "episode" | "sp" | "ova" | "oad";
+  /** Omitted when a special is labeled without a number. Never inferred as 0. */
+  index?: Index;
+}
+
 export type Resolution = "1080" | "720" | "2160";
 
 export type ColorDepth = "8-bit" | "10-bit";
@@ -96,6 +103,17 @@ export interface Subtitle {
   type?: SubtitleType;
 }
 
+export type SubtitleDelivery = "burned-in" | "muxed" | "external";
+
+export interface SubtitleInfo {
+  /** 标题明确标注的 BCP 47 语言；空数组表示语言未知，不推断 Multi-Sub 的具体语言。 */
+  languages: string[];
+  /** 明确标注多字幕，或已识别多个语言标签；false 不保证只有一条字幕轨。 */
+  multi: boolean;
+  /** 资源级交付方式，不代表每种语言与每条字幕轨之间的对应关系。 */
+  delivery: SubtitleDelivery[];
+}
+
 export enum PositionalItemType {
   ORGANIZATION = "organization",
   TITLE = "title",
@@ -128,7 +146,9 @@ export interface ParseTorrentTitleResult {
   /**
    * 集数
    */
-  index: Index;
+  index?: Index;
+  /** Separate numbering namespaces; legacy index is only set for ordinary episodes. */
+  episodeInfo: EpisodeInfo;
   /**
    * 来源
    */
@@ -141,6 +161,10 @@ export interface ParseTorrentTitleResult {
    * 字幕信息
    */
   subtitle?: Subtitle;
+  /**
+   * 独立解析的字幕信息；undefined 表示未知，null 表示明确无字幕
+   */
+  subtitleInfo?: SubtitleInfo | null;
 
   /**
    * 原始标题
