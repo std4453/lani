@@ -33,7 +33,7 @@
 | `revert` | 撤销已有提交 |
 
 - `scope` 可省略；涉及单个包时优先填写包目录名，例如 `admin`、`api-server`、`gateway`、`data-server`、`all-in-one`、`db`、`framework`、`parse-torrent-title`、`cli` 或 `docs`。跨包变更可省略 scope。
-- `description` 用中文或英文简洁说明具体改动，避免 `update`、`fix bug` 等无法说明内容的标题。
+- `description` 优先使用简体中文，简洁说明具体改动，避免 `update`、`fix bug` 等无法说明内容的标题。其他语言约定见 [AGENTS.md 的语言约定](AGENTS.md#语言约定)。
 - 不兼容变更必须使用 `!` 或 `BREAKING CHANGE:` 标记，并说明影响和迁移方式；本仓库推荐同时使用两者。
 - 正文和页脚各自与前一部分空一行。撤销提交使用 `revert` 类型，并在正文或页脚注明被撤销的提交 SHA。
 - 一个提交围绕一个明确目的组织；Git/GitHub 自动生成的 merge commit 信息不受上述格式限制。
