@@ -82,7 +82,7 @@ export class EpisodeScrapeService {
     });
     const seen = new Set<string>();
     const matchedIds = new Set<number>();
-    const updates = (result.episodes ?? []).map((episode) => {
+    const updates = (result.episodes ?? []).flatMap((episode) => {
       const episodeType = (episode.episodeType ?? 'EPISODE') as EpisodeType;
       const episodeNumber = new Prisma.Decimal(
         episode.episodeNumber ?? String(episode.index),
@@ -105,9 +105,12 @@ export class EpisodeScrapeService {
             : e.index != null && episodeNumber.equals(e.index)),
       );
       if (identity && numbered && identity.id !== numbered.id) {
-        throw new ConflictException(
-          `Source episode numbering conflict: ${key}`,
+        // 保留既有编号与任务关联，冲突不应阻止其他剧集同步。
+        matchedIds.add(identity.id);
+        this.logger.warn(
+          `Skipping source episode ${episode.bangumiEpisodeId} in season #${seasonId}: numbering conflict at ${key}`,
         );
+        return [];
       }
       if (
         !identity &&
@@ -115,7 +118,10 @@ export class EpisodeScrapeService {
         episode.bangumiEpisodeId != null &&
         numbered.bangumiEpisodeId !== episode.bangumiEpisodeId
       ) {
-        throw new ConflictException(`Source episode identity conflict: ${key}`);
+        this.logger.warn(
+          `Skipping source episode ${episode.bangumiEpisodeId} in season #${seasonId}: identity conflict at ${key}`,
+        );
+        return [];
       }
       const current = identity ?? numbered;
       if (current) matchedIds.add(current.id);
@@ -138,9 +144,11 @@ export class EpisodeScrapeService {
           ? dayjs(rawAirTime).subtract(downloadOffsetHours, 'hour').toDate()
           : null,
       };
-      return current
-        ? this.prisma.episode.update({ where: { id: current.id }, data })
-        : this.prisma.episode.create({ data: { ...data, seasonId } });
+      return [
+        current
+          ? this.prisma.episode.update({ where: { id: current.id }, data })
+          : this.prisma.episode.create({ data: { ...data, seasonId } }),
+      ];
     });
     // 上游缺失只记录，不删除已有剧集和关联任务。
     const missing = existing.filter((e) => !matchedIds.has(e.id));

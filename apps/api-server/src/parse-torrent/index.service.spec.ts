@@ -215,3 +215,54 @@ describe('new recognition persistence', () => {
     );
   });
 });
+
+describe('重解析时跳过未变化的记录', () => {
+  function setup() {
+    mockedParseTorrentTitle.mockReturnValue(parsedTitle(12.5));
+    const prisma = {
+      torrent: { findMany: jest.fn() },
+      $executeRaw: jest.fn().mockResolvedValue(1),
+    };
+    const service = new ParseTorrentService(prisma as unknown as PrismaService);
+    const fields = service.titleToCreateInput('title');
+    if (!fields) throw new Error('Expected parsed fields');
+    const reverseKeys = (value: any): any =>
+      Array.isArray(value)
+        ? value.map(reverseKeys)
+        : value && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.entries(value)
+              .reverse()
+              .map(([key, child]) => [key, reverseKeys(child)]),
+          )
+        : value;
+    const stored = {
+      ...fields,
+      id: 1,
+      title: 'title',
+      parsedAt: new Date(0),
+      parseResult: reverseKeys(fields.parseResult),
+      episodeNumber: { toJSON: () => '12.5' },
+    };
+    prisma.torrent.findMany.mockResolvedValue([stored]);
+    return { prisma, service, stored };
+  }
+  it('忽略解析时间和 JSON 对象键顺序，兼容数据库小数表示', async () => {
+    const { prisma, service } = setup();
+    await service.parseTorrents([1]);
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
+  });
+  it.each(['version', 'payload', 'column', 'array'])(
+    '仍写入实际变化：%s',
+    async (change) => {
+      const { prisma, service, stored } = setup();
+      if (change === 'version') stored.parseVersion = 0;
+      if (change === 'payload')
+        stored.parseResult.subtitleInfo = { languages: ['en'], multi: false };
+      if (change === 'column') stored.formatResolution = '720';
+      if (change === 'array') stored.parseResult.title.aliases.reverse();
+      await service.parseTorrents([1]);
+      expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+    },
+  );
+});

@@ -10,8 +10,12 @@ import parseTorrentTitle, {
   parseSubtitleInfo,
 } from '@lani/parse-torrent-title';
 import { Injectable, Logger } from '@nestjs/common';
+import { isDeepStrictEqual } from 'util';
 
-// Reject unsupported precision instead of allowing PostgreSQL to round an identity.
+// 持久化结果的版本包含解析器输出与本适配层的映射规则。
+const TORRENT_PARSE_VERSION = 1;
+
+// 拒绝数据库无法精确存储的编号，避免舍入后混淆剧集身份。
 function decimalNumber(value: number): string {
   const text = String(value);
   if (!/^\d+(?:\.\d{1,3})?$/.test(text) || value >= 10000000) {
@@ -93,7 +97,7 @@ export class ParseTorrentService {
       parseResult: JSON.parse(
         JSON.stringify(result ?? { subtitleInfo: parseSubtitleInfo(title) }),
       ),
-      parseVersion: 1,
+      parseVersion: TORRENT_PARSE_VERSION,
       parsedAt: new Date(),
       episodeType:
         (result?.episodeInfo.type.toUpperCase() as EpisodeType) ?? null,
@@ -189,6 +193,11 @@ export class ParseTorrentService {
     }
     let different = false;
     for (const key in data) {
+      if (key === 'parsedAt') continue;
+      if (key === 'parseResult') {
+        if (!isDeepStrictEqual(torrent[key], data[key])) return true;
+        continue;
+      }
       if (
         (data[key] === undefined && torrent[key] !== null) ||
         (data[key] !== undefined &&

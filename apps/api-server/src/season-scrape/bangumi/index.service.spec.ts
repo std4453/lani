@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { BangumiAPIService } from '@/api/bangumi';
 import { BangumiSeasonService } from './index.service';
 jest.mock('@/api/bangumi', () => ({
@@ -58,15 +59,42 @@ it('paginates before filtering unsupported chapter types', async () => {
   ).toHaveLength(1);
   expect(getEpisodes).toHaveBeenNthCalledWith(2, 253, undefined, 100, 1);
 });
-it('rejects incomplete pages and invalid precision', async () => {
+it('rejects incomplete pages', async () => {
   getEpisodes
     .mockResolvedValueOnce({ total: 2, data: [row(1, 0, 1, 1)] })
     .mockResolvedValueOnce({ total: 2, data: [] });
   await expect(
     new BangumiSeasonService().fetch({ episodes: true }, '253'),
   ).rejects.toThrow('empty page');
-  getEpisodes.mockResolvedValue({ total: 1, data: [row(1, 0, 1.1234, 1)] });
-  await expect(
-    new BangumiSeasonService().fetch({ episodes: true }, '253'),
-  ).rejects.toThrow('invalid number');
+});
+it('跳过异常编号并保留同页的有效剧集', async () => {
+  const warn = jest
+    .spyOn(Logger.prototype, 'warn')
+    .mockImplementation(() => undefined);
+  getEpisodes.mockResolvedValue({
+    total: 8,
+    data: [
+      row(1, 0, undefined as any, 1),
+      row(2, 0, 1.1234, 2),
+      row(3, 1, 0, 10000000),
+      row(4, 0, -1, 4),
+      row(5, 0, NaN, 5),
+      row(6, 0, 6, Infinity),
+      row(7, 0, 12.5, 12.5),
+      row(8, 1, 0, 9999999.999),
+    ],
+  });
+  try {
+    const { episodes } = await new BangumiSeasonService().fetch(
+      { episodes: true },
+      '253',
+    );
+    expect(episodes?.map((e) => e.bangumiEpisodeId)).toEqual([7, 8]);
+    expect(warn).toHaveBeenCalledTimes(6);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('episode 1 in subject 253'),
+    );
+  } finally {
+    warn.mockRestore();
+  }
 });

@@ -103,7 +103,7 @@ it('keeps missing local chapters', async () => {
   await sync();
   expect(prisma.episode.deleteMany).not.toHaveBeenCalled();
 });
-it('rejects a different upstream identity at an occupied number', async () => {
+it('跳过编号已占用且来源身份不同的剧集', async () => {
   const { prisma, sync } = setup(
     [{ id: 5, index: 1, episodeType: 'EPISODE', bangumiEpisodeId: 99 }],
     [
@@ -115,6 +115,60 @@ it('rejects a different upstream identity at an occupied number', async () => {
       },
     ],
   );
-  await expect(sync()).rejects.toThrow('identity conflict');
-  expect(prisma.$transaction).not.toHaveBeenCalled();
+  await expect(sync()).resolves.toBe(true);
+  expect(prisma.episode.update).not.toHaveBeenCalled();
+  expect(prisma.episode.create).not.toHaveBeenCalled();
+  expect(prisma.$transaction).toHaveBeenCalled();
 });
+
+it.each(['前移', '交换'])(
+  '上游编号%s时跳过冲突集，其他剧集和同步时间仍正常保存',
+  async (mode) => {
+    const existing = [1, 2].map((n) => ({
+      id: n + 10,
+      index: n,
+      episodeType: 'EPISODE',
+      episodeNumber: new Prisma.Decimal(n),
+      bangumiEpisodeId: n + 100,
+    }));
+    const episodes = [
+      {
+        episodeType: 'EPISODE',
+        episodeNumber: '1',
+        bangumiEpisodeId: 102,
+        title: 'moved',
+      },
+      ...(mode === '交换'
+        ? [
+            {
+              episodeType: 'EPISODE',
+              episodeNumber: '2',
+              bangumiEpisodeId: 101,
+              title: 'swapped',
+            },
+          ]
+        : []),
+      {
+        episodeType: 'EPISODE',
+        episodeNumber: '3',
+        bangumiEpisodeId: 103,
+        title: 'new',
+      },
+    ];
+    const { prisma, sync } = setup(existing, episodes);
+    await expect(sync()).resolves.toBe(true);
+    expect(prisma.episode.update).not.toHaveBeenCalled();
+    expect(prisma.episode.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.episode.create).toHaveBeenCalledTimes(1);
+    expect(prisma.episode.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ bangumiEpisodeId: 103 }),
+      }),
+    );
+    expect(prisma.season.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { episodesLastSync: expect.any(Date) },
+    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  },
+);

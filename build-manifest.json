@@ -3,10 +3,10 @@
   "algorithmVersion": 1,
   "images": {
     "admin": {
-      "fingerprint": "e258433e46e6f318f77ecb9caa84a0fd5c3a645180ea015b5555e18f72e4d903"
+      "fingerprint": "5d27f54e0799f62a65ef939bbefda8118428a5476dd2a85b36015d1397bd629e"
     },
     "api-server": {
-      "fingerprint": "37e5ad822f4c906f526e4ad65b4a85fcc314ea67975a2d8aa002ffd55da65224"
+      "fingerprint": "8f7351d4fb8c2b8d6b76a6d6331ec83f26d7202d8caa69ff7332bd4cc594e759"
     },
     "data-server": {
       "fingerprint": "4dd3784b9260b9f4d411f5a95f93549385e016c634dc2360893325beedd65d35"
@@ -15,7 +15,7 @@
       "fingerprint": "a8519cf37e6048efa5fd7d2f7661fab21064382365d65d370448193f0ba8de13"
     },
     "db": {
-      "fingerprint": "6fd455cd0bf70d19dc3874c3adb2036a0f88438f4c25b9f748c3ed2b6fa643a9"
+      "fingerprint": "fe1c2cddd413c79f5fc3e88293c48a6ded5c419aed458c58809c767992488121"
     }
   }
 }

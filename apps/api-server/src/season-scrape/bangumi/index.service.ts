@@ -6,11 +6,13 @@ import {
   PartialSeason,
   SeasonCharacter,
 } from '@/season-scrape/index.model';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 
 @Injectable()
 export class BangumiSeasonService {
+  private logger = new Logger(BangumiSeasonService.name);
+
   private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
     const season = await BangumiAPIService.getSubjectById(bangumiId);
     result.info = {
@@ -64,9 +66,10 @@ export class BangumiSeasonService {
         (episode) =>
           episode.type === EpType.MainStory || episode.type === EpType.SP,
       )
-      .map((episode) => {
+      .flatMap((episode) => {
         const number =
           episode.type === EpType.MainStory ? episode.ep : episode.sort;
+        // 对应 numeric(10,3) 的范围和精度，避免溢出或舍入造成编号冲突。
         for (const value of [number, episode.sort]) {
           if (
             typeof value !== 'number' ||
@@ -75,37 +78,41 @@ export class BangumiSeasonService {
             !/^\d+(?:\.\d{1,3})?$/.test(String(value)) ||
             value >= 10000000
           ) {
-            throw new Error(
-              `Bangumi episode ${episode.id} has an invalid number`,
+            this.logger.warn(
+              `Skipping Bangumi episode ${episode.id} in subject ${bangumiId}: invalid number or sort`,
             );
+            return [];
           }
         }
-        return {
-          index:
-            episode.type === EpType.MainStory && Number.isInteger(number)
-              ? number
-              : undefined,
-          episodeType: episode.type === EpType.MainStory ? 'EPISODE' : 'SP',
-          episodeNumber: String(number),
-          bangumiEpisodeId: episode.id,
-          bangumiSort: String(episode.sort),
-          sourceData: episode,
-          title:
-            episode.name_cn ||
-            episode.name ||
-            `${episode.type === EpType.SP ? 'SP ' : '第'}${number}${
-              episode.type === EpType.SP ? '' : '话'
-            }`,
-          description: episode.desc,
-          airDate:
-            episode.airdate &&
-            dayjs(episode.airdate).isValid() &&
-            dayjs(episode.airdate).format(DateFormat.BarDay) === episode.airdate
-              ? dayjs(episode.airdate, DateFormat.BarDay).format(
-                  DateFormat.NothingDay,
-                )
-              : undefined,
-        };
+        return [
+          {
+            index:
+              episode.type === EpType.MainStory && Number.isInteger(number)
+                ? number
+                : undefined,
+            episodeType: episode.type === EpType.MainStory ? 'EPISODE' : 'SP',
+            episodeNumber: String(number),
+            bangumiEpisodeId: episode.id,
+            bangumiSort: String(episode.sort),
+            sourceData: episode,
+            title:
+              episode.name_cn ||
+              episode.name ||
+              `${episode.type === EpType.SP ? 'SP ' : '第'}${number}${
+                episode.type === EpType.SP ? '' : '话'
+              }`,
+            description: episode.desc,
+            airDate:
+              episode.airdate &&
+              dayjs(episode.airdate).isValid() &&
+              dayjs(episode.airdate).format(DateFormat.BarDay) ===
+                episode.airdate
+                ? dayjs(episode.airdate, DateFormat.BarDay).format(
+                    DateFormat.NothingDay,
+                  )
+                : undefined,
+          },
+        ];
       });
   }
 
