@@ -1,3 +1,5 @@
+import { formatEpisode } from '@/utils/episode';
+import TorrentSubtitle from '@/components/TorrentSubtitle';
 import Highlight from '@/components/Highlight';
 import { TorrentFieldsFragment } from '@/generated/types';
 import { useMemoizedFn } from 'ahooks';
@@ -113,6 +115,11 @@ export default function TorrentsList({
             </Typography.Text>
             <Typography.Text className={styles.title}>
               <Highlight content={item.title} keyword={keyword} />
+              <br />
+              <Typography.Text type="secondary">
+                {formatEpisode(item.episodeInfo)} ·{' '}
+                <TorrentSubtitle info={item.subtitleInfo} />
+              </Typography.Text>
             </Typography.Text>
           </div>
         )}

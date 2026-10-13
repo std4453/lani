@@ -1,3 +1,4 @@
+import { compareEpisodes } from '@/utils/episode';
 import { calcEpisodeStatus, EpisodeStatus } from '@/constants/download-status';
 import {
   DisplayImageFieldsFragment,
@@ -247,7 +248,9 @@ export function useSeasonPage(id: number) {
       if ('episodesBySeasonId' in values) {
         setEpisodesLastSync(values.episodesLastSync ?? null);
         setEpisodes(
-          (extractNode(values.episodesBySeasonId) ?? []).map(mapEpisode),
+          (extractNode(values.episodesBySeasonId) ?? [])
+            .sort(compareEpisodes)
+            .map(mapEpisode),
         );
       }
     },

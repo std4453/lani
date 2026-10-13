@@ -4,19 +4,13 @@ fragment torrentFields on Torrent {
   size
   title
   torrentLink
-  episodeIndex
+  episodeInfo
+  subtitleInfo
 }
 
 fragment torrentParseFields on Torrent {
-  index
-  indexFrom
-  indexTo
   organizationParts
   seasonTitleAliases
-  subtitleHasChs
-  subtitleHasCht
-  subtitleHasJp
-  subtitleType
 }
 
 query ListTorrents(

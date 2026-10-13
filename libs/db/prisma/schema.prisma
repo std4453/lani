@@ -3,6 +3,7 @@ generator client {
   output        = "../dist"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -27,7 +28,12 @@ model Episode {
   seasonId              Int           @map("season_id")
   title                 String        @default("")
   description           String        @default("")
-  index                 Int
+  index                 Int?
+  episodeType           EpisodeType   @default(EPISODE) @map("episode_type")
+  episodeNumber         Decimal?      @map("episode_number") @db.Decimal(10, 3)
+  bangumiEpisodeId      Int?          @map("bangumi_episode_id")
+  bangumiSort           Decimal?      @map("bangumi_sort") @db.Decimal(10, 3)
+  sourceData            Json?         @map("source_data")
   rawAirTime            DateTime?     @map("raw_air_time") @db.Timestamptz(6)
   airTime               DateTime?     @map("air_time") @db.Timestamptz(6)
   createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -37,6 +43,8 @@ model Episode {
   downloadJobs          DownloadJob[] @relation("download_jobsToepisodes")
 
   @@unique([seasonId, index])
+  @@unique([seasonId, episodeType, episodeNumber])
+  @@unique([seasonId, bangumiEpisodeId])
   @@map("episodes")
 }
 
@@ -106,14 +114,21 @@ model Season {
 }
 
 model Torrent {
-  id           Int      @id(map: "mikan_items_pkey") @default(autoincrement())
-  title        String
-  torrentLink  String   @map("torrent_link")
-  size         BigInt
-  publishDate  DateTime @map("publish_date") @db.Timestamptz(6)
-  hash         String   @unique
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  episodeIndex Int?     @map("episode_index")
+  id                Int          @id(map: "mikan_items_pkey") @default(autoincrement())
+  title             String
+  torrentLink       String       @map("torrent_link")
+  size              BigInt
+  publishDate       DateTime     @map("publish_date") @db.Timestamptz(6)
+  hash              String       @unique
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  episodeIndex      Int?         @map("episode_index")
+  parseResult       Json?        @map("parse_result")
+  parseVersion      Int?         @map("parse_version")
+  parsedAt          DateTime?    @map("parsed_at") @db.Timestamptz(6)
+  episodeType       EpisodeType? @map("episode_type")
+  episodeNumber     Decimal?     @map("episode_number") @db.Decimal(10, 3)
+  episodeNumberFrom Decimal?     @map("episode_number_from") @db.Decimal(10, 3)
+  episodeNumberTo   Decimal?     @map("episode_number_to") @db.Decimal(10, 3)
 
   organizationRaw     String?            @map("organization_raw")
   organizationParts   String[]           @map("organization_parts")
@@ -177,6 +192,7 @@ model DownloadJob {
   // deprecated
   qbtLastSync DateTime? @map("qbt_last_sync") @db.Timestamptz(6)
 
+  @@index([episodeId])
   @@map("download_jobs")
 }
 
@@ -250,4 +266,13 @@ enum TorrentPlatform {
   VIUTV
 
   @@map("torrent_platform")
+}
+
+enum EpisodeType {
+  EPISODE
+  SP
+  OVA
+  OAD
+
+  @@map("episode_type")
 }

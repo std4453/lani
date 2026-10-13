@@ -12,6 +12,7 @@ fragment seasonEpisodes on Season {
         rawAirTime
         id
         index
+        numbering
         jellyfinEpisodeId
         title
         ...episodeStatusFields
@@ -135,7 +136,7 @@ query GetMatchingTorrents($filter: TorrentFilter!, $first: Int!) {
       node {
         id
         title
-        episodeIndex
+        episodeInfo
         publishDate
       }
     }

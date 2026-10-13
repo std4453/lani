@@ -1,3 +1,4 @@
+import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
 import {
   JellyfinHelp,
   MetadataRefreshMode,
@@ -75,10 +76,7 @@ export class ImportService {
   }
 
   private async importFile(episodeId: number, importPath: string) {
-    const {
-      index,
-      season: { title: seasonTitle, jellyfinFolder },
-    } = await this.prisma.episode.findUnique({
+    const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: {
         season: {
@@ -88,6 +86,10 @@ export class ImportService {
         },
       },
     });
+    const {
+      season: { title: seasonTitle, jellyfinFolder },
+    } = episode;
+    const { season: mediaSeason, index } = jellyfinNumber(episode);
     const jellyfinFolderRoot = jellyfinFolder.location;
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
 
@@ -99,10 +101,10 @@ export class ImportService {
       seasonRoot,
       seasonTitle,
       // 不加这个 jellyfin识别就会很成问题，还是加上
-      'Season 1',
-      `Episode - S01E${index.toString().padStart(2, '0')}${path.extname(
-        importPath,
-      )}`,
+      `Season ${mediaSeason}`,
+      `Episode - S${String(mediaSeason).padStart(2, '0')}E${index
+        .toString()
+        .padStart(2, '0')}${path.extname(importPath)}`,
     );
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
 
@@ -139,10 +141,11 @@ export class ImportService {
   private readonly parser = new xml2js.Parser();
 
   private async writeMetadata(episodeId: number, filePath: string) {
-    const { index, title, airTime, description } =
-      await this.prisma.episode.findUnique({
-        where: { id: episodeId },
-      });
+    const episode = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+    });
+    const { title, airTime, description } = episode;
+    const { season: mediaSeason, index } = jellyfinNumber(episode);
     const nfoPath = filePath.replace(path.extname(filePath), '').concat('.nfo');
     // xml2js 对象结构没有类型，只能用 any
     let xmlObj: any = {};
@@ -158,10 +161,12 @@ export class ImportService {
     // https://kodi.wiki/view/NFO_files/Episodes
     mergeXMLNode(
       {
-        title: [title],
+        title: [
+          mediaSeason === 0 ? `${episodeLabel(episode)} - ${title}` : title,
+        ],
         ...(description ? { plot: [description] } : undefined),
         // 不设置 season 的话 Jellyfin 会显示未知
-        season: [1],
+        season: [mediaSeason],
         episode: [index],
         ...(airTime
           ? { aired: [dayjs(airTime).format(DateFormat.BarDay)] }
@@ -184,21 +189,23 @@ export class ImportService {
   }
 
   private async refreshEpisode(episodeId: number) {
-    const {
-      index,
-      season: { jellyfinId: jellyfinSeriesId },
-    } = await this.prisma.episode.findUnique({
+    const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: {
         season: true,
       },
     });
+    const {
+      season: { jellyfinId: jellyfinSeriesId },
+    } = episode;
+    const { season, index } = jellyfinNumber(episode);
     if (!jellyfinSeriesId) {
       throw new Error('未获取到季度对应的Jellyfin ID，无法刷新');
     }
     const jellyfinEpisodeId = await this.getJellyfinEpisode(
       index,
       jellyfinSeriesId,
+      season,
     );
     // 如果已经存在，则跳过刷新，直接获取
     if (jellyfinEpisodeId) {
@@ -211,12 +218,13 @@ export class ImportService {
       imageRefreshMode: MetadataRefreshMode.FULL_REFRESH,
     });
 
-    return await this.waitJellyfin(jellyfinSeriesId, index);
+    return await this.waitJellyfin(jellyfinSeriesId, index, season);
   }
 
   private async getJellyfinEpisode(
     index: number,
     jellyfinSeriesId: string,
+    season: number,
   ): Promise<string | undefined> {
     const { Items: episodes } = await TvShowsService.getEpisodes(
       jellyfinSeriesId,
@@ -224,12 +232,16 @@ export class ImportService {
     );
     const jellyfinEpisodeId = (episodes ?? []).find(
       (episode) =>
-        episode.IndexNumber === index && episode.ParentIndexNumber === 1,
+        episode.IndexNumber === index && episode.ParentIndexNumber === season,
     )?.Id;
     return jellyfinEpisodeId;
   }
 
-  private async waitJellyfin(jellyfinSeriesId: string, index: number) {
+  private async waitJellyfin(
+    jellyfinSeriesId: string,
+    index: number,
+    season: number,
+  ) {
     const sleep = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -239,6 +251,7 @@ export class ImportService {
       const jellyfinEpisodeId = await this.getJellyfinEpisode(
         index,
         jellyfinSeriesId,
+        season,
       );
 
       if (jellyfinEpisodeId) {

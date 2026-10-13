@@ -18,6 +18,7 @@ jest.mock(
 jest.mock('@lani/parse-torrent-title', () => ({
   __esModule: true,
   default: jest.fn(),
+  parseSubtitleInfo: jest.fn(),
 }));
 
 const mockedParseTorrentTitle = parseTorrentTitle as jest.MockedFunction<
@@ -127,15 +128,15 @@ describe('ParseTorrentService title index fields', () => {
       service.titleToCreateInput('[Group] Series 25 [1080p]'),
     ).toMatchObject({
       index: 25,
-      indexFrom: undefined,
-      indexTo: undefined,
+      indexFrom: null,
+      indexTo: null,
     });
     expect(
       service.titleToUpdateInput('[Group] Series 25 [1080p]'),
     ).toMatchObject({
       index: 25,
-      indexFrom: undefined,
-      indexTo: undefined,
+      indexFrom: null,
+      indexTo: null,
     });
   });
 
@@ -145,16 +146,72 @@ describe('ParseTorrentService title index fields', () => {
     expect(
       service.titleToCreateInput('[Group] Series 01-12 [1080p]'),
     ).toMatchObject({
-      index: undefined,
+      index: null,
       indexFrom: 1,
       indexTo: 12,
     });
     expect(
       service.titleToUpdateInput('[Group] Series 01-12 [1080p]'),
     ).toMatchObject({
-      index: undefined,
+      index: null,
       indexFrom: 1,
       indexTo: 12,
     });
+  });
+});
+
+describe('new recognition persistence', () => {
+  const service = new ParseTorrentService({} as PrismaService);
+  it('stores decimal identities and the complete subtitle payload', () => {
+    const result = parsedTitle(12.5);
+    result.subtitleInfo = {
+      languages: ['zh-Hans', 'en'],
+      multi: true,
+      delivery: ['muxed', 'external'],
+    };
+    mockedParseTorrentTitle.mockReturnValue(result);
+    expect(service.titleToCreateInput(result.raw)).toMatchObject({
+      parseVersion: 1,
+      episodeType: 'EPISODE',
+      episodeNumber: '12.5',
+      parseResult: {
+        episodeInfo: { type: 'episode', index: 12.5 },
+        subtitleInfo: result.subtitleInfo,
+      },
+    });
+  });
+  it('keeps unnumbered specials separate from episode zero', () => {
+    mockedParseTorrentTitle.mockReturnValue(
+      parsedTitle(undefined, { type: 'sp' }),
+    );
+    expect(service.titleToUpdateInput('SP')).toMatchObject({
+      episodeType: 'SP',
+      episodeNumber: null,
+    });
+    mockedParseTorrentTitle.mockReturnValue(parsedTitle(0));
+    expect(service.titleToUpdateInput('00')).toMatchObject({
+      episodeType: 'EPISODE',
+      episodeNumber: '0',
+    });
+  });
+  it('marks failed recognition and clears old matching identities', () => {
+    mockedParseTorrentTitle.mockReturnValue(undefined);
+    expect(service.titleToUpdateInput('no episode')).toMatchObject({
+      parseVersion: 1,
+      parseResult: {},
+      episodeType: null,
+      episodeNumber: null,
+      episodeNumberFrom: null,
+      episodeNumberTo: null,
+      index: null,
+      indexFrom: null,
+      indexTo: null,
+    });
+  });
+  it('does not round excessive precision into another identity', () => {
+    mockedParseTorrentTitle.mockReturnValue(parsedTitle(12.1234));
+    expect(() => service.titleToCreateInput('12.1234')).toThrow(
+      'Invalid episode number',
+    );
   });
 });

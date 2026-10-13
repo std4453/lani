@@ -1,3 +1,4 @@
+import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import { DateFormat } from '@/constants/date-format';
 import { AsyncAtom, StepInput } from '@/download-job/atoms';
@@ -32,10 +33,11 @@ export class WriteMetadataAtom extends AsyncAtom<
     if (!episodeId) {
       throw new Error('剧集已被删除');
     }
-    const { index, title, airTime, description } =
-      await this.prisma.episode.findUnique({
-        where: { id: episodeId },
-      });
+    const episode = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+    });
+    const { title, airTime, description } = episode;
+    const { season: mediaSeason, index } = jellyfinNumber(episode);
     const {
       importFile: { filePath },
     } = steps;
@@ -54,10 +56,12 @@ export class WriteMetadataAtom extends AsyncAtom<
     // https://kodi.wiki/view/NFO_files/Episodes
     mergeXMLNode(
       {
-        title: [title],
+        title: [
+          mediaSeason === 0 ? `${episodeLabel(episode)} - ${title}` : title,
+        ],
         ...(description ? { plot: [description] } : undefined),
         // 不设置 season 的话 Jellyfin 会显示未知
-        season: [1],
+        season: [mediaSeason],
         episode: [index],
         ...(airTime
           ? { aired: [dayjs(airTime).format(DateFormat.BarDay)] }

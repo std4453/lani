@@ -1,3 +1,4 @@
+import { jellyfinNumber } from '@/utils/episode-number';
 import {
   JellyfinHelp,
   MetadataRefreshMode,
@@ -15,6 +16,7 @@ import { Cron } from '@nestjs/schedule';
 interface QueueItem {
   jellyfinSeriesId: string;
   index: number;
+  season: number;
   enqueueTime: number;
 }
 
@@ -42,15 +44,16 @@ export class RefreshPlayerAtom extends Atom<
       return;
     }
     try {
-      const {
-        index,
-        season: { jellyfinId: jellyfinSeriesId },
-      } = await this.prisma.episode.findUnique({
+      const episode = await this.prisma.episode.findUnique({
         where: { id: episodeId },
         include: {
           season: true,
         },
       });
+      const {
+        season: { jellyfinId: jellyfinSeriesId },
+      } = episode;
+      const { season, index } = jellyfinNumber(episode);
       if (!jellyfinSeriesId) {
         this.jobFail(id, new Error('未获取到季度对应的Jellyfin ID，无法刷新'));
         return;
@@ -58,6 +61,7 @@ export class RefreshPlayerAtom extends Atom<
       const jellyfinEpisodeId = await this.getJellyfinEpisode(
         index,
         jellyfinSeriesId,
+        season,
       );
       // 如果已经存在，则跳过刷新，直接获取
       if (jellyfinEpisodeId) {
@@ -73,6 +77,7 @@ export class RefreshPlayerAtom extends Atom<
         this.queue[id] = {
           jellyfinSeriesId,
           index,
+          season,
           enqueueTime: new Date().getTime(),
         };
       }
@@ -81,26 +86,31 @@ export class RefreshPlayerAtom extends Atom<
     }
   }
 
-  private async getJellyfinEpisode(index: number, jellyfinSeriesId: string) {
+  private async getJellyfinEpisode(
+    index: number,
+    jellyfinSeriesId: string,
+    season: number,
+  ) {
     const { Items: episodes } = await TvShowsService.getEpisodes(
       jellyfinSeriesId,
       config.jellyfin.dummyUserId,
     );
     const jellyfinEpisodeId = (episodes ?? []).find(
       (episode) =>
-        episode.IndexNumber === index && episode.ParentIndexNumber === 1,
+        episode.IndexNumber === index && episode.ParentIndexNumber === season,
     )?.Id;
     return jellyfinEpisodeId;
   }
 
   private async refreshQueueItem(
     id: number,
-    { enqueueTime, index, jellyfinSeriesId }: QueueItem,
+    { enqueueTime, index, season, jellyfinSeriesId }: QueueItem,
   ) {
     try {
       const jellyfinEpisodeId = await this.getJellyfinEpisode(
         index,
         jellyfinSeriesId,
+        season,
       );
       if (!jellyfinEpisodeId) {
         const now = new Date().getTime();

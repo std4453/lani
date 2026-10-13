@@ -1,3 +1,4 @@
+import { formatNumbering } from '@/utils/episode';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { Hamburger } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
@@ -46,7 +47,7 @@ function useColumns({
           return (
             <div>
               <Link to={`/season/${season.id}`}>{season.title}</Link>
-              &nbsp;/&nbsp;#{episode.index}
+              &nbsp;/&nbsp;#{formatNumbering(episode.numbering)}
             </div>
           );
         },
@@ -182,7 +183,7 @@ async function queryDownloadJobs(
       total: result.totalCount,
     };
   } catch (error) {
-    handleError(error, '下载任务获取失败')
+    handleError(error, '下载任务获取失败');
     return {
       success: false,
     };

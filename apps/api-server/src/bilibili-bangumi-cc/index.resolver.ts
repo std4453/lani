@@ -40,6 +40,11 @@ export class BilibiliBangumiCCResolver {
         },
       },
     });
+    if (index == null || index < 1) {
+      throw new ConflictException(
+        'Bilibili CC requires an ordinary integer episode',
+      );
+    }
     if (!jellyfinEpisodeId) {
       throw new ConflictException('jellyfinEpisodeId not set');
     }

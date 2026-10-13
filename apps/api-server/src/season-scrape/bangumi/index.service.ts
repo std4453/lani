@@ -39,7 +39,7 @@ export class BangumiSeasonService {
     while (true) {
       const { data = [], total } = await BangumiAPIService.getEpisodes(
         bangumiId,
-        EpType.MainStory, // 本篇
+        undefined, // 抓取所有类型，完成分页后选取本篇和 SP
         pageSize,
         episodes.length,
       );
@@ -60,21 +60,53 @@ export class BangumiSeasonService {
     }
 
     result.episodes = episodes
-      // 因为过滤了本篇，应当总有ep字段，为了避免类似 https://github.com/bangumi/api/issues/146
-      // 这样的事故造成的数据错误，且episode的逻辑是只增不删，因此进行额外的检查保证不录入错误数据
-      .filter((episode) => typeof episode.ep === 'number' && episode.airdate)
-      .map((episode) => ({
-        index: episode.ep ?? 0,
-        // 兜底文案
-        title:
-          episode.name_cn ||
-          episode.name ||
-          (typeof episode.ep === 'number' ? `第${episode.ep}话` : '未定'),
-        description: episode.desc,
-        airDate: dayjs(episode.airdate, DateFormat.BarDay).format(
-          DateFormat.NothingDay,
-        ),
-      }));
+      .filter(
+        (episode) =>
+          episode.type === EpType.MainStory || episode.type === EpType.SP,
+      )
+      .map((episode) => {
+        const number =
+          episode.type === EpType.MainStory ? episode.ep : episode.sort;
+        for (const value of [number, episode.sort]) {
+          if (
+            typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            !/^\d+(?:\.\d{1,3})?$/.test(String(value)) ||
+            value >= 10000000
+          ) {
+            throw new Error(
+              `Bangumi episode ${episode.id} has an invalid number`,
+            );
+          }
+        }
+        return {
+          index:
+            episode.type === EpType.MainStory && Number.isInteger(number)
+              ? number
+              : undefined,
+          episodeType: episode.type === EpType.MainStory ? 'EPISODE' : 'SP',
+          episodeNumber: String(number),
+          bangumiEpisodeId: episode.id,
+          bangumiSort: String(episode.sort),
+          sourceData: episode,
+          title:
+            episode.name_cn ||
+            episode.name ||
+            `${episode.type === EpType.SP ? 'SP ' : '第'}${number}${
+              episode.type === EpType.SP ? '' : '话'
+            }`,
+          description: episode.desc,
+          airDate:
+            episode.airdate &&
+            dayjs(episode.airdate).isValid() &&
+            dayjs(episode.airdate).format(DateFormat.BarDay) === episode.airdate
+              ? dayjs(episode.airdate, DateFormat.BarDay).format(
+                  DateFormat.NothingDay,
+                )
+              : undefined,
+        };
+      });
   }
 
   private async fetchCharacters(result: PartialSeason, bangumiId: number) {

@@ -1,3 +1,4 @@
+import { EpisodeType } from '@/generated/types';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { TableTitle } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
@@ -131,8 +132,7 @@ function SeasonStatusTag({
 }) {
   const seasonsStatus = useContext(SeasonsStatusContext);
   const episodeStatus = useMemo(() => {
-    const mergedEpisode =
-      seasonsStatus?.[season.id] ?? extractNode(season.latestEpisode)?.[0];
+    const mergedEpisode = seasonsStatus?.[season.id] ?? season.latestEpisode;
     if (!mergedEpisode) {
       return undefined;
     }
@@ -563,6 +563,7 @@ async function querySeasons(
             },
             episodesBySeasonId: {
               some: {
+                episodeType: { equalTo: EpisodeType.Episode },
                 jellyfinEpisodeId: {
                   isNull: true,
                 },
@@ -582,6 +583,7 @@ async function querySeasons(
             // 不存在存在已放送且未完成下载
             episodesBySeasonId: {
               none: {
+                episodeType: { equalTo: EpisodeType.Episode },
                 jellyfinEpisodeId: {
                   isNull: true,
                 },
@@ -597,6 +599,7 @@ async function querySeasons(
             // 不存在已放送
             episodesBySeasonId: {
               none: {
+                episodeType: { equalTo: EpisodeType.Episode },
                 airTime: {
                   lessThanOrEqualTo: now,
                 },
@@ -609,9 +612,10 @@ async function querySeasons(
             // 全部已放送
             episodesBySeasonId: {
               every: {
-                airTime: {
-                  lessThanOrEqualTo: now,
-                },
+                or: [
+                  { episodeType: { notEqualTo: EpisodeType.Episode } },
+                  { airTime: { lessThanOrEqualTo: now } },
+                ],
               },
             },
           });
@@ -712,7 +716,7 @@ function useSeasonsStatus(seasonIds: number[]) {
   return useMemo(() => {
     const seasonsStatusMap: Record<number, EpisodeStatusFieldsFragment> = {};
     for (const season of extractNode(data?.allSeasons) ?? []) {
-      const episode = extractNode(season.latestEpisode)?.[0];
+      const episode = season.latestEpisode;
       if (!episode) {
         continue;
       }
@@ -756,7 +760,7 @@ export default withAntdSearch(function MetadataPage() {
     {
       hasKeyword: true,
       pagination: {
-          pageSize: 30,
+        pageSize: 30,
       },
     },
   );

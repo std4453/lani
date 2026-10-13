@@ -1,3 +1,4 @@
+import { formatNumbering } from '@/utils/episode';
 import { Episode } from '@/pages/season/help';
 import { createUseDialogWithOnResolve, DialogProps } from '@/utils/useDialog';
 import { ArrowRightOutlined } from '@ant-design/icons';
@@ -40,11 +41,19 @@ function ImportConfirmDialog({
 
           const result = parseTorrentTitle(pathWithoutExtName);
 
-          if (!result?.index || typeof result.index !== 'number') {
+          if (
+            result?.episodeInfo.type !== 'episode' ||
+            typeof result.episodeInfo.index !== 'number'
+          ) {
             continue;
           }
 
-          initialEpisodeMapping[path] = result.index;
+          const episode = input.episodes.find(
+            (e) =>
+              e.numbering?.type === 'episode' &&
+              Number(e.numbering.number) === result.episodeInfo.index,
+          );
+          if (episode) initialEpisodeMapping[path] = episode.id;
         }
 
         setEpisodeMapping(initialEpisodeMapping);
@@ -72,8 +81,8 @@ function ImportConfirmDialog({
 
   const episodeSelectData = useMemo(() => {
     return (input?.episodes ?? []).map((episode) => ({
-      label: `#${episode.index} - ${episode.title}`,
-      value: episode.index,
+      label: `#${formatNumbering(episode.numbering)} - ${episode.title}`,
+      value: episode.id,
     }));
   }, [input?.episodes]);
 
@@ -91,10 +100,7 @@ function ImportConfirmDialog({
         void resolve(
           (input?.importPaths ?? []).map((path) => ({
             importPath: path,
-            episodeId:
-              (input?.episodes ?? []).find(
-                (episode) => episode.index === episodeMapping[path],
-              )?.id ?? 0,
+            episodeId: episodeMapping[path],
           })),
         );
       }}

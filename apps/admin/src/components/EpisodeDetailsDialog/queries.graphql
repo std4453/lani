@@ -26,6 +26,7 @@ query GetEpisodeById($episodeByIdId: Int!) {
     }
     id
     index
+    numbering
     jellyfinEpisodeId
     seasonBySeasonId {
       id

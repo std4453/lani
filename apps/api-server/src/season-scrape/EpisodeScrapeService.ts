@@ -3,7 +3,7 @@ import { DateFormat } from '@/constants/date-format';
 import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
 import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
-import { MetadataSource, Season } from '@lani/db';
+import { EpisodeType, MetadataSource, Prisma, Season } from '@lani/db';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 
@@ -77,60 +77,82 @@ export class EpisodeScrapeService {
       );
     }
 
+    const existing = await this.prisma.episode.findMany({
+      where: { seasonId },
+    });
+    const seen = new Set<string>();
+    const matchedIds = new Set<number>();
+    const updates = (result.episodes ?? []).map((episode) => {
+      const episodeType = (episode.episodeType ?? 'EPISODE') as EpisodeType;
+      const episodeNumber = new Prisma.Decimal(
+        episode.episodeNumber ?? String(episode.index),
+      );
+      const key = `${episodeType}:${episodeNumber}`;
+      if (seen.has(key))
+        throw new ConflictException(`Duplicate source episode ${key}`);
+      seen.add(key);
+      const identity =
+        episode.bangumiEpisodeId == null
+          ? undefined
+          : existing.find(
+              (e) => e.bangumiEpisodeId === episode.bangumiEpisodeId,
+            );
+      const numbered = existing.find(
+        (e) =>
+          e.episodeType === episodeType &&
+          (e.episodeNumber != null
+            ? e.episodeNumber.equals(episodeNumber)
+            : e.index != null && episodeNumber.equals(e.index)),
+      );
+      if (identity && numbered && identity.id !== numbered.id) {
+        throw new ConflictException(
+          `Source episode numbering conflict: ${key}`,
+        );
+      }
+      if (
+        !identity &&
+        numbered?.bangumiEpisodeId != null &&
+        episode.bangumiEpisodeId != null &&
+        numbered.bangumiEpisodeId !== episode.bangumiEpisodeId
+      ) {
+        throw new ConflictException(`Source episode identity conflict: ${key}`);
+      }
+      const current = identity ?? numbered;
+      if (current) matchedIds.add(current.id);
+      const rawAirTime =
+        this.getEpisodeAirTime(seasonAirTime, episode.airDate) ?? null;
+      const data = {
+        episodeType,
+        episodeNumber,
+        index:
+          episodeType === 'EPISODE' && episodeNumber.isInteger()
+            ? episodeNumber.toNumber()
+            : null,
+        bangumiEpisodeId: episode.bangumiEpisodeId,
+        bangumiSort: episode.bangumiSort,
+        sourceData: episode.sourceData,
+        title: episode.title,
+        description: episode.description ?? '',
+        rawAirTime,
+        airTime: rawAirTime
+          ? dayjs(rawAirTime).subtract(downloadOffsetHours, 'hour').toDate()
+          : null,
+      };
+      return current
+        ? this.prisma.episode.update({ where: { id: current.id }, data })
+        : this.prisma.episode.create({ data: { ...data, seasonId } });
+    });
+    // 上游缺失只记录，不删除已有剧集和关联任务。
+    const missing = existing.filter((e) => !matchedIds.has(e.id));
+    if (missing.length)
+      this.logger.warn(
+        `${missing.length} local episodes absent from metadata for season #${seasonId}`,
+      );
     await this.prisma.$transaction([
+      ...updates,
       this.prisma.season.update({
         where: { id: seasonId },
-        data: {
-          episodesLastSync: new Date(),
-          episodes: {
-            upsert: (result.episodes ?? []).map(
-              ({ index, title, description = '', airDate }) => {
-                const rawAirTime = this.getEpisodeAirTime(
-                  seasonAirTime,
-                  airDate,
-                );
-                const airTime = rawAirTime
-                  ? dayjs(rawAirTime)
-                      .subtract(downloadOffsetHours, 'hour')
-                      .toDate()
-                  : undefined;
-                return {
-                  where: {
-                    seasonId_index: {
-                      seasonId,
-                      index,
-                    },
-                  },
-                  update: {
-                    title,
-                    description,
-                    rawAirTime,
-                    airTime,
-                  },
-                  create: {
-                    index,
-                    title,
-                    description,
-                    rawAirTime,
-                    airTime,
-                  },
-                };
-              },
-            ),
-          },
-        },
-      }),
-      // 删除元数据中不存在，且没有任何下载任务的剧集，因为没有任务所以不会有文件，没有副作用
-      this.prisma.episode.deleteMany({
-        where: {
-          seasonId,
-          index: {
-            notIn: (result.episodes ?? []).map((e) => e.index),
-          },
-          downloadJobs: {
-            none: {},
-          },
-        },
+        data: { episodesLastSync: new Date() },
       }),
     ]);
     return true;

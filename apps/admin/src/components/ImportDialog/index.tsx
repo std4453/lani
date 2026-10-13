@@ -1,3 +1,4 @@
+import { formatNumbering } from '@/utils/episode';
 import { FileExplorer } from '@/components/ImportDialog/FileExplorer';
 import { useImportConfirmDialog } from '@/components/ImportDialog/ImportConfirmDialog';
 import {
@@ -40,7 +41,11 @@ function ImportSingleDialog({
       onCancel={reject}
       title={
         '手动导入' +
-        (input ? `（#${input.episode.index} - ${input.episode.title}）` : '')
+        (input
+          ? `（#${formatNumbering(input.episode.numbering)} - ${
+              input.episode.title
+            }）`
+          : '')
       }
       destroyOnClose={true}
       width={850}

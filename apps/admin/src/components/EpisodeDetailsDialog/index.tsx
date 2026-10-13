@@ -1,3 +1,4 @@
+import { formatNumbering } from '@/utils/episode';
 import {
   DownloadJobStatus,
   DownloadStatus,
@@ -410,7 +411,9 @@ export default function EpisodeDetailsDialog({
       footer={false}
       title={
         data?.episodeById
-          ? `#${data.episodeById.index} - ${data.episodeById.title}`
+          ? `#${formatNumbering(data.episodeById.numbering)} - ${
+              data.episodeById.title
+            }`
           : '剧集详情'
       }
       destroyOnClose={true}
