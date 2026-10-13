@@ -1,12 +1,12 @@
-# Corpus gate
+# 语料回放校验
 
-After building the package, run the replay gate with three local NDJSON files:
+构建此包后，使用三个本地 NDJSON 文件运行回放校验：
 
 ```sh
 node scripts/check-corpus.cjs /path/to/baseline.ndjson /path/to/eligibility.ndjson /path/to/reviewed-changes.ndjson
 ```
 
-Run from `libs/parse-torrent-title`. The baseline has one `{ "id", "title", "parsed" }` row per input title; `parsed` is the prior parser result or `null`. Eligibility has the same IDs and titles plus a frozen boolean `eligible`. The reviewed-changes file contains one record per approved difference:
+请在 `libs/parse-torrent-title` 目录下运行。基线文件中的每行对应一个输入标题，结构为 `{ "id", "title", "parsed" }`；`parsed` 是旧解析器的结果或 `null`。适用范围文件包含相同的 ID 和标题，以及事先确定、不随解析结果调整的布尔值 `eligible`。已审核变更文件为每项认可的差异保存一条记录：
 
 ```json
 {
@@ -15,25 +15,25 @@ Run from `libs/parse-torrent-title`. The baseline has one `{ "id", "title", "par
   "path": "index",
   "old": 2,
   "new": 3,
-  "reason": "Verified season and episode mapping",
+  "reason": "已核对季度与剧集编号的对应关系",
   "status": "accepted"
 }
 ```
 
-The gate checks title, organization, index, source, format, and legacy subtitle output. Existing source and format keys must retain their values; newly recognized keys are allowed. Legacy subtitle booleans only flag loss of `true`, while type changes and other legacy subtitle values require review. A new parser result after an old parse failure, or a lost result, is reviewed through its exact `index` change; a lost result must explicitly use `new: null`. Reviews must match the current ID, title, path, old value, and new value exactly, and include a reason. Missing, stale, duplicate, or inexact reviews fail the gate.
+校验覆盖标题、发布组、集数、来源、格式及旧版字幕输出。已存在的来源和格式键必须保留原值，允许增加新识别出的键。旧版字幕布尔值只检查原值为 `true` 的信息是否丢失；字幕类型变化及其他旧版字幕值的变化均需审核。旧解析失败而新解析成功，或原有解析结果丢失时，通过精确的 `index` 变化进行审核；结果丢失必须明确使用 `new: null`。审核记录中的 ID、标题、字段路径、旧值和新值必须与当前差异完全一致，并提供原因。缺失、过时、重复或不精确的审核记录都会使校验失败。
 
-Eligibility must match the baseline IDs and titles one-to-one. The eligible parse-failure rate must be below 3%; parser exceptions always fail. The report prints SHA-256 hashes for all inputs and the package `dist` directory. Keep corpus and review files outside the repository.
+适用范围文件必须与基线中的 ID 和标题一一对应。适用标题的解析失败率必须低于 3%；解析器抛出异常时，校验总是失败。报告会输出所有输入文件和包内 `dist` 目录的 SHA-256 哈希。语料和审核文件应保存在仓库之外。
 
-Eligibility must be established independently of parser success: do not remove a title just because the new parser cannot handle it. Keep uncertain numeric candidates in the denominator. Exclusions need evidence that no episode identifier is present (for example, only technical metadata or explicitly delimited calendar years). Keep the classification rules and exclusion evidence with the local corpus so that a percentage can be reproduced and audited.
+适用范围必须独立于解析是否成功来确定：不能仅因为新解析器无法处理某个标题就将其排除。编号含义不确定的候选仍应计入分母。排除标题需要提供不含剧集标识的证据，例如只有技术参数，或明确限定为日历年份的数字。分类规则和排除依据应与本地语料一起保存，以便复现和审计统计比例。
 
-A passing gate checks this corpus against its reviewed baseline; it is not a claim of accuracy on unseen titles. In particular, accepted changes need semantic review: parser output alone does not prove that a number is an episode.
+校验通过只说明这份语料相对于已审核基线满足要求，不代表对未见过的标题也有相同准确率。尤其是接受输出变更前，需要审核其实际含义：解析器的输出本身不能证明某个数字就是集数。
 
-An optional fourth argument supplies independently reviewed expected indices:
+可通过第四个参数提供经过独立审核的预期集数：
 
 ```sh
 node scripts/check-corpus.cjs baseline.ndjson eligibility.ndjson reviewed-changes.ndjson expected-indices.ndjson
 ```
 
-Each label contains `id`, the exact `title`, `index` (a number, range, or `null` when no ordinary index should be returned), and a nonempty `reason`. Unlike a baseline comparison, this check detects an unchanged wrong answer. Duplicate labels, unknown IDs, title mismatches, incorrect successful indices, and missed expected indices fail the gate. The report states the number of labeled rows; it is not a full-corpus accuracy estimate unless every row has an independent label. Known failures outside a change's scope should remain in a separate audit report, not be relabeled to match the parser.
+每条标注包含 `id`、精确的 `title`、`index`（数字、区间，或不应返回普通集数时使用的 `null`）和非空的 `reason`。与基线比较不同，这项检查可以发现新旧解析器都给出同一个错误答案的情况。重复标注、未知 ID、标题不匹配、成功解析但集数错误，以及遗漏预期集数，都会使校验失败。报告会注明已标注的行数；除非每行都有独立标注，否则不能将其视为整个语料库的准确率估计。改动范围之外的已知失败应保留在单独的审计报告中，不能为了迎合解析器结果而修改标注。
 
-An unnumbered special can return useful `episodeInfo` while still counting as an eligible index failure. A numbered special can recover a typed index, but it does not recover the ordinary legacy `index`. Special metadata changes require exact review; newly added ordinary `episodeInfo` merely duplicates the existing index contract. The expected-index labels validate the legacy index, including its absence for specials; special type and number semantics are also covered by unit tests.
+无编号的特别篇可以返回有用的 `episodeInfo`，但仍计入适用标题中的集数解析失败。有编号的特别篇可以恢复带类型的编号，但不会恢复旧版的普通集数 `index`。特别篇信息的变化需要精确审核；新增加的普通剧集 `episodeInfo` 只是重复表达原有集数约定。预期集数标注检查的是旧版 `index`，包括特别篇不应具有该字段的情况；特别篇类型与编号的含义还由单元测试覆盖。

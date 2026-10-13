@@ -1,16 +1,16 @@
 # `@lani/parse-torrent-title`
 
-`parseTorrentTitle` parses release titles and keeps the existing `subtitle` fields for compatibility. `parseSubtitleInfo` can also be called on its own, including for movie titles that have no episode number.
+`parseTorrentTitle` 用于解析种子标题，并保留原有的 `subtitle` 字段以兼容旧调用方。`parseSubtitleInfo` 也可独立调用，包括处理没有剧集编号的电影标题。
 
-`subtitleInfo` reports explicit subtitle metadata:
+`subtitleInfo` 返回标题中明确标注的字幕信息：
 
-- `languages` contains BCP 47 language tags when the title identifies a language, such as `zh-Hans`, `zh-Hant`, `ja`, or `en`.
-- `multi` is true for an explicit multi-subtitle label or two or more identified language tags; false does not guarantee a single subtitle track. A `Multi-Sub` label does not identify or imply any particular language.
-- `delivery` may contain `burned-in`, `muxed`, or `external` when the title identifies subtitle delivery.
+- `languages` 使用 BCP 47 语言标签，包含标题中已识别的语言，例如 `zh-Hans`、`zh-Hant`、`ja` 或 `en`。
+- 标题明确标注多字幕，或识别出两种及以上语言时，`multi` 为 `true`；`false` 不保证只有一条字幕轨道。`Multi-Sub` 标记本身不表示或暗示任何具体语言。
+- 标题明确标注字幕提供方式时，`delivery` 可包含 `burned-in`（内嵌）、`muxed`（内封）或 `external`（外挂）。
 
-An undefined `subtitleInfo` means the title does not provide enough information. `null` means it explicitly says that subtitles are absent, for example `[No Subs]` or `[无字幕]`. When serialized as JSON, undefined properties are omitted while `null` is retained.
+`subtitleInfo` 为 `undefined` 表示标题没有提供足够信息；为 `null` 表示明确标注了无字幕，例如 `[No Subs]` 或 `[无字幕]`。序列化为 JSON 时，值为 `undefined` 的属性会被省略，`null` 则会保留。
 
-For example, `[简繁日内封]` adds:
+例如，`[简繁日内封]` 会增加以下信息：
 
 ```json
 {
@@ -22,11 +22,11 @@ For example, `[简繁日内封]` adds:
 }
 ```
 
-The legacy `subtitle` still contains `hasCHS`, `hasCHT`, `hasJP`, and `type`. Existing language flags are preserved and augmented during migration; ambiguous legacy flags may therefore differ from the stricter `subtitleInfo`. `toLegacySubtitle` remains available as a pure projection of the new structure. 内封 now maps to 内挂 (muxed subtitles). Custom legacy subtitle keywords remain supported independently of the new metadata. The main parser returns `undefined` if neither an episode nor an explicit special-release marker is identified; use `parseSubtitleInfo` directly in that case.
+旧版 `subtitle` 仍包含 `hasCHS`、`hasCHT`、`hasJP` 和 `type`。兼容期间会保留并补充原有语言标记，因此含义模糊的旧标记可能与要求更严格的 `subtitleInfo` 不一致。`toLegacySubtitle` 可将新结构直接转换为旧结构。内封现在映射为旧版的“内挂”。旧版自定义字幕关键词仍受支持，其处理独立于新字幕信息。主解析器在既未识别出剧集、也未识别出明确的特别篇标记时返回 `undefined`；此时可直接调用 `parseSubtitleInfo`。
 
-Episode matching covers season/episode markers, padded `E01`, bracketed numbers, Chinese episode units, ranges, revisions, and completion labels such as `FIN`, `END`, and 完. Primary numbering is used for dual labels such as `[02(26)]`, `[01 - 总第11]`, and `01-12(25-36)`. Short annotations such as `★12(完)★` are supported. Hyphenated revisions accept `-v1` through `-v9`; existing `vN` and `_vN` notation remains supported. Multi-part version strings are not treated as episode numbers.
+剧集匹配支持季度与集数标记、带前导零的 `E01`、括号内编号、中文集数单位、区间、修订版本，以及 `FIN`、`END`、“完”等完结标记。对于 `[02(26)]`、`[01 - 总第11]` 和 `01-12(25-36)` 这类双重编号，使用主编号。支持 `★12(完)★` 这类简短附注。带连字符的修订版本支持 `-v1` 至 `-v9`，原有的 `vN` 和 `_vN` 写法继续受支持。多段版本号不会被识别为剧集编号。
 
-`episodeInfo` separates ordinary episode numbering from explicitly marked specials:
+`episodeInfo` 区分普通剧集编号与明确标注的特别篇：
 
 ```json
 { "index": 12.5, "episodeInfo": { "type": "episode", "index": 12.5 } }
@@ -36,10 +36,10 @@ Episode matching covers season/episode markers, padded `E01`, bracketed numbers,
 { "episodeInfo": { "type": "sp", "index": 1 } }
 ```
 
-The types are `episode`, `sp`, `ova`, and `oad`. `SP01` produces the second example; a bare `SP` produces `{ "episodeInfo": { "type": "sp" } }`. Missing numbers are omitted, never inferred as zero. Special numbering is kept out of the legacy `index` field, so consumers cannot accidentally interpret `SP1` as ordinary episode 1. Ordinary episodes retain their existing `index` and range shape. A separately identified ordinary range in a mixed pack such as `[01-12+SP]` remains an ordinary range; this is not a complete inventory of the pack's extras.
+类型包括 `episode`、`sp`、`ova` 和 `oad`。`SP01` 会得到第二个示例的结果；只有 `SP` 时返回 `{ "episodeInfo": { "type": "sp" } }`。缺失编号会被省略，不会推断为零。特别篇编号不会写入旧版 `index` 字段，避免调用方误将 `SP1` 视为普通第 1 集。普通剧集保留原有的 `index` 和区间结构。对于 `[01-12+SP]` 这类混合合集，能单独识别出的普通剧集区间仍作为普通区间返回；该结果不代表合集附加内容的完整清单。
 
-Single episodes and range endpoints preserve `.5` exactly; unsupported decimal suffixes and split-file labels such as `26.5 Part 1` are not truncated. Dates, season-only markers, reversed ranges, and ambiguous non-contiguous packs are not coerced into an ordinary episode. These are release-title labels, not a mapping to Bangumi's `type`, `sort`, or `ep` fields.
+单集编号和区间端点会精确保留 `.5`；不支持的小数后缀及 `26.5 Part 1` 这类分卷文件标记不会被截断后当作集数。日期、仅含季度的标记、倒序区间和含义不明确的非连续合集不会被强行解析为普通剧集。这些字段描述种子标题中的标记，不代表与 Bangumi 的 `type`、`sort` 或 `ep` 字段之间存在映射。
 
-No database schema is changed. The API persistence adapter clears all three legacy integer index columns for fractional indices and special releases, while retaining other parsed metadata. It does not round decimals or store special numbers as ordinary episode numbers. Supporting those releases in automatic downloads still requires a corresponding database and metadata-provider mapping.
+解析器本身不负责修改数据库结构。API 持久化适配层会为小数集和特别篇清空三个旧版整数编号列，同时保留其他解析信息；不会将小数舍入，也不会将特别篇编号存为普通剧集编号。项目通过新增的定点小数编号列和原始解析 JSON 保存这些结果，具体约定见[数据库说明](../db/README.md)。普通小数单集可在对应元数据和下载规则满足条件时自动匹配，特别篇暂不参与自动下载匹配。
 
-See [CORPUS.md](./CORPUS.md) for replaying a local title corpus against an independently classified baseline and reviewed output changes.
+使用本地标题语料、独立分类基线及已审核的结果变更进行回放验证，参见 [CORPUS.md](./CORPUS.md)。
