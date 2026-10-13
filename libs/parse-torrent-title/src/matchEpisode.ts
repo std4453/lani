@@ -45,11 +45,25 @@ const boundary = "(?=$|[\\s.\\[\\]【】()_+])";
 type RuleKind =
   | "explicit"
   | "bracket"
+  | "annotated-index"
   | "dash"
   | "annotated-range"
   | "chinese"
-  | "bare-range";
+  | "bare-range"
+  | "bare-single"
+  | "fallback-range"
+  | "complete"
+  | "sequence";
 const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
+  // In dual numbering, retain the primary (season-relative) range. The
+  // parenthesized absolute range is an annotation, not a replacement index.
+  {
+    kind: "bracket",
+    pattern: new RegExp(
+      `(^|[^\\d.])((${rangeOnly})${completion})(?=\\s*\\(\\s*(?:EP)?${rangeOnly}\\s*\\))`,
+      "gi"
+    ),
+  },
   {
     kind: "explicit",
     pattern: new RegExp(
@@ -65,9 +79,36 @@ const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
     ),
   },
   {
+    kind: "explicit",
+    pattern: new RegExp(
+      `(^|[^A-Za-z0-9])(Chapter\\.?\\s*(${rangeOnly})${completion})${boundary}`,
+      "gi"
+    ),
+  },
+  {
+    kind: "explicit",
+    pattern: new RegExp(
+      `(^|[^A-Za-z0-9])(E(${rangeOnly})(?:\\.(?:END|FIN))?)${boundary}`,
+      "gi"
+    ),
+  },
+  {
     kind: "bracket",
     pattern: new RegExp(
-      `()([\\[【]\\s*(?:第\\s*)?(${range})\\s*(?:话|話|集)?${completion}\\s*[\\]】])`,
+      `()([\\[【]\\s*(?:第\\s*)?(${range})\\s*(?:话|話|集)?(?:\\s*\\(\\s*${number}\\s*\\)\\s*)?${completion}\\s*[\\]】])`,
+      "gi"
+    ),
+  },
+  // Some releases wrap an episode in decorative stars, or add a short CJK
+  // annotation / small-theater extra inside the same bracket.
+  {
+    kind: "annotated-index",
+    pattern: new RegExp(`()(★\\s*(\\d{1,3}${revision})\\s*★)`, "gi"),
+  },
+  {
+    kind: "annotated-index",
+    pattern: new RegExp(
+      `()([\\[【]\\s*(\\d{1,3}${revision})(?:\\s*_\\s*[\\u4e00-\\u9fff][^\\]】]*|\\s*\\+\\s*小剧场)\\s*[\\]】])`,
       "gi"
     ),
   },
@@ -80,6 +121,17 @@ const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
     kind: "annotated-range",
     pattern: new RegExp(
       `()([\\[【(]\\s*(?:(?:TV|OVA|OAD)\\s*)?(${rangeOnly}))(?=\\s|[+()\\]】]|TV\\b|TV全|END\\b|FIN\\b|[全完合修精补補话話集简簡繁])`,
+      "gi"
+    ),
+  },
+  {
+    kind: "sequence",
+    pattern: new RegExp(`()((?:第)?((?:${number}[话話集]){2,}))`, "g"),
+  },
+  {
+    kind: "chinese",
+    pattern: new RegExp(
+      `(^|[^\\dA-Za-z])((${episode}[话話集]\\s*[-~]\\s*(?:第\\s*)?${episode})\\s*[话話集])`,
       "gi"
     ),
   },
@@ -99,12 +151,39 @@ const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
   },
   {
     kind: "chinese",
-    pattern: new RegExp(`(^|[\\s_])((${number})[话話集])${boundary}`, "gi"),
+    pattern: new RegExp(`(^|[\\s_])((${number})[话話集])`, "gi"),
   },
   {
     kind: "bare-range",
     pattern: new RegExp(
       `(^|[\\s_])((${rangeOnly})${completion})(?=\\s|[\\[【(+]|$)`,
+      "gi"
+    ),
+  },
+  // Compact dashes and bare numbers are lower-confidence release conventions.
+  // Try these only after explicit markers and ranges have been exhausted.
+  {
+    kind: "dash",
+    pattern: new RegExp(
+      `(^|[^\\d.])(-(${range})${completion})${boundary}`,
+      "gi"
+    ),
+  },
+  {
+    kind: "bare-single",
+    pattern: new RegExp(
+      `(^|[\\s_])((${episode})${completion})${boundary}`,
+      "gi"
+    ),
+  },
+  {
+    kind: "complete",
+    pattern: new RegExp(`()((?:全|共)\\s*(${number})\\s*[话話集])`, "gi"),
+  },
+  {
+    kind: "fallback-range",
+    pattern: new RegExp(
+      `(^|[^\\d])((${rangeOnly})${completion})(?=$|[^\\dA-Za-z])`,
       "gi"
     ),
   },
@@ -133,30 +212,131 @@ function isYear(value: number): boolean {
   return value >= 1900 && value <= 2099;
 }
 
-export default function matchEpisode(input: string): EpisodeMatch | undefined {
+export default function matchEpisode(
+  input: string,
+  allowLeadingEpisode = false
+): EpisodeMatch | undefined {
   const text = normalize(input);
+  let leadingEpisode: EpisodeMatch | undefined;
   for (const { kind, pattern } of rules) {
     for (const match of text.matchAll(pattern)) {
       const marker = match[2];
       let start = match.index! + match[1].length;
       let end = start + marker.length;
+      const bracketStart = Math.max(
+        text.lastIndexOf("[", start),
+        text.lastIndexOf("【", start)
+      );
+      const bracketEnd = [text.indexOf("]", start), text.indexOf("】", start)]
+        .filter((index) => index >= 0)
+        .reduce((nearest, index) => Math.min(nearest, index), Infinity);
+      if (
+        bracketStart > text.lastIndexOf("]", start) &&
+        bracketStart > text.lastIndexOf("】", start) &&
+        bracketEnd > end
+      ) {
+        const bracket = text.slice(bracketStart, bracketEnd + 1);
+        const independentRanges = bracket.match(
+          /(?<![A-Za-z0-9])\d{1,4}\s*[-~]\s*\d{1,4}(?!\d)/g
+        );
+        // A bracket listing disjoint intervals plus annotations is a pack, not
+        // one interval. Do not select a later segment after an earlier segment
+        // was rejected as a partial parse.
+        if (
+          independentRanges &&
+          independentRanges.length > 1 &&
+          /[,，;]/.test(bracket)
+        ) {
+          continue;
+        }
+      }
       if (kind === "explicit" && /[\[【]/.test(text[start - 1] ?? "")) {
         --start;
         if (/[\]】]/.test(text[end] ?? "")) ++end;
       }
+      // The lower-confidence range rules start at the first digit, but in Chinese
+      // titles the preceding 第 is part of the episode marker and must be removed
+      // from the title span as well.
+      if (text[start - 1] === "第" && /[话話集]/.test(marker)) --start;
       const before = text.substring(0, start);
       const after = text.substring(end);
+      const additionalSpecials =
+        /^\s*\+\s*(?:(?:\d+(?:\.\d+)?)(?:SP|OVA|OAD)|\d+\.\d+|SP|OVA|OAD)(?:x\d+)?(?:\s*\+\s*(?:(?:\d+(?:\.\d+)?)(?:SP|OVA|OAD)|\d+\.\d+|SP|OVA|OAD)(?:x\d+)?)*(?=$|[\s\[【(\]】])/i.test(
+          after
+        );
+      const additionalRange = /^\s*[+&,]\s*\d{1,4}\s*[-~]\s*\d/i.test(after);
       // A leading numeric bracket may be the title (e.g. [86]), not an episode.
-      if (!before.replace(/[\s\[\]【】]/g, "")) {
-        continue;
+      const leading = !before.replace(/[\s\[\]【】]/g, "");
+      if (leading && !allowLeadingEpisode) continue;
+      if (kind === "dash") {
+        const dashValue = parseValue(match[3]);
+        if (
+          typeof dashValue === "number" &&
+          [...before.matchAll(/第\s*(\d{1,4})\s*[话話集]/g)].some(
+            (semanticMatch) =>
+              Number(semanticMatch[1]) === dashValue &&
+              !before
+                .slice(semanticMatch.index! + semanticMatch[0].length)
+                .includes("/")
+          )
+        ) {
+          continue;
+        }
       }
-      const value = parseValue(match[3]);
+      if (kind === "dash" && /^-\d/.test(marker) && /[\[【(]\s*$/.test(before))
+        continue;
+      if (
+        kind === "dash" &&
+        /^-\d/.test(marker) &&
+        /\b(?:MPEG|AC|UTF)\s*$/i.test(before)
+      )
+        continue;
+      if (
+        kind === "dash" &&
+        /^-\d/.test(marker) &&
+        (/\b(?:19|20)\d{2}\s*$/.test(before) ||
+          (!/(?:END|FIN|完[结結]?)$/i.test(marker) &&
+            !/^\s*(?:[\[【(]|\d{3,4}p\b|CHS\b|CHT\b|BIG5\b|GB\b|WEB\b|BD\b|DVD\b|HDTV\b)/i.test(
+              after
+            )))
+      )
+        continue;
+      let value = parseValue(match[3]);
+      if (kind === "dash" && typeof value === "number" && /^_\d/.test(after))
+        continue;
+      if (
+        kind === "dash" &&
+        /^-\s+\d/.test(marker) &&
+        typeof value === "number" &&
+        !/(?:END|FIN|完[结結]?)$/i.test(marker) &&
+        /^\s+[A-Za-z]/.test(after) &&
+        !/(?:\b\d{3,4}p\b|\b(?:WEB(?:-DL|Rip)?|BD(?:Rip)?|DVD|HDTV|CHS|CHT|BIG5|GB|AVC|HEVC|x26[45]|Baha|Bglobal|AAC|AC-?3)\b|\[[^\]]*(?:WEB|BD|DVD|HDTV|CHS|CHT|BIG5|GB|AVC|HEVC|x26[45]|Baha|Bglobal|AAC|AC-?3|\d{3,4}p)[^\]]*\])/i.test(
+          after
+        )
+      )
+        continue;
+      if (kind === "complete" && typeof value === "number") {
+        value = value > 0 ? { from: 1, to: value } : undefined;
+      }
+      if (kind === "sequence") {
+        const items = match[3].match(/\d+/g)!.map(Number);
+        value = items.every((item, i) => i === 0 || item === items[i - 1] + 1)
+          ? { from: items[0], to: items[items.length - 1] }
+          : undefined;
+      }
       // Do not truncate decimals, unsupported ranges or a single episode + extras.
       if (
         value === undefined ||
-        /^\.\d+(?:$|[.\s\]】])/.test(after) ||
-        /^\s*[~\-]\s*(?:\d|EP?\d)/i.test(after) ||
-        (typeof value === "number" && /^\s*\+/.test(after))
+        /^\.\d+(?:$|[.\s\[【(\]】])/.test(after) ||
+        (kind === "fallback-range" &&
+          text[start - 1] === "." &&
+          /\d$/.test(text.slice(0, start - 1))) ||
+        (/^\s*[~\-]\s*(?:\d|EP?\d)/i.test(after) &&
+          !/^\s*-\s*\d{3,4}p\b/i.test(after)) ||
+        /^\d+[话話集]/.test(after) ||
+        (typeof value === "number" &&
+          !/第/.test(marker) &&
+          /^\s*\+/.test(after))
       ) {
         continue;
       }
@@ -182,13 +362,49 @@ export default function matchEpisode(input: string): EpisodeMatch | undefined {
           !/^\s*(?:[\[【(]|CHS\b|CHT\b|BIG5\b|GB\b|\d{3,4}p\b)/i.test(
             metadata
           ) &&
+          !/^\s*\|/.test(metadata) &&
           !/(?:END|FIN|合集|全集)$/i.test(marker)
         ) {
           continue;
         }
       }
+      if (
+        (kind === "bare-range" || kind === "fallback-range") &&
+        /(?:\bS|Season|Vol(?:ume)?\.?|Part|第)\s*$/i.test(before)
+      )
+        continue;
+      if (kind === "fallback-range" && /^(?:季|期|部|卷|年)/.test(after))
+        continue;
+      if (
+        typeof value !== "number" &&
+        ((/^\s*[+&,]\s*\d/.test(after) && !additionalSpecials) ||
+          additionalRange ||
+          /\d\s*[+&,]\s*$/.test(before))
+      )
+        continue;
+      if (kind === "bare-single") {
+        const inBracket =
+          before.lastIndexOf("[") > before.lastIndexOf("]") ||
+          before.lastIndexOf("【") > before.lastIndexOf("】");
+        const completed = /(?:END|FIN|完[结結]?)$/i.test(marker);
+        const technical = /^\s*[\[【(](?:WEB|BD(?:Rip)?|DVD|\d{3,4}p\b)/i.test(
+          after
+        );
+        // A bare integer could be part of a title. Require completion or release
+        // metadata, and reject season/volume markers and numbers in title tags.
+        if (
+          inBracket ||
+          /(?:Season|Vol\.?|第)\s*$/i.test(before) ||
+          (!completed && (!technical || !/^0\d/.test(match[3])))
+        )
+          continue;
+      }
+      if (leading) {
+        leadingEpisode ??= { start, end, value };
+        continue;
+      }
       return { start, end, value };
     }
   }
-  return undefined;
+  return leadingEpisode;
 }

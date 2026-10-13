@@ -81,13 +81,26 @@ function matchOrganization(
   { separatorPairs, organizationSeparators }: DefaultedOptions
 ): [Positional<Organization> | undefined, Positional<string>] {
   const [orgnization, rest] = extractPair(content, separatorPairs);
+  const episodeTag = rest.content.match(
+    /^\s*[\[【](?:([第全共])\s*)?(\d{1,4})(?:\s*[-~]\s*\d{1,4})?(话|話|集)?(?:\s*[_-]?\s*(?:END|FIN|完))?\s*[\]】]/i
+  );
+  const unmarkedYearTag = Boolean(
+    episodeTag &&
+      !episodeTag[1] &&
+      !episodeTag[3] &&
+      Number(episodeTag[2]) >= 1900 &&
+      Number(episodeTag[2]) <= 2099
+  );
   // Some releases start with [Title][Episode], without a release-group tag.
   if (
     orgnization &&
+    !unmarkedYearTag &&
     !/字幕[组組社]|发布|發佈|搬运|搬運|\b(?:group|raws?|subs?|studio)\b/i.test(
       orgnization.content
     ) &&
-    /^\s*[\[【](?:第)?\d/.test(rest.content)
+    /^\s*[\[【](?:[第全共]\s*)?\d{1,4}(?:\s*[-~]\s*\d{1,4})?(?:话|話|集)?(?:\s*[_-]?\s*(?:END|FIN|完))?\s*[\]】]/i.test(
+      rest.content
+    )
   ) {
     return [undefined, content];
   }
@@ -160,7 +173,8 @@ function parseIndex(content: string, options: DefaultedOptions): Index {
 function matchIndex(
   content: Positional<string>,
   options: DefaultedOptions,
-  useDefaultMatcher: boolean
+  useDefaultMatcher: boolean,
+  allowLeadingEpisode = false
 ): [Positional<string>, Positional<Index>, Positional<string>] | undefined {
   const { episodePrefixSeparators, episodeRegexes, fixUnmatchedEpisodePrefix } =
     options;
@@ -179,11 +193,15 @@ function matchIndex(
   content = positionalTrimStart(content);
 
   if (useDefaultMatcher) {
-    const match = matchEpisode(content.content);
+    const match = matchEpisode(content.content, allowLeadingEpisode);
     if (!match) return undefined;
-    const before = content.content
-      .substring(0, match.start)
-      .replace(/[\s._-]+$/, "");
+    let before = content.content.substring(0, match.start);
+    // A dash rule already consumes the release separator; retain any preceding
+    // dash belonging to the series title.
+    if (!/^[-–—−]/.test(content.content.substring(match.start))) {
+      before = before.replace(/\s+-\s+$/, "");
+    }
+    before = before.trimEnd();
     return [
       { index: content.index, length: before.length, content: before },
       {
@@ -771,7 +789,8 @@ export default function parseTorrentTitle(
     options,
     !inputOptions?.episodeRegexes &&
       !inputOptions?.episodeInnerRegex &&
-      !inputOptions?.episodeConnectorRegex
+      !inputOptions?.episodeConnectorRegex,
+    Boolean(organization)
   );
   if (!indexResult) {
     return undefined;
@@ -806,11 +825,13 @@ export default function parseTorrentTitle(
   matchKeywords(afterIndex, result, options);
 
   result.subtitleInfo = parseSubtitleInfo(input);
-  // Keep the legacy shape for existing consumers; custom keyword rules can
-  // still supply fields which the standard subtitle parser does not know.
-  result.subtitle = inputOptions?.subtitleKeywords
-    ? { ...result.subtitle, ...toLegacySubtitle(result.subtitleInfo) }
-    : toLegacySubtitle(result.subtitleInfo);
+  // Keep legacy language flags additive during migration. Ambiguous old labels
+  // must not silently remove a flag from existing consumers; subtitleInfo is
+  // the independent, evidence-based representation for new consumers.
+  result.subtitle = {
+    ...result.subtitle,
+    ...toLegacySubtitle(result.subtitleInfo),
+  };
 
   return result;
 }

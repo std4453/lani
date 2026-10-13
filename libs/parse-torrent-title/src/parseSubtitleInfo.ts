@@ -67,6 +67,16 @@ function parseTag(input: string): SubtitleInfo | null | undefined {
   consume(/\b(?:en|eng)\b/gi, () => addLanguage("en"));
   consume(/\b(?:ko|kor)\b/gi, () => addLanguage("ko"));
 
+  if (/\bgb\b/i.test(tag) && /\bcn\b/i.test(tag)) {
+    consume(/\bcn\b/gi, () => addLanguage("zh-Hans"));
+  }
+  if (
+    /(?:chs|cht|big5|gb|简|簡|繁|中文|zh)/i.test(tag) &&
+    !/(?:日版|JPBD|JPN[.& ]?(?:VER|USA))/i.test(tag)
+  ) {
+    consume(/\b(?:jap|jpn)\b/gi, () => addLanguage("ja"));
+  }
+
   consume(/(?:中文[简簡][体體]|[简簡][体體](?:中文)?|[简簡]中|[简簡])/g, () =>
     addLanguage("zh-Hans")
   );
@@ -77,6 +87,11 @@ function parseTag(input: string): SubtitleInfo | null | undefined {
   consume(/(?:日本語|日文|日语|日語|日)/g, () => addLanguage("ja"));
   consume(/(?:英文|英语|english)/gi, () => addLanguage("en"));
   consume(/(?:韓文|韩文|韓語|韩语|korean)/gi, () => addLanguage("ko"));
+
+  // In compounds such as 简中字幕 or 繁简中字, the language token may consume
+  // 中字 only partially; accept the remaining final character as the subtitle
+  // suffix after an explicit language has already been recognized.
+  if (recognized && !/中字$/.test(rest)) consume(/字$/g, () => {});
 
   consume(/(?:内嵌|內嵌|硬字幕|hardsub)/gi, () => {
     recognized = true;
@@ -94,7 +109,7 @@ function parseTag(input: string): SubtitleInfo | null | undefined {
   // These are metadata suffixes; other residue means the bracket was likely a
   // group name, title, audio description, or prose rather than a subtitle tag.
   consume(
-    /(?:双字幕|雙字幕|字幕|双语|雙語|双語|雙语|subtitles?|subs?)/gi,
+    /(?:双字幕|雙字幕|中字|字幕附|字幕|合集|双语|雙語|双語|雙语|subtitles?|subs?)/gi,
     () => {
       recognized = true;
     }
@@ -103,6 +118,7 @@ function parseTag(input: string): SubtitleInfo | null | undefined {
     /(?:mp4|mkv|mka|avi|(?:2160|1080|720|480)p|(?:1920x1080|1280x720|3840x2160)|hevc|avc|av1|[hx]26[45]|(?:8|10)bit|flac|aac|(?:ass|srt|pgs)(?:x\d+)?|bdrip|bd|webrip|web-?dl|试看版|試看版)/gi,
     () => {}
   );
+  consume(/(?:无障碍|無障礙|无障礙|無障碍|renew|v\d+)/gi, () => {});
   rest = rest.replace(new RegExp(`[${separators}]+`, "g"), "").trim();
   if (!recognized || rest) return undefined;
 
@@ -118,9 +134,28 @@ function parseMixedTag(input: string): Array<SubtitleInfo | null | undefined> {
   if (parsed !== undefined) return [parsed];
   const tag = normalize(input);
   const results: Array<SubtitleInfo | null | undefined> = [];
+  // A Multi-Subs marker remains explicit when another field (usually audio)
+  // shares the same parenthesized release tag.
+  const explicitMulti = tag.match(
+    /(?:^|[^a-z0-9])(multi(?:ple)?\s*[-_ ]?\s*(?:subtitles?|subs?))(?=$|[^a-z0-9])|(多国语字幕|多國語字幕|多国字幕|多國字幕)/i
+  );
+  const multiMarker = explicitMulti?.[1] || explicitMulti?.[2];
+  if (multiMarker) results.push(parseTag(multiMarker));
+  // Some releases put the episode span and a subtitle label in one bracket,
+  // e.g. "01-92简中合集". Strip only the leading span before validating the
+  // remaining explicit Chinese language marker.
+  const episodeSpan = tag.match(/^\d{1,4}\s*[-~～]\s*\d{1,4}\s*(?=[简簡繁])/);
+  if (episodeSpan) {
+    const spanless = parseTag(tag.slice(episodeSpan[0].length));
+    if (spanless !== undefined) results.push(spanless);
+  }
+  for (const match of tag.matchAll(/\(([^()]+)\)/g)) {
+    const nested = parseTag(match[1]);
+    if (nested !== undefined) results.push(nested);
+  }
   // Audio and subtitles often share a bracket, separated by +. Only retain
   // clauses that explicitly describe subtitles; do not infer subs from audio.
-  for (const part of tag.split(/[+&]/)) {
+  for (const part of tag.split(/[,;|+&]/)) {
     if (/(?:字幕|内[封挂嵌]|內[封掛嵌]|外[挂掛]|subs?)/i.test(part)) {
       results.push(parseTag(part));
     }
@@ -140,7 +175,7 @@ function parseMixedTag(input: string): Array<SubtitleInfo | null | undefined> {
       results.push(parseTag(match[0]));
     }
     for (const match of tag.matchAll(
-      /(?:^|[\s+&/,])([简簡繁](?:[简簡繁日])*(?:[体體中])?(?:双语|雙語)?(?:内[封挂嵌]|內[封掛嵌]|外[挂掛]|字幕)?)(?=$|[\s+&/,])/g
+      /(?:^|[\s+&/,])((?:简体中文|簡體中文|中文简体|中文簡體|简体|簡體|简中|簡中|简|簡|繁体中文|繁體中文|繁体|繁體|繁中|繁|简繁|繁简|簡繁|繁簡|简日|繁日|簡日)(?:双语|雙語|双語|雙语)?(?:字幕附|中字|字幕|内[封挂嵌]|內[封掛嵌]|外[挂掛])?)(?=$|[\s+&/,])/g
     )) {
       results.push(parseTag(match[1]));
     }
@@ -155,6 +190,8 @@ function extractTagContents(input: string): string[] {
     const content = match[1] || match[2] || match[3];
     if (content) contents.push(content);
   }
+  const unclosedTrailingTag = input.match(/\[([^\[\]]+)$/);
+  if (unclosedTrailingTag?.[1]) contents.push(unclosedTrailingTag[1]);
   return contents;
 }
 
@@ -201,29 +238,55 @@ export function parseSubtitleInfo(
     input.replace(/\[[^\]]+\]|【[^】]+】|\([^)]+\)/g, " ")
   );
   if (
-    /(?:^|[\s[\]()【】])(?:multi(?:ple)?[ -]?(?:subs?|subtitles?)|多国字幕|多國字幕|多国语字幕|多國語字幕)(?=$|[\s[\]()【】])/i.test(
+    /(?:^|[\s[\]()【】,;|.。\/+&-])(?:multi(?:ple)?[ -]?(?:subs?|subtitles?)|多国字幕|多國字幕|多国语字幕|多國語字幕)(?:版|包括中文|包含中文|含中文)?(?=$|[\s[\]()【】,;|.。\/+&-])/i.test(
       outsideTags
     )
   ) {
     foundMetadata = true;
     info.multi = true;
+    if (
+      /多国字幕(?:包括|包含|含)中文|多國字幕(?:包括|包含|含)中文/.test(
+        outsideTags
+      )
+    ) {
+      info.languages.push("zh");
+    }
   }
   for (const match of outsideTags.matchAll(
-    /\b(big5|chs|cht|gb)(?:[ /-]+(cn|jp|ja))?\b(?=[\s.,;|/-]*(?:\d{3,4}p|mp4|mkv|hevc|avc|av1|bdrip|webrip|web-?dl)\b)/gi
+    /\b(big5|chs|cht|gb)(?:[ _/-]+(cn|jp|ja|jap|jpn))?\b(?=[\s_.,;|/-]*(?:\d{3,4}p|mp4|mkv|hevc(?:[ _-]?(?:8|10)bit)?|avc|av1|vp9|opus|aac|flac|x264|x265|bdrip|webrip|web-?dl)(?:\b|_))/gi
   )) {
+    const prefix = outsideTags.slice(0, match.index);
+    const hasEpisodeRange = /\b\d{1,4}\s*[-~～]\s*\d{1,4}\s*$/.test(prefix);
     if (
       /^gb$/i.test(match[1]) &&
-      /\d\s*$/.test(outsideTags.slice(0, match.index))
+      match[2] !== "cn" &&
+      !hasEpisodeRange &&
+      /\b\d+(?:\.\d+)?\s*$/.test(prefix)
     )
       continue;
     const language = /^(?:big5|cht)$/i.test(match[1]) ? "zh-Hant" : "zh-Hans";
     foundMetadata = true;
     if (!info.languages.includes(language)) info.languages.push(language);
-    if (/^(?:jp|ja)$/i.test(match[2] ?? "") && !info.languages.includes("ja"))
+    if (
+      /^(?:jp|ja|jap|jpn)$/i.test(match[2] ?? "") &&
+      !info.languages.includes("ja")
+    )
       info.languages.push("ja");
   }
   for (const match of outsideTags.matchAll(
-    /(?:^|[\s_])([简簡繁](?:[简簡繁日])*(?:[体體中])?(?:字幕|内[封挂嵌]|內[封掛嵌]|外[挂掛])?)(?=$|[\s_])/g
+    /(?:\d{3,4}p|mp4|mkv|hevc|avc|av1|bdrip|webrip|web-?dl)[\s_.,;|/-]+(big5|chs|cht|gb)(?:[_-]v\d+)?(?=$|[\s.,;|/-])/gi
+  )) {
+    if (
+      /^gb$/i.test(match[1]) &&
+      /\b\d+(?:\.\d+)?\s+$/.test(outsideTags.slice(0, match.index))
+    )
+      continue;
+    const language = /^(?:big5|cht)$/i.test(match[1]) ? "zh-Hant" : "zh-Hans";
+    foundMetadata = true;
+    if (!info.languages.includes(language)) info.languages.push(language);
+  }
+  for (const match of outsideTags.matchAll(
+    /(?:^|[\s_])((?:简体中文|簡體中文|中文简体|中文簡體|简体|簡體|简中|簡中|简|簡|繁体中文|繁體中文|繁体|繁體|繁中|繁|简繁|繁简|簡繁|繁簡|简日|繁日|簡日)(?:双语|雙語|双語|雙语)?(?:字幕附|中字|字幕|内[封挂嵌]|內[封掛嵌]|外[挂掛])?)(?=$|[\s_])/g
   )) {
     const parsed = parseTag(match[1]);
     if (!parsed) continue;

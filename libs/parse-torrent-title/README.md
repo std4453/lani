@@ -22,8 +22,10 @@ For example, `[简繁日内封]` adds:
 }
 ```
 
-The legacy `subtitle` projection still contains `hasCHS`, `hasCHT`, `hasJP`, and `type`. 内封 now maps to 内挂 (muxed subtitles). Custom legacy subtitle keywords remain supported independently of the new metadata. The main parser still returns `undefined` if no episode is identified; use `parseSubtitleInfo` directly in that case.
+The legacy `subtitle` still contains `hasCHS`, `hasCHT`, `hasJP`, and `type`. Existing language flags are preserved and augmented during migration; ambiguous legacy flags may therefore differ from the stricter `subtitleInfo`. `toLegacySubtitle` remains available as a pure projection of the new structure. 内封 now maps to 内挂 (muxed subtitles). Custom legacy subtitle keywords remain supported independently of the new metadata. The main parser still returns `undefined` if no episode is identified; use `parseSubtitleInfo` directly in that case.
 
-Episode matching covers season/episode markers, bracketed numbers, Chinese episode units, ranges, revisions, and completion labels such as `FIN`, `END`, and 完. Dates, season-only markers, reversed ranges, decimal episodes, and ambiguous non-contiguous packs are deliberately not coerced into a single episode.
+Episode matching covers season/episode markers, bracketed numbers, Chinese episode units, ranges, revisions, and completion labels such as `FIN`, `END`, and 完. Primary numbering is used for dual labels such as `[02(26)]` and `01-12(25-36)`. Adjacent Chinese episode labels such as `01集02集` become a range. Dates, season-only markers, reversed ranges, decimal episodes, and ambiguous non-contiguous packs are deliberately not coerced into a single episode. Legacy group-plus-number releases with an omitted series title remain supported.
 
 This metadata is parsed from release titles at runtime. It does not change the database schema or the generated column used by automatic downloads.
+
+See [CORPUS.md](./CORPUS.md) for replaying a local title corpus against an independently classified baseline and reviewed output changes.

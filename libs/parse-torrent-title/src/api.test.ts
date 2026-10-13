@@ -27,6 +27,44 @@ describe("public parser API compatibility", () => {
     });
   });
 
+  test.each([
+    ["[Group] Title. - 01 [1080p]", "Title."],
+    ["[Group] Title -SUBTITLE- 第01集 [1080p]", "Title -SUBTITLE-"],
+    ["[Group] Title_ [01][1080p]", "Title_"],
+  ])("preserves title punctuation in %s", (raw, title) => {
+    expect(parseTorrentTitle(raw)?.title.raw).toBe(title);
+  });
+
+  test.each([
+    "[Release Team][1月新番][Series][11][1080p]",
+    "[Release Team][16 位的标题][16bit Title][01][1080p]",
+    "[Release Team][4K][Series][01][2160p]",
+  ])("keeps the group before numeric metadata/title: %s", (raw) => {
+    expect(parseTorrentTitle(raw)?.organization?.raw).toBe("Release Team");
+  });
+
+  test("does not treat a year tag as an episode after a release group", () => {
+    const result = parseTorrentTitle(
+      "【个人压制】[1997][剑风传奇][01][BDRip 1080p]"
+    );
+    expect(result?.organization?.raw).toBe("个人压制");
+  });
+
+  test("keeps legacy language flags without guessing in structured metadata", () => {
+    const result = parseTorrentTitle("[Group] Series [04][JP_CN][简繁内封]");
+    expect(result?.subtitle).toEqual({
+      hasCHS: true,
+      hasCHT: true,
+      hasJP: true,
+      type: "内挂",
+    });
+    expect(result?.subtitleInfo).toEqual({
+      languages: ["zh-Hans", "zh-Hant"],
+      multi: true,
+      delivery: ["muxed"],
+    });
+  });
+
   test("parses movie subtitle metadata without requiring an episode", () => {
     expect(
       parseSubtitleInfo("[Example Subs] Feature Film [Multi-Sub] [CHS] [外挂]")
@@ -106,4 +144,9 @@ describe("public parser API compatibility", () => {
       expect(indexItem?.length).toBe(episode.length);
     }
   );
+  test("preserves a title's trailing dash before a separate episode dash", () => {
+    const result = parseTorrentTitle("[Example Subs] Series - - 01 [1080p]");
+    expect(result?.title.raw).toBe("Series -");
+    expect(result?.index).toBe(1);
+  });
 });

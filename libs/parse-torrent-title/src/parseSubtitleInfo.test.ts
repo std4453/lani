@@ -23,10 +23,13 @@ const legacyCases: Array<[SubtitleInfo | null | undefined, Subtitle]> = [
 describe("parseSubtitleInfo", () => {
   test.each([
     ["[Multiple Subtitle]", [], true, []],
+    ["[01-92简中合集]", ["zh-Hans"], false, []],
     [" 多国字幕", [], true, []],
     [" Multi-Sub", [], true, []],
     [" GB_CN HEVC_opus 1080p", ["zh-Hans"], false, []],
     [" BIG5 MP4_720P", ["zh-Hant"], false, []],
+    [" CUE! 第12集 V2 GB_CN HEVC_opus 1080p", ["zh-Hans"], false, []],
+    [" 女神宿舍的管理员 01-10 GB 1080P MP4 BDrip HEVC", ["zh-Hans"], false, []],
     [" GB_JP MP4_1080P", ["zh-Hans", "ja"], true, []],
     ["[bilibili - 1080p AVC1 CHS-JP]", ["zh-Hans", "ja"], true, []],
     [
@@ -121,7 +124,9 @@ describe("parseSubtitleInfo", () => {
     "[Japanese Audio+Dual Audio] Series -01",
     "[繁花 WEBRip] Series -01",
     "[2GB 1080p] Series -01",
+    "Series 2 GB 1080p",
     "[简繁字幕组 WEBRip] Series -01",
+    "[MultiSubsTeam]字幕组 Series -01",
     "[无外挂字幕] Series -01",
     "",
   ])("keeps unknown metadata unknown: %s", (input) => {
@@ -153,6 +158,27 @@ describe("parseSubtitleInfo", () => {
     expect(parseSubtitleInfo("[Group][GB_MP4] Series -01")).toEqual({
       languages: ["zh-Hans"],
       multi: false,
+      delivery: [],
+    });
+  });
+
+  test.each([
+    ["Feature Film (Dual-Audio, Multi-Subs)", true],
+    ["Feature Film 1080p 日英双语-多国字幕", true],
+    ["[多国语配音] Feature Film", false],
+  ])(
+    "recognizes explicit multi-sub metadata without reading audio: %s",
+    (input, expected) => {
+      expect(parseSubtitleInfo(input)?.multi ?? false).toBe(expected);
+    }
+  );
+
+  test("keeps language evidence beside a shared multi-sub metadata tag", () => {
+    expect(
+      parseSubtitleInfo("[搬运] Series 01 (1080P 繁简中字 多国字幕)")
+    ).toEqual({
+      languages: ["zh-Hans", "zh-Hant"],
+      multi: true,
       delivery: [],
     });
   });
