@@ -1,5 +1,6 @@
 import { PrismaService } from '@/common/prisma.service';
 import { ParseTorrentService } from '@/parse-torrent/index.service';
+import { Logger } from '@nestjs/common';
 import parseTorrentTitle, {
   EpisodeInfo,
   Index,
@@ -265,4 +266,57 @@ describe('重解析时跳过未变化的记录', () => {
       expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+describe('批量重解析的异常隔离', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each(['parseTorrents', 'parseTorrentTitleForAll'] as const)(
+    '%s 跳过无效编号并保存其他种子，直接创建仍拒绝无效编号',
+    async (method) => {
+      const prisma = {
+        torrent: {
+          findMany: jest.fn().mockResolvedValue([
+            { id: 1, title: 'invalid' },
+            { id: 2, title: 'valid' },
+          ]),
+        },
+        $executeRaw: jest.fn().mockResolvedValue(1),
+      };
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+      mockedParseTorrentTitle.mockImplementation((title) =>
+        parsedTitle(title === 'invalid' ? 10000000 : 12.5),
+      );
+      const service = new ParseTorrentService(
+        prisma as unknown as PrismaService,
+      );
+      await service[method]([1, 2]);
+      expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+      const [, id, payload] = prisma.$executeRaw.mock.calls[0];
+      expect(id).toBe(2);
+      expect(JSON.parse(payload).episodeInfo.index).toBe(12.5);
+      expect(warn).toHaveBeenCalledWith(
+        'Skipping torrent 1: Invalid episode number: 10000000',
+      );
+      expect(() => service.titleToCreateInput('invalid')).toThrow(
+        'Invalid episode number',
+      );
+    },
+  );
+
+  it('不吞掉其他解析错误', async () => {
+    const prisma = {
+      torrent: {
+        findMany: jest.fn().mockResolvedValue([{ id: 1, title: 'broken' }]),
+      },
+      $executeRaw: jest.fn(),
+    };
+    const error = new Error('Unexpected parser failure');
+    mockedParseTorrentTitle.mockImplementation(() => {
+      throw error;
+    });
+    const service = new ParseTorrentService(prisma as unknown as PrismaService);
+    await expect(service.parseTorrents([1])).rejects.toBe(error);
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
+  });
 });

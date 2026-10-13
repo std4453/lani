@@ -109,7 +109,8 @@ export default function DownloadSources() {
         const { title, episodeInfo, publishDate } = torrent;
         const episodeIndex =
           episodeInfo?.type === 'episode' &&
-          typeof episodeInfo.index === 'string'
+          (typeof episodeInfo.index === 'string' ||
+            typeof episodeInfo.index === 'number')
             ? Number(episodeInfo.index)
             : undefined;
         if (!title || typeof episodeIndex !== 'number') {

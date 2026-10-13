@@ -15,11 +15,13 @@ import { isDeepStrictEqual } from 'util';
 // 持久化结果的版本包含解析器输出与本适配层的映射规则。
 const TORRENT_PARSE_VERSION = 1;
 
+class InvalidEpisodeNumberError extends Error {}
+
 // 拒绝数据库无法精确存储的编号，避免舍入后混淆剧集身份。
 function decimalNumber(value: number): string {
   const text = String(value);
   if (!/^\d+(?:\.\d{1,3})?$/.test(text) || value >= 10000000) {
-    throw new Error(`Invalid episode number: ${text}`);
+    throw new InvalidEpisodeNumberError(`Invalid episode number: ${text}`);
   }
   return text;
 }
@@ -216,7 +218,14 @@ export class ParseTorrentService {
   ): ParsedTorrentUpdate[] {
     return torrents
       .map((torrent) => {
-        const data = this.titleToUpdateInput(torrent.title);
+        let data: Prisma.TorrentUpdateInput | null;
+        try {
+          data = this.titleToUpdateInput(torrent.title);
+        } catch (error) {
+          if (!(error instanceof InvalidEpisodeNumberError)) throw error;
+          this.logger.warn(`Skipping torrent ${torrent.id}: ${error.message}`);
+          return null;
+        }
         if (
           !ignoreUnchanged ||
           (data && this.shouldUpdateTorrent(torrent, data))
