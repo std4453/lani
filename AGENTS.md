@@ -50,6 +50,14 @@
 
 配置下载匹配规则时，用实际资源标题验证 SQL `LIKE` pattern，核对同一季、同一集及解析出的 `episodeIndex`，确认 `剧集 index + offset = 资源 episodeIndex`，避免误匹配其他季度或合集。具体选源偏好由任务要求或私有补充提供。
 
+## 语言约定
+
+- README、项目文档和手写业务注释使用简体中文。
+- 界面文案、业务错误提示和用户通知使用简体中文。
+- 运行日志和开发工具 CLI 输出使用英文。
+- 提交主题和 PR 标题遵循 Conventional Commits，`type`、`scope` 使用英文，描述优先使用简体中文。
+- 技术名称和代码标识符保留原文；生成代码、第三方代码和模板不强制翻译。
+
 ## 风格、提交与分支
 
 TypeScript 使用两个空格缩进。Prettier 要求分号、双引号、ES5 尾随逗号及箭头参数括号。组件和类使用 `PascalCase`，函数与 Hook 使用 `camelCase`，包目录使用小写 kebab-case。
