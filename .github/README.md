@@ -1,5 +1,7 @@
 # Build and deployment handoff
 
+<!-- Deployment acceptance only; no application or build input changes. -->
+
 `default_pipeline.yaml` builds the complete committed manifest for `next` pushes
 and same-repository PRs targeting `next`. It uses the PR head SHA, builds only
 missing fingerprints, and still notifies when every image is reused. Open fork
