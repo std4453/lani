@@ -8,12 +8,14 @@ const { isDeepStrictEqual } = require("node:util");
 const distDirectory = path.join(__dirname, "../dist");
 const initialDistHash = sha256Directory(distDirectory);
 const parseTorrentTitle = require("../dist").default;
-const [baselinePath, eligibilityPath, reviewsPath] = process.argv.slice(2);
+const [baselinePath, eligibilityPath, reviewsPath, labelsPath] =
+  process.argv.slice(2);
 const FAILURE_LIMIT = 0.03;
 const resultFields = [
   "title",
   "organization",
   "index",
+  "episodeInfo",
   "source",
   "format",
   "subtitle",
@@ -81,9 +83,7 @@ function equal(left, right) {
 }
 
 function indexValue(result) {
-  return result && Object.prototype.hasOwnProperty.call(result, "index")
-    ? result.index
-    : null;
+  return result?.index ?? null;
 }
 
 function addChange(changes, row, fieldPath, oldValue, newValue) {
@@ -106,6 +106,13 @@ function compareResult(row, oldResult, newResult) {
     const newIndex = indexValue(newResult);
     if (!equal(oldIndex, newIndex))
       addChange(changes, row, "index", oldIndex, newIndex);
+    if (newResult?.episodeInfo?.type !== "episode" && newResult?.episodeInfo)
+      addChange(changes, row, "episodeInfo", null, newResult.episodeInfo);
+    else if (
+      oldResult?.episodeInfo?.type !== "episode" &&
+      oldResult?.episodeInfo
+    )
+      addChange(changes, row, "episodeInfo", oldResult.episodeInfo, null);
     return changes;
   }
 
@@ -114,6 +121,8 @@ function compareResult(row, oldResult, newResult) {
     const newHas = Object.prototype.hasOwnProperty.call(newResult, field);
     const oldValue = oldHas ? oldResult[field] : undefined;
     const newValue = newHas ? newResult[field] : undefined;
+    if (field === "episodeInfo" && !oldHas && newValue?.type === "episode")
+      continue; // Ordinary episodeInfo duplicates the existing index contract.
 
     if (field === "source" || field === "format") {
       if (
@@ -242,17 +251,44 @@ function changeIdentity(change) {
 }
 
 function main() {
-  if (process.argv.length !== 5) {
+  if (process.argv.length !== 5 && process.argv.length !== 6) {
     fail(
-      "Usage: node scripts/check-corpus.cjs <baseline.ndjson> <eligibility.ndjson> <reviewed-changes.ndjson>"
+      "Usage: node scripts/check-corpus.cjs <baseline.ndjson> <eligibility.ndjson> <reviewed-changes.ndjson> [expected-indices.ndjson]"
     );
   }
+  if (process.argv.length === 6 && !labelsPath)
+    fail("Expected indices input path must not be empty");
   const baseline = readNdjson(baselinePath, "baseline");
   if (!baseline.length) fail("Baseline must not be empty");
   const eligibility = readNdjson(eligibilityPath, "eligibility");
   const reviews = readNdjson(reviewsPath, "reviewed changes");
   const baselineById = indexUnique(baseline, "baseline");
   const eligibilityById = indexUnique(eligibility, "eligibility");
+  const labels = labelsPath ? readNdjson(labelsPath, "expected indices") : [];
+  const labelsById = indexUnique(labels, "expected indices");
+  if (labelsPath && !labels.length) fail("Expected indices must not be empty");
+  const validNumber = (value) =>
+    typeof value === "number" && Number.isFinite(value) && value >= 0;
+  for (const label of labels) {
+    if (baselineById.get(label.id)?.title !== label.title)
+      fail(`Expected index title/id mismatch for id ${label.id}`);
+    if (
+      !Object.prototype.hasOwnProperty.call(label, "index") ||
+      !(
+        label.index === null ||
+        validNumber(label.index) ||
+        (label.index &&
+          validNumber(label.index.from) &&
+          validNumber(label.index.to) &&
+          label.index.from <= label.index.to)
+      ) ||
+      typeof label.reason !== "string" ||
+      !label.reason.trim()
+    )
+      fail(
+        `Expected index ${label.id} requires a valid index or null and a reason`
+      );
+  }
   if (baselineById.size !== eligibilityById.size)
     fail("Baseline and eligibility row counts differ");
   for (const [id, row] of baselineById) {
@@ -291,6 +327,7 @@ function main() {
   let eligibleCount = 0;
   let eligibleFailures = 0;
   let exceptions = 0;
+  const indexErrors = [];
   for (const row of baseline) {
     const eligible = eligibilityById.get(row.id).eligible;
     if (eligible) eligibleCount++;
@@ -309,7 +346,18 @@ function main() {
       });
       continue;
     }
-    if (!current && eligible) eligibleFailures++;
+    // A type-only special is useful metadata, but has not recovered an index.
+    if ((current?.episodeInfo?.index ?? current?.index) == null && eligible)
+      eligibleFailures++;
+    const label = labelsById.get(row.id);
+    if (label && !equal(label.index, indexValue(current))) {
+      indexErrors.push({
+        id: row.id,
+        expected: label.index,
+        actual: indexValue(current),
+        kind: current ? "wrong_successful_index" : "missed_index",
+      });
+    }
     diffs.push(...compareResult(row, row.parsed || null, current || null));
   }
 
@@ -336,10 +384,25 @@ function main() {
     unreviewed_changes: missingReviews.length,
     stale_reviews: staleReviews.length,
     parser_exceptions: exceptions,
+    // Independent labels detect unchanged wrong answers, unlike baseline diffs.
+    // A partial label set must never be presented as full-corpus accuracy.
+    index_validation: labelsPath
+      ? {
+          labeled_rows: labels.length,
+          wrong_successful_indices: indexErrors.filter(
+            (error) => error.kind === "wrong_successful_index"
+          ).length,
+          missed_indices: indexErrors.filter(
+            (error) => error.kind === "missed_index"
+          ).length,
+          errors: indexErrors,
+        }
+      : null,
     input_sha256: {
       baseline: sha256File(baselinePath),
       eligibility: sha256File(eligibilityPath),
       reviewed_changes: sha256File(reviewsPath),
+      ...(labelsPath ? { expected_indices: sha256File(labelsPath) } : {}),
     },
     dist_sha256: initialDistHash,
     dist_changed_during_check:
@@ -349,6 +412,7 @@ function main() {
 
   if (
     exceptions ||
+    indexErrors.length ||
     missingReviews.length ||
     staleReviews.length ||
     failureRate >= FAILURE_LIMIT ||
@@ -363,6 +427,8 @@ function main() {
         `Eligible failure rate must be below ${FAILURE_LIMIT * 100}%`
       );
     if (exceptions) console.error(`Parser exceptions: ${exceptions}`);
+    if (indexErrors.length)
+      console.error(`Incorrect labeled indices: ${indexErrors.length}`);
     if (report.dist_changed_during_check)
       console.error("Package dist changed during this check");
     process.exitCode = 1;

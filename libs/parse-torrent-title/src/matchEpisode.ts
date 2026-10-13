@@ -32,8 +32,10 @@ function chineseNumber(input: string): number {
   return value + digit;
 }
 
-const number = "\\d{1,4}";
-const revision = "(?:\\s*_?v\\d+)?";
+const number = "\\d{1,4}(?:\\.5)?";
+// A hyphenated revision is deliberately limited to the usual single digit.
+// Do not let a version such as v2.1 become an episode range or a partial index.
+const revision = "(?:\\s*(?:_?v\\d+|-v[1-9]))?";
 const episode = `${number}${revision}`;
 const rangeOnly = `${episode}\\s*[-~]\\s*(?:EP?\\.?\\s*)?${episode}`;
 const range = `${episode}(?:\\s*[-~]\\s*(?:EP?\\.?\\s*)?${episode})?`;
@@ -55,6 +57,20 @@ type RuleKind =
   | "complete"
   | "sequence";
 const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
+  {
+    kind: "bracket",
+    pattern: new RegExp(
+      `()([\\[【]\\s*(${rangeOnly})\\s*\\(\\s*(?:EP)?${rangeOnly}\\s*\\)${completion}\\s*[\\]】])`,
+      "gi"
+    ),
+  },
+  {
+    kind: "bracket",
+    pattern: new RegExp(
+      `()([\\[【]\\s*(${episode})\\s*-\\s*总第${number}(?:话|話|集)?\\s*[\\]】])`,
+      "gi"
+    ),
+  },
   // In dual numbering, retain the primary (season-relative) range. The
   // parenthesized absolute range is an annotation, not a replacement index.
   {
@@ -88,14 +104,21 @@ const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
   {
     kind: "explicit",
     pattern: new RegExp(
-      `(^|[^A-Za-z0-9])(E(${rangeOnly})(?:\\.(?:END|FIN))?)${boundary}`,
+      `(^|[^A-Za-z0-9])(E(${rangeOnly})(?:\\.(?:END|FIN)|${completion}))${boundary}`,
+      "gi"
+    ),
+  },
+  {
+    kind: "explicit",
+    pattern: new RegExp(
+      `(^|[^A-Za-z0-9])(E(\\d{2,4}(?:\\.5)?${revision})${completion})${boundary}`,
       "gi"
     ),
   },
   {
     kind: "bracket",
     pattern: new RegExp(
-      `()([\\[【]\\s*(?:第\\s*)?(${range})\\s*(?:话|話|集)?(?:\\s*\\(\\s*${number}\\s*\\)\\s*)?${completion}\\s*[\\]】])`,
+      `()([\\[【]\\s*(?:第\\s*)?(${range})\\s*(?:话|話|集)?(?:\\s*\\(\\s*(?:${number}|END|FIN|完[结結]?)\\s*\\)\\s*)?${completion}\\s*[\\]】])`,
       "gi"
     ),
   },
@@ -103,7 +126,10 @@ const rules: Array<{ kind: RuleKind; pattern: RegExp }> = [
   // annotation / small-theater extra inside the same bracket.
   {
     kind: "annotated-index",
-    pattern: new RegExp(`()(★\\s*(\\d{1,3}${revision})\\s*★)`, "gi"),
+    pattern: new RegExp(
+      `()(★\\s*(${episode})(?:\\s*\\([^()\\d\\[\\]]{1,40}\\))?\\s*★)`,
+      "gi"
+    ),
   },
   {
     kind: "annotated-index",
@@ -195,11 +221,11 @@ function parseNumber(input: string): number {
 
 function parseValue(token: string): Index | undefined {
   const clean = token
-    .replace(/\s*_?v\d+/gi, "")
+    .replace(/\s*(?:_?v\d+|-v[1-9])/gi, "")
     .replace(/EP?\.?\s*/gi, "")
     .replace(/[第话話集]/g, "");
   const parts = clean.split(/[-~]/).map((part) => parseNumber(part.trim()));
-  if (parts.some((part) => !Number.isInteger(part) || part < 0)) {
+  if (parts.some((part) => !Number.isInteger(part * 2) || part < 0)) {
     return undefined;
   }
   if (parts.length === 1) {
@@ -260,6 +286,13 @@ export default function matchEpisode(
       if (text[start - 1] === "第" && /[话話集]/.test(marker)) --start;
       const before = text.substring(0, start);
       const after = text.substring(end);
+      // A single E marker must not select the tail of an invalid/reversed range.
+      if (
+        kind === "explicit" &&
+        /^E\d/i.test(marker) &&
+        /E\d+(?:\.5)?\s*[-~]\s*$/i.test(before)
+      )
+        continue;
       const additionalSpecials =
         /^\s*\+\s*(?:(?:\d+(?:\.\d+)?)(?:SP|OVA|OAD)|\d+\.\d+|SP|OVA|OAD)(?:x\d+)?(?:\s*\+\s*(?:(?:\d+(?:\.\d+)?)(?:SP|OVA|OAD)|\d+\.\d+|SP|OVA|OAD)(?:x\d+)?)*(?=$|[\s\[【(\]】])/i.test(
           after
@@ -302,6 +335,13 @@ export default function matchEpisode(
       )
         continue;
       let value = parseValue(match[3]);
+      // A half episode split into multiple files is not a complete single episode.
+      if (
+        typeof value === "number" &&
+        !Number.isInteger(value) &&
+        /^\s+Part\s*\d/i.test(after)
+      )
+        continue;
       if (kind === "dash" && typeof value === "number" && /^_\d/.test(after))
         continue;
       if (

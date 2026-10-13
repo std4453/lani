@@ -3,7 +3,7 @@ import { ParseTorrentTitleResult } from "@/types";
 
 type ResultForTesting = Omit<
   ParseTorrentTitleResult,
-  "raw" | "positionalItems"
+  "raw" | "positionalItems" | "episodeInfo"
 >;
 
 describe("test parseTorrentTitle with title", () => {

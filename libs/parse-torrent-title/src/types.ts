@@ -22,6 +22,13 @@ export type Index =
       to: number;
     };
 
+/** Release-title numbering, not an automatic mapping to a metadata provider. */
+export interface EpisodeInfo {
+  type: "episode" | "sp" | "ova" | "oad";
+  /** Omitted when a special is labeled without a number. Never inferred as 0. */
+  index?: Index;
+}
+
 export type Resolution = "1080" | "720" | "2160";
 
 export type ColorDepth = "8-bit" | "10-bit";
@@ -139,7 +146,9 @@ export interface ParseTorrentTitleResult {
   /**
    * 集数
    */
-  index: Index;
+  index?: Index;
+  /** Separate numbering namespaces; legacy index is only set for ordinary episodes. */
+  episodeInfo: EpisodeInfo;
   /**
    * 来源
    */

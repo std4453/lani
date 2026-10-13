@@ -63,15 +63,31 @@ export class ParseTorrentService {
     if (!result) {
       return null;
     }
+    const indexFields =
+      result.index === undefined
+        ? { index: null, indexFrom: null, indexTo: null }
+        : typeof result.index === 'number'
+        ? Number.isInteger(result.index)
+          ? {
+              index: result.index,
+              indexFrom: undefined,
+              indexTo: undefined,
+            }
+          : { index: null, indexFrom: null, indexTo: null }
+        : Number.isInteger(result.index.from) &&
+          Number.isInteger(result.index.to)
+        ? {
+            index: undefined,
+            indexFrom: result.index.from,
+            indexTo: result.index.to,
+          }
+        : { index: null, indexFrom: null, indexTo: null };
     return {
       organizationRaw: result.organization?.raw,
       organizationParts: result.organization?.parts,
       seasonTitleRaw: result.title.raw,
       seasonTitleAliases: result.title.aliases,
-      index: typeof result.index === 'number' ? result.index : undefined,
-      indexFrom:
-        typeof result.index === 'number' ? undefined : result.index.from,
-      indexTo: typeof result.index === 'number' ? undefined : result.index.to,
+      ...indexFields,
       sourceType: result.source.type
         ? (
             {

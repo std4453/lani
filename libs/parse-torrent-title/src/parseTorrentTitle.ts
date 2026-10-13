@@ -1,8 +1,10 @@
 import escapeStringRegexp from "@/escapeStringRegexp";
 import matchEpisode from "@/matchEpisode";
+import matchSpecialEpisode from "@/matchSpecialEpisode";
 import { parseSubtitleInfo, toLegacySubtitle } from "@/parseSubtitleInfo";
 import {
   Index,
+  EpisodeInfo,
   KeywordMap,
   KeywordMatch,
   Organization,
@@ -18,6 +20,10 @@ interface Positional<T> {
   index: number;
   length: number;
   content: T;
+}
+
+interface EpisodePosition extends Positional<Index | undefined> {
+  episodeInfo: EpisodeInfo;
 }
 
 function findRightSeparator(
@@ -175,7 +181,7 @@ function matchIndex(
   options: DefaultedOptions,
   useDefaultMatcher: boolean,
   allowLeadingEpisode = false
-): [Positional<string>, Positional<Index>, Positional<string>] | undefined {
+): [Positional<string>, EpisodePosition, Positional<string>] | undefined {
   const { episodePrefixSeparators, episodeRegexes, fixUnmatchedEpisodePrefix } =
     options;
 
@@ -193,8 +199,22 @@ function matchIndex(
   content = positionalTrimStart(content);
 
   if (useDefaultMatcher) {
-    const match = matchEpisode(content.content, allowLeadingEpisode);
+    const ordinary = matchEpisode(content.content, allowLeadingEpisode);
+    const special = matchSpecialEpisode(content.content);
+    // Keep a separately numbered main episode/range in a mixed release. A
+    // number inside an explicit OVA/SP marker belongs to that namespace only.
+    const useSpecial =
+      special &&
+      (!ordinary ||
+        (special.start < ordinary.end && special.end > ordinary.start));
+    const match = useSpecial ? { ...special, value: undefined } : ordinary;
     if (!match) return undefined;
+    const episodeInfo: EpisodeInfo = useSpecial
+      ? {
+          type: special.type,
+          ...(special.index === undefined ? {} : { index: special.index }),
+        }
+      : { type: "episode", index: ordinary!.value };
     let before = content.content.substring(0, match.start);
     // A dash rule already consumes the release separator; retain any preceding
     // dash belonging to the series title.
@@ -208,6 +228,7 @@ function matchIndex(
         index: content.index + match.start,
         length: match.end - match.start,
         content: match.value,
+        episodeInfo,
       },
       {
         index: content.index + match.end,
@@ -243,6 +264,10 @@ function matchIndex(
         index: content.index + totalIndex + deltaIndex,
         length: groupMatch.length,
         content: parseIndex(groupMatch, options),
+        episodeInfo: {
+          type: "episode",
+          index: parseIndex(groupMatch, options),
+        },
       },
       {
         index: content.index + totalIndex + totalMatch.length,
@@ -815,6 +840,7 @@ export default function parseTorrentTitle(
     organization: organization?.content,
     title: title.content,
     index: index.content,
+    episodeInfo: index.episodeInfo,
     source: {},
     format: {},
     subtitle: {},

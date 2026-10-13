@@ -27,3 +27,13 @@ Eligibility must match the baseline IDs and titles one-to-one. The eligible pars
 Eligibility must be established independently of parser success: do not remove a title just because the new parser cannot handle it. Keep uncertain numeric candidates in the denominator. Exclusions need evidence that no episode identifier is present (for example, only technical metadata or explicitly delimited calendar years). Keep the classification rules and exclusion evidence with the local corpus so that a percentage can be reproduced and audited.
 
 A passing gate checks this corpus against its reviewed baseline; it is not a claim of accuracy on unseen titles. In particular, accepted changes need semantic review: parser output alone does not prove that a number is an episode.
+
+An optional fourth argument supplies independently reviewed expected indices:
+
+```sh
+node scripts/check-corpus.cjs baseline.ndjson eligibility.ndjson reviewed-changes.ndjson expected-indices.ndjson
+```
+
+Each label contains `id`, the exact `title`, `index` (a number, range, or `null` when no ordinary index should be returned), and a nonempty `reason`. Unlike a baseline comparison, this check detects an unchanged wrong answer. Duplicate labels, unknown IDs, title mismatches, incorrect successful indices, and missed expected indices fail the gate. The report states the number of labeled rows; it is not a full-corpus accuracy estimate unless every row has an independent label. Known failures outside a change's scope should remain in a separate audit report, not be relabeled to match the parser.
+
+An unnumbered special can return useful `episodeInfo` while still counting as an eligible index failure. A numbered special can recover a typed index, but it does not recover the ordinary legacy `index`. Special metadata changes require exact review; newly added ordinary `episodeInfo` merely duplicates the existing index contract. The expected-index labels validate the legacy index, including its absence for specials; special type and number semantics are also covered by unit tests.
