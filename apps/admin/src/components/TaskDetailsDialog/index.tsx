@@ -1,4 +1,6 @@
-import DownloadWorkflowView from '@/components/DownloadWorkflow';
+import DownloadWorkflowView, {
+  WorkflowStatusTag,
+} from '@/components/DownloadWorkflow';
 import LegacyDownloadJob from '@/components/DownloadWorkflow/LegacyDownloadJob';
 import EpisodeHeader from '@/components/EpisodeDetailsDialog/EpisodeHeader';
 import {
@@ -128,6 +130,8 @@ export default function TaskDetailsDialog({
           <Space style={{ marginBottom: 16 }}>
             <span>任务类型</span>
             <TaskTypeTag type={job.type} />
+            <span>任务状态</span>
+            <WorkflowStatusTag job={job} />
           </Space>
           {job.workflow ? (
             <DownloadWorkflowView
