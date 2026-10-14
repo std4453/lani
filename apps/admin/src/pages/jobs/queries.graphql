@@ -41,3 +41,23 @@ query ListDownloadJobs($offset: Int, $first: Int, $filter: DownloadJobFilter) {
     }
   }
 }
+
+query GetDownloadJobPageSignature(
+  $offset: Int
+  $first: Int
+  $filter: DownloadJobFilter
+) {
+  allDownloadJobs(
+    offset: $offset
+    first: $first
+    filter: $filter
+    orderBy: ID_DESC
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+      }
+    }
+  }
+}

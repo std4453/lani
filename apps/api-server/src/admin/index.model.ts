@@ -109,7 +109,9 @@ export class DownloadJobStatus {
    */
   eta?: number;
   /**
-   * 做种人数
+   * 下载者人数
    */
   peers?: number;
+  /** 已连接的做种者人数 */
+  seeds?: number;
 }

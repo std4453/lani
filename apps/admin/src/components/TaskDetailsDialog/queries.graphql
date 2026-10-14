@@ -25,18 +25,3 @@ query GetTaskById($id: Int!) {
     ...taskDetailsFields
   }
 }
-
-query GetTaskEpisode($id: Int!) {
-  episodeById(id: $id) {
-    id
-    title
-    numbering
-    rawAirTime
-    airTime
-    description
-    seasonBySeasonId {
-      id
-      title
-    }
-  }
-}

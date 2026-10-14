@@ -62,9 +62,10 @@ export abstract class IDownloadClient {
        */
       eta?: number;
       /**
-       * 做种人数
+       * 下载者人数
        */
       peers?: number;
+      seeds?: number;
     }[]
   >;
 }

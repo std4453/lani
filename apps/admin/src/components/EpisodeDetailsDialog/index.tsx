@@ -3,11 +3,13 @@ import DownloadWorkflowView, {
 } from '@/components/DownloadWorkflow';
 import LegacyDownloadJob from '@/components/DownloadWorkflow/LegacyDownloadJob';
 import EpisodeHeader from './EpisodeHeader';
+import styles from './index.module.less';
+import JobScroll from '@/components/DownloadWorkflow/JobScroll';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { formatNumbering } from '@/utils/episode';
 import { DownloadStatus, GetEpisodeByIdDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { useApolloPoll } from '@/utils/useApolloPoll';
+import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useQuery } from '@apollo/client';
 import { Modal, Spin, Tabs, Typography } from 'antd';
@@ -17,11 +19,12 @@ export default function EpisodeDetailsDialog({
   reject,
   visible,
   input,
-}: DialogProps<{ episodeId: number }>) {
+}: DialogProps<{ episodeId: number; jobId?: number }>) {
+  const available = useForegroundOnline();
   const { data, loading, startPolling, stopPolling, refetch } = useQuery(
     GetEpisodeByIdDocument,
     {
-      skip: !input?.episodeId || !visible,
+      skip: !input?.episodeId || !visible || !available,
       variables: {
         episodeByIdId: input?.episodeId ?? 0,
       },
@@ -42,15 +45,17 @@ export default function EpisodeDetailsDialog({
   const states = useDownloadJobStates(
     jobs.map((job) => job.id),
     visible,
+    2000,
   );
   const [activeJob, setActiveJob] = useState<string>();
   useEffect(() => {
-    setActiveJob(undefined);
-  }, [input?.episodeId]);
+    setActiveJob(input?.jobId ? `${input.jobId}` : undefined);
+  }, [input?.episodeId, input?.jobId]);
   const selectedJob = activeJob ?? (jobs[0] ? `${jobs[0].id}` : undefined);
 
   return (
     <Modal
+      className={styles.dialog}
       visible={visible}
       onCancel={reject}
       footer={false}
@@ -65,9 +70,12 @@ export default function EpisodeDetailsDialog({
       width={800}
     >
       <Spin spinning={loading}>
-        <EpisodeHeader episode={data?.episodeById ?? undefined} />
+        <div className={styles.header}>
+          <EpisodeHeader episode={data?.episodeById ?? undefined} />
+        </div>
         {jobs.length > 0 ? (
           <Tabs
+            className={styles.jobTabs}
             activeKey={selectedJob}
             onChange={setActiveJob}
             tabBarExtraContent={{
@@ -84,6 +92,7 @@ export default function EpisodeDetailsDialog({
                   <div
                     style={{
                       display: 'flex',
+                      gap: 8,
                     }}
                   >
                     #{job.id}
@@ -91,12 +100,7 @@ export default function EpisodeDetailsDialog({
                   </div>
                 }
               >
-                <div
-                  style={{
-                    overflow: 'auto',
-                    maxHeight: 800,
-                  }}
-                >
+                <JobScroll active={visible && selectedJob === `${job.id}`}>
                   {job.workflow ? (
                     <DownloadWorkflowView
                       job={job}
@@ -115,7 +119,7 @@ export default function EpisodeDetailsDialog({
                       jobIdToStatusMap={{}}
                     />
                   )}
-                </div>
+                </JobScroll>
               </Tabs.TabPane>
             ))}
           </Tabs>

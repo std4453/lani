@@ -370,6 +370,7 @@ export class QBittorrentClient implements IDownloadClient {
       total: number;
       eta?: number;
       peers?: number;
+      seeds?: number;
     }[]
   > {
     if (!hashes.length) return [];
@@ -383,6 +384,7 @@ export class QBittorrentClient implements IDownloadClient {
       total: torrent.size,
       eta: torrent.completion_on > 0 ? 0 : torrent.eta,
       peers: torrent.num_leechs,
+      seeds: torrent.num_seeds,
     }));
   }
 }

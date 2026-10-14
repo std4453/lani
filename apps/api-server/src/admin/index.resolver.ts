@@ -359,6 +359,7 @@ export class AdminResolver {
           total: BigInt(torrent.total),
           eta: torrent.eta,
           peers: torrent.peers,
+          seeds: torrent.seeds,
         });
       }
     }

@@ -23,7 +23,11 @@ const stateFragment = gql`
     jellyfinEpisodeId
   }
 `;
-export function useDownloadJobStates(ids: number[], enabled: boolean = true) {
+export function useDownloadJobStates(
+  ids: number[],
+  enabled: boolean = true,
+  activePollInterval: number = 3000,
+) {
   const client = useApolloClient();
   const available = useForegroundOnline();
   const stableIds = ids
@@ -129,7 +133,7 @@ export function useDownloadJobStates(ids: number[], enabled: boolean = true) {
           fetchPolicy: 'network-only',
         }),
       ),
-    pollInterval: 3000,
+    pollInterval: activePollInterval,
     enabled: enabled && !!activeIds.length,
   });
   return { ...query, refetch };

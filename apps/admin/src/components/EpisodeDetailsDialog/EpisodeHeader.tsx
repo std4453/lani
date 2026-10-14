@@ -1,8 +1,8 @@
-import { GetTaskEpisodeQuery } from '@/generated/types';
+import { GetEpisodeByIdQuery } from '@/generated/types';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { Typography } from 'antd';
 import useMobile from '@/utils/useMobile';
-type Episode = NonNullable<GetTaskEpisodeQuery['episodeById']>;
+type Episode = NonNullable<GetEpisodeByIdQuery['episodeById']>;
 export default function EpisodeHeader({ episode }: { episode?: Episode }) {
   const mobile = useMobile();
   return (

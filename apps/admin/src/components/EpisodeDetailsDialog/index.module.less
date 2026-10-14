@@ -1,5 +1,50 @@
-@import "~@/styles/index.less";
+@import '~@/styles/index.less';
 
 .description {
   word-break: break-all;
+}
+.dialog:global(.ant-modal) {
+  top: 24px;
+  padding-bottom: 0;
+  :global(.ant-modal-content) {
+    display: flex;
+    flex-direction: column;
+    max-height: ~'min(800px, calc(100vh - 48px))';
+  }
+  :global(.ant-modal-header) {
+    flex: none;
+  }
+  :global(.ant-modal-body) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  :global(.ant-spin-nested-loading),
+  :global(.ant-spin-container) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+.header {
+  flex: none;
+  max-height: 35vh;
+  overflow: auto;
+}
+.jobTabs:global(.ant-tabs) {
+  margin: 0 -24px;
+  min-height: 0;
+  > :global(.ant-tabs-nav) {
+    margin: 0;
+    padding: 0 24px;
+  }
+  :global(.ant-tabs-content-holder),
+  :global(.ant-tabs-content),
+  :global(.ant-tabs-tabpane-active) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 }

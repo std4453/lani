@@ -14,7 +14,7 @@ import TaskDetailsDialog from './index';
 import {
   DownloadStatus,
   GetTaskByIdDocument,
-  GetTaskEpisodeDocument,
+  GetEpisodeByIdDocument,
   TaskDetailsFieldsFragment,
   TaskType,
 } from '@/generated/types';
@@ -69,7 +69,7 @@ const settle = async (ms = 20) =>
     await new Promise((resolve) => setTimeout(resolve, ms));
   });
 
-it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => {
+it('只传任务 ID 加载剧集弹窗和任务列表，并选中指定任务', async () => {
   act(() => {
     ReactDOM.render(
       <MockedProvider
@@ -79,7 +79,10 @@ it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => 
             result: { data: { downloadJobById: job } },
           },
           {
-            request: { query: GetTaskEpisodeDocument, variables: { id: 7 } },
+            request: {
+              query: GetEpisodeByIdDocument,
+              variables: { episodeByIdId: 7 },
+            },
             delay: 100,
             result: {
               data: {
@@ -87,6 +90,13 @@ it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => 
                   __typename: 'Episode',
                   id: 7,
                   title: '异步剧集标题',
+                  index: 3,
+                  createdAt: job.createdAt,
+                  jellyfinEpisodeId: null,
+                  downloadJobsByEpisodeId: {
+                    __typename: 'DownloadJobsConnection',
+                    edges: [{ node: { ...job, id: 43 } }, { node: job }],
+                  },
                   numbering: { type: 'episode', number: '3', sort: '3' },
                   rawAirTime: null,
                   airTime: null,
@@ -95,6 +105,7 @@ it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => 
                     __typename: 'Season',
                     id: 2,
                     title: '测试季度',
+                    downloadOffsetHours: 0,
                   },
                 },
               },
@@ -113,12 +124,6 @@ it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => 
     );
   });
   await settle();
-  expect(document.querySelector('.ant-modal-title')?.textContent).toBe(
-    '下载任务 #42',
-  );
-  expect(document.querySelector('.ant-collapse')?.textContent).toContain(
-    '自定义提交',
-  );
   await settle(150);
   expect(document.querySelector('.ant-modal-title')?.textContent).toContain(
     '异步剧集标题',
@@ -126,9 +131,19 @@ it('只传任务 ID 即加载类型、流程和异步剧集头部', async () => 
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '加载后的说明',
   );
+  expect(document.querySelector('.ant-tabs-tab-active')?.textContent).toContain(
+    '#42',
+  );
+  expect(document.querySelectorAll('.ant-tabs-tab')).toHaveLength(2);
+  expect(document.querySelector('.ant-modal-title')?.textContent).toBe(
+    '#3 - 异步剧集标题',
+  );
+  expect(document.querySelector('.ant-modal-body')?.textContent).not.toContain(
+    '任务类型',
+  );
   expect(
-    document.querySelector('.ant-modal-body .ant-tag-geekblue')?.textContent,
-  ).toBe('下载');
+    document.querySelector('.ant-tabs-tabpane-active .ant-steps')?.textContent,
+  ).toContain('自定义提交');
 });
 it('任务没有关联剧集仍可查看流程，不依赖调用侧提供剧集信息', async () => {
   act(() => {
@@ -155,7 +170,7 @@ it('任务没有关联剧集仍可查看流程，不依赖调用侧提供剧集�
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '关联剧集不存在',
   );
-  expect(document.querySelector('.ant-collapse-item')?.textContent).toContain(
+  expect(document.querySelector('.ant-steps')?.textContent).toContain(
     '自定义提交',
   );
 });
@@ -184,5 +199,5 @@ it('不存在的任务显示空结果，不显示其他任务信息', async () =
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '任务不存在',
   );
-  expect(document.querySelector('.ant-collapse')).toBeNull();
+  expect(document.querySelector('.ant-steps')).toBeNull();
 });

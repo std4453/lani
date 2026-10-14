@@ -38,6 +38,7 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import JobsPage from './index';
 import { TaskType } from '@/generated/types';
+import { jobStateFilter } from './status';
 
 it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采用最新结果', async () => {
   const container = document.createElement('div');
@@ -55,7 +56,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       second = table.request(
         { current: 2, pageSize: 10 },
         {},
-        { isFailed: ['true'], type: [TaskType.Download] },
+        { lifecycle: ['failed'], type: [TaskType.Download] },
       );
     });
     const result = (id: number) => ({
@@ -76,7 +77,9 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
     });
     expect(table.dataSource.map((row) => row.id)).toEqual([12]);
     query.mockResolvedValue({
-      data: { getDownloadJobListSignature: { ids: [12], total: 20 } },
+      data: {
+        allDownloadJobs: { edges: [{ node: { id: 12 } }], totalCount: 20 },
+      },
     });
     await act(async () => {
       await poll.refetch();
@@ -84,9 +87,14 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
     expect(query.mock.calls[2][0].variables).toEqual({
       offset: 10,
       first: 10,
-      isFailed: [true],
-      types: [TaskType.Download],
+      filter: {
+        ...jobStateFilter(['failed']),
+        type: { in: [TaskType.Download] },
+      },
     });
+    expect(query.mock.calls[1][0].variables.filter).toEqual(
+      query.mock.calls[2][0].variables.filter,
+    );
     expect(container.textContent).not.toContain('任务列表有变化');
   } finally {
     act(() => {

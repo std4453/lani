@@ -1,11 +1,16 @@
 import { applyJobSnapshots } from './snapshots';
 import { WorkflowStepTag } from '@/components/DownloadWorkflow/StepTag';
-import { TaskTypeTag, taskTypeLabels } from '@/components/TaskDetailsDialog';
-import { WorkflowStatusTag } from '@/components/DownloadWorkflow';
+import {
+  jobState,
+  jobStates,
+  jobStateFilter,
+  selectedJobStates,
+} from './status';
+import styles from './index.module.less';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { parseWorkflow, currentStep } from '@lani/download-workflow';
-import { GetDownloadJobListSignatureDocument } from '@/generated/types';
+import { GetDownloadJobPageSignatureDocument } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { Hamburger } from '@/components/Layout';
@@ -15,6 +20,7 @@ import { DownloadStatusTag } from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
   DownloadJobFilter,
+  DownloadStatus,
   TaskType,
   ListDownloadJobsDocument,
   ListDownloadJobsFieldsFragment,
@@ -22,7 +28,7 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Alert, Typography } from 'antd';
+import { Alert, Badge, Typography } from 'antd';
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
@@ -40,14 +46,6 @@ function useColumns({
         align: 'center',
         width: 96,
         className: tableStyles.compactCell,
-      },
-      {
-        title: '任务类型',
-        dataIndex: 'type',
-        width: 110,
-        filters: true,
-        valueEnum: taskTypeLabels,
-        render: (_, row) => <TaskTypeTag type={row.type} />,
       },
       {
         title: '剧集',
@@ -78,31 +76,45 @@ function useColumns({
       {
         title: '步骤',
         dataIndex: 'status',
-        render: (_, r) => (
-          <div>
-            {r.workflow ? (
-              <WorkflowStepTag step={currentStep(parseWorkflow(r.workflow))} />
-            ) : (
-              <DownloadStatusTag status={r.status} />
-            )}
-          </div>
-        ),
-        width: 84,
+        render: (_, row) => {
+          const state = jobState(row);
+          if (state === 'cancelled') return '-';
+          if (state === 'succeeded')
+            return <DownloadStatusTag status={DownloadStatus.Available} />;
+          return row.workflow ? (
+            <WorkflowStepTag step={currentStep(parseWorkflow(row.workflow))} />
+          ) : (
+            <DownloadStatusTag status={row.status} />
+          );
+        },
+        width: 128,
       },
       {
         title: '状态',
-        dataIndex: 'isFailed',
-        render: (_, row) => <WorkflowStatusTag job={row} />,
-        valueEnum: {
-          true: {
-            text: '运行失败',
-            status: 'Error',
-          },
-          false: {
-            text: '正常',
-            status: 'Default',
-          },
+        key: 'lifecycle',
+        render: (_, row) => {
+          const state = jobState(row);
+          return (
+            <Badge
+              className={styles.status}
+              status={
+                state === 'running'
+                  ? 'processing'
+                  : state === 'failed'
+                  ? 'error'
+                  : 'default'
+              }
+              text={
+                <Typography.Text
+                  type={state === 'cancelled' ? 'secondary' : undefined}
+                >
+                  {jobStates[state].text}
+                </Typography.Text>
+              }
+            />
+          );
         },
+        valueEnum: jobStates,
         width: 120,
         filters: true,
       },
@@ -110,7 +122,25 @@ function useColumns({
         title: '失败原因',
         dataIndex: 'failedReason',
         width: 240,
-        ellipsis: false,
+        render: (_, row) =>
+          row.failedReason ? (
+            <Typography.Text
+              className={styles.failureReason}
+              ellipsis={{
+                tooltip: {
+                  title: row.failedReason,
+                  overlayInnerStyle: {
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                  },
+                },
+              }}
+            >
+              {row.failedReason}
+            </Typography.Text>
+          ) : (
+            '-'
+          ),
       },
       {
         title: 'Jellyfin',
@@ -165,22 +195,16 @@ async function queryDownloadJobs(
   _sort: any,
   // filter
   {
-    isFailed,
+    lifecycle,
     type,
   }: {
-    isFailed?: ('true' | 'false')[];
+    lifecycle?: string[];
     type?: TaskType[];
   },
 ) {
   const filter: DownloadJobFilter = {
     ...(type?.length ? { type: { in: type } } : {}),
-    ...(isFailed?.length
-      ? {
-          isFailed: {
-            in: isFailed.map((value) => value === 'true'),
-          },
-        }
-      : undefined),
+    ...jobStateFilter(selectedJobStates(lifecycle)),
   };
   try {
     const { data } = await client.query({
@@ -222,8 +246,7 @@ export default function JobsPage() {
   const baseline = useRef({
     offset: 0,
     first: 30,
-    isFailed: undefined as boolean[] | undefined,
-    types: undefined as TaskType[] | undefined,
+    filter: {} as DownloadJobFilter,
     ids: [] as number[],
     total: 0,
   });
@@ -237,20 +260,21 @@ export default function JobsPage() {
     refetch: async () => {
       const snapshot = baseline.current;
       const { data } = await client.query({
-        query: GetDownloadJobListSignatureDocument,
+        query: GetDownloadJobPageSignatureDocument,
         variables: {
           offset: snapshot.offset,
           first: snapshot.first,
-          isFailed: snapshot.isFailed,
-          types: snapshot.types,
+          filter: snapshot.filter,
         },
         fetchPolicy: 'network-only',
       });
       if (snapshot !== baseline.current) return;
-      const latest = data.getDownloadJobListSignature;
+      const latest = data.allDownloadJobs;
+      if (!latest) return;
       setChanged(
-        latest.total !== snapshot.total ||
-          latest.ids.join(',') !== snapshot.ids.join(','),
+        latest.totalCount !== snapshot.total ||
+          (extractNode(latest) ?? []).map((job) => job.id).join(',') !==
+            snapshot.ids.join(','),
       );
     },
   });
@@ -288,10 +312,18 @@ export default function JobsPage() {
             baseline.current = {
               offset: ((params.current ?? 1) - 1) * (params.pageSize ?? 30),
               first: params.pageSize ?? 30,
-              isFailed: filter.isFailed?.map((value) => value === 'true'),
-              types: Object.values(TaskType).filter((type) =>
-                filter.type?.includes(type),
-              ),
+              filter: {
+                ...jobStateFilter(selectedJobStates(filter.lifecycle)),
+                ...(filter.type?.length
+                  ? {
+                      type: {
+                        in: Object.values(TaskType).filter((type) =>
+                          filter.type?.includes(type),
+                        ),
+                      },
+                    }
+                  : {}),
+              },
               ids: result.data.map((row) => row.id),
               total: result.total ?? 0,
             };
@@ -311,7 +343,7 @@ export default function JobsPage() {
         search={false}
         defaultSize="middle"
         scroll={{
-          x: 1342,
+          x: 1276,
         }}
       />
       {taskDetailsDialog}
