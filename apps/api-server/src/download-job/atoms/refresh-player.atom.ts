@@ -33,16 +33,14 @@ export class RefreshPlayerAtom extends AsyncAtom<
     if (!jellyfinSeriesId)
       throw new Error('未获取到季度对应的 Jellyfin ID，无法刷新');
     const { season, index } = jellyfinNumber(episode);
-    if (!context.checkpoint.refreshStartedAt) {
-      await context.saveCheckpoint({
-        refreshStartedAt: new Date().toISOString(),
-      });
-    }
     await context.assertActive();
     await JellyfinHelp.refreshItem({
       itemId: jellyfinSeriesId,
       metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
       imageRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+    });
+    await context.saveCheckpoint({
+      refreshStartedAt: new Date().toISOString(),
     });
     for (;;) {
       await context.assertActive();

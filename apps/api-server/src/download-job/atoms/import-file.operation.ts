@@ -70,7 +70,7 @@ export async function importFile(
       throw new Error('导入源文件已经变化');
     await fs.rm(cp.temporary, { force: true });
     let linked = false;
-    if (cp.strategy !== 'copyOnly') {
+    if (cp.strategy !== 'copyOnly' && cp.strategy !== 'moveOnly') {
       try {
         await fs.link(cp.source, cp.temporary);
         linked = true;

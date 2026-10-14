@@ -89,3 +89,29 @@ it('复制期间源文件变化时拒绝发布', async () => {
     spy.mockRestore();
   }
 });
+
+it.each(['copyOnly', 'moveOnly'])(
+  '%s 不尝试在源文件系统创建硬链接',
+  async (strategy) => {
+    const source = path.join(directory, 'source'),
+      target = path.join(directory, 'target');
+    await fs.writeFile(source, 'video');
+    const link = fs.link.bind(fs);
+    const spy = jest.spyOn(fs, 'link').mockImplementation(async (from, to) => {
+      if (from === source)
+        throw Object.assign(new Error('unsupported'), { code: 'ENOTSUP' });
+      return link(from, to);
+    });
+    try {
+      await expect(
+        importFile(1, source, target, strategy, context()),
+      ).resolves.toBe(target);
+      expect(await fs.readFile(target, 'utf8')).toBe('video');
+      if (strategy === 'moveOnly')
+        await expect(fs.stat(source)).rejects.toMatchObject({ code: 'ENOENT' });
+      else expect(await fs.readFile(source, 'utf8')).toBe('video');
+    } finally {
+      spy.mockRestore();
+    }
+  },
+);

@@ -218,6 +218,7 @@ export default function JobsPage() {
   const actionRef = useRef<ActionType>();
   const [rows, setRows] = useState<ListDownloadJobsFieldsFragment[]>([]);
   const [changed, setChanged] = useState(false);
+  const requestSequence = useRef(0);
   const baseline = useRef({
     offset: 0,
     first: 30,
@@ -275,8 +276,13 @@ export default function JobsPage() {
         rowKey="id"
         dataSource={displayed}
         request={async (params, sort, filter) => {
+          const sequence = ++requestSequence.current;
           const result = await queryDownloadJobs(client, params, sort, filter);
-          if (result.success && result.data) {
+          if (
+            sequence === requestSequence.current &&
+            result.success &&
+            result.data
+          ) {
             setRows(result.data);
             setChanged(false);
             baseline.current = {

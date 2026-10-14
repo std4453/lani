@@ -109,6 +109,9 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       '旧任务不允许重试',
     );
     expect(atoms.download.run).not.toHaveBeenCalled();
+    expect((await service.getDownloadJobStates([old.id]))[0].canRetry).toBe(
+      false,
+    );
   });
   it('新建任务保存快照，失败后允许另建任务', async () => {
     const first = await service.downloadTorrentForEpisode(

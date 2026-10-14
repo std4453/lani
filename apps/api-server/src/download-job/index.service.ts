@@ -279,7 +279,7 @@ export class JobService
         isFailed: job.isFailed,
         isCancelled: job.isCancelled,
         failedReason: job.failedReason,
-        canRetry: job.isFailed,
+        canRetry: !!workflow && workflow.status === 'failed',
         canCancel:
           !!workflow &&
           !workflow.cancellation &&

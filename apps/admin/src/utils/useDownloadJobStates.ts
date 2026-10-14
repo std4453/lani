@@ -38,6 +38,7 @@ export function useDownloadJobStates(ids: number[], enabled: boolean = true) {
     variables: { jobIds },
     skip: !enabled || !available || !jobIds.length,
     fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
     nextFetchPolicy: 'cache-first',
   });
   useEffect(() => {
@@ -64,22 +65,57 @@ export function useDownloadJobStates(ids: number[], enabled: boolean = true) {
     }
   }, [query.data, client]);
   const pending = useRef<Promise<unknown>>();
-  const serial = (refresh: () => Promise<unknown>) => {
-    if (pending.current) return pending.current;
-    if (query.loading) return Promise.resolve();
-    const request = refresh().finally(() => {
-      pending.current = undefined;
+  const latest = useRef({ query, enabled, available, jobIds });
+  latest.current = { query, enabled, available, jobIds };
+  const idleWaiters = useRef(new Set<() => void>());
+  const mounted = useRef(true);
+  useEffect(() => {
+    if (!query.loading) {
+      idleWaiters.current.forEach((resolve) => resolve());
+      idleWaiters.current.clear();
+    }
+  }, [query.loading]);
+  useEffect(() => {
+    mounted.current = true;
+    const waiters = idleWaiters.current;
+    return () => {
+      mounted.current = false;
+      waiters.forEach((resolve) => resolve());
+      waiters.clear();
+    };
+  }, []);
+  const serial = (refresh: () => Promise<unknown>, force = false) => {
+    if (!force && pending.current) return pending.current;
+    if (!force && latest.current.query.loading) return Promise.resolve();
+    const previous = pending.current;
+    const request = (async () => {
+      // 操作后的刷新必须晚于所有在途请求，即使此前请求失败也要重新查询。
+      await previous?.catch(() => undefined);
+      if (force && mounted.current && latest.current.query.loading) {
+        await new Promise<void>((resolve) => idleWaiters.current.add(resolve));
+      }
+      const current = latest.current;
+      if (
+        !mounted.current ||
+        !current.enabled ||
+        !current.available ||
+        !current.jobIds.length
+      )
+        return;
+      return refresh();
+    })().finally(() => {
+      if (pending.current === request) pending.current = undefined;
     });
     pending.current = request;
     return request;
   };
-  const refetch = () => serial(() => query.refetch());
+  const refetch = () => serial(() => latest.current.query.refetch(), true);
   const activeIds =
     query.data?.getDownloadJobStates
       .filter((job) => job.workflow && isActive(parseWorkflow(job.workflow)))
       .map((job) => job.id) ?? [];
   useApolloPoll({
-    refetch,
+    refetch: () => serial(() => latest.current.query.refetch()),
     pollInterval: 30000,
     enabled: enabled && !!jobIds.length,
   });
