@@ -6,7 +6,7 @@
       "fingerprint": "7c3da1c80581f47082fe3e20b546bb4c1ed5f83e6a40e6577f4b6d60c9121bf4"
     },
     "api-server": {
-      "fingerprint": "ba73938db12b976b2f947e9d08e5400d1dc2fd93828b919acdff11cfb009e1a5"
+      "fingerprint": "ba4c137778c3282ba3fa05b1f851b08be1310f6664277f6e78a3a6fec9273d72"
     },
     "data-server": {
       "fingerprint": "4dd3784b9260b9f4d411f5a95f93549385e016c634dc2360893325beedd65d35"
@@ -15,7 +15,7 @@
       "fingerprint": "a8519cf37e6048efa5fd7d2f7661fab21064382365d65d370448193f0ba8de13"
     },
     "db": {
-      "fingerprint": "fe1c2cddd413c79f5fc3e88293c48a6ded5c419aed458c58809c767992488121"
+      "fingerprint": "4b223b95192a96a94db433eb3d12f9bc8759493b25c0d9d8a95211f2aa04a9a5"
     }
   }
 }

@@ -1,15 +1,15 @@
-import { GlobalAxiosService } from '@/common/axios.service';
-import { PrismaService } from '@/common/prisma.service';
-import { S3Service } from '@/common/s3.service';
-import config from '@/config';
-import { SeasonEmitService } from '@/season-emit/index.service';
-import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
-import { PartialSeason } from '@/season-scrape/index.model';
-import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
-import { SeasonImageKey, SeasonWithImages } from '@/types/entities';
-import { Image, MetadataSource, Prisma } from '@lani/db';
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import md5 from 'md5';
+import { GlobalAxiosService } from "@/common/axios.service";
+import { PrismaService } from "@/common/prisma.service";
+import { S3Service } from "@/common/s3.service";
+import config from "@/config";
+import { SeasonEmitService } from "@/season-emit/index.service";
+import { BangumiSeasonService } from "@/season-scrape/bangumi/index.service";
+import { PartialSeason } from "@/season-scrape/index.model";
+import { SkyhookSeasonService } from "@/season-scrape/skyhook/index.service";
+import { SeasonImageKey, SeasonWithImages } from "@/types/entities";
+import { Image, MetadataSource, Prisma } from "@lani/db";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
+import md5 from "md5";
 
 @Injectable()
 export class SeasonScrapeService {
@@ -21,7 +21,7 @@ export class SeasonScrapeService {
     private bangumi: BangumiSeasonService,
     private prisma: PrismaService,
     private global: GlobalAxiosService,
-    private s3: S3Service,
+    private s3: S3Service
   ) {}
 
   async syncMetadata({
@@ -35,34 +35,47 @@ export class SeasonScrapeService {
     bannerImage,
     posterImage,
   }: SeasonWithImages) {
+    if (infoSource === MetadataSource.MANUAL) {
+      const season = await this.prisma.season.findUnique({
+        where: { id },
+        include: {
+          jellyfinFolder: true,
+          bannerImage: true,
+          fanartImage: true,
+          posterImage: true,
+        },
+      });
+      await this.seasonEmitService.writeSeasonMetadata(season);
+      return;
+    }
     let result: PartialSeason = {};
     switch (infoSource) {
       case MetadataSource.BGM_CN:
         if (!bangumiId) {
-          throw new ConflictException('bangumiId not set');
+          throw new ConflictException("bangumiId not set");
         }
         this.logger.verbose(
-          `Syncing metadata for season #${id} (${title}) from bgmid:${bangumiId}`,
+          `Syncing metadata for season #${id} (${title}) from bgmid:${bangumiId}`
         );
         result = await this.bangumi.fetch(
           {
             info: true,
             images: true,
           },
-          bangumiId,
+          bangumiId
         );
         break;
       case MetadataSource.SKYHOOK:
         if (!tvdbId) {
-          throw new ConflictException('tvdbid not set');
+          throw new ConflictException("tvdbid not set");
         }
         if (tvdbSeason === null) {
-          throw new ConflictException('tvdbSeason not set');
+          throw new ConflictException("tvdbSeason not set");
         }
         this.logger.verbose(
           `Syncing metadata for season #${id} (${title}) from tvdb:${tvdbId} / S${tvdbSeason
             .toString()
-            .padStart(2, '0')}`,
+            .padStart(2, "0")}`
         );
         result = await this.skyhook.fetch(
           {
@@ -70,23 +83,23 @@ export class SeasonScrapeService {
             images: true,
           },
           tvdbId,
-          tvdbSeason,
+          tvdbSeason
         );
         break;
       default:
-        throw new ConflictException('infoSource not available for auto sync');
+        throw new ConflictException("infoSource not available for auto sync");
     }
     const { info, images } = result;
 
     const data: Prisma.SeasonUpdateInput = {
-      description: info?.description ?? '',
+      description: info?.description ?? "",
       tags: info?.tags ?? info?.genres ?? [],
       weekday: info?.weekday ?? null,
-      airTime: info?.time ?? '',
+      airTime: info?.time ?? "",
       yearAndSemester:
         info?.year && info?.semester
-          ? `${info.year}${info.semester.toString().padStart(2, '0')}`
-          : '',
+          ? `${info.year}${info.semester.toString().padStart(2, "0")}`
+          : "",
       // yearAndSemesterCanonical字段粗略做到可排序，原先的yearAndSemester冬季番
       //（XXXX年1月开播）录入的是XXXX04，会显得大于当年4月开播的春季番。出于兼容性考虑，
       // 新增一个字段，对于冬季番录入(XXXX-1)04，顺序就正确了。
@@ -98,9 +111,9 @@ export class SeasonScrapeService {
 
     this.logger.verbose(`Uploading images for season #${id} (${title})...`);
     await Promise.all([
-      this.uploadImage(fanartImage, images?.fanartURL, data, 'fanartImage'),
-      this.uploadImage(posterImage, images?.posterURL, data, 'posterImage'),
-      this.uploadImage(bannerImage, images?.bannerURL, data, 'bannerImage'),
+      this.uploadImage(fanartImage, images?.fanartURL, data, "fanartImage"),
+      this.uploadImage(posterImage, images?.posterURL, data, "posterImage"),
+      this.uploadImage(bannerImage, images?.bannerURL, data, "bannerImage"),
     ]);
 
     this.logger.verbose(`Writing db for season #${id} (${title})...`);
@@ -122,7 +135,7 @@ export class SeasonScrapeService {
     image: Image | null,
     url: string | undefined,
     update: Prisma.SeasonUpdateInput,
-    type: SeasonImageKey,
+    type: SeasonImageKey
   ) {
     if (!url) {
       return;
@@ -133,25 +146,25 @@ export class SeasonScrapeService {
     }
 
     // TODO: SSRF
-    const ext = url.substring(url.lastIndexOf('.')).toLowerCase();
+    const ext = url.substring(url.lastIndexOf(".")).toLowerCase();
     // 防止XSS攻击，这里过滤一下后缀名
-    if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
+    if (![".jpg", ".jpeg", ".png"].includes(ext)) {
       this.logger.warn(
-        `Unable to download ${type} from ${url} (unsupported file extension type)`,
+        `Unable to download ${type} from ${url} (unsupported file extension type)`
       );
       return;
     }
     this.logger.verbose(`Downloading ${type} from ${url}...`);
     // lani.bgm.tv 当前已无法直连，必须使用代理
     const { data } = await this.global.get<Buffer>(url, {
-      responseType: 'arraybuffer',
+      responseType: "arraybuffer",
       // 最大10M
       maxContentLength: 10 * 1024 * 1024,
     });
     const hash = md5(data);
     const key = `${hash}${ext}`;
     this.logger.verbose(
-      `${type} downloaded from ${url}, new path will be ${key}, uploading file...`,
+      `${type} downloaded from ${url}, new path will be ${key}, uploading file...`
     );
 
     try {
@@ -163,7 +176,7 @@ export class SeasonScrapeService {
         })
         .promise();
       this.logger.warn(
-        `Upload ${type} skipped (file under path ${key} already exists)`,
+        `Upload ${type} skipped (file under path ${key} already exists)`
       );
       return;
     } catch (error) {

@@ -1,26 +1,30 @@
-import { jellyfinNumber } from '@/utils/episode-number';
-import { PrismaService } from '@/common/prisma.service';
-import config from '@/config';
-import { AsyncAtom, StepInput } from '@/download-job/atoms';
-import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
-import { mapPath } from '@/utils/path';
-import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import fs from 'fs/promises';
-import path from 'path';
+import {
+  getSeasonDirectory,
+  resolveSeasonPath,
+} from "@/utils/season-directory";
+import { jellyfinNumber } from "@/utils/episode-number";
+import { PrismaService } from "@/common/prisma.service";
+import config from "@/config";
+import { AsyncAtom, StepInput } from "@/download-job/atoms";
+import { DownloadWorkflowDefinition } from "@/download-job/atoms/types";
+import { mapPath } from "@/utils/path";
+import { Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import fs from "fs/promises";
+import path from "path";
 
 @Injectable()
 export class ImportFileAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
-  'importFile'
+  "importFile"
 > {
   constructor(emitter: EventEmitter2, private prisma: PrismaService) {
-    super(emitter, 'importFile');
+    super(emitter, "importFile");
   }
 
   private async tryHardLink(
     sourcePath: string,
-    targetPath: string,
+    targetPath: string
   ): Promise<boolean> {
     // 源文件不存在，报错
     const { ino: sourceIno } = await fs.stat(sourcePath);
@@ -32,7 +36,7 @@ export class ImportFileAtom extends AsyncAtom<
         try {
           await fs.link(sourcePath, targetPath);
         } catch (error) {
-          if (error.code === 'EXDEV') {
+          if (error.code === "EXDEV") {
             // mount point 不同，无法硬链接
             return false;
           } else {
@@ -42,12 +46,12 @@ export class ImportFileAtom extends AsyncAtom<
       }
       // 如果ino相同，则内容一定相同，不需要操作
     } catch (error) {
-      if (error.code === 'ENOENT') {
+      if (error.code === "ENOENT") {
         // 如果目标文件不存在，无视错误
         try {
           await fs.link(sourcePath, targetPath);
         } catch (error) {
-          if (error.code === 'EXDEV') {
+          if (error.code === "EXDEV") {
             // mount point 不同，无法硬链接
             return false;
           } else {
@@ -73,13 +77,13 @@ export class ImportFileAtom extends AsyncAtom<
 
   async run(
     _id: number,
-    { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
+    { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>
   ) {
     if (!steps.findVideoFile) {
-      throw new Error('findVideoFile step not finished');
+      throw new Error("findVideoFile step not finished");
     }
     if (!episodeId) {
-      throw new Error('剧集已被删除');
+      throw new Error("剧集已被删除");
     }
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
@@ -92,7 +96,7 @@ export class ImportFileAtom extends AsyncAtom<
       },
     });
     const {
-      season: { title: seasonTitle, jellyfinFolder },
+      season: { jellyfinFolder },
     } = episode;
     const { season: mediaSeason, index } = jellyfinNumber(episode);
     const jellyfinFolderRoot = jellyfinFolder.location;
@@ -100,41 +104,40 @@ export class ImportFileAtom extends AsyncAtom<
 
     const sourcePath = mapPath(
       config.downloadClient[config.downloadClient.kind].pathMapping,
-      steps.findVideoFile.importPath,
+      steps.findVideoFile.importPath
     );
     const targetPath = path.join(
-      seasonRoot,
-      seasonTitle,
+      resolveSeasonPath(seasonRoot, getSeasonDirectory(episode.season)),
       // 不加这个 jellyfin识别就会很成问题，还是加上
       `Season ${mediaSeason}`,
-      `Episode - S${String(mediaSeason).padStart(2, '0')}E${index
+      `Episode - S${String(mediaSeason).padStart(2, "0")}E${index
         .toString()
-        .padStart(2, '0')}${path.extname(steps.findVideoFile.importPath)}`,
+        .padStart(2, "0")}${path.extname(steps.findVideoFile.importPath)}`
     );
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
 
     switch (config.lani.moveStrategy) {
-      case 'hardLinkOnly':
+      case "hardLinkOnly":
         if (!(await this.tryHardLink(sourcePath, targetPath))) {
-          throw new Error('无法在不同文件系统之间建立硬链接');
+          throw new Error("无法在不同文件系统之间建立硬链接");
         }
         break;
-      case 'hardLinkOrCopy':
+      case "hardLinkOrCopy":
         if (await this.tryHardLink(sourcePath, targetPath)) {
           break;
         }
         await this.copy(sourcePath, targetPath);
         break;
-      case 'hardLinkOrMove':
+      case "hardLinkOrMove":
         if (await this.tryHardLink(sourcePath, targetPath)) {
           break;
         }
         await this.move(sourcePath, targetPath);
         break;
-      case 'copyOnly':
+      case "copyOnly":
         await this.copy(sourcePath, targetPath);
         break;
-      case 'moveOnly':
+      case "moveOnly":
         await this.move(sourcePath, targetPath);
         break;
     }
