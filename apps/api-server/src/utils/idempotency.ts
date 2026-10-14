@@ -41,6 +41,7 @@ export async function writeFileIdempotent(
 export interface WriteXMLFileIdempotentOptions {
   rootType: string;
   mkdir?: boolean;
+  removeKeys?: string[];
 }
 
 const builder = new xml2js.Builder();
@@ -49,7 +50,7 @@ const parser = new xml2js.Parser();
 export async function writeXMLFileIdempotent(
   path: string,
   content: any,
-  { rootType, mkdir = true }: WriteXMLFileIdempotentOptions,
+  { rootType, mkdir = true, removeKeys = [] }: WriteXMLFileIdempotentOptions,
 ) {
   if (mkdir) {
     await fs.mkdir(pathModule.dirname(path), { recursive: true });
@@ -66,6 +67,9 @@ export async function writeXMLFileIdempotent(
     // 如果是没有读权限，或是目录，之后写入时肯定会报错，现在也可以无视
   }
   ensureXMLRoot(xmlObj, rootType);
+  for (const key of removeKeys) {
+    delete xmlObj[rootType][key];
+  }
   mergeXMLNode(content, xmlObj[rootType]);
   const newContent = builder.buildObject(xmlObj);
   if (currentContent !== newContent) {

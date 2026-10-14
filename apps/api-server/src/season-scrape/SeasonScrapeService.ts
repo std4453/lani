@@ -35,6 +35,19 @@ export class SeasonScrapeService {
     bannerImage,
     posterImage,
   }: SeasonWithImages) {
+    if (infoSource === MetadataSource.MANUAL) {
+      const season = await this.prisma.season.findUnique({
+        where: { id },
+        include: {
+          jellyfinFolder: true,
+          bannerImage: true,
+          fanartImage: true,
+          posterImage: true,
+        },
+      });
+      await this.seasonEmitService.writeSeasonMetadata(season);
+      return;
+    }
     let result: PartialSeason = {};
     switch (infoSource) {
       case MetadataSource.BGM_CN:

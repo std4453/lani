@@ -1,3 +1,4 @@
+import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
   DownloadJobStatus,
@@ -259,6 +260,9 @@ export class AdminResolver {
         },
         data: {
           ...seasonPatch,
+          ...(seasonPatch.title !== undefined
+            ? { directory: sanitizeSeasonDirectory(seasonPatch.title) }
+            : {}),
           yearAndSemesterCanonical: ((yearAndSemester?: string) => {
             if (!yearAndSemester) {
               return undefined;
@@ -297,13 +301,13 @@ export class AdminResolver {
     >;
 
     this.logger.verbose(
-      `Enqueuing new download jobs after season #${id} updated...`,
-    );
-    await this.job.enqueueDownloadJobsInternal();
-    this.logger.verbose(
       `Writing metadata to disk after season #${id} updated...`,
     );
     await this.seasonEmit.writeSeasonMetadata(season);
+    this.logger.verbose(
+      `Enqueuing new download jobs after season #${id} updated...`,
+    );
+    await this.job.enqueueDownloadJobsInternal();
     this.logger.log(`Update season #${id} success`);
 
     this.emitter.emit(SEASON_SAVE_EVENT, new SeasonSaveEvent(season));

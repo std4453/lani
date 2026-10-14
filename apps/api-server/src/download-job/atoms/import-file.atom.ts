@@ -1,3 +1,7 @@
+import {
+  getSeasonDirectory,
+  resolveSeasonPath,
+} from '@/utils/season-directory';
 import { jellyfinNumber } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
@@ -92,7 +96,7 @@ export class ImportFileAtom extends AsyncAtom<
       },
     });
     const {
-      season: { title: seasonTitle, jellyfinFolder },
+      season: { jellyfinFolder },
     } = episode;
     const { season: mediaSeason, index } = jellyfinNumber(episode);
     const jellyfinFolderRoot = jellyfinFolder.location;
@@ -103,8 +107,7 @@ export class ImportFileAtom extends AsyncAtom<
       steps.findVideoFile.importPath,
     );
     const targetPath = path.join(
-      seasonRoot,
-      seasonTitle,
+      resolveSeasonPath(seasonRoot, getSeasonDirectory(episode.season)),
       // 不加这个 jellyfin识别就会很成问题，还是加上
       `Season ${mediaSeason}`,
       `Episode - S${String(mediaSeason).padStart(2, '0')}E${index

@@ -15,6 +15,13 @@ import { mapPath } from '@/utils/path';
 import { Injectable, Logger } from '@nestjs/common';
 import fs from 'fs/promises';
 import path from 'path';
+import xml2js from 'xml2js';
+import { jellyfinNumber } from '@/utils/episode-number';
+import {
+  getSeasonDirectory,
+  resolveSeasonPath,
+  sanitizeSeasonDirectory,
+} from '@/utils/season-directory';
 
 @Injectable()
 export class SeasonEmitService {
@@ -31,20 +38,58 @@ export class SeasonEmitService {
       `Writing metadata for season #${season.id} (${season.title})`,
     );
 
-    const oldTitle = season.lastWriteTitle;
-    const renamed = oldTitle !== null && oldTitle !== season.title;
+    const directory = sanitizeSeasonDirectory(season.title);
+    const oldDirectory = getSeasonDirectory(season);
+    // 先保存目标目录，让数据库唯一约束在任何文件操作之前检查冲突。
+    await this.prisma.season.update({
+      where: { id: season.id },
+      data: { directory },
+    });
+    const renamed = oldDirectory !== directory;
+    season = { ...season, directory };
+    if (!renamed && !season.lastWriteTitle && !season.lastWriteDirectory) {
+      const root = mapPath(
+        config.jellyfin.pathMapping,
+        season.jellyfinFolder.location,
+      );
+      const target = resolveSeasonPath(root, directory);
+      let exists = false;
+      try {
+        await fs.lstat(target);
+        exists = true;
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+      if (exists && !(await this.ownsDirectory(target, season.id))) {
+        throw new Error('目标季度目录已存在，无法写入');
+      }
+    }
     if (renamed) {
       this.logger.verbose(
-        `Season #${season.id} renamed (${oldTitle} -> ${season.title}), renaming folder...`,
+        `Season #${season.id} renamed (${oldDirectory} -> ${directory}), renaming folder...`,
       );
-      const { newPath, oldPath } = await this.renameFolder(season);
+      const { newPath, oldPath } = await this.renameFolder(
+        season,
+        oldDirectory,
+      );
       this.logger.verbose(
         `Folder of season #${season.id} rename success (${oldPath} -> ${newPath})`,
       );
     }
 
-    // 如果重命名了，自动视为已修改
-    let modified = renamed;
+    // 文件移动成功即记录实际位置；后续 NFO、图片或刷新失败时可安全重试。
+    await this.prisma.season.update({
+      where: { id: season.id },
+      data: {
+        lastWriteDirectory: directory,
+        ...(renamed ? { jellyfinId: '' } : {}),
+      },
+    });
+    season = {
+      ...season,
+      lastWriteDirectory: directory,
+      ...(renamed ? { jellyfinId: '' } : {}),
+    };
 
     this.logger.verbose(
       `Writing .nfo file for season #${season.id} (${season.title})...`,
@@ -54,7 +99,6 @@ export class SeasonEmitService {
       this.logger.verbose(
         `Write .nfo file for season #${season.id} (${season.title}) success, file written to ${nfoPath}`,
       );
-      modified = true;
     } else {
       this.logger.verbose(
         `Write .nfo file for season #${season.id} (${season.title}) skipped (no changes)`,
@@ -78,65 +122,135 @@ export class SeasonEmitService {
           poster ? `, poster -> ${poster}` : ''
         }`,
       );
-      modified = true;
     } else {
       this.logger.verbose(
         `Write image files for season #${season.id} (${season.title}) skipped (no changes)`,
       );
     }
 
-    if (modified) {
-      this.logger.log(
-        `Season #${season.id} (${season.title}) files changed, refreshing Jellyfin...`,
-      );
-      if (renamed) {
-        await this.seasonJellyfin.refreshAfterFolderRename(season);
-      } else {
-        await this.seasonJellyfin.refreshAfterWriteToDisk(season);
-      }
-
-      this.logger.verbose(
-        `Updating last write status for season #${season.id} (${season.title}) in db...`,
-      );
-      await this.prisma.season.update({
-        where: {
-          id: season.id,
-        },
-        data: {
-          lastWriteToDisk: new Date(),
-          lastWriteTitle: season.title,
-          ...(renamed
-            ? {
-                jellyfinId: '',
-              }
-            : undefined),
-        },
-      });
+    // 显式同步始终刷新，保证上次文件写入成功但 Jellyfin 刷新失败后仍可重试。
+    if (renamed) {
+      await this.seasonJellyfin.refreshAfterFolderRename(season);
     } else {
-      this.logger.log(
-        `Season #${season.id} (${season.title}) unchanged, skipping Jellyfin refresh`,
-      );
+      await this.seasonJellyfin.refreshAfterWriteToDisk(season);
     }
+    await this.prisma.season.update({
+      where: { id: season.id },
+      data: {
+        lastWriteToDisk: new Date(),
+        lastWriteTitle: season.title,
+        ...(renamed ? { jellyfinId: '' } : {}),
+      },
+    });
   }
 
-  private async renameFolder({
-    lastWriteTitle: oldTitle,
-    title: newTitle,
-    jellyfinFolder: { location: jellyfinFolderRoot },
-  }: SeasonWithFolderAndImages) {
-    if (oldTitle === null) {
-      throw new Error('oldTitle is null');
+  private async renameFolder(
+    season: SeasonWithFolderAndImages,
+    oldDirectory: string,
+  ) {
+    const root = mapPath(
+      config.jellyfin.pathMapping,
+      season.jellyfinFolder.location,
+    );
+    const oldPath = resolveSeasonPath(root, oldDirectory);
+    const newPath = resolveSeasonPath(root, season.directory ?? '');
+    const exists = async (filename: string) => {
+      try {
+        await fs.lstat(filename);
+        return true;
+      } catch (error) {
+        if (error.code === 'ENOENT') return false;
+        throw error;
+      }
+    };
+    const oldExists = await exists(oldPath);
+    const newExists = await exists(newPath);
+    if (newExists) {
+      // 进程可能在 rename 成功、数据库更新前中断，只允许恢复本季度的目标目录。
+      if (oldExists || !(await this.ownsDirectory(newPath, season.id))) {
+        throw new Error('目标季度目录已存在，无法自动移动');
+      }
+    } else if (oldExists) {
+      await fs.rename(oldPath, newPath);
+    } else {
+      throw new Error('原季度目录不存在，无法自动移动');
     }
-    const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
-    const oldPath = path.join(seasonRoot, oldTitle);
-    const newPath = path.join(seasonRoot, newTitle);
-    // 目录已经存在时会报错，不会覆盖
-    await fs.rename(oldPath, newPath);
+
+    // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
+    const jobs = await this.prisma.downloadJob.findMany({
+      where: { episode: { seasonId: season.id } },
+      select: { id: true, filePath: true, nfoPath: true },
+    });
+    const movePath = (value: string | null) => {
+      if (!value) return value;
+      const relative = path.relative(oldPath, value);
+      return relative &&
+        relative !== '..' &&
+        !relative.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relative)
+        ? path.join(newPath, relative)
+        : value;
+    };
+    await this.prisma.$transaction(
+      jobs.map((job) =>
+        this.prisma.downloadJob.update({
+          where: { id: job.id },
+          data: {
+            filePath: movePath(job.filePath),
+            nfoPath: movePath(job.nfoPath),
+          },
+        }),
+      ),
+    );
     return { oldPath, newPath };
+  }
+
+  private async ownsDirectory(directory: string, seasonId: number) {
+    const ownsNfo = (node: any, id: number) =>
+      [...(node?.uniqueid ?? []), ...(node?.uniqueId ?? [])].some(
+        (value) =>
+          value.$?.type?.toLowerCase() === 'lani' &&
+          String(value._) === String(id),
+      );
+    try {
+      const xml = await fs.readFile(path.join(directory, 'tvshow.nfo'), 'utf8');
+      const { tvshow } = await xml2js.parseStringPromise(xml);
+      return ownsNfo(tvshow, seasonId);
+    } catch (error) {
+      // 已有但归属不明、损坏或不可读的季度 NFO 不能被剧集证据覆盖。
+      if (error.code !== 'ENOENT') return false;
+    }
+
+    // 手动导入和下载导入可能先于季度同步，只写了剧集 NFO。
+    // 只认可当前季度的剧集在标准导入位置留下的 Lani ID。
+    const episodes = await this.prisma.episode.findMany({
+      where: { seasonId },
+      select: { id: true, index: true, episodeType: true, episodeNumber: true },
+    });
+    for (const episode of episodes) {
+      const { season, index } = jellyfinNumber(episode);
+      const filename = path.join(
+        directory,
+        `Season ${season}`,
+        `Episode - S${String(season).padStart(2, '0')}E${String(index).padStart(
+          2,
+          '0',
+        )}.nfo`,
+      );
+      try {
+        const xml = await fs.readFile(filename, 'utf8');
+        const { episodedetails } = await xml2js.parseStringPromise(xml);
+        if (ownsNfo(episodedetails, episode.id)) return true;
+      } catch {
+        // 缺失或无法解析的剧集 NFO 不构成归属证据。
+      }
+    }
+    return false;
   }
 
   private async emitNfo({
     title,
+    directory,
     description,
     tags,
     tvdbId,
@@ -146,15 +260,18 @@ export class SeasonEmitService {
     jellyfinFolder: { location: jellyfinFolderRoot },
   }: SeasonWithFolderAndImages) {
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
-    const nfoPath = path.join(seasonRoot, title, 'tvshow.nfo');
+    const nfoPath = path.join(
+      resolveSeasonPath(seasonRoot, directory ?? ''),
+      'tvshow.nfo',
+    );
     // https://kodi.wiki/view/NFO_files/TV_shows
     const modified = await writeXMLFileIdempotent(
       nfoPath,
       {
         title: [title],
         ...(description ? { plot: [description] } : undefined),
-        tag: tags.length > 0 ? tags : undefined,
-        uniqueId: [
+        tag: tags,
+        uniqueid: [
           {
             $: {
               type: 'lani',
@@ -185,6 +302,7 @@ export class SeasonEmitService {
       },
       {
         rootType: 'tvshow',
+        removeKeys: ['uniqueId'],
       },
     );
     return { modified, nfoPath };
@@ -194,7 +312,7 @@ export class SeasonEmitService {
     bannerImage,
     fanartImage,
     posterImage,
-    title,
+    directory,
     jellyfinFolder: { location: jellyfinFolderRoot },
   }: SeasonWithFolderAndImages) {
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
@@ -210,7 +328,10 @@ export class SeasonEmitService {
         }
         const { cosPath, hash } = image;
         const ext = cosPath.substring(cosPath.lastIndexOf('.'));
-        const filePath = path.join(seasonRoot, title, `${type}${ext}`);
+        const filePath = path.join(
+          resolveSeasonPath(seasonRoot, directory ?? ''),
+          `${type}${ext}`,
+        );
         const currentHash = await getFileHash(filePath);
 
         if (hash && currentHash && currentHash === hash) {
@@ -244,12 +365,15 @@ export class SeasonEmitService {
   }
 
   async deleteSeasonFiles(season: SeasonWithJellyfinFolder) {
-    const { jellyfinFolder, title } = season;
+    const { jellyfinFolder } = season;
     const seasonRoot = mapPath(
       config.jellyfin.pathMapping,
       jellyfinFolder.location,
     );
-    const folderPath = path.join(seasonRoot, title);
+    const folderPath = resolveSeasonPath(
+      seasonRoot,
+      getSeasonDirectory(season),
+    );
     this.logger.log(
       `Deleting files for season #${season.id} (${season.title}), located under ${folderPath}`,
     );

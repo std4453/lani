@@ -64,8 +64,9 @@ model Image {
 }
 
 model Season {
-  id    Int    @id @default(autoincrement())
-  title String @unique @default("")
+  id        Int     @id @default(autoincrement())
+  title     String  @unique @default("")
+  directory String?
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
@@ -93,8 +94,9 @@ model Season {
   bannerImage              Image?         @relation("imagesToseasons_banner_image_id", fields: [bannerImageId], references: [id])
   fanartImage              Image?         @relation("imagesToseasons_fanart_image_id", fields: [fanartImageId], references: [id])
 
-  lastWriteToDisk DateTime? @map("last_write_to_disk") @db.Timestamptz(6)
-  lastWriteTitle  String?   @map("last_write_title")
+  lastWriteToDisk    DateTime? @map("last_write_to_disk") @db.Timestamptz(6)
+  lastWriteTitle     String?   @map("last_write_title")
+  lastWriteDirectory String?  @map("last_write_directory")
 
   isMonitoring        Boolean          @default(true) @map("is_monitoring")
   needDownloadCc      Boolean          @default(false) @map("need_download_cc")
@@ -111,6 +113,7 @@ model Season {
   laniaSync Boolean @default(false) @map("integrations_lania_sync")
 
   @@map("seasons")
+  @@unique([jellyfinFolderId, directory])
 }
 
 model Torrent {
