@@ -1,4 +1,5 @@
 import { formatNumbering } from '@/utils/episode';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import {
@@ -62,10 +63,10 @@ const EpisodesStatusContext = createContext<
 
 function EpisodeStatusTag({
   episode,
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
   episode: Episode;
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const episodesStatus = useContext(EpisodesStatusContext);
   const mergedEpisode = { ...episode, ...episodesStatus?.[episode.id] };
@@ -74,9 +75,8 @@ function EpisodeStatusTag({
     <div>
       <DownloadStatusTag
         status={mergedEpisode.jobStatus}
-        episodeId={mergedEpisode.id}
         jobId={mergedEpisode.jobId}
-        openEpisodeDetails={openEpisodeDetails}
+        openTaskDetails={openTaskDetails}
       />
     </div>
   );
@@ -86,12 +86,14 @@ function useColumns({
   tableWidth,
   openDownloadMagnet,
   openEpisodeDetails,
+  openTaskDetails,
   openSearchTorrent,
   openImportSingleDialog,
   refetchEpisodesStatus,
 }: {
   tableWidth: number;
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
   openImportSingleDialog: ReturnType<typeof useImportSingleDialog>[2];
@@ -144,10 +146,7 @@ function useColumns({
         dataIndex: 'jobStatus',
         width: fixedColumnWidths.status,
         render: (_, r) => (
-          <EpisodeStatusTag
-            episode={r}
-            openEpisodeDetails={openEpisodeDetails}
-          />
+          <EpisodeStatusTag episode={r} openTaskDetails={openTaskDetails} />
         ),
       },
       {
@@ -220,8 +219,7 @@ function useColumns({
                             void message.success(
                               `下载任务 #${data.downloadTorrentForEpisode} 已受理`,
                             );
-                            void openEpisodeDetails({
-                              episodeId: r.id,
+                            void openTaskDetails({
                               jobId: data.downloadTorrentForEpisode,
                             });
                           }
@@ -241,7 +239,7 @@ function useColumns({
                     void openDownloadMagnet({
                       episodeId: r.id,
                       onResolve: (jobId) => {
-                        void openEpisodeDetails({ episodeId: r.id, jobId });
+                        void openTaskDetails({ jobId });
                         void reloadEpisodes();
                         void refetchEpisodesStatus();
                       },
@@ -324,6 +322,7 @@ function useColumns({
       remainingColumnWidth,
       openDownloadMagnet,
       openEpisodeDetails,
+      openTaskDetails,
       openSearchTorrent,
       openImportSingleDialog,
       reloadEpisodes,
@@ -398,6 +397,7 @@ export default function Episodes() {
   const ref = useRef<ActionType>();
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
   const [importSingleDialog, , openImportSingleDialog] =
     useImportSingleDialog();
@@ -411,6 +411,7 @@ export default function Episodes() {
     tableWidth: Math.max(minTableWidth, tableSize?.width ?? 0),
     openDownloadMagnet,
     openEpisodeDetails,
+    openTaskDetails,
     openSearchTorrent,
     openImportSingleDialog,
     refetchEpisodesStatus,
@@ -576,6 +577,7 @@ export default function Episodes() {
       </EpisodesStatusContext.Provider>
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
+      {taskDetailsDialog}
       {searchTorrentDialog}
       {importSingleDialog}
       {importMultipleDialog}

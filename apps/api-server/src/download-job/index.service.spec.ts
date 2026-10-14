@@ -1,6 +1,6 @@
 import { JobService, downloadDefinition } from './index.service';
 import { PrismaService } from '@/common/prisma.service';
-import { DownloadStatus, PrismaClient } from '@lani/db';
+import { DownloadStatus, PrismaClient, TaskType } from '@lani/db';
 import {
   atomTypes,
   createWorkflow,
@@ -104,6 +104,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     });
     expect(result?.isFailed).toBe(true);
     expect(result?.workflow).toBeNull();
+    expect(result?.type).toBe(TaskType.DOWNLOAD);
     await expect(service.retryJobStep(old.id)).rejects.toThrow(
       '旧任务不允许重试',
     );
@@ -129,6 +130,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     );
     expect(second).not.toBe(first);
     const [state] = await service.getDownloadJobStates([second]);
+    expect(state.type).toBe(TaskType.DOWNLOAD);
     expect(state.workflow?.steps.map((step) => step.atom)).toEqual(
       downloadDefinition.map((step) => step.atom),
     );
@@ -265,7 +267,12 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         { episodeId, status: DownloadStatus.DOWNLOADING, isFailed: false },
       ],
     });
-    const result = await service.getDownloadJobListSignature(0, 1, [true]);
+    const result = await service.getDownloadJobListSignature(
+      0,
+      1,
+      [true],
+      [TaskType.DOWNLOAD],
+    );
     expect(result.ids).toHaveLength(1);
     expect(result.total).toBe(1);
   });

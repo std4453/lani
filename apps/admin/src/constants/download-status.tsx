@@ -1,5 +1,5 @@
 import { parseWorkflow } from '@lani/download-workflow';
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { DownloadStatus, EpisodeStatusFieldsFragment } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { SelectOutlined } from '@ant-design/icons';
@@ -109,21 +109,18 @@ export const downloadStatusMap: Partial<
 
 export function DownloadStatusTag({
   status,
-  episodeId,
   jobId,
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
   status: EpisodeStatus;
-  episodeId?: number;
   jobId?: number;
-  openEpisodeDetails?: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails?: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const tagProps = downloadStatusMap[status];
   if (tagProps) {
     const { children, color } = tagProps;
     // 可用状态隐藏按钮
-    const showDialog =
-      episodeId && jobId && status !== DownloadStatus.Available;
+    const showDialog = jobId && status !== DownloadStatus.Available;
     return (
       <Tag
         color={color}
@@ -132,8 +129,7 @@ export function DownloadStatusTag({
         }}
         onClick={() => {
           if (showDialog) {
-            void openEpisodeDetails?.({
-              episodeId,
+            void openTaskDetails?.({
               jobId,
             });
           }

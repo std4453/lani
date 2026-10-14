@@ -1,5 +1,5 @@
 import { EpisodeType } from '@/generated/types';
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { TableTitle } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
 import tableStyles from '@/components/MainTable/index.module.less';
@@ -126,10 +126,10 @@ enum EpisodesFilter {
 
 function SeasonStatusTag({
   season,
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
   season: ListSeasonsFieldsFragment;
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const seasonsStatus = useContext(SeasonsStatusContext);
   const episodeStatus = useMemo(() => {
@@ -147,18 +147,17 @@ function SeasonStatusTag({
     <div>
       <DownloadStatusTag
         status={episodeStatus.status}
-        episodeId={episodeStatus.id}
         jobId={episodeStatus.jobId}
-        openEpisodeDetails={openEpisodeDetails}
+        openTaskDetails={openTaskDetails}
       />
     </div>
   );
 }
 
 function useColumns({
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const history = useHistory();
   const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
@@ -314,10 +313,7 @@ function useColumns({
           width: 126,
           className: clsx(tableStyles.compactCell, styles.latestEpisodeCell),
           render: (_, r) => (
-            <SeasonStatusTag
-              season={r}
-              openEpisodeDetails={openEpisodeDetails}
-            />
+            <SeasonStatusTag season={r} openTaskDetails={openTaskDetails} />
           ),
         },
         {
@@ -466,7 +462,7 @@ function useColumns({
         semesterOptions,
         foldersOptions,
         hasHiddenFolder,
-        openEpisodeDetails,
+        openTaskDetails,
         history,
         client,
       ],
@@ -746,9 +742,8 @@ export default withAntdSearch(function MetadataPage() {
     (state) => state.auth.config?.testRoutingEnabled === true,
   );
 
-  const [episodeDetailsDiglog, , openEpisodeDetails] =
-    useEpisodeDetailsDialog();
-  const columns = useColumns({ openEpisodeDetails });
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
+  const columns = useColumns({ openTaskDetails });
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
@@ -835,7 +830,7 @@ export default withAntdSearch(function MetadataPage() {
       />
       {createSeasonDialog}
       {addFromBangumiDialog}
-      {episodeDetailsDiglog}
+      {taskDetailsDialog}
     </SeasonsStatusContext.Provider>
   );
 });

@@ -2,10 +2,9 @@ import dayjs from 'dayjs';
 import {
   CancelDownloadJobDocument,
   GetActiveDownloadJobStatusDocument,
-  GetEpisodeByIdQuery,
+  TaskDetailsFieldsFragment,
   RetryJobStepDocument,
 } from '@/generated/types';
-import { ExtractNode } from '@/utils/graphql';
 import { handleError } from '@/utils/error';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { useApolloClient, useQuery } from '@apollo/client';
@@ -27,12 +26,9 @@ import {
 import { LoadingOutlined } from '@ant-design/icons';
 import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
+import { WorkflowStepTag } from './StepTag';
 
-type Job = NonNullable<
-  ExtractNode<
-    NonNullable<GetEpisodeByIdQuery['episodeById']>['downloadJobsByEpisodeId']
-  >
->;
+type Job = TaskDetailsFieldsFragment;
 const formatTime = (value?: string) =>
   value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-';
 const stateLabels = {
@@ -134,13 +130,17 @@ function DownloadProgress({ id, enabled }: { id: number; enabled: boolean }) {
 function StepTitle({ step }: { step: WorkflowStep }) {
   return (
     <Space>
-      <span>{step.title}</span>
+      <WorkflowStepTag step={step} />
       <Tag
         color={
           step.status === 'failed'
             ? 'red'
             : step.status === 'succeeded'
             ? 'green'
+            : step.status === 'running'
+            ? 'blue'
+            : step.status === 'cancelling'
+            ? 'orange'
             : undefined
         }
       >

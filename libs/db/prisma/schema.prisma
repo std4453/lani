@@ -156,8 +156,15 @@ model Torrent {
   @@map("torrents")
 }
 
+enum TaskType {
+  DOWNLOAD
+
+  @@map("task_type")
+}
+
 model DownloadJob {
   id Int @id @default(autoincrement())
+  type TaskType @default(DOWNLOAD)
 
   // 入参
   episodeId   Int?     @map("episode_id")

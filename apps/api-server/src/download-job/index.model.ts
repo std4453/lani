@@ -1,13 +1,15 @@
-import { DownloadStatus } from '@lani/db';
+import { DownloadStatus, TaskType } from '@lani/db';
 import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { DownloadWorkflow } from '@lani/download-workflow';
 import { DownloadWorkflowScalar } from './workflow.scalar';
 
 registerEnumType(DownloadStatus, { name: 'DownloadStatus' });
+registerEnumType(TaskType, { name: 'TaskType' });
 
 @ObjectType()
 export class DownloadLifecycle {
   @Field(() => Int) id: number;
+  @Field(() => TaskType) type: TaskType;
   @Field(() => Int) version: number;
   @Field(() => DownloadWorkflowScalar, { nullable: true })
   workflow: DownloadWorkflow | null;

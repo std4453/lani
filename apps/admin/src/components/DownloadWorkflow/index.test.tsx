@@ -114,3 +114,25 @@ it('取消失败操作仍显示重试，调用统一重试接口', async () => {
   });
   expect(refresh).toHaveBeenCalledTimes(1);
 });
+it('步骤名称按原子着色，取消步骤置灰，运行中状态有颜色', () => {
+  const flow = workflow();
+  flow.steps[0].status = 'running';
+  flow.steps[1].status = 'cancelled';
+  act(() => {
+    ReactDOM.render(
+      <DownloadWorkflowView
+        job={{ id: 1, workflow: flow } as never}
+        active
+        refresh={async () => undefined}
+      />,
+      container,
+    );
+  });
+  const headers = container.querySelectorAll('.ant-collapse-header');
+  expect(headers[0].querySelector('.ant-tag-purple')?.textContent).toBe(
+    '自定义第一步',
+  );
+  expect(headers[0].querySelector('.ant-tag-blue')?.textContent).toBe('进行中');
+  expect(headers[1].querySelector('.ant-tag-blue')).toBeNull();
+  expect(headers[1].textContent).toContain('自定义第二步已取消');
+});

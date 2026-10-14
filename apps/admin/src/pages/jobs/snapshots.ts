@@ -15,6 +15,7 @@ export function applyJobSnapshots(
       ? {
           ...row,
           version: live.version,
+          type: live.type,
           workflow: live.workflow,
           status: live.status,
           isFailed: live.isFailed,

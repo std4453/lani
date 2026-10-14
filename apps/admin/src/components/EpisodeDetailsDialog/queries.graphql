@@ -7,23 +7,7 @@ query GetEpisodeById($episodeByIdId: Int!) {
     downloadJobsByEpisodeId(orderBy: ID_DESC) {
       edges {
         node {
-          createdAt
-          downloadPath
-          failedAt
-          failedReason
-          filePath
-          id
-          importPath
-          isFailed
-          isCancelled
-          workflow
-          version
-          nfoPath
-          qbtTorrentHash
-          status
-          torrentLink
-          jellyfinEpisodeId
-          torrentTitle
+          ...taskDetailsFields
         }
       }
     }

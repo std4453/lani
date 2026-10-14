@@ -1,6 +1,7 @@
 query GetDownloadJobStates($jobIds: [Int!]!) {
   getDownloadJobStates(jobIds: $jobIds) {
     id
+    type
     version
     workflow
     status
@@ -25,11 +26,13 @@ query GetDownloadJobListSignature(
   $offset: Int!
   $first: Int!
   $isFailed: [Boolean!]
+  $types: [TaskType!]
 ) {
   getDownloadJobListSignature(
     offset: $offset
     first: $first
     isFailed: $isFailed
+    types: $types
   ) {
     ids
     total

@@ -10,7 +10,7 @@ import { WriteMetadataAtom } from './atoms/write-metadata.atom';
 import { EpisodePublishEvent, EPISODE_PUBLISH_EVENT } from './events';
 import { LaniError } from '@/utils/error';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { DownloadJob, DownloadStatus, Prisma } from '@lani/db';
+import { DownloadJob, DownloadStatus, Prisma, TaskType } from '@lani/db';
 import {
   Injectable,
   Logger,
@@ -225,7 +225,7 @@ export class JobService
         .$queryRaw`SELECT pg_advisory_xact_lock(14521, ${episodeId})::text`,
       this.prisma.$queryRaw<{ id: number }[]>`
         WITH existing AS (SELECT id FROM download_jobs WHERE episode_id=${episodeId} AND NOT is_failed AND NOT is_cancelled AND status<>'AVAILABLE'::download_status ORDER BY id DESC LIMIT 1),
-        inserted AS (INSERT INTO download_jobs (episode_id,torrent_link,status,workflow) SELECT ${episodeId},${torrentLink},'DOWNLOAD_SUBMITTING'::download_status,${JSON.stringify(
+        inserted AS (INSERT INTO download_jobs (type,episode_id,torrent_link,status,workflow) SELECT 'DOWNLOAD'::task_type,${episodeId},${torrentLink},'DOWNLOAD_SUBMITTING'::download_status,${JSON.stringify(
         workflow,
       )}::jsonb WHERE NOT EXISTS (SELECT 1 FROM existing) RETURNING id)
         SELECT id FROM existing UNION ALL SELECT id FROM inserted`,
@@ -294,10 +294,15 @@ export class JobService
     @Args({ name: 'first', type: () => Int, defaultValue: 30 }) first: number,
     @Args({ name: 'isFailed', type: () => [Boolean], nullable: true })
     isFailed?: boolean[],
+    @Args({ name: 'types', type: () => [TaskType], nullable: true })
+    types?: TaskType[],
   ) {
-    const where: Prisma.DownloadJobWhereInput = isFailed?.length
-      ? { OR: isFailed.map((value) => ({ isFailed: value })) }
-      : {};
+    const where: Prisma.DownloadJobWhereInput = {
+      ...(isFailed?.length
+        ? { OR: isFailed.map((value) => ({ isFailed: value })) }
+        : {}),
+      ...(types?.length ? { type: { in: types } } : {}),
+    };
     const [jobs, total] = await this.prisma.$transaction([
       this.prisma.downloadJob.findMany({
         where,

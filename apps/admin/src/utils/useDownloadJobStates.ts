@@ -7,6 +7,7 @@ import { useApolloPoll, useForegroundOnline } from './useApolloPoll';
 const stateFragment = gql`
   fragment LiveDownloadJob on DownloadJob {
     id
+    type
     version
     workflow
     status

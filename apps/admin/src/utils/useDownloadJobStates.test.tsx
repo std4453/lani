@@ -45,6 +45,7 @@ it('只对活动任务高频查询，终态合并到当前页后停止高频刷�
             data: {
               getDownloadJobStates: ids.map((id) => ({
                 __typename: 'DownloadLifecycle',
+                type: 'DOWNLOAD',
                 id,
                 version: requested.length,
                 workflow:

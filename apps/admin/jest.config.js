@@ -4,8 +4,10 @@ module.exports = {
   transform: { '^.+\\.tsx?$': 'ts-jest' },
   globals: { 'ts-jest': { tsconfig: '<rootDir>/tests/tsconfig.json' } },
   moduleNameMapper: {
+    '^antd/es/.*/style(/index)?$': '<rootDir>/tests/style-mock.js',
+    '^antd/es/(.*)$': 'antd/lib/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.module\\.less$': '<rootDir>/tests/style-mock.js',
+    '\\.less$': '<rootDir>/tests/style-mock.js',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
 };

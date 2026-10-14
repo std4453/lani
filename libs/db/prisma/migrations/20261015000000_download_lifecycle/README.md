@@ -1,6 +1,6 @@
 # 下载任务生命周期
 
-为 `download_jobs` 增加可空 `workflow` JSONB、`version` 和 `updated_at`。不补写历史流程，不改变历史产物。
+为 `download_jobs` 增加 `type`（`task_type` 枚举，默认 `DOWNLOAD`）、可空 `workflow` JSONB、`version` 和 `updated_at`。类型仅用于展示和筛选。不补写历史流程，不改变历史产物。
 
 新 API 启动时将未结束的旧任务置为失败并停止恢复；旧任务的重试接口返回“旧任务不允许重试”。新任务使用持久化快照推进，兼容状态列和流程 JSON 在同一事务更新。
 

@@ -1,11 +1,13 @@
 import { applyJobSnapshots } from './snapshots';
+import { WorkflowStepTag } from '@/components/DownloadWorkflow/StepTag';
+import { TaskTypeTag, taskTypeLabels } from '@/components/TaskDetailsDialog';
 import { WorkflowStatusTag } from '@/components/DownloadWorkflow';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { parseWorkflow, currentStep } from '@lani/download-workflow';
 import { GetDownloadJobListSignatureDocument } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { Hamburger } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
 import tableStyles from '@/components/MainTable/index.module.less';
@@ -13,6 +15,7 @@ import { DownloadStatusTag } from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
   DownloadJobFilter,
+  TaskType,
   ListDownloadJobsDocument,
   ListDownloadJobsFieldsFragment,
 } from '@/generated/types';
@@ -25,9 +28,9 @@ import { Link } from 'umi';
 import { handleError } from '@/utils/error';
 
 function useColumns({
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   return useMemo(
     (): ProColumns<ListDownloadJobsFieldsFragment>[] => [
@@ -37,6 +40,14 @@ function useColumns({
         align: 'center',
         width: 96,
         className: tableStyles.compactCell,
+      },
+      {
+        title: '任务类型',
+        dataIndex: 'type',
+        width: 110,
+        filters: true,
+        valueEnum: taskTypeLabels,
+        render: (_, row) => <TaskTypeTag type={row.type} />,
       },
       {
         title: '剧集',
@@ -70,7 +81,7 @@ function useColumns({
         render: (_, r) => (
           <div>
             {r.workflow ? (
-              currentStep(parseWorkflow(r.workflow)).title
+              <WorkflowStepTag step={currentStep(parseWorkflow(r.workflow))} />
             ) : (
               <DownloadStatusTag status={r.status} />
             )}
@@ -124,12 +135,7 @@ function useColumns({
           <Typography.Link
             key={0}
             onClick={() => {
-              if (r.episodeByEpisodeId?.id) {
-                void openEpisodeDetails({
-                  episodeId: r.episodeByEpisodeId.id,
-                  jobId: r.id,
-                });
-              }
+              void openTaskDetails({ jobId: r.id });
             }}
           >
             详情
@@ -140,7 +146,7 @@ function useColumns({
         fixed: 'right',
       },
     ],
-    [openEpisodeDetails],
+    [openTaskDetails],
   );
 }
 
@@ -160,11 +166,14 @@ async function queryDownloadJobs(
   // filter
   {
     isFailed,
+    type,
   }: {
     isFailed?: ('true' | 'false')[];
+    type?: TaskType[];
   },
 ) {
   const filter: DownloadJobFilter = {
+    ...(type?.length ? { type: { in: type } } : {}),
     ...(isFailed?.length
       ? {
           isFailed: {
@@ -204,9 +213,8 @@ async function queryDownloadJobs(
 
 export default function JobsPage() {
   const client = useApolloClient();
-  const [episodeDetailsDiglog, , openEpisodeDetails] =
-    useEpisodeDetailsDialog();
-  const columns = useColumns({ openEpisodeDetails });
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
+  const columns = useColumns({ openTaskDetails });
   const actionRef = useRef<ActionType>();
   const [rows, setRows] = useState<ListDownloadJobsFieldsFragment[]>([]);
   const [changed, setChanged] = useState(false);
@@ -214,6 +222,7 @@ export default function JobsPage() {
     offset: 0,
     first: 30,
     isFailed: undefined as boolean[] | undefined,
+    types: undefined as TaskType[] | undefined,
     ids: [] as number[],
     total: 0,
   });
@@ -232,6 +241,7 @@ export default function JobsPage() {
           offset: snapshot.offset,
           first: snapshot.first,
           isFailed: snapshot.isFailed,
+          types: snapshot.types,
         },
         fetchPolicy: 'network-only',
       });
@@ -273,6 +283,9 @@ export default function JobsPage() {
               offset: ((params.current ?? 1) - 1) * (params.pageSize ?? 30),
               first: params.pageSize ?? 30,
               isFailed: filter.isFailed?.map((value) => value === 'true'),
+              types: Object.values(TaskType).filter((type) =>
+                filter.type?.includes(type),
+              ),
               ids: result.data.map((row) => row.id),
               total: result.total ?? 0,
             };
@@ -295,7 +308,7 @@ export default function JobsPage() {
           x: 1342,
         }}
       />
-      {episodeDetailsDiglog}
+      {taskDetailsDialog}
     </>
   );
 }
