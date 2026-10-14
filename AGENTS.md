@@ -60,7 +60,7 @@
 
 ## 风格、提交与分支
 
-TypeScript 使用两个空格缩进。Prettier 要求分号、双引号、ES5 尾随逗号及箭头参数括号。组件和类使用 `PascalCase`，函数与 Hook 使用 `camelCase`，包目录使用小写 kebab-case。
+TypeScript 使用两个空格缩进。格式化以文件所在目录向上找到的最近一份 Prettier 配置为准，不用根目录配置覆盖包内配置。根目录 `.prettierrc.json` 使用分号、双引号、ES5 尾随逗号及箭头参数括号；`apps/api-server/.prettierrc` 使用单引号和 `trailingComma: all`。修改代码时沿用所属包的配置，避免整文件无关格式变更。组件和类使用 `PascalCase`，函数与 Hook 使用 `camelCase`，包目录使用小写 kebab-case。
 
 提交主题和 PR 标题遵循 Conventional Commits：`<type>[(<scope>)][!]: <description>`。类型使用小写 `feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`style`、`chore` 或 `revert`；单包改动优先以包目录名作为 scope。不兼容变更使用 `!` 或 `BREAKING CHANGE:` 并说明迁移方式；自动生成的 merge commit 信息除外。
 

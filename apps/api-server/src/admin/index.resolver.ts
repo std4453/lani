@@ -1,27 +1,27 @@
-import { sanitizeSeasonDirectory } from "@/utils/season-directory";
+import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
   DownloadJobStatus,
   SaveSeasonPatch,
   SearchBangumiSeason,
-} from "@/admin/index.model";
+} from '@/admin/index.model';
 import {
   ApiError,
   BangumiAPIService,
   Legacy_SubjectType,
   SubjectType,
-} from "@/api/bangumi";
-import { PrismaService } from "@/common/prisma.service";
-import config from "@/config";
-import { IDownloadClient } from "@/download-job/client/IDownloadClient";
-import { JobService } from "@/download-job/index.service";
-import { env } from "@/env";
-import { SeasonEmitService } from "@/season-emit/index.service";
-import { DownloadSource, DownloadStatus, Prisma } from "@lani/db";
-import { Injectable, Logger } from "@nestjs/common";
-import { Args, ID, Int, Mutation, Query, Resolver } from "@nestjs/graphql";
-import { EventEmitter2 } from "@nestjs/event-emitter";
-import { SeasonSaveEvent, SEASON_SAVE_EVENT } from "@/integrations/events";
+} from '@/api/bangumi';
+import { PrismaService } from '@/common/prisma.service';
+import config from '@/config';
+import { IDownloadClient } from '@/download-job/client/IDownloadClient';
+import { JobService } from '@/download-job/index.service';
+import { env } from '@/env';
+import { SeasonEmitService } from '@/season-emit/index.service';
+import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
+import { Injectable, Logger } from '@nestjs/common';
+import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
 
 @Injectable()
 @Resolver()
@@ -33,7 +33,7 @@ export class AdminResolver {
     private job: JobService,
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
-    private emitter: EventEmitter2
+    private emitter: EventEmitter2,
   ) {}
 
   @Query(() => ID)
@@ -61,21 +61,21 @@ export class AdminResolver {
 
   @Query(() => [SearchBangumiSeason])
   async searchBangumi(
-    @Args("keywords") keywords: string,
+    @Args('keywords') keywords: string,
     @Args({
-      name: "useNewBangumiSearchApi",
+      name: 'useNewBangumiSearchApi',
       nullable: true,
       type: () => Boolean,
     })
-    useNewBangumiSearchApi = true
+    useNewBangumiSearchApi = true,
   ): Promise<SearchBangumiSeason[]> {
     const match = keywords.match(
-      /^(bgmid|bangumiid|bangumi_id):(\s)*(?<bgmid>(\d)+)$/
+      /^(bgmid|bangumiid|bangumi_id):(\s)*(?<bgmid>(\d)+)$/,
     );
     if (match?.groups?.bgmid) {
       const bgmid = parseInt(match.groups.bgmid);
       this.logger.verbose(
-        `Input keyword '${keywords}' is precise search, bgmid = ${bgmid}`
+        `Input keyword '${keywords}' is precise search, bgmid = ${bgmid}`,
       );
       try {
         const item = await BangumiAPIService.getSubjectById(bgmid);
@@ -91,7 +91,7 @@ export class AdminResolver {
         return [
           {
             id: `${item.id}`,
-            name: item.name_cn || item.name || "未命名",
+            name: item.name_cn || item.name || '未命名',
             airDate: item.date,
             image: item.images?.small,
             added,
@@ -109,15 +109,15 @@ export class AdminResolver {
 
     this.logger.verbose(
       `Searching bangumi for '${keywords}' using ${
-        useNewBangumiSearchApi ? "new" : "legacy"
-      } API...`
+        useNewBangumiSearchApi ? 'new' : 'legacy'
+      } API...`,
     );
     // 兼容新旧bangumi搜索API
     const entries = useNewBangumiSearchApi
       ? (
           await BangumiAPIService.searchSubjects(50, 0, {
             keyword: keywords,
-            sort: "match",
+            sort: 'match',
             filter: {
               type: [SubjectType.Anime],
             },
@@ -127,9 +127,9 @@ export class AdminResolver {
           await BangumiAPIService.searchSubjectByKeywords(
             keywords,
             Legacy_SubjectType._2,
-            "small",
+            'small',
             0,
-            25
+            25,
           )
         ).list ?? [];
     const ids = entries.map(({ id }) => `${id}`);
@@ -142,7 +142,7 @@ export class AdminResolver {
     });
     return entries.map((item) => ({
       id: `${item.id}`,
-      name: item.name_cn || item.name || "未命名",
+      name: item.name_cn || item.name || '未命名',
       airDate: item.date || item.air_date,
       image: item.image || item.images?.small,
       added:
@@ -156,16 +156,16 @@ export class AdminResolver {
       select: {
         yearAndSemester: true,
       },
-      distinct: ["yearAndSemester"],
+      distinct: ['yearAndSemester'],
       orderBy: {
-        yearAndSemester: "desc",
+        yearAndSemester: 'desc',
       },
     });
     return results.map((result) => result.yearAndSemester);
   }
 
   @Mutation(() => ID)
-  async deleteSeasonById(@Args("id") id: number) {
+  async deleteSeasonById(@Args('id') id: number) {
     const season = await this.prisma.season.findUnique({
       where: { id },
       include: {
@@ -174,7 +174,7 @@ export class AdminResolver {
     });
     this.logger.log(`Deleting season #${id} (${season.title})...`);
     this.logger.verbose(
-      `Deleting files for season #${id} (${season.title})...`
+      `Deleting files for season #${id} (${season.title})...`,
     );
     await this.seasonEmit.deleteSeasonFiles(season);
     this.logger.verbose(`Delete db row for season #${id} (${season.title})...`);
@@ -184,11 +184,11 @@ export class AdminResolver {
       },
     });
     this.logger.log(`Delete #${id} (${season.title}) success`);
-    return "ok";
+    return 'ok';
   }
 
   @Mutation(() => ID)
-  async setJellyfinFolderDefault(@Args("id") id: number) {
+  async setJellyfinFolderDefault(@Args('id') id: number) {
     await this.prisma.$transaction([
       this.prisma.jellyfinFolder.updateMany({
         data: {
@@ -207,17 +207,17 @@ export class AdminResolver {
         },
       }),
     ]);
-    return "ok";
+    return 'ok';
   }
 
   @Mutation(() => ID)
   async saveSeason(
-    @Args("id") id: number,
+    @Args('id') id: number,
     @Args({
-      name: "patch",
+      name: 'patch',
       type: () => SaveSeasonPatch,
     })
-    { sources, ...seasonPatch }: SaveSeasonPatch
+    { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
     this.logger.log(`Updating season #${id}...`);
     this.logger.verbose(`Writing season #${id} to db...`);
@@ -242,7 +242,7 @@ export class AdminResolver {
               pattern,
               offset,
             },
-          })
+          }),
         ),
       this.prisma.downloadSource.createMany({
         data: sources
@@ -301,27 +301,27 @@ export class AdminResolver {
     >;
 
     this.logger.verbose(
-      `Writing metadata to disk after season #${id} updated...`
+      `Writing metadata to disk after season #${id} updated...`,
     );
     await this.seasonEmit.writeSeasonMetadata(season);
     this.logger.verbose(
-      `Enqueuing new download jobs after season #${id} updated...`
+      `Enqueuing new download jobs after season #${id} updated...`,
     );
     await this.job.enqueueDownloadJobsInternal();
     this.logger.log(`Update season #${id} success`);
 
     this.emitter.emit(SEASON_SAVE_EVENT, new SeasonSaveEvent(season));
 
-    return "ok";
+    return 'ok';
   }
 
   @Query(() => [DownloadJobStatus])
   async getActiveDownloadJobStatus(
     @Args({
-      name: "jobIds",
+      name: 'jobIds',
       type: () => [Int],
     })
-    jobIds: number[]
+    jobIds: number[],
   ) {
     const jobs = await this.prisma.downloadJob.findMany({
       where: {
@@ -337,7 +337,7 @@ export class AdminResolver {
     const torrents = await this.client.getActiveTorrentsStatus(
       jobs
         .map((job) => job.qbtTorrentHash)
-        .filter((hash): hash is Exclude<typeof hash, null> => hash !== null)
+        .filter((hash): hash is Exclude<typeof hash, null> => hash !== null),
     );
     const result: DownloadJobStatus[] = [];
     for (const torrent of torrents) {

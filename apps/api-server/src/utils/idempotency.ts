@@ -1,8 +1,8 @@
-import { ensureXMLRoot, mergeXMLNode } from "@/utils/xml";
-import fs from "fs/promises";
-import md5 from "md5";
-import pathModule from "path";
-import xml2js from "xml2js";
+import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
+import fs from 'fs/promises';
+import md5 from 'md5';
+import pathModule from 'path';
+import xml2js from 'xml2js';
 
 export interface WriteFileIdempotentOptions {
   mkdir?: boolean;
@@ -15,14 +15,14 @@ export async function getFileHash(path: string) {
     return md5(currentContent);
   } catch (error) {
     // 若文件不存在无视报错
-    return "";
+    return '';
   }
 }
 
 export async function writeFileIdempotent(
   path: string,
   content: string | Buffer,
-  { mkdir = true }: WriteFileIdempotentOptions = {}
+  { mkdir = true }: WriteFileIdempotentOptions = {},
 ) {
   if (mkdir) {
     await fs.mkdir(pathModule.dirname(path), { recursive: true });
@@ -50,17 +50,17 @@ const parser = new xml2js.Parser();
 export async function writeXMLFileIdempotent(
   path: string,
   content: any,
-  { rootType, mkdir = true, removeKeys = [] }: WriteXMLFileIdempotentOptions
+  { rootType, mkdir = true, removeKeys = [] }: WriteXMLFileIdempotentOptions,
 ) {
   if (mkdir) {
     await fs.mkdir(pathModule.dirname(path), { recursive: true });
   }
 
   let xmlObj: any = {};
-  let currentContent = "";
+  let currentContent = '';
   try {
     await fs.stat(path);
-    currentContent = await fs.readFile(path, "utf8");
+    currentContent = await fs.readFile(path, 'utf8');
     xmlObj = await parser.parseStringPromise(currentContent);
   } catch (error) {
     // 若文件不存在，xml格式有问题，无视报错，因为之后会覆盖它
@@ -73,7 +73,7 @@ export async function writeXMLFileIdempotent(
   mergeXMLNode(content, xmlObj[rootType]);
   const newContent = builder.buildObject(xmlObj);
   if (currentContent !== newContent) {
-    await fs.writeFile(path, newContent, "utf-8");
+    await fs.writeFile(path, newContent, 'utf-8');
     return true;
   } else {
     return false;

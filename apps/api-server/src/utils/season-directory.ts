@@ -1,21 +1,21 @@
-import path from "path";
+import path from 'path';
 
 export function sanitizeSeasonDirectory(title: string): string {
   const unsafe = '<>:"/\\|?*';
-  const replacements = "＜＞：＂／＼｜？＊";
+  const replacements = '＜＞：＂／＼｜？＊';
   let directory = title
     .replace(/[<>:"/\\|?*]/g, (char) => replacements[unsafe.indexOf(char)])
-    .replace(/[\x00-\x1f\x7f]/g, "_")
+    .replace(/[\x00-\x1f\x7f]/g, '_')
     .trim()
-    .replace(/[. ]+$/, "");
+    .replace(/[. ]+$/, '');
   // 给文件系统组件长度留出余量，不截断 Unicode 字符。
   const characters = Array.from(directory);
-  while (Buffer.byteLength(characters.join(""), "utf8") > 240) {
+  while (Buffer.byteLength(characters.join(''), 'utf8') > 240) {
     characters.pop();
   }
-  directory = characters.join("").replace(/[. ]+$/, "");
-  if (!directory || directory === "." || directory === "..") {
-    throw new Error("季度标题无法生成有效目录名");
+  directory = characters.join('').replace(/[. ]+$/, '');
+  if (!directory || directory === '.' || directory === '..') {
+    throw new Error('季度标题无法生成有效目录名');
   }
   if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i.test(directory)) {
     directory = `_${directory}`;
@@ -45,11 +45,11 @@ export function resolveSeasonPath(root: string, directory: string): string {
   const relative = path.relative(path.resolve(root), result);
   if (
     !relative ||
-    relative === ".." ||
+    relative === '..' ||
     relative.startsWith(`..${path.sep}`) ||
     path.isAbsolute(relative)
   ) {
-    throw new Error("季度目录必须位于媒体库目录内");
+    throw new Error('季度目录必须位于媒体库目录内');
   }
   return result;
 }

@@ -1,26 +1,27 @@
-import { PrismaService } from "@/common/prisma.service";
-import { S3Service } from "@/common/s3.service";
-import config from "@/config";
-import { SeasonJellyfinService } from "@/season-jellyfin/SeasonJellyfinService";
+import { PrismaService } from '@/common/prisma.service';
+import { S3Service } from '@/common/s3.service';
+import config from '@/config';
+import { SeasonJellyfinService } from '@/season-jellyfin/SeasonJellyfinService';
 import {
   SeasonWithFolderAndImages,
   SeasonWithJellyfinFolder,
-} from "@/types/entities";
+} from '@/types/entities';
 import {
   getFileHash,
   removeDirectoryIdempotent,
   writeXMLFileIdempotent,
-} from "@/utils/idempotency";
-import { mapPath } from "@/utils/path";
-import { Injectable, Logger } from "@nestjs/common";
-import fs from "fs/promises";
-import path from "path";
-import xml2js from "xml2js";
+} from '@/utils/idempotency';
+import { mapPath } from '@/utils/path';
+import { Injectable, Logger } from '@nestjs/common';
+import fs from 'fs/promises';
+import path from 'path';
+import xml2js from 'xml2js';
+import { jellyfinNumber } from '@/utils/episode-number';
 import {
   getSeasonDirectory,
   resolveSeasonPath,
   sanitizeSeasonDirectory,
-} from "@/utils/season-directory";
+} from '@/utils/season-directory';
 
 @Injectable()
 export class SeasonEmitService {
@@ -29,12 +30,12 @@ export class SeasonEmitService {
   constructor(
     private s3: S3Service,
     private seasonJellyfin: SeasonJellyfinService,
-    private prisma: PrismaService
+    private prisma: PrismaService,
   ) {}
 
   async writeSeasonMetadata(season: SeasonWithFolderAndImages) {
     this.logger.log(
-      `Writing metadata for season #${season.id} (${season.title})`
+      `Writing metadata for season #${season.id} (${season.title})`,
     );
 
     const directory = sanitizeSeasonDirectory(season.title);
@@ -49,7 +50,7 @@ export class SeasonEmitService {
     if (!renamed && !season.lastWriteTitle && !season.lastWriteDirectory) {
       const root = mapPath(
         config.jellyfin.pathMapping,
-        season.jellyfinFolder.location
+        season.jellyfinFolder.location,
       );
       const target = resolveSeasonPath(root, directory);
       let exists = false;
@@ -57,22 +58,22 @@ export class SeasonEmitService {
         await fs.lstat(target);
         exists = true;
       } catch (error) {
-        if (error.code !== "ENOENT") throw error;
+        if (error.code !== 'ENOENT') throw error;
       }
       if (exists && !(await this.ownsDirectory(target, season.id))) {
-        throw new Error("目标季度目录已存在，无法写入");
+        throw new Error('目标季度目录已存在，无法写入');
       }
     }
     if (renamed) {
       this.logger.verbose(
-        `Season #${season.id} renamed (${oldDirectory} -> ${directory}), renaming folder...`
+        `Season #${season.id} renamed (${oldDirectory} -> ${directory}), renaming folder...`,
       );
       const { newPath, oldPath } = await this.renameFolder(
         season,
-        oldDirectory
+        oldDirectory,
       );
       this.logger.verbose(
-        `Folder of season #${season.id} rename success (${oldPath} -> ${newPath})`
+        `Folder of season #${season.id} rename success (${oldPath} -> ${newPath})`,
       );
     }
 
@@ -81,31 +82,31 @@ export class SeasonEmitService {
       where: { id: season.id },
       data: {
         lastWriteDirectory: directory,
-        ...(renamed ? { jellyfinId: "" } : {}),
+        ...(renamed ? { jellyfinId: '' } : {}),
       },
     });
     season = {
       ...season,
       lastWriteDirectory: directory,
-      ...(renamed ? { jellyfinId: "" } : {}),
+      ...(renamed ? { jellyfinId: '' } : {}),
     };
 
     this.logger.verbose(
-      `Writing .nfo file for season #${season.id} (${season.title})...`
+      `Writing .nfo file for season #${season.id} (${season.title})...`,
     );
     const { modified: nfoEmitted, nfoPath } = await this.emitNfo(season);
     if (nfoEmitted) {
       this.logger.verbose(
-        `Write .nfo file for season #${season.id} (${season.title}) success, file written to ${nfoPath}`
+        `Write .nfo file for season #${season.id} (${season.title}) success, file written to ${nfoPath}`,
       );
     } else {
       this.logger.verbose(
-        `Write .nfo file for season #${season.id} (${season.title}) skipped (no changes)`
+        `Write .nfo file for season #${season.id} (${season.title}) skipped (no changes)`,
       );
     }
 
     this.logger.verbose(
-      `Writing image files for season #${season.id} (${season.title})...`
+      `Writing image files for season #${season.id} (${season.title})...`,
     );
     const {
       modified: imagesEmitted,
@@ -116,14 +117,14 @@ export class SeasonEmitService {
     if (imagesEmitted) {
       this.logger.verbose(
         `Write image files for season #${season.id} (${season.title}) success${
-          banner ? `, banner -> ${banner}` : ""
-        }${fanart ? `, fanart -> ${fanart}` : ""}${
-          poster ? `, poster -> ${poster}` : ""
-        }`
+          banner ? `, banner -> ${banner}` : ''
+        }${fanart ? `, fanart -> ${fanart}` : ''}${
+          poster ? `, poster -> ${poster}` : ''
+        }`,
       );
     } else {
       this.logger.verbose(
-        `Write image files for season #${season.id} (${season.title}) skipped (no changes)`
+        `Write image files for season #${season.id} (${season.title}) skipped (no changes)`,
       );
     }
 
@@ -138,27 +139,27 @@ export class SeasonEmitService {
       data: {
         lastWriteToDisk: new Date(),
         lastWriteTitle: season.title,
-        ...(renamed ? { jellyfinId: "" } : {}),
+        ...(renamed ? { jellyfinId: '' } : {}),
       },
     });
   }
 
   private async renameFolder(
     season: SeasonWithFolderAndImages,
-    oldDirectory: string
+    oldDirectory: string,
   ) {
     const root = mapPath(
       config.jellyfin.pathMapping,
-      season.jellyfinFolder.location
+      season.jellyfinFolder.location,
     );
     const oldPath = resolveSeasonPath(root, oldDirectory);
-    const newPath = resolveSeasonPath(root, season.directory ?? "");
+    const newPath = resolveSeasonPath(root, season.directory ?? '');
     const exists = async (filename: string) => {
       try {
         await fs.lstat(filename);
         return true;
       } catch (error) {
-        if (error.code === "ENOENT") return false;
+        if (error.code === 'ENOENT') return false;
         throw error;
       }
     };
@@ -167,12 +168,12 @@ export class SeasonEmitService {
     if (newExists) {
       // 进程可能在 rename 成功、数据库更新前中断，只允许恢复本季度的目标目录。
       if (oldExists || !(await this.ownsDirectory(newPath, season.id))) {
-        throw new Error("目标季度目录已存在，无法自动移动");
+        throw new Error('目标季度目录已存在，无法自动移动');
       }
     } else if (oldExists) {
       await fs.rename(oldPath, newPath);
     } else {
-      throw new Error("原季度目录不存在，无法自动移动");
+      throw new Error('原季度目录不存在，无法自动移动');
     }
 
     // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
@@ -184,7 +185,7 @@ export class SeasonEmitService {
       if (!value) return value;
       const relative = path.relative(oldPath, value);
       return relative &&
-        relative !== ".." &&
+        relative !== '..' &&
         !relative.startsWith(`..${path.sep}`) &&
         !path.isAbsolute(relative)
         ? path.join(newPath, relative)
@@ -198,24 +199,53 @@ export class SeasonEmitService {
             filePath: movePath(job.filePath),
             nfoPath: movePath(job.nfoPath),
           },
-        })
-      )
+        }),
+      ),
     );
     return { oldPath, newPath };
   }
 
   private async ownsDirectory(directory: string, seasonId: number) {
-    try {
-      const xml = await fs.readFile(path.join(directory, "tvshow.nfo"), "utf8");
-      const { tvshow } = await xml2js.parseStringPromise(xml);
-      return [...(tvshow.uniqueid ?? []), ...(tvshow.uniqueId ?? [])].some(
-        (node) =>
-          node.$?.type?.toLowerCase() === "lani" &&
-          String(node._) === String(seasonId)
+    const ownsNfo = (node: any, id: number) =>
+      [...(node?.uniqueid ?? []), ...(node?.uniqueId ?? [])].some(
+        (value) =>
+          value.$?.type?.toLowerCase() === 'lani' &&
+          String(value._) === String(id),
       );
-    } catch {
-      return false;
+    try {
+      const xml = await fs.readFile(path.join(directory, 'tvshow.nfo'), 'utf8');
+      const { tvshow } = await xml2js.parseStringPromise(xml);
+      return ownsNfo(tvshow, seasonId);
+    } catch (error) {
+      // 已有但归属不明、损坏或不可读的季度 NFO 不能被剧集证据覆盖。
+      if (error.code !== 'ENOENT') return false;
     }
+
+    // 手动导入和下载导入可能先于季度同步，只写了剧集 NFO。
+    // 只认可当前季度的剧集在标准导入位置留下的 Lani ID。
+    const episodes = await this.prisma.episode.findMany({
+      where: { seasonId },
+      select: { id: true, index: true, episodeType: true, episodeNumber: true },
+    });
+    for (const episode of episodes) {
+      const { season, index } = jellyfinNumber(episode);
+      const filename = path.join(
+        directory,
+        `Season ${season}`,
+        `Episode - S${String(season).padStart(2, '0')}E${String(index).padStart(
+          2,
+          '0',
+        )}.nfo`,
+      );
+      try {
+        const xml = await fs.readFile(filename, 'utf8');
+        const { episodedetails } = await xml2js.parseStringPromise(xml);
+        if (ownsNfo(episodedetails, episode.id)) return true;
+      } catch {
+        // 缺失或无法解析的剧集 NFO 不构成归属证据。
+      }
+    }
+    return false;
   }
 
   private async emitNfo({
@@ -231,8 +261,8 @@ export class SeasonEmitService {
   }: SeasonWithFolderAndImages) {
     const seasonRoot = mapPath(config.jellyfin.pathMapping, jellyfinFolderRoot);
     const nfoPath = path.join(
-      resolveSeasonPath(seasonRoot, directory ?? ""),
-      "tvshow.nfo"
+      resolveSeasonPath(seasonRoot, directory ?? ''),
+      'tvshow.nfo',
     );
     // https://kodi.wiki/view/NFO_files/TV_shows
     const modified = await writeXMLFileIdempotent(
@@ -244,15 +274,15 @@ export class SeasonEmitService {
         uniqueid: [
           {
             $: {
-              type: "lani",
-              default: "true",
+              type: 'lani',
+              default: 'true',
             },
             _: id,
           },
           tvdbId
             ? {
                 $: {
-                  type: "tvdb",
+                  type: 'tvdb',
                 },
                 _: tvdbId,
               }
@@ -260,7 +290,7 @@ export class SeasonEmitService {
           bangumiId
             ? {
                 $: {
-                  type: "bangumi",
+                  type: 'bangumi',
                 },
                 _: bangumiId,
               }
@@ -271,9 +301,9 @@ export class SeasonEmitService {
           : undefined),
       },
       {
-        rootType: "tvshow",
-        removeKeys: ["uniqueId"],
-      }
+        rootType: 'tvshow',
+        removeKeys: ['uniqueId'],
+      },
     );
     return { modified, nfoPath };
   }
@@ -289,18 +319,18 @@ export class SeasonEmitService {
     let modified = false;
     const [banner, fanart, poster] = await Promise.all(
       [
-        { image: bannerImage, type: "banner" },
-        { image: fanartImage, type: "fanart" },
-        { image: posterImage, type: "poster" },
+        { image: bannerImage, type: 'banner' },
+        { image: fanartImage, type: 'fanart' },
+        { image: posterImage, type: 'poster' },
       ].map(async ({ image, type }) => {
         if (!image) {
           return;
         }
         const { cosPath, hash } = image;
-        const ext = cosPath.substring(cosPath.lastIndexOf("."));
+        const ext = cosPath.substring(cosPath.lastIndexOf('.'));
         const filePath = path.join(
-          resolveSeasonPath(seasonRoot, directory ?? ""),
-          `${type}${ext}`
+          resolveSeasonPath(seasonRoot, directory ?? ''),
+          `${type}${ext}`,
         );
         const currentHash = await getFileHash(filePath);
 
@@ -315,16 +345,16 @@ export class SeasonEmitService {
           })
           .promise();
         if (!content) {
-          throw new Error("GetObject returns empty content");
+          throw new Error('GetObject returns empty content');
         }
         if (!Buffer.isBuffer(content)) {
-          throw new Error("GetObject returns non-buffer result");
+          throw new Error('GetObject returns non-buffer result');
         }
 
         await fs.writeFile(filePath, content);
         modified = true;
         return filePath;
-      })
+      }),
     );
     return {
       banner,
@@ -338,19 +368,19 @@ export class SeasonEmitService {
     const { jellyfinFolder } = season;
     const seasonRoot = mapPath(
       config.jellyfin.pathMapping,
-      jellyfinFolder.location
+      jellyfinFolder.location,
     );
     const folderPath = resolveSeasonPath(
       seasonRoot,
-      getSeasonDirectory(season)
+      getSeasonDirectory(season),
     );
     this.logger.log(
-      `Deleting files for season #${season.id} (${season.title}), located under ${folderPath}`
+      `Deleting files for season #${season.id} (${season.title}), located under ${folderPath}`,
     );
     const deleted = await removeDirectoryIdempotent(folderPath);
     if (!deleted) {
       this.logger.warn(
-        `Delete files for season #${season.id} (${season.title}) under ${folderPath} failed, perhaps files were already deleted?`
+        `Delete files for season #${season.id} (${season.title}) under ${folderPath} failed, perhaps files were already deleted?`,
       );
     }
     await this.seasonJellyfin.refreshAfterDelete(season);
