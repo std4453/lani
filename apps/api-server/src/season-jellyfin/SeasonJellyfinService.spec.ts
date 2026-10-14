@@ -1,4 +1,4 @@
-import { JellyfinHelp, ItemFields } from "@/api/jellyfin";
+import { JellyfinHelp, ItemFields, MetadataRefreshMode } from "@/api/jellyfin";
 import { SeasonJellyfinService } from "./SeasonJellyfinService";
 
 jest.mock("@/common/prisma.service", () => ({ PrismaService: class {} }));
@@ -30,11 +30,55 @@ afterEach(() => jest.restoreAllMocks());
 function setup() {
   const prisma = { season: { update: jest.fn(), findMany: jest.fn() } };
   const service = new SeasonJellyfinService(prisma as any);
+  const refresh = jest.spyOn(JellyfinHelp, "refreshItem").mockResolvedValue();
   const warn = jest
     .spyOn((service as any).logger, "warn")
     .mockImplementation(() => undefined);
-  return { service, prisma, warn };
+  return { service, prisma, warn, refresh };
 }
+
+it("reads the NFO of a newly discovered series after its initial path match", async () => {
+  const { service, prisma, refresh } = setup();
+  await service.syncJellyfinSeriesId(season, [
+    { Id: "new-series", Path: "/media/new", ProviderIds: {} },
+  ]);
+  expect(refresh).toHaveBeenCalledWith({
+    itemId: "new-series",
+    metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+    imageRefreshMode: MetadataRefreshMode.DEFAULT,
+  });
+  expect(prisma.season.update).toHaveBeenCalled();
+});
+
+it("leaves an unsuccessful NFO refresh eligible for the next association retry", async () => {
+  const { service, prisma, refresh } = setup();
+  refresh.mockRejectedValue(new Error("refresh unavailable"));
+  await expect(
+    service.syncJellyfinSeriesId(season, [
+      { Id: "new-series", Path: "/media/new" },
+    ])
+  ).rejects.toThrow("refresh unavailable");
+  expect(prisma.season.update).not.toHaveBeenCalled();
+});
+
+it("does not refresh legacy NFOs until the season has been explicitly written", async () => {
+  const { service, refresh } = setup();
+  await service.syncJellyfinSeriesId({ ...season, directory: null }, [
+    { Id: "legacy", Path: "/media/new" },
+  ]);
+  expect(refresh).not.toHaveBeenCalled();
+});
+
+it("explicit metadata sync rereads NFOs even when Jellyfin previously cached the item", async () => {
+  const { service, refresh } = setup();
+  await service.refreshAfterWriteToDisk({ ...season, jellyfinId: "existing" });
+  expect(refresh).toHaveBeenCalledWith(
+    expect.objectContaining({
+      itemId: "existing",
+      metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+    })
+  );
+});
 
 it("prioritizes Lani ID over title and path, warning and choosing the first duplicate", async () => {
   const { service, prisma, warn } = setup();

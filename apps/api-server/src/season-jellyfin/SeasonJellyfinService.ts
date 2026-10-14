@@ -29,6 +29,7 @@ export class SeasonJellyfinService {
     );
     await JellyfinHelp.refreshItem({
       itemId: jellyfinFolder.jellyfinId,
+      metadataRefreshMode: MetadataRefreshMode.DEFAULT,
       recursive: true,
     });
   }
@@ -48,7 +49,7 @@ export class SeasonJellyfinService {
       );
       await JellyfinHelp.refreshItem({
         itemId: jellyfinId,
-        metadataRefreshMode: MetadataRefreshMode.DEFAULT,
+        metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
         imageRefreshMode: MetadataRefreshMode.DEFAULT,
       });
     } else {
@@ -62,6 +63,7 @@ export class SeasonJellyfinService {
       );
       await JellyfinHelp.refreshItem({
         itemId: jellyfinFolder.jellyfinId,
+        metadataRefreshMode: MetadataRefreshMode.DEFAULT,
         recursive: true,
       });
     }
@@ -148,7 +150,7 @@ export class SeasonJellyfinService {
       );
     }
     const match = matches[0];
-    if (!match) {
+    if (!match?.Id) {
       this.logger.verbose(
         `Season #${seasonId} (${title}) matched no Jellyfin series`
       );
@@ -160,6 +162,11 @@ export class SeasonJellyfinService {
       );
     }
     if (match.Id !== jellyfinId) {
+      // 部分 Jellyfin 版本的媒体库刷新只发现目录，不读取新季度的 NFO。
+      // 对已经由应用写入或显式同步的季度，关联后单独读取其元数据。
+      if (!laniId(match) && season.directory) {
+        await this.refreshAfterWriteToDisk({ ...season, jellyfinId: match.Id });
+      }
       await this.prisma.season.update({
         where: { id: seasonId },
         data: { jellyfinId: match.Id },
