@@ -1,3 +1,4 @@
+import { parseWorkflow } from '@lani/download-workflow';
 import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
@@ -323,8 +324,11 @@ export class AdminResolver {
     })
     jobIds: number[],
   ) {
+    if (!jobIds.length) return [];
     const jobs = await this.prisma.downloadJob.findMany({
       where: {
+        isFailed: false,
+        isCancelled: false,
         id: {
           in: jobIds,
         },
@@ -334,25 +338,29 @@ export class AdminResolver {
         },
       },
     });
+    const activeJobs = jobs.filter(
+      (job) => job.workflow && parseWorkflow(job.workflow).status === 'running',
+    );
+    if (!activeJobs.length) return [];
     const torrents = await this.client.getActiveTorrentsStatus(
-      jobs
+      activeJobs
         .map((job) => job.qbtTorrentHash)
         .filter((hash): hash is Exclude<typeof hash, null> => hash !== null),
     );
     const result: DownloadJobStatus[] = [];
     for (const torrent of torrents) {
-      const job = jobs.find((job) => job.qbtTorrentHash === torrent.hash);
-      if (!job) {
-        continue;
+      for (const job of activeJobs.filter(
+        (job) => job.qbtTorrentHash === torrent.hash,
+      )) {
+        result.push({
+          id: job.id,
+          downloaded: BigInt(torrent.downloaded),
+          speed: torrent.speed,
+          total: BigInt(torrent.total),
+          eta: torrent.eta,
+          peers: torrent.peers,
+        });
       }
-      result.push({
-        id: job.id,
-        downloaded: BigInt(torrent.downloaded),
-        speed: torrent.speed,
-        total: BigInt(torrent.total),
-        eta: torrent.eta,
-        peers: torrent.peers,
-      });
     }
     return result;
   }

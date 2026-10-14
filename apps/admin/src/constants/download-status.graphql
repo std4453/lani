@@ -2,6 +2,9 @@ fragment downloadJobStatusFields on DownloadJob {
   id
   status
   isFailed
+  isCancelled
+  workflow
+  version
 }
 
 fragment episodeStatusFields on Episode {

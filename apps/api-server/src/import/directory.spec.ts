@@ -1,3 +1,4 @@
+import { AtomContext } from '@/download-job/atoms';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -21,6 +22,18 @@ jest.mock('@/config', () => ({
     s3: { bucket: 'test' },
   },
 }));
+
+function atomContext(): AtomContext {
+  const context: AtomContext = {
+    checkpoint: {},
+    assertActive: async () => undefined,
+    wait: async () => undefined,
+    saveCheckpoint: async (patch) => {
+      Object.assign(context.checkpoint, patch);
+    },
+  };
+  return context;
+}
 
 it.each(['manual', 'download'])(
   'imports %s videos into the recorded directory',
@@ -52,10 +65,14 @@ it.each(['manual', 'download'])(
               source,
             )
           : (
-              await new ImportFileAtom({} as any, prisma as any).run(1, {
-                params: { episodeId: 1 },
-                steps: { findVideoFile: { importPath: source } },
-              } as any)
+              await new ImportFileAtom(prisma as any).run(
+                1,
+                {
+                  params: { episodeId: 1 },
+                  steps: { findVideoFile: { importPath: source } },
+                } as any,
+                atomContext(),
+              )
             ).filePath;
       expect(target).toBe(
         path.join(root, 'A／B', 'Season 1', 'Episode - S01E01.mkv'),
@@ -116,11 +133,12 @@ it.each(['manual', 'download'])(
           params: { episodeId: episode.id },
           steps: { findVideoFile: { importPath: source } },
         } as any;
-        input.steps.importFile = await new ImportFileAtom(
-          {} as any,
-          prisma as any,
-        ).run(1, input);
-        await new WriteMetadataAtom({} as any, prisma as any).run(1, input);
+        input.steps.importFile = await new ImportFileAtom(prisma as any).run(
+          1,
+          input,
+          atomContext(),
+        );
+        await new WriteMetadataAtom(prisma as any).run(1, input, atomContext());
       }
 
       const target = path.join(root, 'A／B');

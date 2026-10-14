@@ -1,3 +1,4 @@
+import { parseWorkflow } from '@lani/download-workflow';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { DownloadStatus, EpisodeStatusFieldsFragment } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
@@ -8,6 +9,8 @@ import dayjs from 'dayjs';
 export type EpisodeStatus =
   | DownloadStatus
   | 'DOWNLOAD_FAILED'
+  | 'CANCELLED'
+  | 'CANCELLING'
   | 'NOT_AIRED'
   | 'DATE_UNKNOWN'
   | 'RESOURCE_WAITING'
@@ -21,7 +24,13 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   if (episode.jellyfinEpisodeId) {
     return { status: DownloadStatus.Available };
   } else if (job) {
-    if (job.isFailed) {
+    if (job.isCancelled) return { status: 'CANCELLED', jobId: job.id };
+    if (job.workflow && parseWorkflow(job.workflow).status === 'cancelling')
+      return { status: 'CANCELLING', jobId: job.id };
+    if (
+      job.isFailed ||
+      (!job.workflow && job.status !== DownloadStatus.Available)
+    ) {
       return { status: 'DOWNLOAD_FAILED', jobId: job.id };
     }
     return { status: job.status, jobId: job.id };
@@ -76,6 +85,8 @@ export const downloadStatusMap: Partial<
     children: '提交下载',
     color: 'blue',
   },
+  CANCELLED: { children: '已取消' },
+  CANCELLING: { children: '取消中', color: 'orange' },
   NOT_AIRED: {
     children: '未放送',
   },

@@ -23,6 +23,7 @@ import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-
 import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
+import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -208,14 +209,22 @@ function useColumns({
                       seasonFullName: formRef.current?.getFieldValue('title'),
                       async onResolve(torrent: TorrentFieldsFragment) {
                         try {
-                          await client.mutate({
+                          const { data } = await client.mutate({
                             mutation: DownloadTorrentForEpisodeDocument,
                             variables: {
                               episodeId: r.id,
                               torrentLink: torrent.torrentLink,
                             },
                           });
-                          void message.success('下载任务创建成功');
+                          if (data) {
+                            void message.success(
+                              `下载任务 #${data.downloadTorrentForEpisode} 已受理`,
+                            );
+                            void openEpisodeDetails({
+                              episodeId: r.id,
+                              jobId: data.downloadTorrentForEpisode,
+                            });
+                          }
                           void reloadEpisodes();
                           void refetchEpisodesStatus();
                         } catch (error) {
@@ -231,7 +240,8 @@ function useColumns({
                   onClick={() => {
                     void openDownloadMagnet({
                       episodeId: r.id,
-                      onResolve: () => {
+                      onResolve: (jobId) => {
+                        void openEpisodeDetails({ episodeId: r.id, jobId });
                         void reloadEpisodes();
                         void refetchEpisodesStatus();
                       },
@@ -338,10 +348,19 @@ function useEpisodeStatus(episodes: Episode[]) {
       variables: {
         episodeIds,
       },
-      pollInterval: 5000,
     },
   );
-  useApolloPoll({ pollInterval: 5000, startPolling, stopPolling, refetch });
+  const jobIds = (extractNode(data?.allEpisodes) ?? []).flatMap(
+    (episode) => extractNode(episode.jobs)?.map((job) => job.id) ?? [],
+  );
+  useDownloadJobStates(jobIds);
+  useApolloPoll({
+    pollInterval: 30000,
+    startPolling,
+    stopPolling,
+    refetch,
+    enabled: !!episodeIds.length,
+  });
   const result = useMemo(() => {
     const episodesStatus = extractNode(data?.allEpisodes);
     if (!episodesStatus) {

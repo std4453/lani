@@ -11,7 +11,8 @@
     "devops": "lani-cli devops",
     "generate": "graphql-codegen --config codegen.yml",
     "lint": "eslint src/",
-    "manifest": "lani-cli manifest"
+    "manifest": "lani-cli manifest",
+    "test": "jest"
   },
   "devDependencies": {
     "@lani/cli": "~1.0.0",
@@ -29,7 +30,10 @@
     "@rushstack/eslint-config": "~2.5.1",
     "eslint-plugin-react-hooks": "~4.3.0",
     "@umijs/plugin-esbuild": "~1.4.1",
-    "@types/md5": "~2.3.2"
+    "@types/md5": "~2.3.2",
+    "jest": "^27.2.5",
+    "ts-jest": "^27.0.3",
+    "@types/jest": "27.4.1"
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
@@ -64,7 +68,8 @@
     "hsluv": "~0.1.0",
     "store2": "~2.14.2",
     "virtualizedtableforantd4": "~1.3.1",
-    "@lani/parse-torrent-title": "~1.0.0"
+    "@lani/parse-torrent-title": "~1.0.0",
+    "@lani/download-workflow": "~1.0.0"
   },
   "files": [
     "/dist",

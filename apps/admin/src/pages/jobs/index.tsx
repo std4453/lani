@@ -1,3 +1,9 @@
+import { applyJobSnapshots } from './snapshots';
+import { WorkflowStatusTag } from '@/components/DownloadWorkflow';
+import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { useApolloPoll } from '@/utils/useApolloPoll';
+import { parseWorkflow, currentStep } from '@lani/download-workflow';
+import { GetDownloadJobListSignatureDocument } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { Hamburger } from '@/components/Layout';
@@ -13,8 +19,8 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Typography } from 'antd';
-import { useMemo, useRef } from 'react';
+import { Alert, Typography } from 'antd';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
 
@@ -63,7 +69,11 @@ function useColumns({
         dataIndex: 'status',
         render: (_, r) => (
           <div>
-            <DownloadStatusTag status={r.status} />
+            {r.workflow ? (
+              currentStep(parseWorkflow(r.workflow)).title
+            ) : (
+              <DownloadStatusTag status={r.status} />
+            )}
           </div>
         ),
         width: 84,
@@ -71,6 +81,7 @@ function useColumns({
       {
         title: '状态',
         dataIndex: 'isFailed',
+        render: (_, row) => <WorkflowStatusTag job={row} />,
         valueEnum: {
           true: {
             text: '运行失败',
@@ -154,7 +165,7 @@ async function queryDownloadJobs(
   },
 ) {
   const filter: DownloadJobFilter = {
-    ...(isFailed
+    ...(isFailed?.length
       ? {
           isFailed: {
             in: isFailed.map((value) => value === 'true'),
@@ -165,6 +176,7 @@ async function queryDownloadJobs(
   try {
     const { data } = await client.query({
       query: ListDownloadJobsDocument,
+      fetchPolicy: 'network-only',
       variables: {
         first: pageSize,
         offset: pageSize * (current - 1),
@@ -196,15 +208,77 @@ export default function JobsPage() {
     useEpisodeDetailsDialog();
   const columns = useColumns({ openEpisodeDetails });
   const actionRef = useRef<ActionType>();
+  const [rows, setRows] = useState<ListDownloadJobsFieldsFragment[]>([]);
+  const [changed, setChanged] = useState(false);
+  const baseline = useRef({
+    offset: 0,
+    first: 30,
+    isFailed: undefined as boolean[] | undefined,
+    ids: [] as number[],
+    total: 0,
+  });
+  const states = useDownloadJobStates(rows.map((row) => row.id));
+  const displayed = applyJobSnapshots(
+    rows,
+    states.data?.getDownloadJobStates ?? [],
+  );
+  useApolloPoll({
+    pollInterval: 30000,
+    refetch: async () => {
+      const snapshot = baseline.current;
+      const { data } = await client.query({
+        query: GetDownloadJobListSignatureDocument,
+        variables: {
+          offset: snapshot.offset,
+          first: snapshot.first,
+          isFailed: snapshot.isFailed,
+        },
+        fetchPolicy: 'network-only',
+      });
+      if (snapshot !== baseline.current) return;
+      const latest = data.getDownloadJobListSignature;
+      setChanged(
+        latest.total !== snapshot.total ||
+          latest.ids.join(',') !== snapshot.ids.join(','),
+      );
+    },
+  });
 
   return (
     <>
+      {changed && (
+        <Alert
+          type="info"
+          message={
+            <Typography.Link
+              onClick={() => {
+                void actionRef.current?.reload();
+              }}
+            >
+              任务列表有变化，点击更新
+            </Typography.Link>
+          }
+        />
+      )}
       <MainTable<ListDownloadJobsFieldsFragment>
         columns={columns}
         rowKey="id"
-        request={(params, sort, filter) =>
-          queryDownloadJobs(client, params, sort, filter)
-        }
+        dataSource={displayed}
+        request={async (params, sort, filter) => {
+          const result = await queryDownloadJobs(client, params, sort, filter);
+          if (result.success && result.data) {
+            setRows(result.data);
+            setChanged(false);
+            baseline.current = {
+              offset: ((params.current ?? 1) - 1) * (params.pageSize ?? 30),
+              first: params.pageSize ?? 30,
+              isFailed: filter.isFailed?.map((value) => value === 'true'),
+              ids: result.data.map((row) => row.id),
+              total: result.total ?? 0,
+            };
+          }
+          return result;
+        }}
         pagination={{
           pageSize: 30,
         }}

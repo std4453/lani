@@ -2,6 +2,9 @@ fragment listDownloadJobsFields on DownloadJob {
   id
   status
   isFailed
+  isCancelled
+  workflow
+  version
   jellyfinEpisodeId
   episodeByEpisodeId {
     id

@@ -1,3 +1,4 @@
+import { parseWorkflow } from '@lani/download-workflow';
 import { episodeLabel } from '@/utils/episode-number';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -149,6 +150,9 @@ export class LarkBot
   }
 
   private getDownloadJobState(job: DownloadJob) {
+    if (job.isCancelled) return '已取消';
+    if (job.workflow && parseWorkflow(job.workflow).status === 'cancelling')
+      return '取消中';
     if (job.isFailed) {
       return `已失败，原因为${job.failedReason}`;
     } else {

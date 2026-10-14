@@ -12,3 +12,4 @@ config:
   scalars:
     DateTime: 'string'
     JSON: 'any'
+    DownloadWorkflow: '@lani/download-workflow#DownloadWorkflow'

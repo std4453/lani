@@ -1,11 +1,10 @@
 import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import { DateFormat } from '@/constants/date-format';
-import { AsyncAtom, StepInput } from '@/download-job/atoms';
+import { AsyncAtom, StepInput, AtomContext } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
@@ -16,8 +15,10 @@ export class WriteMetadataAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
   'writeMetadata'
 > {
-  constructor(emitter: EventEmitter2, private prisma: PrismaService) {
-    super(emitter, 'writeMetadata');
+  readonly wants = [['importFile']] as const;
+
+  constructor(private prisma: PrismaService) {
+    super();
   }
 
   private readonly builder = new xml2js.Builder();
@@ -26,6 +27,7 @@ export class WriteMetadataAtom extends AsyncAtom<
   async run(
     _id: number,
     { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
+    context: AtomContext,
   ) {
     if (!steps.importFile) {
       throw new Error('input step not finished');
@@ -79,7 +81,11 @@ export class WriteMetadataAtom extends AsyncAtom<
       xmlObj.episodedetails,
     );
     const nfoContent = this.builder.buildObject(xmlObj);
-    await fs.writeFile(nfoPath, nfoContent, 'utf-8');
+    await context.assertActive();
+    const temporary = `${nfoPath}.lani-${_id}.tmp`;
+    await fs.writeFile(temporary, nfoContent, 'utf-8');
+    await context.assertActive();
+    await fs.rename(temporary, nfoPath);
     return {
       nfoPath,
     };

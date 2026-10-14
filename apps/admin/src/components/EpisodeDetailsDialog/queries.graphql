@@ -15,6 +15,9 @@ query GetEpisodeById($episodeByIdId: Int!) {
           id
           importPath
           isFailed
+          isCancelled
+          workflow
+          version
           nfoPath
           qbtTorrentHash
           status

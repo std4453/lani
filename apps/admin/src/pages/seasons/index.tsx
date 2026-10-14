@@ -33,6 +33,7 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
+import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
@@ -709,10 +710,23 @@ function useSeasonsStatus(seasonIds: number[]) {
         seasonIds,
         now: nowRef.current,
       },
-      pollInterval: 5000,
     },
   );
-  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 5000 });
+  const jobIds = (extractNode(data?.allSeasons) ?? []).flatMap(
+    (season) =>
+      extractNode(season.latestEpisode?.jobs)?.map((job) => job.id) ?? [],
+  );
+  useDownloadJobStates(jobIds);
+  useApolloPoll({
+    startPolling,
+    stopPolling,
+    refetch: () => {
+      nowRef.current = new Date();
+      return refetch({ seasonIds, now: nowRef.current });
+    },
+    pollInterval: 30000,
+    enabled: !!seasonIds.length,
+  });
   return useMemo(() => {
     const seasonsStatusMap: Record<number, EpisodeStatusFieldsFragment> = {};
     for (const season of extractNode(data?.allSeasons) ?? []) {

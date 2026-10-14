@@ -15,8 +15,20 @@ export type TorrentStatus =
 
 export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
 
+export interface SubmissionHooks {
+  prepared(info: TorrentInfo): Promise<void>;
+  requested(): Promise<void>;
+  confirmed(): Promise<void>;
+  assertActive(): Promise<void>;
+}
+
 export abstract class IDownloadClient {
-  abstract submitTorrentLink(torrentLink: string): Promise<TorrentInfo>;
+  abstract submitTorrentLink(
+    torrentLink: string,
+    hooks?: SubmissionHooks,
+  ): Promise<TorrentInfo>;
+
+  abstract removeTorrent(hash: string): Promise<void>;
 
   abstract lookupTorrents(hashes: string[]): Promise<TorrentInfoWithStatus[]>;
 

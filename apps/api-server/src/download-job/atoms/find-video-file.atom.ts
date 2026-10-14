@@ -3,7 +3,6 @@ import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { VIDEO_FILE_MATCHER } from '@/download-job/types';
 import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import path from 'path';
 
 @Injectable()
@@ -11,8 +10,10 @@ export class FindVideoFileAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
   'findVideoFile'
 > {
-  constructor(emitter: EventEmitter2, private client: IDownloadClient) {
-    super(emitter, 'findVideoFile');
+  readonly wants = [['submitDownload'], ['download']] as const;
+
+  constructor(private client: IDownloadClient) {
+    super();
   }
 
   async run(_id: number, { steps }: StepInput<DownloadWorkflowDefinition>) {

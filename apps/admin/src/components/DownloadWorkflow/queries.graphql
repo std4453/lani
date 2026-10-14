@@ -1,0 +1,37 @@
+query GetDownloadJobStates($jobIds: [Int!]!) {
+  getDownloadJobStates(jobIds: $jobIds) {
+    id
+    version
+    workflow
+    status
+    isFailed
+    isCancelled
+    failedReason
+    canRetry
+    canCancel
+    qbtTorrentHash
+    torrentTitle
+    downloadPath
+    importPath
+    filePath
+    nfoPath
+    jellyfinEpisodeId
+  }
+}
+mutation CancelDownloadJob($jobId: Int!) {
+  cancelDownloadJob(jobId: $jobId)
+}
+query GetDownloadJobListSignature(
+  $offset: Int!
+  $first: Int!
+  $isFailed: [Boolean!]
+) {
+  getDownloadJobListSignature(
+    offset: $offset
+    first: $first
+    isFailed: $isFailed
+  ) {
+    ids
+    total
+  }
+}

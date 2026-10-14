@@ -200,7 +200,6 @@ function useJellyfinId(id: number) {
       variables: {
         id,
       },
-      pollInterval: 2000,
     },
   );
   useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 2000 });

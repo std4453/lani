@@ -6,147 +6,61 @@ import {
 } from '@/api/jellyfin';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { Atom, StepInput } from '@/download-job/atoms';
+import { AsyncAtom, AtomContext, StepInput } from '@/download-job/atoms';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Int, Mutation } from '@nestjs/graphql';
-import { Cron } from '@nestjs/schedule';
-
-interface QueueItem {
-  jellyfinSeriesId: string;
-  index: number;
-  season: number;
-  enqueueTime: number;
-}
 
 @Injectable()
-export class RefreshPlayerAtom extends Atom<
+export class RefreshPlayerAtom extends AsyncAtom<
   DownloadWorkflowDefinition,
   'refreshPlayer'
 > {
-  constructor(emitter: EventEmitter2, private prisma: PrismaService) {
-    super(emitter, 'refreshPlayer');
+  readonly wants = [['writeMetadata']] as const;
+  constructor(private prisma: PrismaService) {
+    super();
   }
-
-  private queue: Record<number, QueueItem> = {};
-
-  async enqueue(
-    id: number,
-    { steps, params: { episodeId } }: StepInput<DownloadWorkflowDefinition>,
+  async run(
+    _id: number,
+    { params: { episodeId } }: StepInput<DownloadWorkflowDefinition>,
+    context: AtomContext,
   ) {
-    if (!steps.writeMetadata) {
-      this.jobFail(id, new Error('writeMetadata step not finished'));
-      return;
-    }
-    if (!episodeId) {
-      this.jobFail(id, new Error('剧集已被删除'));
-      return;
-    }
-    try {
-      const episode = await this.prisma.episode.findUnique({
-        where: { id: episodeId },
-        include: {
-          season: true,
-        },
+    if (!episodeId) throw new Error('剧集已被删除');
+    const episode = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+      include: { season: true },
+    });
+    const jellyfinSeriesId = episode.season.jellyfinId;
+    if (!jellyfinSeriesId)
+      throw new Error('未获取到季度对应的 Jellyfin ID，无法刷新');
+    const { season, index } = jellyfinNumber(episode);
+    if (!context.checkpoint.refreshStartedAt) {
+      await context.saveCheckpoint({
+        refreshStartedAt: new Date().toISOString(),
       });
-      const {
-        season: { jellyfinId: jellyfinSeriesId },
-      } = episode;
-      const { season, index } = jellyfinNumber(episode);
-      if (!jellyfinSeriesId) {
-        this.jobFail(id, new Error('未获取到季度对应的Jellyfin ID，无法刷新'));
-        return;
-      }
-      const jellyfinEpisodeId = await this.getJellyfinEpisode(
-        index,
+    }
+    await context.assertActive();
+    await JellyfinHelp.refreshItem({
+      itemId: jellyfinSeriesId,
+      metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+      imageRefreshMode: MetadataRefreshMode.FULL_REFRESH,
+    });
+    for (;;) {
+      await context.assertActive();
+      const { Items } = await TvShowsService.getEpisodes(
         jellyfinSeriesId,
-        season,
+        config.jellyfin.dummyUserId,
       );
-      // 如果已经存在，则跳过刷新，直接获取
-      if (jellyfinEpisodeId) {
-        this.jobSuccess(id, {
-          jellyfinEpisodeId,
-        });
-      } else {
-        await JellyfinHelp.refreshItem({
-          itemId: jellyfinSeriesId,
-          metadataRefreshMode: MetadataRefreshMode.FULL_REFRESH,
-          imageRefreshMode: MetadataRefreshMode.FULL_REFRESH,
-        });
-        this.queue[id] = {
-          jellyfinSeriesId,
-          index,
-          season,
-          enqueueTime: new Date().getTime(),
-        };
-      }
-    } catch (error) {
-      this.jobFail(id, error);
+      const id = (Items ?? []).find(
+        (item) =>
+          item.IndexNumber === index && item.ParentIndexNumber === season,
+      )?.Id;
+      if (id) return { jellyfinEpisodeId: id };
+      if (
+        Date.now() - Date.parse(context.checkpoint.refreshStartedAt!) >
+        5 * 60 * 1000
+      )
+        throw new Error('超过5分钟未被识别，请检查 Jellyfin 设置');
+      await context.wait(15000);
     }
-  }
-
-  private async getJellyfinEpisode(
-    index: number,
-    jellyfinSeriesId: string,
-    season: number,
-  ) {
-    const { Items: episodes } = await TvShowsService.getEpisodes(
-      jellyfinSeriesId,
-      config.jellyfin.dummyUserId,
-    );
-    const jellyfinEpisodeId = (episodes ?? []).find(
-      (episode) =>
-        episode.IndexNumber === index && episode.ParentIndexNumber === season,
-    )?.Id;
-    return jellyfinEpisodeId;
-  }
-
-  private async refreshQueueItem(
-    id: number,
-    { enqueueTime, index, season, jellyfinSeriesId }: QueueItem,
-  ) {
-    try {
-      const jellyfinEpisodeId = await this.getJellyfinEpisode(
-        index,
-        jellyfinSeriesId,
-        season,
-      );
-      if (!jellyfinEpisodeId) {
-        const now = new Date().getTime();
-        // 5分钟内没有完成就算失败
-        if (now - enqueueTime > 5 * 60 * 1000) {
-          this.jobFail(id, new Error('超过5分钟未被识别，请检查Jellyfin设置'));
-          return true;
-        }
-        return false;
-      }
-      this.jobSuccess(id, {
-        jellyfinEpisodeId,
-      });
-      return true;
-    } catch (error) {
-      this.jobFail(id, error);
-      return true;
-    }
-  }
-
-  @Cron('*/15 * * * * *') // 每 15 秒
-  @Mutation(() => Int)
-  async refreshAllPlayerWaitingStatus() {
-    const ids = Object.keys(this.queue).map((idStr) => parseInt(idStr, 10));
-    if (ids.length === 0) {
-      return 0;
-    }
-    const changes = await Promise.all(
-      ids.map(async (id) => {
-        const changed = await this.refreshQueueItem(id, this.queue[id]);
-        if (changed) {
-          delete this.queue[id];
-        }
-        return changed;
-      }),
-    );
-    return changes.filter((change) => change).length;
   }
 }

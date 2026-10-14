@@ -1,8 +1,12 @@
+import DownloadWorkflowView, {
+  WorkflowStatusTag,
+} from '@/components/DownloadWorkflow';
+import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { handleError } from '@/utils/error';
 import { formatNumbering } from '@/utils/episode';
 import {
   DownloadJobStatus,
   DownloadStatus,
-  GetActiveDownloadJobStatusDocument,
   GetEpisodeByIdDocument,
   GetEpisodeByIdQuery,
   RetryJobStepDocument,
@@ -14,19 +18,10 @@ import useMobile from '@/utils/useMobile';
 import { ReloadOutlined } from '@ant-design/icons';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { useApolloClient, useQuery } from '@apollo/client';
-import {
-  Modal,
-  Progress,
-  Space,
-  Spin,
-  Steps,
-  Tabs,
-  Tag,
-  Typography,
-} from 'antd';
+import { Modal, Progress, Space, Spin, Steps, Tabs, Typography } from 'antd';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, useState, useEffect } from 'react';
 import styles from './index.module.less';
 
 type Episode = NonNullable<GetEpisodeByIdQuery['episodeById']>;
@@ -174,12 +169,16 @@ function JobStepTitle({
       {current === step && job.isFailed && (
         <Typography.Link
           onClick={async () => {
-            await client.mutate({
-              mutation: RetryJobStepDocument,
-              variables: {
-                jobId: job.id,
-              },
-            });
+            try {
+              await client.mutate({
+                mutation: RetryJobStepDocument,
+                variables: {
+                  jobId: job.id,
+                },
+              });
+            } catch (error) {
+              handleError(error);
+            }
           }}
           style={{
             fontSize: 14,
@@ -353,33 +352,6 @@ function EpisodeJob({
   );
 }
 
-function useActiveJobsStatus(
-  jobs: ExtractNode<
-    NonNullable<GetEpisodeByIdQuery['episodeById']>['downloadJobsByEpisodeId']
-  >[],
-) {
-  const jobIds = useMemo(() => jobs.map((job) => job.id), [jobs]);
-  const { data, startPolling, stopPolling, refetch } = useQuery(
-    GetActiveDownloadJobStatusDocument,
-    {
-      skip: !jobIds.length,
-      variables: {
-        jobIds,
-      },
-      pollInterval: 2000,
-    },
-  );
-  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 2000 });
-  const jobIdToStatusMap = useMemo(() => {
-    const map: Record<number, DownloadJobStatus> = {};
-    for (const entry of data?.getActiveDownloadJobStatus ?? []) {
-      map[entry.id] = entry;
-    }
-    return map;
-  }, [data]);
-  return jobIdToStatusMap;
-}
-
 export default function EpisodeDetailsDialog({
   reject,
   visible,
@@ -392,17 +364,30 @@ export default function EpisodeDetailsDialog({
       variables: {
         episodeByIdId: input?.episodeId ?? 0,
       },
-      pollInterval: 1000,
     },
   );
-  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 1000 });
+  useApolloPoll({
+    startPolling,
+    stopPolling,
+    refetch,
+    pollInterval: 30000,
+    enabled: visible && !!input?.episodeId,
+  });
   const jobs = useMemo(
     () => extractNode(data?.episodeById?.downloadJobsByEpisodeId) ?? [],
     [data],
   );
   const mobile = useMobile();
 
-  const jobIdToStatusMap = useActiveJobsStatus(jobs);
+  const states = useDownloadJobStates(
+    jobs.map((job) => job.id),
+    visible,
+  );
+  const [activeJob, setActiveJob] = useState<string>();
+  useEffect(() => {
+    setActiveJob(input?.jobId ? `${input.jobId}` : undefined);
+  }, [input?.jobId, input?.episodeId]);
+  const selectedJob = activeJob ?? (jobs[0] ? `${jobs[0].id}` : undefined);
 
   return (
     <Modal
@@ -462,7 +447,8 @@ export default function EpisodeDetailsDialog({
         </ProDescriptions>
         {jobs.length > 0 ? (
           <Tabs
-            defaultActiveKey={input?.jobId ? `${input.jobId}` : undefined}
+            activeKey={selectedJob}
+            onChange={setActiveJob}
             tabBarExtraContent={{
               left: <div style={{ marginRight: 16 }}>下载任务</div>,
               right: (
@@ -480,24 +466,7 @@ export default function EpisodeDetailsDialog({
                     }}
                   >
                     #{job.id}
-                    <Tag
-                      color={
-                        job.status === DownloadStatus.Available
-                          ? 'green'
-                          : job.isFailed
-                          ? 'red'
-                          : 'blue'
-                      }
-                      style={{
-                        marginLeft: 8,
-                      }}
-                    >
-                      {job.status === DownloadStatus.Available
-                        ? '成功'
-                        : job.isFailed
-                        ? '错误'
-                        : '进行中'}
-                    </Tag>
+                    <WorkflowStatusTag job={job} />
                   </div>
                 }
               >
@@ -507,7 +476,24 @@ export default function EpisodeDetailsDialog({
                     maxHeight: 800,
                   }}
                 >
-                  <EpisodeJob job={job} jobIdToStatusMap={jobIdToStatusMap} />
+                  {job.workflow ? (
+                    <DownloadWorkflowView
+                      job={job}
+                      active={visible && selectedJob === `${job.id}`}
+                      refresh={states.refetch}
+                    />
+                  ) : (
+                    <EpisodeJob
+                      job={{
+                        ...job,
+                        isFailed:
+                          job.isFailed ||
+                          (!job.isCancelled &&
+                            job.status !== DownloadStatus.Available),
+                      }}
+                      jobIdToStatusMap={{}}
+                    />
+                  )}
                 </div>
               </Tabs.TabPane>
             ))}

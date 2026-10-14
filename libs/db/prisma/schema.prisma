@@ -164,6 +164,11 @@ model DownloadJob {
   episode     Episode? @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
   torrentLink String?  @map("torrent_link")
 
+  // 流程快照为空的任务只作历史展示，不恢复执行。
+  workflow Json?
+  version Int @default(0)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
   // 任务状态
   status       DownloadStatus
   isCancelled  Boolean        @default(false) @map("is_cancelled")
