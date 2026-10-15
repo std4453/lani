@@ -27,7 +27,7 @@
 - `cancelDownloadJob(jobId)`：请求永久取消。
 - `retryJobStep(jobId)`：重试执行或取消，拒绝旧任务。
 - `getDownloadJobStates(jobIds)`：批量获取类型化流程、兼容字段和操作能力。
-- `getDownloadJobListSignature(offset, first, isFailed, types)`：检查当前列表的 ID 集合及总数变化。
+- 列表变化检查复用 `allDownloadJobs`，使用与列表相同的筛选和分页，仅查询 ID 与总数。
 - 原下载进度与手动刷新接口保留；空 ID 集合不查询下载器。
 
 共享协议和执行器测试使用内存 store；文件恢复测试使用临时目录。数据库集成测试仅在设置 `LANI_LIFECYCLE_TEST_DATABASE_URL` 时运行，要求本机隔离数据库且名称以 `_test` 结尾。先准备与 Prisma schema 一致的测试数据库，再运行：

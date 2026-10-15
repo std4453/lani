@@ -22,19 +22,3 @@ query GetDownloadJobStates($jobIds: [Int!]!) {
 mutation CancelDownloadJob($jobId: Int!) {
   cancelDownloadJob(jobId: $jobId)
 }
-query GetDownloadJobListSignature(
-  $offset: Int!
-  $first: Int!
-  $isFailed: [Boolean!]
-  $types: [TaskType!]
-) {
-  getDownloadJobListSignature(
-    offset: $offset
-    first: $first
-    isFailed: $isFailed
-    types: $types
-  ) {
-    ids
-    total
-  }
-}

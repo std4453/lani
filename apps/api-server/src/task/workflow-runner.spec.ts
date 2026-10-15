@@ -83,6 +83,32 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
     completions: () => completions,
   };
 }
+it('状态转换遇到并发提交后重读最新检查点，重复取消不再写入', async () => {
+  const test = setup();
+  const commit = test.store.commit;
+  const commits = jest.spyOn(test.store, 'commit');
+  commits.mockImplementationOnce(async (job) => {
+    const concurrent = parseWorkflow(job.workflow);
+    currentStep(concurrent).checkpoint.submission = {
+      hash: 'concurrent',
+      phase: 'prepared',
+    };
+    await commit(job, concurrent);
+    return false;
+  });
+  await test.runner.transition(1, (workflow) =>
+    requestCancellation(workflow, now),
+  );
+  expect(commits).toHaveBeenCalledTimes(2);
+  expect(test.state().workflow.status).toBe('cancelling');
+  expect(currentStep(test.state().workflow).checkpoint.submission?.hash).toBe(
+    'concurrent',
+  );
+  await test.runner.transition(1, (workflow) =>
+    requestCancellation(workflow, now),
+  );
+  expect(commits).toHaveBeenCalledTimes(2);
+});
 it.each([
   ['download'],
   ['refreshPlayer', 'submitDownload', 'download'],

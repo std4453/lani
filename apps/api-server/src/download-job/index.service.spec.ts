@@ -298,20 +298,4 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       data: { jellyfinEpisodeId: null },
     });
   });
-  it('列表签名只返回所选分页及筛选的任务', async () => {
-    await prisma.downloadJob.createMany({
-      data: [
-        { episodeId, status: DownloadStatus.DOWNLOADING, isFailed: true },
-        { episodeId, status: DownloadStatus.DOWNLOADING, isFailed: false },
-      ],
-    });
-    const result = await service.getDownloadJobListSignature(
-      0,
-      1,
-      [true],
-      [TaskType.DOWNLOAD],
-    );
-    expect(result.ids).toHaveLength(1);
-    expect(result.total).toBe(1);
-  });
 });

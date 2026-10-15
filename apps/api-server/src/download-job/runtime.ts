@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { WorkflowRuntime } from '@/task/runtime';
-import { Atoms } from '@/task/workflow-runner';
+import { WorkflowRunner } from '@/task/workflow-runner';
 import { DownloadTaskStore } from './task-store';
 import { DownloadAtom } from './atoms/download-atom';
 import { FindVideoFileAtom } from './atoms/find-video-file.atom';
@@ -10,8 +9,7 @@ import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadWorkflowDefinition } from './atoms/types';
 import { WriteMetadataAtom } from './atoms/write-metadata.atom';
 @Injectable()
-export class DownloadTaskRuntime extends WorkflowRuntime<DownloadWorkflowDefinition> {
-  private atoms: Atoms<DownloadWorkflowDefinition>;
+export class DownloadTaskRuntime extends WorkflowRunner<DownloadWorkflowDefinition> {
   constructor(
     private downloadStore: DownloadTaskStore,
     submitDownload: SubmitDownloadAtom,
@@ -33,14 +31,6 @@ export class DownloadTaskRuntime extends WorkflowRuntime<DownloadWorkflowDefinit
       },
       (error) => new Logger(DownloadTaskRuntime.name).error(error),
     );
-    this.atoms = {
-      submitDownload,
-      download,
-      findVideoFile,
-      importFile,
-      writeMetadata,
-      refreshPlayer,
-    };
   }
   async create(episodeId: number, torrentLink: string) {
     const id = await this.downloadStore.create(

@@ -27,8 +27,3 @@ export class DownloadLifecycle {
   @Field() canRetry: boolean;
   @Field() canCancel: boolean;
 }
-@ObjectType()
-export class JobListSignature {
-  @Field(() => [Int]) ids: number[];
-  @Field(() => Int) total: number;
-}

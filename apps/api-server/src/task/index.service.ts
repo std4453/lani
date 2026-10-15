@@ -13,8 +13,8 @@ import {
   requestCancellation,
   retryWorkflow,
 } from '@lani/download-workflow';
-import { DownloadLifecycle, JobListSignature } from './index.model';
-import { TaskRuntime } from './runtime';
+import { DownloadLifecycle } from './index.model';
+import { TaskRuntime } from './workflow-runner';
 @Injectable()
 @Resolver()
 export class TaskService
@@ -61,13 +61,7 @@ export class TaskService
       const workflow = job.workflow ? parseWorkflow(job.workflow) : null;
       return {
         ...job,
-        id: job.id,
-        version: job.version,
         workflow,
-        status: job.status,
-        isFailed: job.isFailed,
-        isCancelled: job.isCancelled,
-        failedReason: job.failedReason,
         canRetry: !!workflow && workflow.status === 'failed',
         canCancel:
           !!workflow &&
@@ -76,33 +70,6 @@ export class TaskService
           workflow.status !== 'cancelled',
       };
     });
-  }
-  @Query(() => JobListSignature)
-  async getDownloadJobListSignature(
-    @Args({ name: 'offset', type: () => Int, defaultValue: 0 }) offset: number,
-    @Args({ name: 'first', type: () => Int, defaultValue: 30 }) first: number,
-    @Args({ name: 'isFailed', type: () => [Boolean], nullable: true })
-    isFailed?: boolean[],
-    @Args({ name: 'types', type: () => [TaskType], nullable: true })
-    types?: TaskType[],
-  ) {
-    const where: Prisma.DownloadJobWhereInput = {
-      ...(isFailed?.length
-        ? { OR: isFailed.map((value) => ({ isFailed: value })) }
-        : {}),
-      ...(types?.length ? { type: { in: types } } : {}),
-    };
-    const [jobs, total] = await this.prisma.$transaction([
-      this.prisma.downloadJob.findMany({
-        where,
-        orderBy: { id: 'desc' },
-        skip: Math.max(0, offset),
-        take: Math.min(100, Math.max(1, first)),
-        select: { id: true },
-      }),
-      this.prisma.downloadJob.count({ where }),
-    ]);
-    return { ids: jobs.map((job) => job.id), total };
   }
   async onApplicationBootstrap() {
     await this.prisma.downloadJob.updateMany({

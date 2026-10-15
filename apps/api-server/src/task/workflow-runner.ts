@@ -36,14 +36,24 @@ export interface WorkflowStore<D extends WorkflowDefinition> {
 export type Atoms<D extends WorkflowDefinition> = {
   [K in AtomType]: AsyncAtom<D, K>;
 };
-export class WorkflowRunner<D extends WorkflowDefinition> {
+export interface TaskRuntime {
+  start(id: number): Promise<void>;
+  stop(): Promise<void>;
+  transition(
+    id: number,
+    change: (workflow: DownloadWorkflow) => DownloadWorkflow,
+  ): Promise<void>;
+}
+export class WorkflowRunner<D extends WorkflowDefinition>
+  implements TaskRuntime
+{
   private running = new Map<number, Promise<void>>();
   private wake = new Map<number, () => void>();
   private stopping = false;
   private restart = new Set<number>();
   constructor(
     private store: WorkflowStore<D>,
-    private atoms: Atoms<D>,
+    protected readonly atoms: Atoms<D>,
     private onError: (error: unknown) => void,
   ) {}
 
@@ -69,6 +79,16 @@ export class WorkflowRunner<D extends WorkflowDefinition> {
     this.stopping = true;
     for (const wake of this.wake.values()) wake();
     await Promise.all(this.running.values());
+  }
+  async transition(
+    id: number,
+    change: (workflow: DownloadWorkflow) => DownloadWorkflow,
+  ) {
+    for (;;) {
+      const job = await this.store.read(id);
+      const next = change(job.workflow);
+      if (next === job.workflow || (await this.store.commit(job, next))) return;
+    }
   }
   private context(
     job: StoredWorkflow<D>,
