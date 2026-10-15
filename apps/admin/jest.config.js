@@ -8,6 +8,7 @@ module.exports = {
     '^antd/es/.*/style(/index)?$': '<rootDir>/tests/style-mock.js',
     '^antd/es/(.*)$': 'antd/lib/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@lani/workflow$': '<rootDir>/../../libs/workflow/src/index.ts',
     '\\.less$': '<rootDir>/tests/style-mock.js',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],

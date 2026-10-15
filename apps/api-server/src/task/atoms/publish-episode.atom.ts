@@ -44,12 +44,28 @@ export class PublishEpisodeAtom extends AsyncAtom {
         where: { id: episodeId, jellyfinEpisodeId: null },
         data: { jellyfinEpisodeId },
       });
-      if (result.count) return true;
-      const episode = await tx.episode.findUnique({ where: { id: episodeId } });
-      if (!episode) throw new Error('剧集已被删除');
-      if (episode.jellyfinEpisodeId !== jellyfinEpisodeId)
-        throw new Error('剧集已关联其他 Jellyfin 条目，无法继续发布');
-      return false;
+      if (!result.count) {
+        const episode = await tx.episode.findUnique({
+          where: { id: episodeId },
+        });
+        if (!episode) throw new Error('剧集已被删除');
+        if (episode.jellyfinEpisodeId !== jellyfinEpisodeId)
+          throw new Error('剧集已关联其他 Jellyfin 条目，无法继续发布');
+      }
+      const previouslyPublished = step.checkpoint.episodePublished;
+      if (!previouslyPublished) {
+        // 发布归属和关联同时提交；任务终态仍由执行器独立推进。
+        step.checkpoint.episodePublished = true;
+        await tx.task.update({
+          where: { id },
+          data: {
+            workflow: JSON.parse(JSON.stringify(workflow)),
+            version: { increment: 1 },
+            updatedAt: new Date(),
+          },
+        });
+      }
+      return !!result.count && !previouslyPublished;
     });
     if (published) {
       const episode = await this.prisma.episode.findUnique({

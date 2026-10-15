@@ -3,6 +3,8 @@ import { downloadDefinition } from './definition';
 import { TaskService } from '@/task/index.service';
 import { TaskStore } from '@/task/task-store';
 import { claimEpisodePublication } from '@/task/atoms/publication';
+import { PublishEpisodeAtom } from '@/task/atoms/publish-episode.atom';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/common/prisma.service';
 import { LegacyTaskStage, PrismaClient, TaskType } from '@lani/db';
 import {
@@ -277,26 +279,70 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     await expect(service.cancelTask(task.id)).rejects.toThrow('任务已完成');
   });
   it.each(['failed', 'cancelled'] as const)(
-    '关联完成后任务变为 %s，其他任务仍不能进入发布区段',
+    '相同识别ID不阻断发布恢复，真正发布后变为 %s 仍保护成果',
     async (status) => {
       const flow = buildWorkflowSnapshot(
         downloadDefinition,
         atoms,
         new Date().toISOString(),
       );
-      flow.currentStepId = 'import';
+      flow.currentStepId = 'publish';
+      currentStep(flow).status = 'running';
+      currentStep(flow).attempt = 1;
+      // A 仅识别到 Jellyfin 条目，尚未关联即失败。
       await prisma.task.create({
         data: {
           episodeId,
           legacyStage: LegacyTaskStage.PLAYER_WAITING,
-          isFailed: status === 'failed',
-          isCancelled: status === 'cancelled',
+          isFailed: true,
           jellyfinEpisodeId: 'published',
           workflow: JSON.parse(
-            JSON.stringify({ ...flow, status, publicationClaimed: true }),
+            JSON.stringify({
+              ...flow,
+              status: 'failed',
+              publicationClaimed: true,
+            }),
           ),
         },
       });
+      const publisher = await prisma.task.create({
+        data: {
+          episodeId,
+          legacyStage: LegacyTaskStage.PLAYER_WAITING,
+          jellyfinEpisodeId: 'published',
+          workflow: JSON.parse(JSON.stringify(flow)),
+        },
+      });
+      const context = {
+        stepId: 'publish',
+        attempt: 1,
+        checkpoint: {},
+        assertActive: async () => undefined,
+        saveCheckpoint: async () => undefined,
+        wait: async () => undefined,
+        waitFor: async <T>(operation: Promise<T>) => operation,
+      };
+      const emitter = new EventEmitter2();
+      const emit = jest.spyOn(emitter, 'emit');
+      const publish = new PublishEpisodeAtom(prisma as PrismaService, emitter);
+      // B 关联已提交、任务尚未收尾时恢复，A 的相同 ID 不能被当作发布归属。
+      await publish.run(publisher.id, publisher, context);
+      await publish.recover(publisher.id, publisher, context);
+      expect(emit).toHaveBeenCalledTimes(1);
+      const saved = await store.read(publisher.id);
+      expect(currentStep(saved.workflow).checkpoint.episodePublished).toBe(
+        true,
+      );
+      expect(saved.workflow.status).toBe('running');
+      expect(
+        (await prisma.episode.findUnique({ where: { id: episodeId } }))
+          ?.jellyfinEpisodeId,
+      ).toBe('published');
+      const terminal = parseWorkflow(saved.workflow);
+      terminal.status = status;
+      terminal.finishedAt = new Date().toISOString();
+      expect(await store.commit(saved, terminal)).toBe(true);
+      flow.currentStepId = 'import';
       const retry = await prisma.task.create({
         data: {
           episodeId,
@@ -304,23 +350,13 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           workflow: JSON.parse(JSON.stringify(flow)),
         },
       });
-      const claim = () =>
+      await expect(
         claimEpisodePublication(prisma as PrismaService, retry.id, {
+          ...context,
           stepId: 'import',
           attempt: 0,
-          checkpoint: {},
-          assertActive: async () => undefined,
-          saveCheckpoint: async () => undefined,
-          wait: async () => undefined,
-          waitFor: async (operation) => operation,
-        });
-      // 仅刷新识别到条目不等于完成发布，不应阻止失败后的另建任务。
-      await expect(claim()).resolves.toBeUndefined();
-      await prisma.episode.update({
-        where: { id: episodeId },
-        data: { jellyfinEpisodeId: 'published' },
-      });
-      await expect(claim()).rejects.toThrow('其他任务正在发布或已发布');
+        }),
+      ).rejects.toThrow('其他任务正在发布或已发布');
     },
   );
 });

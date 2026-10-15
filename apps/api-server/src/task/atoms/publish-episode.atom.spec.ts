@@ -61,7 +61,12 @@ function setup() {
   };
   const tx = {
     $queryRaw: jest.fn(async () => []),
-    task: { findUnique: jest.fn(async () => ({ workflow })) },
+    task: {
+      findUnique: jest.fn(async () => ({ workflow })),
+      update: jest.fn(async ({ data }) =>
+        Object.assign(workflow, data.workflow),
+      ),
+    },
     episode,
   };
   const prisma = {
@@ -100,6 +105,8 @@ it('关联提交后尚未收尾时恢复，只通知首次发布', async () => {
     data: { jellyfinEpisodeId: 'jellyfin-episode' },
   });
   expect(test.emit).toHaveBeenCalledTimes(1);
+  expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
+  expect(test.tx.task.update).toHaveBeenCalledTimes(1);
   expect(claimEpisodePublication).toHaveBeenCalledWith(
     expect.anything(),
     1,

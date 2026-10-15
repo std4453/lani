@@ -33,13 +33,12 @@ export async function claimEpisodePublication(
     workflow.publicationClaimed = true;
     const claimed = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(14521, ${job.episodeId})::text`;
-      // 已关联的成果不因任务随后失败或取消而释放；未关联的刷新结果仍可让位。
+      // 只有发布原子提交的标记证明归属，识别到相同 Jellyfin ID 不代表已发布。
       const other = await tx.$queryRaw<{ id: number }[]>`
         SELECT id FROM download_jobs WHERE episode_id=${job.episodeId} AND id<>${id}
           AND (status='AVAILABLE'::download_status OR
             (workflow->>'publicationClaimed'='true' AND workflow->>'status' IN ('running','cancelling','succeeded')) OR
-            (jellyfin_episode_id IS NOT NULL AND jellyfin_episode_id=
-              (SELECT episodes.jellyfin_episode_id FROM episodes WHERE episodes.id=${job.episodeId})))
+            workflow->'steps' @> '[{"atom":"publishEpisode","checkpoint":{"episodePublished":true}}]'::jsonb)
         LIMIT 1`;
       if (other.length)
         throw new Error('同一剧集的其他任务正在发布或已发布，无法继续');

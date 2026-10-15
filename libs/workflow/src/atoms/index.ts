@@ -5,11 +5,13 @@ import {
   submissionCheckpointSchema,
 } from "./submit-download";
 import { refreshStartedAtSchema } from "./refresh-player";
+import { episodePublishedSchema } from "./publish-episode";
 export { FileIdentity, FileCheckpoint } from "./import-file";
 export interface Checkpoint {
   submission?: SubmissionCheckpoint;
   file?: FileCheckpoint;
   refreshStartedAt?: string;
+  episodePublished?: boolean;
 }
 /** 注册表只组合 atom 自己定义的检查点，不集中实现业务校验。 */
 export const atomSchemas = {
@@ -19,7 +21,7 @@ export const atomSchemas = {
   importFile: { file: fileCheckpointSchema },
   writeMetadata: {},
   refreshPlayer: { refreshStartedAt: refreshStartedAtSchema },
-  publishEpisode: {},
+  publishEpisode: { episodePublished: episodePublishedSchema },
 };
 export type AtomType = keyof typeof atomSchemas;
 export const atomTypes = Object.keys(atomSchemas) as AtomType[];

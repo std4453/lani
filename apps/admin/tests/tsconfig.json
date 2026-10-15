@@ -4,6 +4,7 @@
     "target": "ES2020",
     "allowJs": true,
     "module": "commonjs",
+    "importHelpers": false,
     "skipLibCheck": true
   },
   "include": ["../src/**/*.test.ts", "../src/**/*.test.tsx", "./types.d.ts"],
