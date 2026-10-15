@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
@@ -9,6 +9,7 @@ export class DownloadRefreshService extends BatchQueue<
   string,
   { downloadPath: string }
 > {
+  private logger = new Logger(DownloadRefreshService.name);
   constructor(private client: IDownloadClient) {
     super();
   }
@@ -40,12 +41,12 @@ export class DownloadRefreshService extends BatchQueue<
           this.settle(id, entry, { downloadPath: torrent.downloadPath });
       }
     } catch (error) {
-      for (const [id, entry] of entries)
-        this.settle(
-          id,
-          entry,
-          error instanceof Error ? error : new Error('下载状态刷新失败'),
-        );
+      // 查询失败不能证明下载失败；保留等待对象，下个周期重试。
+      this.logger.warn(
+        `Torrent status query failed; retrying on next refresh: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 }

@@ -164,11 +164,9 @@ it('前一个季度刷新在途时取消后面的季度，不发送已取消季�
         release = resolve;
       }),
   );
-  jest
-    .spyOn(TvShowsService, 'getEpisodes')
-    .mockResolvedValue({
-      Items: [{ Id: 'one', IndexNumber: 1, ParentIndexNumber: 1 }],
-    });
+  jest.spyOn(TvShowsService, 'getEpisodes').mockResolvedValue({
+    Items: [{ Id: 'one', IndexNumber: 1, ParentIndexNumber: 1 }],
+  });
   const queue = new PlayerRefreshService();
   const first = queue.enqueue(1, {
     seriesId: 'first',
@@ -188,4 +186,49 @@ it('前一个季度刷新在途时取消后面的季度，不发送已取消季�
   await batch;
   await first;
   expect(refresh).toHaveBeenCalledTimes(1);
+});
+it('下载器暂时断连保留队列，下个周期继续查询，取消对象不再查询', async () => {
+  const lookupTorrents = jest
+    .fn()
+    .mockRejectedValueOnce(new Error('temporarily offline'))
+    .mockResolvedValueOnce([
+      { hash: 'keep', status: 'success', downloadPath: '/download' },
+    ]);
+  const queue = new DownloadRefreshService({
+    lookupTorrents,
+  } as unknown as IDownloadClient);
+  const fulfilled = jest.fn(),
+    rejected = jest.fn();
+  const result = queue.enqueue(1, 'keep').then(fulfilled, rejected);
+  void queue.enqueue(2, 'cancelled').then(fulfilled, rejected);
+  await queue.refreshAllDownloadStatus();
+  expect(fulfilled).not.toHaveBeenCalled();
+  expect(rejected).not.toHaveBeenCalled();
+  queue.remove(2);
+  await queue.refreshAllDownloadStatus();
+  await result;
+  expect(lookupTorrents).toHaveBeenNthCalledWith(2, ['keep']);
+  expect(fulfilled).toHaveBeenCalledWith({ downloadPath: '/download' });
+  expect(rejected).not.toHaveBeenCalled();
+});
+it('成功查询后，种子不存在或明确错误才会使对应下载失败', async () => {
+  const lookupTorrents = jest.fn().mockResolvedValue([
+    { hash: 'broken', status: 'error', state: 'missingFiles' },
+    { hash: 'good', status: 'success', downloadPath: '/download' },
+  ]);
+  const queue = new DownloadRefreshService({
+    lookupTorrents,
+  } as unknown as IDownloadClient);
+  const missing = expect(queue.enqueue(1, 'missing')).rejects.toThrow(
+    '种子不存在',
+  );
+  const broken = expect(queue.enqueue(2, 'broken')).rejects.toThrow(
+    'missingFiles',
+  );
+  const good = expect(queue.enqueue(3, 'good')).resolves.toEqual({
+    downloadPath: '/download',
+  });
+  await queue.refreshAllDownloadStatus();
+  await Promise.all([missing, broken, good]);
+  expect(await queue.refreshAllDownloadStatus()).toBe(0);
 });
