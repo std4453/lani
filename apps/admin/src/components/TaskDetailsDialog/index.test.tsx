@@ -18,6 +18,13 @@ import {
 } from '@/generated/types';
 import { atomTypes, AtomRegistry, buildWorkflowSnapshot } from '@lani/workflow';
 
+it('生成的任务详情查询不重复定义嵌套复用的片段', () => {
+  const names = GetTaskByIdDocument.definitions.flatMap((definition) =>
+    definition.kind === 'FragmentDefinition' ? [definition.name.value] : [],
+  );
+  expect(new Set(names).size).toBe(names.length);
+});
+
 const registry = Object.fromEntries(
   atomTypes.map((atom) => [atom, { wants: [] }]),
 ) as unknown as AtomRegistry;
