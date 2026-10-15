@@ -9,6 +9,11 @@
 
   @media @mobile {
     :global {
+      // 固定容器定位，避免左边界阴影切换时改变滚动层，打断 iOS Safari 手势。
+      .ant-table-container {
+        position: relative;
+      }
+
       .ant-table-wrapper {
         margin: 0 -24px;
         max-width: calc(100% + 48px);
