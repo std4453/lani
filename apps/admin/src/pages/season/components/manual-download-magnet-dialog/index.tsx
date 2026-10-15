@@ -41,7 +41,7 @@ export default function ManualDownloadMagnetDialog({
             },
           });
           if (!data) throw new Error('下载任务响应为空');
-          void message.success('创建成功');
+          void message.success('下载任务创建成功');
           await resolve(data.downloadTorrentForEpisode);
           return true;
         } catch (error) {

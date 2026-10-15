@@ -1,8 +1,8 @@
 import { Badge, Tag, Typography } from 'antd';
 import {
   taskStatus,
-  jobState,
-  jobStates,
+  taskState,
+  taskStates,
   taskStatusLabels,
 } from '@/constants/task-status';
 import styles from './index.module.less';
@@ -14,14 +14,14 @@ const colors = {
   cancelling: 'blue',
 };
 export default function TaskStatus({
-  job,
+  task,
   variant = 'tag',
 }: {
-  job: Parameters<typeof taskStatus>[0];
+  task: Parameters<typeof taskStatus>[0];
   variant?: 'tag' | 'badge';
 }) {
-  const status = taskStatus(job);
-  const state = jobState(job);
+  const status = taskStatus(task);
+  const state = taskState(task);
   return variant === 'tag' ? (
     <Tag color={colors[status]}>{taskStatusLabels[status]}</Tag>
   ) : (
@@ -36,7 +36,7 @@ export default function TaskStatus({
       }
       text={
         <Typography.Text type={state === 'cancelled' ? 'secondary' : undefined}>
-          {jobStates[state].text}
+          {taskStates[state].text}
         </Typography.Text>
       }
     />

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
-import { DownloadJobStatus } from '@/generated/types';
+import { DownloadProgress } from '@/generated/types';
 import {
   DownloadProgressDetails,
   formatBytes,
@@ -17,7 +17,7 @@ it('速度为零或 ETA 不可用时显示未知时间，正常时间补齐时�
 });
 it('展示做种者和下载者，超额下载百分比不超过 100%', () => {
   const container = document.createElement('div');
-  const progress: DownloadJobStatus = {
+  const progress: DownloadProgress = {
     id: 1,
     speed: 0,
     downloaded: '150',

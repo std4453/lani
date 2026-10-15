@@ -1,6 +1,6 @@
-fragment downloadJobStatusFields on DownloadJob {
+fragment taskStatusFields on Task {
   id
-  status
+  legacyStage
   isFailed
   isCancelled
   workflow
@@ -11,10 +11,10 @@ fragment episodeStatusFields on Episode {
   jellyfinEpisodeId
   airTime
   id
-  jobs: downloadJobsByEpisodeId(first: 1, orderBy: ID_DESC) {
+  tasks: tasksByEpisodeId(first: 1, orderBy: ID_DESC) {
     edges {
       node {
-        ...downloadJobStatusFields
+        ...taskStatusFields
       }
     }
   }

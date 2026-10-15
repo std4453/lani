@@ -1,5 +1,5 @@
-jest.mock('@/utils/useDownloadJobStates', () => ({
-  useDownloadJobStates: () => ({ refetch: jest.fn() }),
+jest.mock('@/utils/useTaskStates', () => ({
+  useTaskStates: () => ({ refetch: jest.fn() }),
 }));
 jest.mock('@/utils/useApolloPoll', () => ({
   useApolloPoll: jest.fn(),
@@ -11,23 +11,18 @@ import { act } from 'react-dom/test-utils';
 import { MockedProvider } from '@apollo/client/testing';
 import TaskDetailsDialog from './index';
 import {
-  DownloadStatus,
+  LegacyTaskStage,
   GetTaskByIdDocument,
-  GetEpisodeByIdDocument,
   TaskDetailsFieldsFragment,
   TaskType,
 } from '@/generated/types';
-import {
-  atomTypes,
-  AtomRegistry,
-  buildWorkflowSnapshot,
-} from '@lani/download-workflow';
+import { atomTypes, AtomRegistry, buildWorkflowSnapshot } from '@lani/workflow';
 
 const registry = Object.fromEntries(
   atomTypes.map((atom) => [atom, { wants: [] }]),
 ) as unknown as AtomRegistry;
-const job: TaskDetailsFieldsFragment = {
-  __typename: 'DownloadJob',
+const task: TaskDetailsFieldsFragment = {
+  __typename: 'Task',
   id: 42,
   type: TaskType.Download,
   episodeId: 7,
@@ -42,7 +37,7 @@ const job: TaskDetailsFieldsFragment = {
   version: 0,
   nfoPath: null,
   qbtTorrentHash: null,
-  status: DownloadStatus.DownloadSubmitting,
+  legacyStage: LegacyTaskStage.DownloadSubmitting,
   torrentLink: null,
   jellyfinEpisodeId: null,
   torrentTitle: null,
@@ -68,43 +63,39 @@ const settle = async (ms = 20) =>
     await new Promise((resolve) => setTimeout(resolve, ms));
   });
 
-it('只传任务 ID 加载剧集弹窗和任务列表，并选中指定任务', async () => {
+it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列表与选中任务', async () => {
   act(() => {
     ReactDOM.render(
       <MockedProvider
         mocks={[
           {
             request: { query: GetTaskByIdDocument, variables: { id: 42 } },
-            result: { data: { downloadJobById: job } },
-          },
-          {
-            request: {
-              query: GetEpisodeByIdDocument,
-              variables: { episodeByIdId: 7 },
-            },
             delay: 100,
             result: {
               data: {
-                episodeById: {
-                  __typename: 'Episode',
-                  id: 7,
-                  title: '异步剧集标题',
-                  index: 3,
-                  createdAt: job.createdAt,
-                  jellyfinEpisodeId: null,
-                  downloadJobsByEpisodeId: {
-                    __typename: 'DownloadJobsConnection',
-                    edges: [{ node: { ...job, id: 43 } }, { node: job }],
-                  },
-                  numbering: { type: 'episode', number: '3', sort: '3' },
-                  rawAirTime: null,
-                  airTime: null,
-                  description: '加载后的说明',
-                  seasonBySeasonId: {
-                    __typename: 'Season',
-                    id: 2,
-                    title: '测试季度',
-                    downloadOffsetHours: 0,
+                taskById: {
+                  ...task,
+                  episodeByEpisodeId: {
+                    __typename: 'Episode',
+                    id: 7,
+                    title: '异步剧集标题',
+                    index: 3,
+                    createdAt: task.createdAt,
+                    jellyfinEpisodeId: null,
+                    tasksByEpisodeId: {
+                      __typename: 'TasksConnection',
+                      edges: [{ node: { ...task, id: 43 } }, { node: task }],
+                    },
+                    numbering: { type: 'episode', number: '3', sort: '3' },
+                    rawAirTime: null,
+                    airTime: null,
+                    description: '加载后的说明',
+                    seasonBySeasonId: {
+                      __typename: 'Season',
+                      id: 2,
+                      title: '测试季度',
+                      downloadOffsetHours: 0,
+                    },
                   },
                 },
               },
@@ -113,7 +104,7 @@ it('只传任务 ID 加载剧集弹窗和任务列表，并选中指定任务', 
         ]}
       >
         <TaskDetailsDialog
-          input={{ jobId: 42 }}
+          input={{ taskId: 42, taskType: TaskType.Download }}
           visible
           reject={jest.fn()}
           resolve={jest.fn()}
@@ -122,8 +113,12 @@ it('只传任务 ID 加载剧集弹窗和任务列表，并选中指定任务', 
       container,
     );
   });
-  await settle();
+  const modal = document.querySelector('.ant-modal');
+  expect(modal).not.toBeNull();
+  expect(modal?.querySelector('.ant-skeleton')).not.toBeNull();
   await settle(150);
+  expect(document.querySelector('.ant-modal')).toBe(modal);
+  expect(modal?.querySelector('.ant-skeleton')).toBeNull();
   expect(document.querySelector('.ant-modal-title')?.textContent).toContain(
     '异步剧集标题',
   );
@@ -151,12 +146,20 @@ it('任务没有关联剧集仍可查看流程，不依赖调用侧提供剧集�
         mocks={[
           {
             request: { query: GetTaskByIdDocument, variables: { id: 42 } },
-            result: { data: { downloadJobById: { ...job, episodeId: null } } },
+            result: {
+              data: {
+                taskById: {
+                  ...task,
+                  episodeId: null,
+                  episodeByEpisodeId: null,
+                },
+              },
+            },
           },
         ]}
       >
         <TaskDetailsDialog
-          input={{ jobId: 42 }}
+          input={{ taskId: 42, taskType: TaskType.Download }}
           visible
           reject={jest.fn()}
           resolve={jest.fn()}
@@ -173,28 +176,44 @@ it('任务没有关联剧集仍可查看流程，不依赖调用侧提供剧集�
     '自定义提交',
   );
 });
-it('不存在的任务显示空结果，不显示其他任务信息', async () => {
-  act(() => {
-    ReactDOM.render(
-      <MockedProvider
-        mocks={[
-          {
-            request: { query: GetTaskByIdDocument, variables: { id: 99 } },
-            result: { data: { downloadJobById: null } },
-          },
-        ]}
-      >
-        <TaskDetailsDialog
-          input={{ jobId: 99 }}
-          visible
-          reject={jest.fn()}
-          resolve={jest.fn()}
-        />
-      </MockedProvider>,
-      container,
-    );
-  });
+it('切换任务立即清除旧内容，不存在的任务显示空结果', async () => {
+  const render = (taskId: number) =>
+    act(() => {
+      ReactDOM.render(
+        <MockedProvider
+          mocks={[
+            {
+              request: { query: GetTaskByIdDocument, variables: { id: 42 } },
+              result: {
+                data: { taskById: { ...task, episodeByEpisodeId: null } },
+              },
+            },
+            {
+              request: { query: GetTaskByIdDocument, variables: { id: 99 } },
+              delay: 100,
+              result: { data: { taskById: null } },
+            },
+          ]}
+        >
+          <TaskDetailsDialog
+            input={{ taskId, taskType: TaskType.Download }}
+            visible
+            reject={jest.fn()}
+            resolve={jest.fn()}
+          />
+        </MockedProvider>,
+        container,
+      );
+    });
+  render(42);
   await settle();
+  expect(document.querySelector('.ant-steps')).not.toBeNull();
+  const modal = document.querySelector('.ant-modal');
+  render(99);
+  expect(document.querySelector('.ant-modal')).toBe(modal);
+  expect(document.querySelector('.ant-steps')).toBeNull();
+  expect(document.querySelector('.ant-skeleton')).not.toBeNull();
+  await settle(150);
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '任务不存在',
   );

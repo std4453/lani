@@ -17,12 +17,12 @@ import {
   atomTypes,
   buildWorkflowSnapshot,
   requestCancellation,
-  DownloadWorkflow,
-} from '@lani/download-workflow';
+  Workflow,
+} from '@lani/workflow';
 import {
-  CancelDownloadJobDocument,
-  RetryJobStepDocument,
-  DownloadStatus,
+  CancelTaskDocument,
+  RetryTaskDocument,
+  LegacyTaskStage,
   TaskDetailsFieldsFragment,
 } from '@/generated/types';
 const registry = Object.fromEntries(
@@ -39,11 +39,11 @@ const workflow = () =>
   );
 let container: HTMLDivElement;
 const refresh = jest.fn(async () => undefined);
-const render = (flow: DownloadWorkflow) =>
+const render = (flow: Workflow) =>
   act(() => {
     ReactDOM.render(
       <TaskWorkflowView
-        job={{ id: 1, createdAt: '2026-10-14', workflow: flow } as never}
+        task={{ id: 1, createdAt: '2026-10-14', workflow: flow } as never}
         active
         refresh={refresh}
       />,
@@ -138,8 +138,8 @@ it.each(['execute', 'cancel'] as const)(
       button.click();
     });
     expect(mutate).toHaveBeenCalledWith({
-      mutation: RetryJobStepDocument,
-      variables: { jobId: 1 },
+      mutation: RetryTaskDocument,
+      variables: { taskId: 1 },
     });
     expect(refresh).toHaveBeenCalledTimes(1);
   },
@@ -147,10 +147,7 @@ it.each(['execute', 'cancel'] as const)(
 it('取消中默认无表单和操作，取消完成只有当前位置显示取消时间且不可折叠', () => {
   const base = workflow();
   base.steps[0].status = 'running';
-  const flow: DownloadWorkflow = requestCancellation(
-    base,
-    '2026-10-14T12:01:00Z',
-  );
+  const flow: Workflow = requestCancellation(base, '2026-10-14T12:01:00Z');
   render(flow);
   expect(container.querySelector('[aria-label="loading"]')).not.toBeNull();
   const current = container.querySelector('.ant-steps-item-process')!;
@@ -203,8 +200,8 @@ it('取消任务先确认，接口返回后立即刷新', async () => {
       .click();
   });
   expect(mutate).toHaveBeenCalledWith({
-    mutation: CancelDownloadJobDocument,
-    variables: { jobId: 1 },
+    mutation: CancelTaskDocument,
+    variables: { taskId: 1 },
   });
   expect(refresh).toHaveBeenCalledTimes(1);
   expect(mutate.mock.invocationCallOrder[0]).toBeLessThan(
@@ -215,10 +212,10 @@ it('取消任务先确认，接口返回后立即刷新', async () => {
 it.each([true, false])(
   '旧任务复用可折叠步骤和失败表单（已记录失败：%s），重试仍调用原接口',
   async (isFailed) => {
-    const job = {
+    const task = {
       id: 9,
       workflow: null,
-      status: DownloadStatus.Downloading,
+      legacyStage: LegacyTaskStage.Downloading,
       isFailed,
       isCancelled: false,
       createdAt: '2026-10-14',
@@ -226,10 +223,10 @@ it.each([true, false])(
       failedReason: '种子不存在',
       qbtTorrentHash: 'existing-hash',
     } as TaskDetailsFieldsFragment;
-    const original = JSON.stringify(job);
+    const original = JSON.stringify(task);
     act(() => {
       ReactDOM.render(
-        <TaskWorkflowView job={job} active refresh={refresh} />,
+        <TaskWorkflowView task={task} active refresh={refresh} />,
         container,
       );
     });
@@ -251,9 +248,9 @@ it.each([true, false])(
       failed.querySelector<HTMLButtonElement>('button.ant-btn-link')!.click(),
     );
     expect(mutate).toHaveBeenCalledWith({
-      mutation: RetryJobStepDocument,
-      variables: { jobId: 9 },
+      mutation: RetryTaskDocument,
+      variables: { taskId: 9 },
     });
-    expect(JSON.stringify(job)).toBe(original);
+    expect(JSON.stringify(task)).toBe(original);
   },
 );

@@ -1,0 +1,21 @@
+fragment LiveTask on Task {
+  id
+  type
+  version
+  workflow
+  legacyStage
+  isFailed
+  isCancelled
+  failedReason
+  qbtTorrentHash
+  torrentTitle
+  downloadPath
+  importPath
+  filePath
+  nfoPath
+  jellyfinEpisodeId
+}
+
+fragment TaskVersion on Task {
+  version
+}

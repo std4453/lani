@@ -88,7 +88,7 @@ export class SaveSeasonPatch {
 }
 
 @ObjectType()
-export class DownloadJobStatus {
+export class DownloadProgress {
   id: number;
   /**
    * 当前速度，单位: byte/s

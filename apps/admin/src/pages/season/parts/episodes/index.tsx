@@ -1,4 +1,5 @@
 import { formatNumbering } from '@/utils/episode';
+import { TaskType } from '@/generated/types';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
@@ -24,7 +25,7 @@ import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-
 import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
-import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -74,8 +75,8 @@ function EpisodeStatusTag({
   return (
     <div>
       <DownloadStatusTag
-        status={mergedEpisode.jobStatus}
-        jobId={mergedEpisode.jobId}
+        status={mergedEpisode.taskStatus}
+        taskId={mergedEpisode.taskId}
         openTaskDetails={openTaskDetails}
       />
     </div>
@@ -143,7 +144,7 @@ function useColumns({
       },
       {
         title: '下载状态',
-        dataIndex: 'jobStatus',
+        dataIndex: 'taskStatus',
         width: fixedColumnWidths.status,
         render: (_, r) => (
           <EpisodeStatusTag episode={r} openTaskDetails={openTaskDetails} />
@@ -216,9 +217,10 @@ function useColumns({
                             },
                           });
                           if (data) {
-                            void message.success('创建成功');
+                            void message.success('下载任务创建成功');
                             void openTaskDetails({
-                              jobId: data.downloadTorrentForEpisode,
+                              taskId: data.downloadTorrentForEpisode,
+                              taskType: TaskType.Download,
                             });
                           }
                           void reloadEpisodes();
@@ -236,8 +238,11 @@ function useColumns({
                   onClick={() => {
                     void openDownloadMagnet({
                       episodeId: r.id,
-                      onResolve: (jobId) => {
-                        void openTaskDetails({ jobId });
+                      onResolve: (taskId) => {
+                        void openTaskDetails({
+                          taskId,
+                          taskType: TaskType.Download,
+                        });
                         void reloadEpisodes();
                         void refetchEpisodesStatus();
                       },
@@ -347,10 +352,10 @@ function useEpisodeStatus(episodes: Episode[]) {
       },
     },
   );
-  const jobIds = (extractNode(data?.allEpisodes) ?? []).flatMap(
-    (episode) => extractNode(episode.jobs)?.map((job) => job.id) ?? [],
+  const taskIds = (extractNode(data?.allEpisodes) ?? []).flatMap(
+    (episode) => extractNode(episode.tasks)?.map((task) => task.id) ?? [],
   );
-  useDownloadJobStates(jobIds);
+  useTaskStates(taskIds);
   useApolloPoll({
     pollInterval: 30000,
     startPolling,
@@ -365,10 +370,10 @@ function useEpisodeStatus(episodes: Episode[]) {
     }
     const episodesStatusMap: Record<number, EpisodeStatusFields> = {};
     for (const item of episodesStatus) {
-      const { status, jobId } = calcEpisodeStatus(item);
+      const { status, taskId } = calcEpisodeStatus(item);
       episodesStatusMap[item.id] = {
-        jobStatus: status,
-        jobId,
+        taskStatus: status,
+        taskId,
       };
     }
     return episodesStatusMap;

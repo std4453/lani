@@ -1,7 +1,7 @@
-fragment listDownloadJobsFields on DownloadJob {
+fragment listTasksFields on Task {
   id
   type
-  status
+  legacyStage
   isFailed
   isCancelled
   workflow
@@ -22,37 +22,23 @@ fragment listDownloadJobsFields on DownloadJob {
   failedReason
 }
 
-query ListDownloadJobs($offset: Int, $first: Int, $filter: DownloadJobFilter) {
-  allDownloadJobs(
-    offset: $offset
-    first: $first
-    filter: $filter
-    orderBy: ID_DESC
-  ) {
+query ListTasks($offset: Int, $first: Int, $filter: TaskFilter) {
+  allTasks(offset: $offset, first: $first, filter: $filter, orderBy: ID_DESC) {
     pageInfo {
       hasNextPage
     }
     totalCount
     edges {
       node {
-        ...listDownloadJobsFields
+        ...listTasksFields
       }
       cursor
     }
   }
 }
 
-query GetDownloadJobPageSignature(
-  $offset: Int
-  $first: Int
-  $filter: DownloadJobFilter
-) {
-  allDownloadJobs(
-    offset: $offset
-    first: $first
-    filter: $filter
-    orderBy: ID_DESC
-  ) {
+query GetTaskPageSignature($offset: Int, $first: Int, $filter: TaskFilter) {
+  allTasks(offset: $offset, first: $first, filter: $filter, orderBy: ID_DESC) {
     totalCount
     edges {
       node {

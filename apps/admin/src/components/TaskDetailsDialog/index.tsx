@@ -1,74 +1,21 @@
-import TaskContent from '@/components/TaskWorkflow/TaskContent';
-import styles from '../EpisodeDetailsDialog/index.module.less';
 import EpisodeDetailsDialog from '@/components/EpisodeDetailsDialog';
-import { GetTaskByIdDocument } from '@/generated/types';
-import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
-import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { TaskType } from '@/generated/types';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
-import { useQuery } from '@apollo/client';
-import { Alert, Modal, Spin } from 'antd';
 
-/** 调用方只提供任务 ID，内部定位剧集并选中对应下载任务。 */
+/** 通用入口只分派任务类型；各类任务自行加载详情。 */
 export default function TaskDetailsDialog(
-  props: DialogProps<{ jobId: number }>,
+  props: DialogProps<{ taskId: number; taskType: TaskType }>,
 ) {
-  const { input, visible, reject, resolve } = props;
-  const available = useForegroundOnline();
-  const { data, loading, error, refetch } = useQuery(GetTaskByIdDocument, {
-    variables: { id: input?.jobId ?? 0 },
-    skip: !visible || !available || !input?.jobId,
-    fetchPolicy: 'cache-and-network',
-  });
-  useApolloPoll({
-    refetch,
-    pollInterval: 30000,
-    enabled: visible && !!input?.jobId,
-  });
-  const job =
-    data?.downloadJobById?.id === input?.jobId
-      ? data?.downloadJobById
-      : undefined;
-  const states = useDownloadJobStates(
-    job && !job.episodeId ? [job.id] : [],
-    visible,
-    2000,
-  );
-  if (job?.episodeId)
-    return (
-      <EpisodeDetailsDialog
-        input={{ episodeId: job.episodeId, jobId: job.id }}
-        visible={visible}
-        reject={reject}
-        resolve={resolve}
-      />
-    );
-  return (
-    <Modal
-      className={styles.dialog}
-      visible={visible}
-      onCancel={reject}
-      footer={false}
-      title="下载任务详情"
-      width={800}
-      destroyOnClose
-    >
-      <Spin spinning={loading}>
-        {error ? (
-          <Alert type="error" message="任务加载失败" />
-        ) : job ? (
-          <>
-            <Alert
-              type="info"
-              message="关联剧集不存在"
-              style={{ marginBottom: 16 }}
-            />
-            <TaskContent job={job} active={visible} refresh={states.refetch} />
-          </>
-        ) : (
-          !loading && <Alert type="info" message="任务不存在" />
-        )}
-      </Spin>
-    </Modal>
-  );
+  switch (props.input?.taskType) {
+    case TaskType.Download:
+      return (
+        <EpisodeDetailsDialog
+          {...props}
+          input={{ taskId: props.input.taskId }}
+        />
+      );
+    default:
+      return null;
+  }
 }
 export const useTaskDetailsDialog = createUseDialog(TaskDetailsDialog);

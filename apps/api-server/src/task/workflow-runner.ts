@@ -1,59 +1,41 @@
 import {
   AtomContext,
-  AsyncAtom,
   ExecutionStopped,
-  StepInput,
-  PartialOutput,
+  TaskInput,
+  TaskOutput,
+  Atoms,
 } from './atom';
-export interface WorkflowDefinition {
-  params: unknown;
-  steps: Record<AtomType, { output: unknown }>;
-}
 import {
-  AtomType,
   Checkpoint,
   currentStep,
-  DownloadWorkflow,
+  Workflow,
   isActive,
   parseWorkflow,
-} from '@lani/download-workflow';
+} from '@lani/workflow';
 
-export type Output<D extends WorkflowDefinition> = PartialOutput<D>;
-export interface StoredWorkflow<D extends WorkflowDefinition> {
+export type Output = TaskOutput;
+export interface StoredTask {
   id: number;
   version: number;
-  workflow: DownloadWorkflow;
-  input: StepInput<D>;
+  workflow: Workflow;
+  input: TaskInput;
 }
-export interface WorkflowStore<D extends WorkflowDefinition> {
-  read(id: number): Promise<StoredWorkflow<D>>;
+export interface TaskStorePort {
+  read(id: number): Promise<StoredTask>;
   commit(
-    job: StoredWorkflow<D>,
-    workflow: DownloadWorkflow,
-    output?: Output<D>,
+    task: StoredTask,
+    workflow: Workflow,
+    output?: Output,
   ): Promise<boolean>;
 }
-export type Atoms<D extends WorkflowDefinition> = {
-  [K in AtomType]: AsyncAtom<D, K>;
-};
-export interface TaskRuntime {
-  start(id: number): Promise<void>;
-  stop(): Promise<void>;
-  transition(
-    id: number,
-    change: (workflow: DownloadWorkflow) => DownloadWorkflow,
-  ): Promise<void>;
-}
-export class WorkflowRunner<D extends WorkflowDefinition>
-  implements TaskRuntime
-{
+export class WorkflowRunner {
   private running = new Map<number, Promise<void>>();
   private wake = new Map<number, () => void>();
   private stopping = false;
   private restart = new Set<number>();
   constructor(
-    private store: WorkflowStore<D>,
-    protected readonly atoms: Atoms<D>,
+    private store: TaskStorePort,
+    protected readonly atoms: Atoms,
     private onError: (error: unknown) => void,
   ) {}
 
@@ -80,26 +62,24 @@ export class WorkflowRunner<D extends WorkflowDefinition>
     for (const wake of this.wake.values()) wake();
     await Promise.all(this.running.values());
   }
-  async transition(
-    id: number,
-    change: (workflow: DownloadWorkflow) => DownloadWorkflow,
-  ) {
+  async transition(id: number, change: (workflow: Workflow) => Workflow) {
     for (;;) {
-      const job = await this.store.read(id);
-      const next = change(job.workflow);
-      if (next === job.workflow || (await this.store.commit(job, next))) return;
+      const task = await this.store.read(id);
+      const next = change(task.workflow);
+      if (next === task.workflow || (await this.store.commit(task, next)))
+        return;
     }
   }
   private context(
-    job: StoredWorkflow<D>,
+    task: StoredTask,
     stepId: string,
     cancelling = false,
   ): AtomContext {
-    const initial = job.workflow.steps.find((step) => step.id === stepId)!;
+    const initial = task.workflow.steps.find((step) => step.id === stepId)!;
     const attempt = initial.attempt;
     let checkpoint = initial.checkpoint;
     const read = async () => {
-      const latest = await this.store.read(job.id);
+      const latest = await this.store.read(task.id);
       const step = latest.workflow.steps.find((s) => s.id === stepId);
       if (
         this.stopping ||
@@ -130,7 +110,7 @@ export class WorkflowRunner<D extends WorkflowDefinition>
         let wake: () => void;
         const signal = new Promise<typeof interrupted>((resolve) => {
           wake = () => resolve(interrupted);
-          this.wake.set(job.id, wake);
+          this.wake.set(task.id, wake);
         });
         try {
           await assertActive();
@@ -141,7 +121,7 @@ export class WorkflowRunner<D extends WorkflowDefinition>
             return result.value;
           }
         } finally {
-          if (this.wake.get(job.id) === wake!) this.wake.delete(job.id);
+          if (this.wake.get(task.id) === wake!) this.wake.delete(task.id);
         }
       }
     };
@@ -152,13 +132,13 @@ export class WorkflowRunner<D extends WorkflowDefinition>
         return checkpoint;
       },
       assertActive,
-      saveCheckpoint: async (patch: Checkpoint) => {
+      saveCheckpoint: async (patch: Checkpoint, output?: TaskOutput) => {
         for (;;) {
           const latest = await read();
           const next = parseWorkflow(latest.workflow);
           const step = next.steps.find((s) => s.id === stepId)!;
           step.checkpoint = { ...step.checkpoint, ...patch };
-          if (await this.store.commit(latest, next)) {
+          if (await this.store.commit(latest, next, output)) {
             checkpoint = step.checkpoint;
             return;
           }
@@ -211,23 +191,23 @@ export class WorkflowRunner<D extends WorkflowDefinition>
       if (await this.store.commit(latest, next)) return;
     }
   }
-  private async cancel(job: StoredWorkflow<D>) {
-    const step = currentStep(job.workflow);
+  private async cancel(task: StoredTask) {
+    const step = currentStep(task.workflow);
     try {
       // 已完成原子的资源也需要释放，但保留其成功展示状态。
-      for (const item of [...job.workflow.steps].reverse()) {
+      for (const item of [...task.workflow.steps].reverse()) {
         if (
           item.attempt === 0 ||
-          job.workflow.cancellation!.completedAtoms.includes(item.id)
+          task.workflow.cancellation!.completedAtoms.includes(item.id)
         )
           continue;
         await this.atoms[item.atom].cancel(
-          job.id,
-          job.input,
-          this.context(job, item.id, true),
+          task.id,
+          task.input,
+          this.context(task, item.id, true),
         );
         for (;;) {
-          const latest = await this.store.read(job.id);
+          const latest = await this.store.read(task.id);
           if (latest.workflow.status !== 'cancelling') return;
           const next = parseWorkflow(latest.workflow);
           next.cancellation!.completedAtoms.push(item.id);
@@ -235,7 +215,7 @@ export class WorkflowRunner<D extends WorkflowDefinition>
         }
       }
       for (;;) {
-        const latest = await this.store.read(job.id);
+        const latest = await this.store.read(task.id);
         if (latest.workflow.status !== 'cancelling') return;
         const next = parseWorkflow(latest.workflow);
         const now = new Date().toISOString();
@@ -247,36 +227,35 @@ export class WorkflowRunner<D extends WorkflowDefinition>
       }
     } catch (error) {
       if (this.stopping) return;
-      await this.fail(job.id, step.id, step.attempt, error, true);
+      await this.fail(task.id, step.id, step.attempt, error, true);
     }
   }
   private async execute(id: number) {
     while (!this.stopping) {
-      let job = await this.store.read(id);
-      if (!isActive(job.workflow)) return;
-      if (job.workflow.cancellation) {
-        await this.cancel(job);
+      let task = await this.store.read(id);
+      if (!isActive(task.workflow)) return;
+      if (task.workflow.cancellation) {
+        await this.cancel(task);
         return;
       }
-      let step = currentStep(job.workflow);
+      let step = currentStep(task.workflow);
       const recovering = step.status === 'running';
       try {
-        const next = parseWorkflow(job.workflow);
+        const next = parseWorkflow(task.workflow);
         const claimed = currentStep(next);
         claimed.status = 'running';
         claimed.attempt += 1;
         claimed.startedAt = new Date().toISOString();
         delete claimed.finishedAt;
-        if (!(await this.store.commit(job, next))) continue;
-        job = await this.store.read(id);
-        step = currentStep(job.workflow);
-        const context = this.context(job, step.id);
+        if (!(await this.store.commit(task, next))) continue;
+        task = await this.store.read(id);
+        step = currentStep(task.workflow);
+        const context = this.context(task, step.id);
         await context.assertActive();
         const atom = this.atoms[step.atom];
-        const output: Output<D> = {};
-        output[step.atom] = recovering
-          ? await atom.recover(id, job.input, context)
-          : await atom.run(id, job.input, context);
+        const output = recovering
+          ? await atom.recover(id, task.input, context)
+          : await atom.run(id, task.input, context);
         for (;;) {
           const latest = await this.store.read(id);
           if (latest.workflow.cancellation) break;

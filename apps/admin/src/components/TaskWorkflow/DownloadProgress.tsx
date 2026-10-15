@@ -1,7 +1,7 @@
 import prettyBytes from 'pretty-bytes';
 import {
-  GetActiveDownloadJobStatusDocument,
-  DownloadJobStatus,
+  GetDownloadProgressDocument,
+  DownloadProgress as DownloadProgressState,
 } from '@/generated/types';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { useQuery } from '@apollo/client';
@@ -43,7 +43,7 @@ const countLabel = (value?: number | null) =>
 export function DownloadProgressDetails({
   progress,
 }: {
-  progress?: DownloadJobStatus;
+  progress?: DownloadProgressState;
 }) {
   const total = Number(progress?.total ?? 0);
   const downloaded = Number(progress?.downloaded ?? 0);
@@ -97,15 +97,13 @@ export default function DownloadProgress({
   enabled: boolean;
 }) {
   const available = useForegroundOnline();
-  const query = useQuery(GetActiveDownloadJobStatusDocument, {
-    variables: { jobIds: [id] },
+  const query = useQuery(GetDownloadProgressDocument, {
+    variables: { taskIds: [id] },
     skip: !enabled || !available,
     fetchPolicy: 'network-only',
   });
   useApolloPoll({ refetch: query.refetch, pollInterval: 2000, enabled });
   return enabled ? (
-    <DownloadProgressDetails
-      progress={query.data?.getActiveDownloadJobStatus[0]}
-    />
+    <DownloadProgressDetails progress={query.data?.getDownloadProgress[0]} />
   ) : null;
 }

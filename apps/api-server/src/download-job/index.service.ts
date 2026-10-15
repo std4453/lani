@@ -3,21 +3,42 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { DownloadTaskRuntime } from './runtime';
+import { TaskService } from '@/task/index.service';
+import { LegacyTaskStage, TaskType } from '@lani/db';
+import { downloadDefinition } from './definition';
 @Injectable()
 @Resolver()
 export class DownloadJobService {
   private logger = new Logger(DownloadJobService.name);
-  constructor(
-    private prisma: PrismaService,
-    private runtime: DownloadTaskRuntime,
-  ) {}
+  constructor(private prisma: PrismaService, private tasks: TaskService) {}
   @Mutation(() => Int)
   async downloadTorrentForEpisode(
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
-    return this.runtime.create(episodeId, torrentLink);
+    const id = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(14521, ${episodeId})::text`;
+      const existing = await tx.task.findFirst({
+        where: {
+          episodeId,
+          type: TaskType.DOWNLOAD,
+          isFailed: false,
+          isCancelled: false,
+          legacyStage: { not: LegacyTaskStage.AVAILABLE },
+        },
+        orderBy: { id: 'desc' },
+      });
+      if (existing) return existing.id;
+      const task = await this.tasks.create(
+        tx,
+        TaskType.DOWNLOAD,
+        downloadDefinition,
+        { episodeId, torrentLink },
+      );
+      return task.id;
+    });
+    void this.tasks.start(id);
+    return id;
   }
   async findTorrentsToDownload() {
     // pattern 可跨季度复用；按 season_id 关联，按 episodes.id 去重，避免多条规则重复入队。

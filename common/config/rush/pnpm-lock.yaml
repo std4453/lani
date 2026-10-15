@@ -49,10 +49,10 @@ specifiers:
   '@rush-temp/data-server': file:./projects/data-server.tgz
   '@rush-temp/db': file:./projects/db.tgz
   '@rush-temp/docs': file:./projects/docs.tgz
-  '@rush-temp/download-workflow': file:./projects/download-workflow.tgz
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
   '@rush-temp/parse-torrent-title': file:./projects/parse-torrent-title.tgz
+  '@rush-temp/workflow': file:./projects/workflow.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
   '@sentry/react': ~6.17.8
@@ -210,10 +210,10 @@ dependencies:
   '@rush-temp/data-server': file:projects/data-server.tgz_@types+node@17.0.45
   '@rush-temp/db': file:projects/db.tgz
   '@rush-temp/docs': file:projects/docs.tgz_ee8ddb3b2e8dd69f13adf968b2159735
-  '@rush-temp/download-workflow': file:projects/download-workflow.tgz_ts-node@10.9.2
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
   '@rush-temp/parse-torrent-title': file:projects/parse-torrent-title.tgz_ts-node@10.9.2
+  '@rush-temp/workflow': file:projects/workflow.tgz_ts-node@10.9.2
   '@rushstack/eslint-config': 2.5.4_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.7
   '@sentry/react': 6.17.9_react@17.0.2
@@ -28344,7 +28344,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_e9135e3aadee9fadc8ca05347d60aedd:
-    resolution: {integrity: sha512-TyrMpiO7Q1hPzTa8Ro1AXS4v00pMvzKS3e/V/WDMK6IYmd4dXb/QS+CD7X39fj/QugHjld0aUIKnRL1mfNC2Pg==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-efTN4iIDgn/NAwBKAzzIDvdARklxlPBG6l855qos4yFKF/WiVg+Rah9V0FL8qztswoNF68WCjYXeTluEIPun9A==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -28432,7 +28432,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_15893210049667005b57ffcd3361e91c:
-    resolution: {integrity: sha512-d7cPEz/Qt4QF4Yp/gz28qAb59cIXV3Dq9mMoUNyhomZpH6mtITgovo0KERKaRMQ9j86LuwJDfmWAbpJt3iGe6g==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-EFlHkyDAsBooQxFcPDCboDvFsmijll7FaJyHIfaR5llVYX2+2/5uF1bGPnvoT6KLeEd+iN+xzYXctyK07SkctA==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -28668,29 +28668,6 @@ packages:
       - webpack-cli
     dev: false
 
-  file:projects/download-workflow.tgz_ts-node@10.9.2:
-    resolution: {integrity: sha512-LzE66PwOllELkL4RNgi467G9ZY+JNt7OWeJVB84NgBbwTWjklxbaKfuVpxz0BkAcUYp9pk5QvSSyWjpzVuGT+w==, tarball: file:projects/download-workflow.tgz}
-    id: file:projects/download-workflow.tgz
-    name: '@rush-temp/download-workflow'
-    version: 0.0.0
-    dependencies:
-      '@types/jest': 27.4.1
-      jest: 27.5.1_ts-node@10.9.2
-      joi: 17.6.4
-      ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
-      typescript: 4.5.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - esbuild
-      - node-notifier
-      - supports-color
-      - ts-node
-      - utf-8-validate
-    dev: false
-
   file:projects/framework.tgz:
     resolution: {integrity: sha512-Ghzl75bNflq8twZALHIZ5JnCwFeFmFUfDw389FJGfMNXeLdI17puEKwzb0AznUhSuS6uwkett/5JxjACDIuMmg==, tarball: file:projects/framework.tgz}
     name: '@rush-temp/framework'
@@ -28746,6 +28723,29 @@ packages:
       ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
       typescript: 4.5.5
       typescript-transform-paths: 3.3.1_typescript@4.5.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-jest
+      - bufferutil
+      - canvas
+      - esbuild
+      - node-notifier
+      - supports-color
+      - ts-node
+      - utf-8-validate
+    dev: false
+
+  file:projects/workflow.tgz_ts-node@10.9.2:
+    resolution: {integrity: sha512-EnHBsCxn0SFVS4I01eSx2UgHxPpuZBzaXbMph8N5GoWtFl7ShNbrwY58mUR87syZvUnTFiA9lxfGPXVVCv2mgg==, tarball: file:projects/workflow.tgz}
+    id: file:projects/workflow.tgz
+    name: '@rush-temp/workflow'
+    version: 0.0.0
+    dependencies:
+      '@types/jest': 27.4.1
+      jest: 27.5.1_ts-node@10.9.2
+      joi: 17.6.4
+      ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
+      typescript: 4.5.5
     transitivePeerDependencies:
       - '@babel/core'
       - babel-jest

@@ -1,4 +1,4 @@
-import { AtomType, WorkflowStep } from '@lani/download-workflow';
+import { AtomType, WorkflowStep } from '@lani/workflow';
 import { Tag } from 'antd';
 
 const atomColors: Record<AtomType, string> = {
@@ -8,6 +8,7 @@ const atomColors: Record<AtomType, string> = {
   importFile: 'purple',
   writeMetadata: 'purple',
   refreshPlayer: 'cyan',
+  publishEpisode: 'green',
 };
 
 /** 颜色标识步骤用途，已取消步骤统一置灰。 */

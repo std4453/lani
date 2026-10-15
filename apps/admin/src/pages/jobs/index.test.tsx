@@ -23,8 +23,8 @@ jest.mock('@/components/TaskDetailsDialog', () => ({
 jest.mock('@/components/TaskWorkflow', () => ({}));
 jest.mock('@/constants/download-status', () => ({}));
 jest.mock('@/constants/link', () => ({}));
-jest.mock('@/utils/useDownloadJobStates', () => ({
-  useDownloadJobStates: () => ({}),
+jest.mock('@/utils/useTaskStates', () => ({
+  useTaskStates: () => ({}),
 }));
 jest.mock('@/utils/useApolloPoll', () => ({
   useApolloPoll: (options: typeof poll) => {
@@ -38,7 +38,7 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import JobsPage from './index';
 import { TaskType } from '@/generated/types';
-import { jobStateFilter } from './status';
+import { taskStateFilter } from './status';
 
 it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采用最新结果', async () => {
   const container = document.createElement('div');
@@ -61,7 +61,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
     });
     const result = (id: number) => ({
       data: {
-        allDownloadJobs: {
+        allTasks: {
           edges: [{ node: { id, version: 1 } }],
           totalCount: 20,
         },
@@ -78,7 +78,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
     expect(table.dataSource.map((row) => row.id)).toEqual([12]);
     query.mockResolvedValue({
       data: {
-        allDownloadJobs: { edges: [{ node: { id: 12 } }], totalCount: 20 },
+        allTasks: { edges: [{ node: { id: 12 } }], totalCount: 20 },
       },
     });
     await act(async () => {
@@ -88,7 +88,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       offset: 10,
       first: 10,
       filter: {
-        ...jobStateFilter(['failed']),
+        ...taskStateFilter(['failed']),
         type: { in: [TaskType.Download] },
       },
     });
@@ -101,4 +101,27 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       ReactDOM.unmountComponentAtNode(container);
     });
   }
+});
+
+import { applyTaskStates } from './index';
+it('新增、删除和过滤条件变化不会改变当前页成员或顺序', () => {
+  const rows = [
+    { id: 2, version: 3, isFailed: false },
+    { id: 1, version: 1, isFailed: false },
+  ] as never;
+  const live = [
+    { id: 3, version: 1, isFailed: false },
+    { id: 1, version: 2, isFailed: true },
+  ] as never;
+  const displayed = applyTaskStates(rows, live);
+  expect(displayed.map((row) => row.id)).toEqual([2, 1]);
+  expect(displayed[1].isFailed).toBe(true);
+  expect(displayed[0]).toBe(rows[0]);
+});
+it('迟到的旧版本响应不能覆盖当前页状态', () => {
+  const rows = [{ id: 1, version: 3, isCancelled: true }] as never;
+  const result = applyTaskStates(rows, [
+    { id: 1, version: 2, isCancelled: false },
+  ] as never);
+  expect(result[0]).toBe(rows[0]);
 });

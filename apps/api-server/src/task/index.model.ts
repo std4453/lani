@@ -1,19 +1,19 @@
-import { DownloadStatus, TaskType } from '@lani/db';
+import { LegacyTaskStage, TaskType } from '@lani/db';
 import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { DownloadWorkflow } from '@lani/download-workflow';
-import { DownloadWorkflowScalar } from './workflow.scalar';
+import { Workflow } from '@lani/workflow';
+import { WorkflowScalar } from './workflow.scalar';
 
-registerEnumType(DownloadStatus, { name: 'DownloadStatus' });
+registerEnumType(LegacyTaskStage, { name: 'LegacyTaskStage' });
 registerEnumType(TaskType, { name: 'TaskType' });
 
 @ObjectType()
-export class DownloadLifecycle {
+export class TaskState {
   @Field(() => Int) id: number;
   @Field(() => TaskType) type: TaskType;
   @Field(() => Int) version: number;
-  @Field(() => DownloadWorkflowScalar, { nullable: true })
-  workflow: DownloadWorkflow | null;
-  @Field(() => DownloadStatus) status: DownloadStatus;
+  @Field(() => WorkflowScalar, { nullable: true })
+  workflow: Workflow | null;
+  @Field(() => LegacyTaskStage) legacyStage: LegacyTaskStage;
   @Field() isFailed: boolean;
   @Field() isCancelled: boolean;
   @Field() failedReason: string;

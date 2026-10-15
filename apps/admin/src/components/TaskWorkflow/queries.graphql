@@ -1,10 +1,32 @@
-query GetDownloadJobStates($jobIds: [Int!]!) {
-  getDownloadJobStates(jobIds: $jobIds) {
+fragment taskDetailsFields on Task {
+  type
+  episodeId
+  createdAt
+  downloadPath
+  failedAt
+  failedReason
+  filePath
+  id
+  importPath
+  isFailed
+  isCancelled
+  workflow
+  version
+  nfoPath
+  qbtTorrentHash
+  legacyStage
+  torrentLink
+  jellyfinEpisodeId
+  torrentTitle
+}
+
+query GetTaskStates($taskIds: [Int!]!) {
+  getTaskStates(taskIds: $taskIds) {
     id
     type
     version
     workflow
-    status
+    legacyStage
     isFailed
     isCancelled
     failedReason
@@ -19,6 +41,22 @@ query GetDownloadJobStates($jobIds: [Int!]!) {
     jellyfinEpisodeId
   }
 }
-mutation CancelDownloadJob($jobId: Int!) {
-  cancelDownloadJob(jobId: $jobId)
+mutation CancelTask($taskId: Int!) {
+  cancelTask(taskId: $taskId)
+}
+
+mutation RetryTask($taskId: Int!) {
+  retryTask(taskId: $taskId)
+}
+
+query GetDownloadProgress($taskIds: [Int!]!) {
+  getDownloadProgress(taskIds: $taskIds) {
+    downloaded
+    eta
+    id
+    peers
+    seeds
+    speed
+    total
+  }
 }

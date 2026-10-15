@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import {
-  CancelDownloadJobDocument,
+  CancelTaskDocument,
   TaskDetailsFieldsFragment,
-  RetryJobStepDocument,
+  RetryTaskDocument,
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { useApolloClient } from '@apollo/client';
@@ -17,13 +17,14 @@ import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
 import Field from './Field';
 import { atomViews } from './atoms';
-import { JobPresentation, presentJob } from './presentation';
+import { parseWorkflow } from '@lani/workflow';
+import { legacyWorkflow } from './legacy-compat';
 
-type Job = TaskDetailsFieldsFragment;
+type Task = TaskDetailsFieldsFragment;
 const formatTime = (value?: string) =>
   value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-';
 const cancellationSuffix: Partial<
-  Record<import('@lani/download-workflow').StepStatus, string>
+  Record<import('@lani/workflow').StepStatus, string>
 > = {
   cancelling: '（取消中）',
   failed: '（取消失败）',
@@ -57,7 +58,11 @@ function StepDetails({
   );
 }
 
-function FailureDetails({ error }: { error: JobPresentation['error'] }) {
+function FailureDetails({
+  error,
+}: {
+  error?: { at?: string; message?: string };
+}) {
   return (
     <div className={styles.failure}>
       <Field label="失败时间">{formatTime(error?.at)}</Field>
@@ -67,30 +72,41 @@ function FailureDetails({ error }: { error: JobPresentation['error'] }) {
 }
 
 export default function TaskWorkflowView({
-  job,
+  task,
   active,
   refresh,
 }: {
-  job: Job;
+  task: Task;
   active: boolean;
   refresh(): Promise<unknown>;
 }) {
-  const view = presentJob(job);
-  const defaultExpanded = view.hasStarted
-    ? `step:${view.currentStepId}`
-    : 'job-info';
+  const savedWorkflow = task.workflow
+    ? parseWorkflow(task.workflow)
+    : undefined;
+  const workflow = savedWorkflow ?? legacyWorkflow(task);
+  const hasStarted =
+    !savedWorkflow ||
+    savedWorkflow.steps.some(
+      (step) =>
+        step.attempt > 0 ||
+        !!step.startedAt ||
+        !['pending', 'cancelled'].includes(step.status),
+    );
+  const defaultExpanded = hasStarted
+    ? `step:${workflow.currentStepId}`
+    : 'task-info';
   const [expanded, setExpanded] = useState<string[]>([defaultExpanded]);
   const [busy, setBusy] = useState(false);
   const client = useApolloClient();
   useEffect(() => {
     setExpanded([defaultExpanded]);
-  }, [job.id, defaultExpanded]);
+  }, [task.id, defaultExpanded]);
   const act = async (cancel: boolean) => {
     setBusy(true);
     try {
       await client.mutate({
-        mutation: cancel ? CancelDownloadJobDocument : RetryJobStepDocument,
-        variables: { jobId: job.id },
+        mutation: cancel ? CancelTaskDocument : RetryTaskDocument,
+        variables: { taskId: task.id },
       });
       await refresh();
     } catch (error) {
@@ -105,7 +121,7 @@ export default function TaskWorkflowView({
         type="button"
         className={styles.stepTitle}
         aria-expanded={expanded.includes(id)}
-        aria-controls={`job-${job.id}-step-${id}`}
+        aria-controls={`task-${task.id}-step-${id}`}
         onClick={() =>
           setExpanded((ids) =>
             ids.includes(id)
@@ -127,22 +143,22 @@ export default function TaskWorkflowView({
     <Steps direction="vertical" className={styles.steps}>
       <Steps.Step
         status="finish"
-        title={title('job-info', '任务信息')}
+        title={title('task-info', '任务信息')}
         description={
           <StepDetails
-            id={`job-${job.id}-step-job-info`}
-            open={expanded.includes('job-info')}
+            id={`task-${task.id}-step-task-info`}
+            open={expanded.includes('task-info')}
           >
-            <Field label="创建时间">{formatTime(job.createdAt)}</Field>
-            <Field label="种子地址">{job.torrentLink}</Field>
+            <Field label="创建时间">{formatTime(task.createdAt)}</Field>
+            <Field label="种子地址">{task.torrentLink}</Field>
           </StepDetails>
         }
       />
-      {view.steps.map((item) => {
+      {workflow.steps.map((item) => {
         const atomView = item.atom ? atomViews[item.atom] : undefined;
-        const cancelledHere = view.cancelledStepId === item.id;
+        const cancelledHere = workflow.cancellation?.stepId === item.id;
         const failed =
-          view.status === 'failed' && view.currentStepId === item.id;
+          workflow.status === 'failed' && workflow.currentStepId === item.id;
         const cancelling = item.status === 'cancelling';
         const cancelled = item.status === 'cancelled';
         const collapsible = item.status === 'succeeded';
@@ -155,7 +171,7 @@ export default function TaskWorkflowView({
         return (
           <Steps.Step
             key={item.id}
-            data-current-step={view.currentStepId === item.id}
+            data-current-step={workflow.currentStepId === item.id}
             data-step-id={item.id}
             data-step-status={item.status}
             status={stepStatuses[item.status]}
@@ -180,7 +196,9 @@ export default function TaskWorkflowView({
                   >
                     重试
                   </Button>
-                ) : item.status === 'running' && view.canCancel ? (
+                ) : item.status === 'running' &&
+                  !!task.workflow &&
+                  !workflow.cancellation ? (
                   <Popconfirm
                     placement="rightBottom"
                     arrowPointAtCenter
@@ -213,21 +231,23 @@ export default function TaskWorkflowView({
             description={
               cancelled ? (
                 cancelledHere && (
-                  <Field label="取消时间">{formatTime(view.cancelledAt)}</Field>
+                  <Field label="取消时间">
+                    {formatTime(workflow.finishedAt)}
+                  </Field>
                 )
               ) : item.status !== 'pending' ? (
                 <StepDetails
-                  id={`job-${job.id}-step-step:${item.id}`}
+                  id={`task-${task.id}-step-step:${item.id}`}
                   open={open}
                 >
                   {failed ? (
-                    <FailureDetails error={view.error} />
+                    <FailureDetails error={workflow.error} />
                   ) : cancelling ? (
-                    atomView?.cancelling?.(job) ?? null
+                    atomView?.cancelling?.(task) ?? null
                   ) : (
                     <>
                       {atomView?.fields(
-                        job,
+                        task,
                         active && open && item.status === 'running',
                       )}
                     </>

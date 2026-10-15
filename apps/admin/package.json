@@ -69,7 +69,7 @@
     "store2": "~2.14.2",
     "virtualizedtableforantd4": "~1.3.1",
     "@lani/parse-torrent-title": "~1.0.0",
-    "@lani/download-workflow": "~1.0.0"
+    "@lani/workflow": "~1.0.0"
   },
   "files": [
     "/dist",

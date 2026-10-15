@@ -1,66 +1,121 @@
+import { SubmitDownloadAtom } from './atoms/submit-download.atom';
+import { DownloadAtom } from './atoms/download-atom';
+import { FindVideoFileAtom } from './atoms/find-video-file.atom';
+import { ImportFileAtom } from './atoms/import-file.atom';
+import { WriteMetadataAtom } from './atoms/write-metadata.atom';
+import { RefreshPlayerAtom } from './atoms/refresh-player.atom';
+import { PublishEpisodeAtom } from './atoms/publish-episode.atom';
 import { PrismaService } from '@/common/prisma.service';
-import { DownloadTaskRuntime } from '@/download-job/runtime';
 import { LaniError } from '@/utils/error';
-import { DownloadStatus, Prisma, TaskType } from '@lani/db';
+import { LegacyTaskStage, Prisma, TaskType } from '@lani/db';
 import {
   Injectable,
+  Logger,
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   parseWorkflow,
+  buildWorkflowSnapshot,
+  StepDefinition,
   requestCancellation,
   retryWorkflow,
-} from '@lani/download-workflow';
-import { DownloadLifecycle } from './index.model';
-import { TaskRuntime } from './workflow-runner';
+} from '@lani/workflow';
+import { TaskState } from './index.model';
+import { WorkflowRunner } from './workflow-runner';
+import { TaskStore } from './task-store';
+import { Atoms } from './atom';
+import { legacyTaskFields } from './legacy-compat';
 @Injectable()
 @Resolver()
 export class TaskService
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
-  private runtimes: Record<TaskType, TaskRuntime>;
-  constructor(private prisma: PrismaService, download: DownloadTaskRuntime) {
-    this.runtimes = { [TaskType.DOWNLOAD]: download };
+  private readonly atoms: Atoms;
+  private readonly runner: WorkflowRunner;
+  constructor(
+    private prisma: PrismaService,
+    store: TaskStore,
+    submitDownload: SubmitDownloadAtom,
+    download: DownloadAtom,
+    findVideoFile: FindVideoFileAtom,
+    importFile: ImportFileAtom,
+    writeMetadata: WriteMetadataAtom,
+    refreshPlayer: RefreshPlayerAtom,
+    publishEpisode: PublishEpisodeAtom,
+  ) {
+    this.atoms = {
+      submitDownload,
+      download,
+      findVideoFile,
+      importFile,
+      writeMetadata,
+      refreshPlayer,
+      publishEpisode,
+    };
+    const logger = new Logger(TaskService.name);
+    this.runner = new WorkflowRunner(store, this.atoms, (error) =>
+      logger.error(error),
+    );
   }
-  private async runtime(jobId: number, operation: '重试' | '取消') {
-    const job = await this.prisma.downloadJob.findUnique({
-      where: { id: jobId },
+  async create(
+    tx: Prisma.TransactionClient,
+    type: TaskType,
+    definition: StepDefinition[],
+    params: { episodeId?: number; torrentLink?: string },
+  ) {
+    const workflow = buildWorkflowSnapshot(
+      definition,
+      this.atoms,
+      new Date().toISOString(),
+    );
+    return tx.task.create({
+      data: {
+        ...params,
+        type,
+        ...legacyTaskFields(workflow),
+        workflow: JSON.parse(JSON.stringify(workflow)),
+      },
     });
-    if (!job.workflow) throw new LaniError(`旧任务不允许${operation}`);
-    return this.runtimes[job.type];
+  }
+  start(taskId: number) {
+    return this.runner.start(taskId);
   }
   @Mutation(() => ID)
-  async retryJobStep(@Args('jobId') jobId: number) {
-    const runtime = await this.runtime(jobId, '重试');
-    await runtime.transition(jobId, (workflow) =>
+  async retryTask(@Args('taskId') taskId: number) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new LaniError('任务不存在');
+    if (!task.workflow) throw new LaniError('旧任务不允许重试');
+    await this.runner.transition(taskId, (workflow) =>
       retryWorkflow(workflow, new Date().toISOString()),
     );
-    void runtime.start(jobId);
+    void this.runner.start(taskId);
     return 'ok';
   }
   @Mutation(() => ID)
-  async cancelDownloadJob(@Args('jobId') jobId: number) {
-    const runtime = await this.runtime(jobId, '取消');
-    await runtime.transition(jobId, (workflow) =>
+  async cancelTask(@Args('taskId') taskId: number) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new LaniError('任务不存在');
+    if (!task.workflow) throw new LaniError('旧任务不允许取消');
+    await this.runner.transition(taskId, (workflow) =>
       requestCancellation(workflow, new Date().toISOString()),
     );
-    void runtime.start(jobId);
+    void this.runner.start(taskId);
     return 'ok';
   }
-  @Query(() => [DownloadLifecycle])
-  async getDownloadJobStates(
-    @Args({ name: 'jobIds', type: () => [Int] }) jobIds: number[],
+  @Query(() => [TaskState])
+  async getTaskStates(
+    @Args({ name: 'taskIds', type: () => [Int] }) taskIds: number[],
   ) {
-    if (!jobIds.length) return [];
-    const jobs = await this.prisma.downloadJob.findMany({
-      where: { id: { in: jobIds } },
+    if (!taskIds.length) return [];
+    const tasks = await this.prisma.task.findMany({
+      where: { id: { in: taskIds } },
     });
-    return jobs.map((job) => {
-      const workflow = job.workflow ? parseWorkflow(job.workflow) : null;
+    return tasks.map((task) => {
+      const workflow = task.workflow ? parseWorkflow(task.workflow) : null;
       return {
-        ...job,
+        ...task,
         workflow,
         canRetry: !!workflow && workflow.status === 'failed',
         canCancel:
@@ -72,12 +127,12 @@ export class TaskService
     });
   }
   async onApplicationBootstrap() {
-    await this.prisma.downloadJob.updateMany({
+    await this.prisma.task.updateMany({
       where: {
         workflow: { equals: Prisma.DbNull },
         isFailed: false,
         isCancelled: false,
-        status: { not: DownloadStatus.AVAILABLE },
+        legacyStage: { not: LegacyTaskStage.AVAILABLE },
       },
       data: {
         isFailed: true,
@@ -87,19 +142,17 @@ export class TaskService
         version: { increment: 1 },
       },
     });
-    const jobs = await this.prisma.downloadJob.findMany({
+    const tasks = await this.prisma.task.findMany({
       where: {
         workflow: { not: Prisma.DbNull },
         isFailed: false,
         isCancelled: false,
-        status: { not: DownloadStatus.AVAILABLE },
+        legacyStage: { not: LegacyTaskStage.AVAILABLE },
       },
     });
-    for (const job of jobs) void this.runtimes[job.type].start(job.id);
+    for (const task of tasks) void this.runner.start(task.id);
   }
   async onApplicationShutdown() {
-    await Promise.all(
-      Object.values(this.runtimes).map((runtime) => runtime.stop()),
-    );
+    await this.runner.stop();
   }
 }

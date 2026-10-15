@@ -1,13 +1,17 @@
-import { parseWorkflow } from '@lani/download-workflow';
+import { parseWorkflow } from '@lani/workflow';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
-import { DownloadStatus, EpisodeStatusFieldsFragment } from '@/generated/types';
+import {
+  LegacyTaskStage,
+  EpisodeStatusFieldsFragment,
+  TaskType,
+} from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { SelectOutlined } from '@ant-design/icons';
 import { Tag, TagProps } from 'antd';
 import dayjs from 'dayjs';
 
 export type EpisodeStatus =
-  | DownloadStatus
+  | LegacyTaskStage
   | 'DOWNLOAD_FAILED'
   | 'CANCELLED'
   | 'CANCELLING'
@@ -18,22 +22,22 @@ export type EpisodeStatus =
 
 export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   status: EpisodeStatus;
-  jobId?: number;
+  taskId?: number;
 } {
-  const job = extractNode(episode.jobs)?.[0];
+  const task = extractNode(episode.tasks)?.[0];
   if (episode.jellyfinEpisodeId) {
-    return { status: DownloadStatus.Available };
-  } else if (job) {
-    if (job.isCancelled) return { status: 'CANCELLED', jobId: job.id };
-    if (job.workflow && parseWorkflow(job.workflow).status === 'cancelling')
-      return { status: 'CANCELLING', jobId: job.id };
+    return { status: LegacyTaskStage.Available };
+  } else if (task) {
+    if (task.isCancelled) return { status: 'CANCELLED', taskId: task.id };
+    if (task.workflow && parseWorkflow(task.workflow).status === 'cancelling')
+      return { status: 'CANCELLING', taskId: task.id };
     if (
-      job.isFailed ||
-      (!job.workflow && job.status !== DownloadStatus.Available)
+      task.isFailed ||
+      (!task.workflow && task.legacyStage !== LegacyTaskStage.Available)
     ) {
-      return { status: 'DOWNLOAD_FAILED', jobId: job.id };
+      return { status: 'DOWNLOAD_FAILED', taskId: task.id };
     }
-    return { status: job.status, jobId: job.id };
+    return { status: task.legacyStage, taskId: task.id };
   } else {
     if (episode.airTime) {
       const now = dayjs();
@@ -57,31 +61,31 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
 export const downloadStatusMap: Partial<
   Record<EpisodeStatus, Pick<TagProps, 'children' | 'color'>>
 > = {
-  [DownloadStatus.Available]: {
+  [LegacyTaskStage.Available]: {
     children: '可用',
     color: 'green',
   },
-  [DownloadStatus.Downloading]: {
+  [LegacyTaskStage.Downloading]: {
     children: '下载中',
     color: 'blue',
   },
-  [DownloadStatus.DownloadCompleted]: {
+  [LegacyTaskStage.DownloadCompleted]: {
     children: '寻找文件',
     color: 'purple',
   },
-  [DownloadStatus.Importing]: {
+  [LegacyTaskStage.Importing]: {
     children: '导入中',
     color: 'purple',
   },
-  [DownloadStatus.PlayerWaiting]: {
+  [LegacyTaskStage.PlayerWaiting]: {
     children: '等待识别',
     color: 'cyan',
   },
-  [DownloadStatus.WritingMetadata]: {
+  [LegacyTaskStage.WritingMetadata]: {
     children: '写入元数据',
     color: 'purple',
   },
-  [DownloadStatus.DownloadSubmitting]: {
+  [LegacyTaskStage.DownloadSubmitting]: {
     children: '提交下载',
     color: 'blue',
   },
@@ -109,18 +113,18 @@ export const downloadStatusMap: Partial<
 
 export function DownloadStatusTag({
   status,
-  jobId,
+  taskId,
   openTaskDetails,
 }: {
   status: EpisodeStatus;
-  jobId?: number;
+  taskId?: number;
   openTaskDetails?: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const tagProps = downloadStatusMap[status];
   if (tagProps) {
     const { children, color } = tagProps;
     // 可用状态隐藏按钮
-    const showDialog = jobId && status !== DownloadStatus.Available;
+    const showDialog = taskId && status !== LegacyTaskStage.Available;
     return (
       <Tag
         color={color}
@@ -130,7 +134,8 @@ export function DownloadStatusTag({
         onClick={() => {
           if (showDialog) {
             void openTaskDetails?.({
-              jobId,
+              taskId,
+              taskType: TaskType.Download,
             });
           }
         }}

@@ -33,7 +33,7 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
-import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
@@ -147,7 +147,7 @@ function SeasonStatusTag({
     <div>
       <DownloadStatusTag
         status={episodeStatus.status}
-        jobId={episodeStatus.jobId}
+        taskId={episodeStatus.taskId}
         openTaskDetails={openTaskDetails}
       />
     </div>
@@ -708,11 +708,11 @@ function useSeasonsStatus(seasonIds: number[]) {
       },
     },
   );
-  const jobIds = (extractNode(data?.allSeasons) ?? []).flatMap(
+  const taskIds = (extractNode(data?.allSeasons) ?? []).flatMap(
     (season) =>
-      extractNode(season.latestEpisode?.jobs)?.map((job) => job.id) ?? [],
+      extractNode(season.latestEpisode?.tasks)?.map((task) => task.id) ?? [],
   );
-  useDownloadJobStates(jobIds);
+  useTaskStates(taskIds);
   useApolloPoll({
     startPolling,
     stopPolling,

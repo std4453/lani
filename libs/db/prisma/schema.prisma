@@ -41,7 +41,7 @@ model Episode {
   jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
   lastMissingNotifyTime DateTime?     @map("last_missing_notify_time") @db.Timestamptz(6)
   season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  downloadJobs          DownloadJob[] @relation("download_jobsToepisodes")
+  tasks          Task[] @relation("download_jobsToepisodes")
 
   @@unique([seasonId, index])
   @@unique([seasonId, episodeType, episodeNumber])
@@ -163,7 +163,7 @@ enum TaskType {
   @@map("task_type")
 }
 
-model DownloadJob {
+model Task {
   id Int @id @default(autoincrement())
   type TaskType @default(DOWNLOAD)
 
@@ -178,7 +178,7 @@ model DownloadJob {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   // 任务状态
-  status       DownloadStatus
+  legacyStage  LegacyTaskStage @map("status")
   isCancelled  Boolean        @default(false) @map("is_cancelled")
   cancelledAt  DateTime?      @map("cancelled_at") @db.Timestamptz(6)
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -224,7 +224,7 @@ model JellyfinFolder {
   @@map("jellyfin_folders")
 }
 
-enum DownloadStatus {
+enum LegacyTaskStage {
   UNAVAILABLE
   DOWNLOADING
   RENAMING

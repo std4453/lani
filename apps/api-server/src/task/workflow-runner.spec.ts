@@ -6,20 +6,14 @@ import {
   parseWorkflow,
   requestCancellation,
   retryWorkflow,
-} from '@lani/download-workflow';
+} from '@lani/workflow';
 import {
-  Atoms as WorkflowAtoms,
-  Output as WorkflowOutput,
-  StoredWorkflow as Stored,
+  Output,
+  StoredTask,
   WorkflowRunner,
-  WorkflowStore as Store,
-  WorkflowDefinition,
+  TaskStorePort,
 } from '@/task/workflow-runner';
-import { AtomContext, ExecutionStopped } from '@/task/atom';
-type Atoms = WorkflowAtoms<WorkflowDefinition>;
-type Output = WorkflowOutput<WorkflowDefinition>;
-type StoredWorkflow = Stored<WorkflowDefinition>;
-type WorkflowStore = Store<WorkflowDefinition>;
+import { AtomContext, Atoms, ExecutionStopped } from '@/task/atom';
 const now = '2026-10-14T12:00:00Z';
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -40,7 +34,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
       },
     ]),
   ) as unknown as Atoms;
-  let state: StoredWorkflow = {
+  let state: StoredTask = {
     id: 1,
     version: 0,
     workflow: buildWorkflowSnapshot(
@@ -50,12 +44,19 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
     ),
     input: {
       id: 1,
-      params: { episodeId: 1, torrentLink: 'magnet:test' },
-      steps: {},
+      episodeId: 1,
+      torrentLink: 'magnet:test',
+      qbtTorrentHash: null,
+      torrentTitle: null,
+      downloadPath: null,
+      importPath: null,
+      filePath: null,
+      nfoPath: null,
+      jellyfinEpisodeId: null,
     },
   };
   let completions = 0;
-  const store: WorkflowStore = {
+  const store: TaskStorePort = {
     read: async () => ({
       ...state,
       workflow: parseWorkflow(JSON.parse(JSON.stringify(state.workflow))),
@@ -67,7 +68,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
         ...state,
         version: state.version + 1,
         workflow: parseWorkflow(workflow),
-        input: { ...state.input, steps: { ...state.input.steps, ...output } },
+        input: { ...state.input, ...output },
       };
       return true;
     },
@@ -91,7 +92,7 @@ it('状态转换遇到并发提交后重读最新检查点，重复取消不再�
     const concurrent = parseWorkflow(job.workflow);
     currentStep(concurrent).checkpoint.submission = {
       hash: 'concurrent',
-      phase: 'prepared',
+      phase: 'requested',
     };
     await commit(job, concurrent);
     return false;
@@ -183,9 +184,7 @@ it('重试和恢复复用成功产物，只执行当前未结束步骤', async (
   const recovered = new WorkflowRunner(test.store, test.atoms, test.errors);
   await recovered.start(1);
   expect(test.atoms.submitDownload.run).toHaveBeenCalledTimes(1);
-  expect(test.state().input.steps.submitDownload).toEqual({
-    qbtTorrentHash: 'hash',
-  });
+  expect(test.state().input.qbtTorrentHash).toBe('hash');
   expect(test.completions()).toBe(1);
 });
 it('取消中的任务重启继续取消，取消前的检查点仍可读取', async () => {
@@ -235,9 +234,7 @@ it('旧尝试的迟到检查点不能覆盖重试后的状态，重复启动不�
   ).rejects.toBeInstanceOf(ExecutionStopped);
   finish.resolve({ qbtTorrentHash: 'current' });
   await running;
-  expect(test.state().input.steps.submitDownload).toEqual({
-    qbtTorrentHash: 'current',
-  });
+  expect(test.state().input.qbtTorrentHash).toBe('current');
   expect(test.atoms.submitDownload.run).toHaveBeenCalledTimes(2);
   expect(test.completions()).toBe(1);
 });
@@ -273,7 +270,7 @@ it('中止队列等待后继续取消，不等待外部批次返回，也不接�
   expect(test.state().workflow.status).toBe('cancelled');
   batch.resolve({ downloadPath: '/late' });
   await Promise.resolve();
-  expect(test.state().input.steps.download).toBeUndefined();
+  expect(test.state().input.downloadPath).toBeNull();
 });
 it('执行器不根据 atom 名称添加发布互斥', async () => {
   const test = setup(['importFile']);

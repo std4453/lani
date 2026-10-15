@@ -56,7 +56,7 @@
     "joi": "~17.6.0",
     "aws-sdk": "~2.1152.0",
     "@lani/parse-torrent-title": "~1.0.0",
-    "@lani/download-workflow": "~1.0.0"
+    "@lani/workflow": "~1.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

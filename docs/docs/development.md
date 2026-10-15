@@ -93,7 +93,7 @@ query LocalGatewayRouteProbe {
   allSeasons(first: 1) {
     totalCount
   }
-  allDownloadJobs(first: 1) {
+  allTasks(first: 1) {
     totalCount
   }
 }

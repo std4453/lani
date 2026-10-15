@@ -2,53 +2,60 @@ import TaskStatus from '@/components/TaskStatus';
 import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
 import styles from './index.module.less';
-import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
+import { useTaskStates } from '@/utils/useTaskStates';
 import { formatNumbering } from '@/utils/episode';
-import { GetEpisodeByIdDocument } from '@/generated/types';
+import { GetEpisodeByIdDocument, GetTaskByIdDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useQuery } from '@apollo/client';
-import { Modal, Spin, Tabs, Typography } from 'antd';
-import { useMemo, useState, useEffect } from 'react';
+import { Alert, Modal, Skeleton, Tabs, Typography } from 'antd';
+import { useState, useEffect } from 'react';
 
 export default function EpisodeDetailsDialog({
   reject,
   visible,
   input,
-}: DialogProps<{ episodeId: number; jobId?: number }>) {
+}: DialogProps<{ episodeId?: number; taskId?: number }>) {
   const available = useForegroundOnline();
-  const { data, loading, startPolling, stopPolling, refetch } = useQuery(
-    GetEpisodeByIdDocument,
-    {
-      skip: !input?.episodeId || !visible || !available,
-      variables: {
-        episodeByIdId: input?.episodeId ?? 0,
-      },
-    },
-  );
-  useApolloPoll({
-    startPolling,
-    stopPolling,
-    refetch,
-    pollInterval: 30000,
-    enabled: visible && !!input?.episodeId,
+  const episodeQuery = useQuery(GetEpisodeByIdDocument, {
+    skip: !input?.episodeId || !visible || !available,
+    variables: { episodeByIdId: input?.episodeId ?? 0 },
   });
-  const jobs = useMemo(
-    () => extractNode(data?.episodeById?.downloadJobsByEpisodeId) ?? [],
-    [data],
-  );
-
-  const states = useDownloadJobStates(
-    jobs.map((job) => job.id),
+  const taskQuery = useQuery(GetTaskByIdDocument, {
+    skip: !!input?.episodeId || !input?.taskId || !visible || !available,
+    variables: { id: input?.taskId ?? 0 },
+  });
+  const query = input?.episodeId ? episodeQuery : taskQuery;
+  useApolloPoll({
+    refetch: query.refetch,
+    pollInterval: 30000,
+    enabled: visible && !!(input?.episodeId || input?.taskId),
+  });
+  const task =
+    taskQuery.data?.taskById?.id === input?.taskId
+      ? taskQuery.data?.taskById
+      : undefined;
+  const episode = input?.episodeId
+    ? episodeQuery.data?.episodeById?.id === input.episodeId
+      ? episodeQuery.data.episodeById
+      : undefined
+    : task?.episodeByEpisodeId;
+  const tasks = episode
+    ? extractNode(episode.tasksByEpisodeId) ?? []
+    : task
+    ? [task]
+    : [];
+  const states = useTaskStates(
+    tasks.map((task) => task.id),
     visible,
     2000,
   );
-  const [activeJob, setActiveJob] = useState<string>();
+  const [activeTask, setActiveTask] = useState<string>();
   useEffect(() => {
-    setActiveJob(input?.jobId ? `${input.jobId}` : undefined);
-  }, [input?.episodeId, input?.jobId]);
-  const selectedJob = activeJob ?? (jobs[0] ? `${jobs[0].id}` : undefined);
+    setActiveTask(input?.taskId ? `${input.taskId}` : undefined);
+  }, [input?.episodeId, input?.taskId]);
+  const selectedTask = activeTask ?? (tasks[0] ? `${tasks[0].id}` : undefined);
 
   return (
     <Modal
@@ -57,61 +64,73 @@ export default function EpisodeDetailsDialog({
       onCancel={reject}
       footer={false}
       title={
-        data?.episodeById
-          ? `#${formatNumbering(data.episodeById.numbering)} - ${
-              data.episodeById.title
-            }`
+        episode
+          ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
+          : input?.taskId
+          ? '下载任务详情'
           : '剧集详情'
       }
-      destroyOnClose={true}
+      destroyOnClose
       width={800}
     >
-      <Spin spinning={loading}>
-        <div className={styles.header}>
-          <EpisodeHeader episode={data?.episodeById ?? undefined} />
-        </div>
-        {jobs.length > 0 ? (
-          <Tabs
-            className={styles.jobTabs}
-            tabBarGutter={16}
-            activeKey={selectedJob}
-            onChange={setActiveJob}
-            tabBarExtraContent={{
-              left: <div style={{ marginRight: 16 }}>下载任务</div>,
-              right: (
-                <Typography.Text type="secondary">自动刷新中</Typography.Text>
-              ),
-            }}
-          >
-            {jobs.map((job) => (
-              <Tabs.TabPane
-                key={job.id}
-                tab={
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                    }}
-                  >
-                    #{job.id}
-                    <TaskStatus job={job} />
-                  </div>
-                }
-              >
-                <TaskContent
-                  job={job}
-                  active={visible && selectedJob === `${job.id}`}
-                  refresh={states.refetch}
-                />
-              </Tabs.TabPane>
-            ))}
-          </Tabs>
-        ) : (
-          '无下载任务'
-        )}
-      </Spin>
+      {!episode && !task && query.loading ? (
+        <Skeleton active paragraph={{ rows: 6 }} />
+      ) : query.error ? (
+        <Alert
+          type="error"
+          message={input?.taskId ? '任务加载失败' : '剧集加载失败'}
+        />
+      ) : !episode && !task ? (
+        <Alert
+          type="info"
+          message={input?.taskId ? '任务不存在' : '剧集不存在'}
+        />
+      ) : (
+        <>
+          <div className={styles.header}>
+            {episode ? (
+              <EpisodeHeader episode={episode} />
+            ) : (
+              <Alert type="info" message="关联剧集不存在" />
+            )}
+          </div>
+          {tasks.length > 0 ? (
+            <Tabs
+              className={styles.taskTabs}
+              tabBarGutter={16}
+              activeKey={selectedTask}
+              onChange={setActiveTask}
+              tabBarExtraContent={{
+                left: <div style={{ marginRight: 16 }}>下载任务</div>,
+                right: (
+                  <Typography.Text type="secondary">自动刷新中</Typography.Text>
+                ),
+              }}
+            >
+              {tasks.map((task) => (
+                <Tabs.TabPane
+                  key={task.id}
+                  tab={
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      #{task.id}
+                      <TaskStatus task={task} />
+                    </div>
+                  }
+                >
+                  <TaskContent
+                    task={task}
+                    active={visible && selectedTask === `${task.id}`}
+                    refresh={states.refetch}
+                  />
+                </Tabs.TabPane>
+              ))}
+            </Tabs>
+          ) : (
+            '无下载任务'
+          )}
+        </>
+      )}
     </Modal>
   );
 }
-
 export const useEpisodeDetailsDialog = createUseDialog(EpisodeDetailsDialog);

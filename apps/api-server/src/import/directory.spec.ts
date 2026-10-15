@@ -1,4 +1,4 @@
-jest.mock('@/download-job/atoms/publication', () => ({
+jest.mock('@/task/atoms/publication', () => ({
   claimEpisodePublication: jest.fn(async () => undefined),
 }));
 import { AtomContext } from '@/task/atom';
@@ -6,8 +6,8 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { ImportService } from './index.service';
-import { ImportFileAtom } from '@/download-job/atoms/import-file.atom';
-import { WriteMetadataAtom } from '@/download-job/atoms/write-metadata.atom';
+import { ImportFileAtom } from '@/task/atoms/import-file.atom';
+import { WriteMetadataAtom } from '@/task/atoms/write-metadata.atom';
 import { SeasonEmitService } from '@/season-emit/index.service';
 import xml2js from 'xml2js';
 
@@ -74,8 +74,8 @@ it.each(['manual', 'download'])(
               await new ImportFileAtom(prisma as any).run(
                 1,
                 {
-                  params: { episodeId: 1 },
-                  steps: { findVideoFile: { importPath: source } },
+                  episodeId: 1,
+                  importPath: source,
                 } as any,
                 atomContext(),
               )
@@ -136,13 +136,12 @@ it.each(['manual', 'download'])(
         await importer.importSingle(episode.id, source);
       } else {
         const input = {
-          params: { episodeId: episode.id },
-          steps: { findVideoFile: { importPath: source } },
+          episodeId: episode.id,
+          importPath: source,
         } as any;
-        input.steps.importFile = await new ImportFileAtom(prisma as any).run(
-          1,
+        Object.assign(
           input,
-          atomContext(),
+          await new ImportFileAtom(prisma as any).run(1, input, atomContext()),
         );
         await new WriteMetadataAtom(prisma as any).run(1, input, atomContext());
       }

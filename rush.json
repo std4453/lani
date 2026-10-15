@@ -449,8 +449,8 @@
     //   "reviewCategory": "tools"
     // }
     {
-      "packageName": "@lani/download-workflow",
-      "projectFolder": "libs/download-workflow"
+      "packageName": "@lani/workflow",
+      "projectFolder": "libs/workflow"
     },
     {
       "packageName": "@lani/framework",

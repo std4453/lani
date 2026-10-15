@@ -1,5 +1,5 @@
-import { DownloadStatus } from '@/generated/types';
-import { parseWorkflow, WorkflowStatus } from '@lani/download-workflow';
+import { LegacyTaskStage } from '@/generated/types';
+import { parseWorkflow, WorkflowStatus } from '@lani/workflow';
 export const taskStatusLabels = {
   pending: '待执行',
   running: '进行中',
@@ -8,37 +8,38 @@ export const taskStatusLabels = {
   succeeded: '成功',
   cancelled: '已取消',
 };
-export const jobStates = {
+export const taskStates = {
   succeeded: { text: '正常', status: 'Default' },
   running: { text: '运行中', status: 'Processing' },
   failed: { text: '运行失败', status: 'Error' },
   cancelled: { text: '取消', status: 'Default' },
 } as const;
-export type JobState = keyof typeof jobStates;
-export function selectedJobStates(
+export type TaskState = keyof typeof taskStates;
+export function selectedTaskStates(
   values?: readonly unknown[] | null,
-): JobState[] {
-  return (Object.keys(jobStates) as JobState[]).filter((state) =>
+): TaskState[] {
+  return (Object.keys(taskStates) as TaskState[]).filter((state) =>
     values?.includes(state),
   );
 }
-export function jobState(job: {
+export function taskState(task: {
   workflow?: unknown;
   isFailed: boolean;
   isCancelled: boolean;
-  status: string;
-}): JobState {
-  const state = taskStatus(job);
+  legacyStage: string;
+}): TaskState {
+  const state = taskStatus(task);
   return state === 'cancelling' ? 'running' : state;
 }
-export function taskStatus(job: {
+export function taskStatus(task: {
   workflow?: unknown;
   isFailed: boolean;
   isCancelled: boolean;
-  status: string;
+  legacyStage: string;
 }): WorkflowStatus {
-  if (job.workflow) return parseWorkflow(job.workflow).status;
-  if (job.isCancelled) return 'cancelled';
-  if (job.isFailed || job.status !== DownloadStatus.Available) return 'failed';
+  if (task.workflow) return parseWorkflow(task.workflow).status;
+  if (task.isCancelled) return 'cancelled';
+  if (task.isFailed || task.legacyStage !== LegacyTaskStage.Available)
+    return 'failed';
   return 'succeeded';
 }

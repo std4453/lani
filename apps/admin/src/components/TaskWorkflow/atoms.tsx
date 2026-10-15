@@ -1,43 +1,44 @@
 import { ReactNode } from 'react';
-import { AtomType } from '@lani/download-workflow';
-import { TaskDetailsFieldsFragment as Job } from '@/generated/types';
+import { AtomType } from '@lani/workflow';
+import { TaskDetailsFieldsFragment as Task } from '@/generated/types';
 import Field from './Field';
 import DownloadProgress from './DownloadProgress';
 export const atomViews: Record<
   AtomType,
   {
-    fields(job: Job, enabled: boolean): ReactNode;
-    cancelling?(job: Job): ReactNode;
+    fields(task: Task, enabled: boolean): ReactNode;
+    cancelling?(task: Task): ReactNode;
   }
 > = {
   submitDownload: {
-    fields: (job) => (
+    fields: (task) => (
       <>
-        <Field label="种子 Hash">{job.qbtTorrentHash}</Field>
-        <Field label="种子名称">{job.torrentTitle}</Field>
+        <Field label="种子 Hash">{task.qbtTorrentHash}</Field>
+        <Field label="种子名称">{task.torrentTitle}</Field>
       </>
     ),
   },
   download: {
-    fields: (job, enabled) => (
+    fields: (task, enabled) => (
       <>
-        <Field label="下载文件根路径">{job.downloadPath}</Field>
-        <DownloadProgress id={job.id} enabled={enabled} />
+        <Field label="下载文件根路径">{task.downloadPath}</Field>
+        <DownloadProgress id={task.id} enabled={enabled} />
       </>
     ),
   },
   findVideoFile: {
-    fields: (job) => <Field label="视频文件路径">{job.importPath}</Field>,
+    fields: (task) => <Field label="视频文件路径">{task.importPath}</Field>,
   },
   importFile: {
-    fields: (job) => <Field label="导入文件路径">{job.filePath}</Field>,
+    fields: (task) => <Field label="导入文件路径">{task.filePath}</Field>,
   },
   writeMetadata: {
-    fields: (job) => <Field label="元数据路径">{job.nfoPath}</Field>,
+    fields: (task) => <Field label="元数据路径">{task.nfoPath}</Field>,
   },
+  publishEpisode: { fields: () => null },
   refreshPlayer: {
-    fields: (job) => (
-      <Field label="Jellyfin 剧集 ID">{job.jellyfinEpisodeId}</Field>
+    fields: (task) => (
+      <Field label="Jellyfin 剧集 ID">{task.jellyfinEpisodeId}</Field>
     ),
   },
 };
