@@ -3,6 +3,7 @@ import os from 'os';
 import path from 'path';
 import xml2js from 'xml2js';
 import { SeasonEmitService } from './index.service';
+import { TaskType } from '@lani/db';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/common/s3.service', () => ({ S3Service: class {} }));
@@ -125,6 +126,10 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.uniqueid[0]._).toBe('12');
   expect(tvshow.tag).toBeUndefined();
   expect(tvshow.plot).toEqual(['keep']);
+  expect(prisma.task.findMany).toHaveBeenCalledWith({
+    where: { type: TaskType.DOWNLOAD, episode: { seasonId: 12 } },
+    select: { id: true, filePath: true, nfoPath: true },
+  });
   expect(prisma.task.update).toHaveBeenCalledWith({
     where: { id: 1 },
     data: {

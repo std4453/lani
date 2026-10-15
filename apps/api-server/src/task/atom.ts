@@ -1,5 +1,5 @@
-import { AtomType, Checkpoint, Wants } from '@lani/workflow';
-import { Task } from '@lani/db';
+import { AtomType, Checkpoint, Wants, Workflow } from '@lani/workflow';
+import { Prisma, Task } from '@lani/db';
 
 export type TaskInput = Pick<
   Task,
@@ -17,11 +17,20 @@ export type TaskInput = Pick<
 export type TaskOutput = Partial<
   Omit<TaskInput, 'id' | 'episodeId' | 'torrentLink'>
 >;
+export interface AtomTransaction {
+  tx: Prisma.TransactionClient;
+  workflow: Workflow;
+  input: TaskInput;
+  saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
+}
 export interface AtomContext {
   readonly stepId: string;
   readonly attempt: number;
   readonly checkpoint: Checkpoint;
   assertActive(): Promise<void>;
+  transaction<T>(
+    operation: (transaction: AtomTransaction) => Promise<T>,
+  ): Promise<T>;
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
   wait(milliseconds: number): Promise<void>;
   waitFor<T>(operation: Promise<T>): Promise<T>;

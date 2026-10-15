@@ -20,6 +20,7 @@ function setup(checkpoint: Checkpoint = {}) {
     checkpoint,
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(async () => undefined),
+    transaction: jest.fn(),
     saveCheckpoint: jest.fn(async (value) => {
       Object.assign(checkpoint, value);
     }),

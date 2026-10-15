@@ -1,6 +1,6 @@
 import { LegacyTaskStage } from '@/generated/types';
 import { parseWorkflow, WorkflowStatus } from '@lani/workflow';
-export const taskStatusLabels = {
+export const TASK_STATUS_LABELS = {
   pending: '待执行',
   running: '进行中',
   cancelling: '取消中',
@@ -8,17 +8,17 @@ export const taskStatusLabels = {
   succeeded: '成功',
   cancelled: '已取消',
 };
-export const taskStates = {
+export const TASK_STATES = {
   succeeded: { text: '正常', status: 'Default' },
   running: { text: '运行中', status: 'Processing' },
   failed: { text: '运行失败', status: 'Error' },
   cancelled: { text: '取消', status: 'Default' },
 } as const;
-export type TaskState = keyof typeof taskStates;
+export type TaskState = keyof typeof TASK_STATES;
 export function selectedTaskStates(
   values?: readonly unknown[] | null,
 ): TaskState[] {
-  return (Object.keys(taskStates) as TaskState[]).filter((state) =>
+  return (Object.keys(TASK_STATES) as TaskState[]).filter((state) =>
     values?.includes(state),
   );
 }

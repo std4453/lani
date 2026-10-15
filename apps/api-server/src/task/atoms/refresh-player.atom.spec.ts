@@ -47,6 +47,7 @@ function setup() {
     checkpoint: { refreshStartedAt: '2000-01-01T00:00:00Z' },
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(async () => undefined),
+    transaction: jest.fn(),
     saveCheckpoint: jest.fn(async (value) => {
       Object.assign(context.checkpoint, value);
     }),

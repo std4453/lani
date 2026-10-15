@@ -12,7 +12,9 @@ import {
   buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
+  requestCancellation,
 } from '@lani/workflow';
+import { WorkflowRunner } from '@/task/workflow-runner';
 import { Atoms } from '@/task/atom';
 
 jest.mock('@/config', () => ({
@@ -35,6 +37,29 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
   let seasonId: number;
   let folderId: number;
   let atoms: Atoms;
+  const contextFor = async (id: number) => {
+    const task = await store.read(id);
+    return new WorkflowRunner(store, atoms, jest.fn())['context'](
+      task,
+      task.workflow.currentStepId,
+    );
+  };
+  const createImportTask = async () => {
+    const workflow = buildWorkflowSnapshot(
+      downloadDefinition,
+      atoms,
+      new Date().toISOString(),
+    );
+    workflow.currentStepId = 'import';
+    currentStep(workflow).status = 'running';
+    return prisma.task.create({
+      data: {
+        episodeId,
+        legacyStage: LegacyTaskStage.IMPORTING,
+        workflow: JSON.parse(JSON.stringify(workflow)),
+      },
+    });
+  };
   beforeAll(async () => {
     const url = new URL(databaseUrl!);
     if (
@@ -108,6 +133,69 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       await prisma.jellyfinFolder.delete({ where: { id: folderId } });
     await prisma.$disconnect();
   });
+  it('原子事务回滚同时撤销业务写入和检查点，内存只在提交后更新', async () => {
+    const task = await createImportTask();
+    const context = await contextFor(task.id);
+    await expect(
+      context.transaction(async ({ tx, saveCheckpoint }) => {
+        await tx.episode.update({
+          where: { id: episodeId },
+          data: { jellyfinEpisodeId: 'rollback' },
+        });
+        await saveCheckpoint({ publicationClaimed: true });
+        expect(context.checkpoint.publicationClaimed).toBeUndefined();
+        throw new Error('rollback');
+      }),
+    ).rejects.toThrow('rollback');
+    expect(
+      (await prisma.episode.findUnique({ where: { id: episodeId } }))
+        ?.jellyfinEpisodeId,
+    ).toBeNull();
+    expect((await store.read(task.id)).version).toBe(0);
+    expect(context.checkpoint.publicationClaimed).toBeUndefined();
+    await context.transaction(({ saveCheckpoint }) =>
+      saveCheckpoint({ publicationClaimed: true }),
+    );
+    expect(context.checkpoint.publicationClaimed).toBe(true);
+    expect((await store.read(task.id)).version).toBe(1);
+  });
+  it('执行事务与取消串行提交，取消不丢失已写检查点且阻止后续业务事务', async () => {
+    const task = await createImportTask();
+    const context = await contextFor(task.id);
+    const runner = new WorkflowRunner(store, atoms, jest.fn());
+    let cancel: Promise<void>;
+    await context.transaction(async ({ saveCheckpoint }) => {
+      cancel = runner.transition(task.id, (workflow) =>
+        requestCancellation(workflow, new Date().toISOString()),
+      );
+      await saveCheckpoint({ publicationClaimed: true });
+    });
+    await cancel!;
+    const saved = await store.read(task.id);
+    expect(saved.workflow.status).toBe('cancelling');
+    expect(currentStep(saved.workflow).checkpoint.publicationClaimed).toBe(
+      true,
+    );
+    const operation = jest.fn();
+    await expect(context.transaction(operation)).rejects.toThrow();
+    expect(operation).not.toHaveBeenCalled();
+  });
+  it('同集两个任务同时申请发布，只有一个获得占用且不会死锁', async () => {
+    const tasks = await Promise.all([createImportTask(), createImportTask()]);
+    const results = await Promise.allSettled(
+      tasks.map(async (task) =>
+        claimEpisodePublication(task.id, await contextFor(task.id)),
+      ),
+    );
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
+    const saved = await Promise.all(tasks.map((task) => store.read(task.id)));
+    expect(
+      saved.filter(
+        (task) => currentStep(task.workflow).checkpoint.publicationClaimed,
+      ),
+    ).toHaveLength(1);
+  });
   it('旧任务启动后失败、不补写流程，重试直接报错且不启动 atom', async () => {
     const old = await prisma.task.create({
       data: { episodeId, legacyStage: LegacyTaskStage.DOWNLOADING },
@@ -117,6 +205,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       where: { id: old.id },
     });
     expect(result?.isFailed).toBe(true);
+    expect(result?.failedReason).toBe('旧版任务已失效，请重新创建');
     expect(result?.workflow).toBeNull();
     expect(result?.type).toBe(TaskType.DOWNLOAD);
     await expect(service.retryTask(old.id)).rejects.toThrow('旧任务不允许重试');
@@ -189,7 +278,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       new Date().toISOString(),
     );
     flow.currentStepId = 'import';
-    flow.publicationClaimed = true;
+    currentStep(flow).checkpoint.publicationClaimed = true;
     const first = await prisma.task.create({
       data: {
         episodeId,
@@ -207,15 +296,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const state = await store.read(second.id);
     currentStep(state.workflow).status = 'running';
     await expect(
-      claimEpisodePublication(prisma as PrismaService, state.id, {
-        stepId: 'import',
-        attempt: 0,
-        checkpoint: {},
-        assertActive: async () => undefined,
-        saveCheckpoint: async () => undefined,
-        wait: async () => undefined,
-        waitFor: async (operation) => operation,
-      }),
+      claimEpisodePublication(state.id, await contextFor(state.id)),
     ).rejects.toThrow('其他任务正在发布');
     expect(
       (await prisma.task.findUnique({ where: { id: first.id } }))?.version,
@@ -240,15 +321,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     });
     const state = await store.read(retry.id);
     await expect(
-      claimEpisodePublication(prisma as PrismaService, state.id, {
-        stepId: 'import',
-        attempt: 0,
-        checkpoint: {},
-        assertActive: async () => undefined,
-        saveCheckpoint: async () => undefined,
-        wait: async () => undefined,
-        waitFor: async (operation) => operation,
-      }),
+      claimEpisodePublication(state.id, await contextFor(state.id)),
     ).rejects.toThrow('其他任务正在发布或已发布');
   });
   it('并发提交只有一个版本获胜，成功后不能取消', async () => {
@@ -300,7 +373,6 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
             JSON.stringify({
               ...flow,
               status: 'failed',
-              publicationClaimed: true,
             }),
           ),
         },
@@ -313,15 +385,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           workflow: JSON.parse(JSON.stringify(flow)),
         },
       });
-      const context = {
-        stepId: 'publish',
-        attempt: 1,
-        checkpoint: {},
-        assertActive: async () => undefined,
-        saveCheckpoint: async () => undefined,
-        wait: async () => undefined,
-        waitFor: async <T>(operation: Promise<T>) => operation,
-      };
+      const context = await contextFor(publisher.id);
       const emitter = new EventEmitter2();
       const emit = jest.spyOn(emitter, 'emit');
       const publish = new PublishEpisodeAtom(prisma as PrismaService, emitter);
@@ -351,11 +415,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         },
       });
       await expect(
-        claimEpisodePublication(prisma as PrismaService, retry.id, {
-          ...context,
-          stepId: 'import',
-          attempt: 0,
-        }),
+        claimEpisodePublication(retry.id, await contextFor(retry.id)),
       ).rejects.toThrow('其他任务正在发布或已发布');
     },
   );

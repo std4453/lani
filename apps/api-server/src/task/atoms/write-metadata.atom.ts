@@ -22,11 +22,11 @@ export class WriteMetadataAtom extends AsyncAtom {
   private readonly parser = new xml2js.Parser();
 
   async run(
-    _id: number,
+    id: number,
     { episodeId, filePath }: TaskInput,
     context: AtomContext,
   ) {
-    await claimEpisodePublication(this.prisma, _id, context, true);
+    await claimEpisodePublication(id, context, true);
     if (!filePath) {
       throw new Error('input step not finished');
     }
@@ -77,7 +77,7 @@ export class WriteMetadataAtom extends AsyncAtom {
     );
     const nfoContent = this.builder.buildObject(xmlObj);
     await context.assertActive();
-    const temporary = `${nfoPath}.lani-${_id}.tmp`;
+    const temporary = `${nfoPath}.lani-${id}.tmp`;
     await fs.writeFile(temporary, nfoContent, 'utf-8');
     await context.assertActive();
     await fs.rename(temporary, nfoPath);

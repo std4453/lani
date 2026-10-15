@@ -123,6 +123,9 @@ it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列�
   const modal = document.querySelector('.ant-modal');
   expect(modal).not.toBeNull();
   expect(modal?.querySelector('.ant-skeleton')).not.toBeNull();
+  expect(modal?.querySelector('.ant-modal-title')?.textContent).toBe(
+    '剧集详情',
+  );
   await settle(150);
   expect(document.querySelector('.ant-modal')).toBe(modal);
   expect(modal?.querySelector('.ant-skeleton')).toBeNull();

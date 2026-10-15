@@ -13,6 +13,7 @@ import {
 } from '@/utils/idempotency';
 import { mapPath } from '@/utils/path';
 import { Injectable, Logger } from '@nestjs/common';
+import { TaskType } from '@lani/db';
 import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
@@ -178,7 +179,7 @@ export class SeasonEmitService {
 
     // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
     const jobs = await this.prisma.task.findMany({
-      where: { episode: { seasonId: season.id } },
+      where: { type: TaskType.DOWNLOAD, episode: { seasonId: season.id } },
       select: { id: true, filePath: true, nfoPath: true },
     });
     const movePath = (value: string | null) => {

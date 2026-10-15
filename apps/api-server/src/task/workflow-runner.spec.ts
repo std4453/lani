@@ -57,6 +57,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
   };
   let completions = 0;
   const store: TaskStorePort = {
+    transaction: jest.fn(),
     read: async () => ({
       ...state,
       workflow: parseWorkflow(JSON.parse(JSON.stringify(state.workflow))),
@@ -276,5 +277,25 @@ it('执行器不根据 atom 名称添加发布互斥', async () => {
   const test = setup(['importFile']);
   await test.runner.start(1);
   expect(test.state().workflow.status).toBe('succeeded');
-  expect(test.state().workflow.publicationClaimed).toBeUndefined();
+  expect(
+    currentStep(test.state().workflow).checkpoint.publicationClaimed,
+  ).toBeUndefined();
+});
+
+it('取消到达后仍保存同次尝试已发生副作用的检查点', async () => {
+  const test = setup();
+  const context = test.runner['context'](
+    await test.store.read(1),
+    'submitDownload',
+  );
+  await test.runner.transition(1, (workflow) =>
+    requestCancellation(workflow, now),
+  );
+  await context.saveCheckpoint({
+    submission: { hash: 'late', phase: 'confirmed' },
+  });
+  expect(test.state().workflow.status).toBe('cancelling');
+  expect(currentStep(test.state().workflow).checkpoint.submission?.phase).toBe(
+    'confirmed',
+  );
 });

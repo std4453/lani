@@ -14,8 +14,8 @@ export class RefreshPlayerAtom extends AsyncAtom {
   ) {
     super();
   }
-  async run(_id: number, { episodeId }: TaskInput, context: AtomContext) {
-    await claimEpisodePublication(this.prisma, _id, context, true);
+  async run(id: number, { episodeId }: TaskInput, context: AtomContext) {
+    await claimEpisodePublication(id, context, true);
     if (!episodeId) throw new Error('剧集已被删除');
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
@@ -28,7 +28,7 @@ export class RefreshPlayerAtom extends AsyncAtom {
     await context.assertActive();
     try {
       return await context.waitFor(
-        this.refresh.enqueue(_id, {
+        this.refresh.enqueue(id, {
           seriesId: jellyfinSeriesId,
           season,
           index,
@@ -39,7 +39,7 @@ export class RefreshPlayerAtom extends AsyncAtom {
         }),
       );
     } finally {
-      this.refresh.remove(_id);
+      this.refresh.remove(id);
     }
   }
 }

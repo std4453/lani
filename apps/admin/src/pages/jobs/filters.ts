@@ -1,11 +1,5 @@
 import { TaskFilter, LegacyTaskStage } from '@/generated/types';
 import { TaskState } from '@/constants/task-status';
-export {
-  taskStates,
-  taskState,
-  selectedTaskStates,
-  TaskState,
-} from '@/constants/task-status';
 /** 列表与集合检查共用筛选，旧任务的未结束状态按失败处理。 */
 export function taskStateFilter(states: TaskState[]): TaskFilter {
   if (!states.length) return {};

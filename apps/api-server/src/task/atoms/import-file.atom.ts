@@ -20,11 +20,11 @@ export class ImportFileAtom extends AsyncAtom {
   }
 
   async run(
-    _id: number,
+    id: number,
     { episodeId, importPath }: TaskInput,
     context: AtomContext,
   ) {
-    await claimEpisodePublication(this.prisma, _id, context);
+    await claimEpisodePublication(id, context);
     if (!importPath) {
       throw new Error('findVideoFile step not finished');
     }
@@ -61,7 +61,7 @@ export class ImportFileAtom extends AsyncAtom {
         .padStart(2, '0')}${path.extname(importPath)}`,
     );
     const importedFile = await importFile(
-      _id,
+      id,
       sourcePath,
       targetPath,
       config.lani.moveStrategy,

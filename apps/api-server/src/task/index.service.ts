@@ -27,6 +27,12 @@ import { WorkflowRunner } from './workflow-runner';
 import { TaskStore } from './task-store';
 import { Atoms } from './atom';
 import { legacyTaskFields } from './legacy-compat';
+
+export interface TaskParams {
+  episodeId?: number;
+  torrentLink?: string;
+}
+
 @Injectable()
 @Resolver()
 export class TaskService
@@ -63,7 +69,7 @@ export class TaskService
     tx: Prisma.TransactionClient,
     type: TaskType,
     definition: StepDefinition[],
-    params: { episodeId?: number; torrentLink?: string },
+    params: TaskParams,
   ) {
     const workflow = buildWorkflowSnapshot(
       definition,
@@ -137,7 +143,7 @@ export class TaskService
       data: {
         isFailed: true,
         failedAt: new Date(),
-        failedReason: '',
+        failedReason: '旧版任务已失效，请重新创建',
         updatedAt: new Date(),
         version: { increment: 1 },
       },

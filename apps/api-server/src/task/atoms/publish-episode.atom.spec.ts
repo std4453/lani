@@ -1,11 +1,17 @@
 import { PrismaService } from '@/common/prisma.service';
 import { AtomContext, ExecutionStopped, TaskInput } from '@/task/atom';
-import { Workflow } from '@lani/workflow';
+import { Workflow, parseWorkflow } from '@lani/workflow';
+import { TaskStore } from '@/task/task-store';
+import { WorkflowRunner } from '@/task/workflow-runner';
+import { Atoms } from '@/task/atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PublishEpisodeAtom } from './publish-episode.atom';
 import { claimEpisodePublication } from './publication';
 
-jest.mock('./publication', () => ({ claimEpisodePublication: jest.fn() }));
+jest.mock('./publication', () => ({
+  claimEpisodePublication: jest.fn(),
+  lockEpisode: jest.fn(),
+}));
 jest.mock('@/config', () => ({ __esModule: true, default: {} }));
 
 function setup() {
@@ -38,15 +44,6 @@ function setup() {
     nfoPath: null,
     jellyfinEpisodeId: 'jellyfin-episode',
   };
-  const context: AtomContext = {
-    stepId: 'publish',
-    attempt: 1,
-    checkpoint: {},
-    assertActive: async () => undefined,
-    saveCheckpoint: async () => undefined,
-    wait: async () => undefined,
-    waitFor: async (operation) => operation,
-  };
   let association: string | null = null;
   const episode = {
     updateMany: jest.fn(async () => {
@@ -59,13 +56,20 @@ function setup() {
       jellyfinEpisodeId: association,
     })),
   };
+  let version = 0;
   const tx = {
     $queryRaw: jest.fn(async () => []),
     task: {
-      findUnique: jest.fn(async () => ({ workflow })),
-      update: jest.fn(async ({ data }) =>
-        Object.assign(workflow, data.workflow),
-      ),
+      findUnique: jest.fn(async () => ({
+        ...input,
+        version,
+        workflow: parseWorkflow(workflow),
+      })),
+      updateMany: jest.fn(async ({ data }) => {
+        Object.assign(workflow, data.workflow);
+        ++version;
+        return { count: 1 };
+      }),
     },
     episode,
   };
@@ -73,7 +77,17 @@ function setup() {
     $transaction: async (run: (value: typeof tx) => Promise<boolean>) =>
       run(tx),
     episode,
+    task: tx.task,
   };
+  const store = new TaskStore(prisma as unknown as PrismaService);
+  const context: AtomContext = new WorkflowRunner(
+    store,
+    {} as Atoms,
+    jest.fn(),
+  )['context'](
+    { id: input.id, version, workflow: parseWorkflow(workflow), input },
+    'publish',
+  );
   const emitter = new EventEmitter2();
   const emit = jest.spyOn(emitter, 'emit');
   const atom = new PublishEpisodeAtom(
@@ -106,13 +120,8 @@ it('关联提交后尚未收尾时恢复，只通知首次发布', async () => {
   });
   expect(test.emit).toHaveBeenCalledTimes(1);
   expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
-  expect(test.tx.task.update).toHaveBeenCalledTimes(1);
-  expect(claimEpisodePublication).toHaveBeenCalledWith(
-    expect.anything(),
-    1,
-    test.context,
-    true,
-  );
+  expect(test.tx.task.updateMany).toHaveBeenCalledTimes(1);
+  expect(claimEpisodePublication).toHaveBeenCalledWith(1, test.context, true);
 });
 
 it.each(['cancelled', 'stale-attempt', 'different-step'])(

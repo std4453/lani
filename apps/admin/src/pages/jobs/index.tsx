@@ -2,10 +2,10 @@ import TaskStatus from '@/components/TaskStatus';
 import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
 import {
   taskState,
-  taskStates,
-  taskStateFilter,
+  TASK_STATES,
   selectedTaskStates,
-} from './status';
+} from '@/constants/task-status';
+import { taskStateFilter } from './filters';
 import styles from './index.module.less';
 import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
@@ -16,11 +16,13 @@ import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { Hamburger } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
 import tableStyles from '@/components/MainTable/index.module.less';
-import { DownloadStatusTag } from '@/constants/download-status';
+import {
+  DownloadStatusTag,
+  LEGACY_EPISODE_STATUS,
+} from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
   TaskFilter,
-  LegacyTaskStage,
   TaskType,
   GetTaskStatesQuery,
   ListTasksDocument,
@@ -82,11 +84,13 @@ function useColumns({
           const state = taskState(row);
           if (state === 'cancelled') return '-';
           if (state === 'succeeded')
-            return <DownloadStatusTag status={LegacyTaskStage.Available} />;
+            return <DownloadStatusTag status="AVAILABLE" />;
           return row.workflow ? (
             <WorkflowStepTag step={currentStep(parseWorkflow(row.workflow))} />
           ) : (
-            <DownloadStatusTag status={row.legacyStage} />
+            <DownloadStatusTag
+              status={LEGACY_EPISODE_STATUS[row.legacyStage]}
+            />
           );
         },
         width: 128,
@@ -95,7 +99,7 @@ function useColumns({
         title: '状态',
         key: 'lifecycle',
         render: (_, row) => <TaskStatus task={row} variant="badge" />,
-        valueEnum: taskStates,
+        valueEnum: TASK_STATES,
         width: 120,
         filters: true,
       },

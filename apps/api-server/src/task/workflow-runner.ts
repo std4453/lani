@@ -1,3 +1,4 @@
+import { Prisma } from '@lani/db';
 import {
   AtomContext,
   ExecutionStopped,
@@ -21,11 +22,16 @@ export interface StoredTask {
   input: TaskInput;
 }
 export interface TaskStorePort {
-  read(id: number): Promise<StoredTask>;
+  read(id: number, tx?: Prisma.TransactionClient): Promise<StoredTask>;
+  transaction<T>(
+    id: number,
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T>;
   commit(
     task: StoredTask,
     workflow: Workflow,
     output?: Output,
+    tx?: Prisma.TransactionClient,
   ): Promise<boolean>;
 }
 export class WorkflowRunner {
@@ -78,8 +84,8 @@ export class WorkflowRunner {
     const initial = task.workflow.steps.find((step) => step.id === stepId)!;
     const attempt = initial.attempt;
     let checkpoint = initial.checkpoint;
-    const read = async () => {
-      const latest = await this.store.read(task.id);
+    const read = async (tx?: Prisma.TransactionClient) => {
+      const latest = await this.store.read(task.id, tx);
       const step = latest.workflow.steps.find((s) => s.id === stepId);
       if (
         this.stopping ||
@@ -90,8 +96,7 @@ export class WorkflowRunner {
         throw new ExecutionStopped();
       return latest;
     };
-    const assertActive = async () => {
-      const latest = await read();
+    const checkActive = (latest: StoredTask) => {
       if (
         !cancelling &&
         (latest.workflow.cancellation ||
@@ -99,6 +104,7 @@ export class WorkflowRunner {
       )
         throw new ExecutionStopped();
     };
+    const assertActive = async () => checkActive(await read());
     const waitFor = async <T>(operation: Promise<T>): Promise<T> => {
       const interrupted = Symbol('interrupted');
       // 立即接住批次失败；取消可能在检查活动状态期间结束等待。
@@ -125,6 +131,22 @@ export class WorkflowRunner {
         }
       }
     };
+    const saveCheckpoint = async (
+      patch: Checkpoint,
+      output?: TaskOutput,
+      tx?: Prisma.TransactionClient,
+    ) => {
+      for (;;) {
+        const latest = await read(tx);
+        const next = parseWorkflow(latest.workflow);
+        const step = next.steps.find((s) => s.id === stepId)!;
+        step.checkpoint = { ...step.checkpoint, ...patch };
+        if (await this.store.commit(latest, next, output, tx)) {
+          if (!tx) checkpoint = step.checkpoint;
+          return;
+        }
+      }
+    };
     return {
       stepId,
       attempt,
@@ -132,18 +154,29 @@ export class WorkflowRunner {
         return checkpoint;
       },
       assertActive,
-      saveCheckpoint: async (patch: Checkpoint, output?: TaskOutput) => {
-        for (;;) {
-          const latest = await read();
-          const next = parseWorkflow(latest.workflow);
-          const step = next.steps.find((s) => s.id === stepId)!;
-          step.checkpoint = { ...step.checkpoint, ...patch };
-          if (await this.store.commit(latest, next, output)) {
-            checkpoint = step.checkpoint;
-            return;
-          }
-        }
+      transaction: async (operation) => {
+        const committed = await this.store.transaction(task.id, async (tx) => {
+          const latest = await read(tx);
+          checkActive(latest);
+          const value = await operation({
+            tx,
+            workflow: latest.workflow,
+            input: latest.input,
+            saveCheckpoint: (patch, output) =>
+              saveCheckpoint(patch, output, tx),
+          });
+          const saved = await read(tx);
+          return {
+            value,
+            checkpoint: saved.workflow.steps.find((s) => s.id === stepId)!
+              .checkpoint,
+          };
+        });
+        // 回滚的事务不能把未落库的检查点暴露给后续执行。
+        checkpoint = committed.checkpoint;
+        return committed.value;
       },
+      saveCheckpoint,
       waitFor,
       wait: async (milliseconds) => {
         let timer: ReturnType<typeof setTimeout> | undefined;

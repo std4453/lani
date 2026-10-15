@@ -1,3 +1,4 @@
+import { lockEpisode } from '@/task/atoms/publication';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
@@ -17,7 +18,7 @@ export class DownloadJobService {
     @Args('torrentLink') torrentLink: string,
   ) {
     const id = await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(14521, ${episodeId})::text`;
+      await lockEpisode(tx, episodeId);
       const existing = await tx.task.findFirst({
         where: {
           episodeId,

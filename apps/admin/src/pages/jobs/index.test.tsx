@@ -38,7 +38,7 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import JobsPage from './index';
 import { TaskType } from '@/generated/types';
-import { taskStateFilter } from './status';
+import { taskStateFilter } from './filters';
 
 it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采用最新结果', async () => {
   const container = document.createElement('div');

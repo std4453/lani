@@ -1,6 +1,12 @@
-/** 流程协议仅包含可序列化的数据，不依赖浏览器、数据库或 NestJS。 */
-import * as Joi from "joi";
-import { AtomType, Checkpoint, atomTypes, checkpointSchema } from "./atoms";
+import type { AtomType } from "./atoms";
+import type {
+  AtomRegistry,
+  StepDefinition,
+  Workflow,
+  WorkflowStep,
+} from "./types";
+import { parseWorkflow } from "./schema";
+
 export {
   AtomType,
   Checkpoint,
@@ -8,48 +14,8 @@ export {
   FileIdentity,
   FileCheckpoint,
 } from "./atoms";
-export type WorkflowStatus =
-  | "running"
-  | "cancelling"
-  | "failed"
-  | "succeeded"
-  | "cancelled";
-export type StepStatus = WorkflowStatus | "pending";
-export type Wants = readonly (readonly AtomType[])[];
-export interface StepDefinition {
-  id: string;
-  atom: AtomType;
-  title: string;
-}
-export interface WorkflowStep extends StepDefinition {
-  status: StepStatus;
-  attempt: number;
-  startedAt?: string;
-  finishedAt?: string;
-  checkpoint: Checkpoint;
-}
-export interface Workflow {
-  schemaVersion: 1;
-  definitionVersion: number;
-  status: WorkflowStatus;
-  currentStepId: string;
-  steps: WorkflowStep[];
-  createdAt: string;
-  publicationClaimed?: boolean;
-  finishedAt?: string;
-  cancellation?: {
-    requestedAt: string;
-    stepId: string;
-    completedAtoms: string[];
-  };
-  error?: {
-    operation: "execute" | "cancel";
-    stepId: string;
-    message: string;
-    at: string;
-  };
-}
-export type AtomRegistry = Record<AtomType, { wants: Wants }>;
+export * from "./types";
+export { parseWorkflow } from "./schema";
 
 export function validateDefinition(
   definition: readonly StepDefinition[],
@@ -138,58 +104,4 @@ export function retryWorkflow(workflow: Workflow, now: string): Workflow {
   delete step.finishedAt;
   step.startedAt = now;
   return next;
-}
-
-const statuses = ["running", "cancelling", "failed", "succeeded", "cancelled"];
-const workflowSchema = Joi.object<Workflow>({
-  schemaVersion: Joi.valid(1).required(),
-  definitionVersion: Joi.number().required(),
-  status: Joi.string()
-    .valid(...statuses)
-    .required(),
-  currentStepId: Joi.string().required(),
-  createdAt: Joi.string().required(),
-  finishedAt: Joi.string(),
-  publicationClaimed: Joi.boolean(),
-  steps: Joi.array()
-    .min(1)
-    .items(
-      Joi.object<WorkflowStep>({
-        id: Joi.string().required(),
-        atom: Joi.string()
-          .valid(...atomTypes)
-          .required(),
-        title: Joi.string().required(),
-        status: Joi.string()
-          .valid("pending", ...statuses)
-          .required(),
-        attempt: Joi.number().required(),
-        startedAt: Joi.string(),
-        finishedAt: Joi.string(),
-        checkpoint: checkpointSchema.required(),
-      })
-    )
-    .required(),
-  cancellation: Joi.object({
-    requestedAt: Joi.string().required(),
-    stepId: Joi.string().required(),
-    completedAtoms: Joi.array().items(Joi.string()).required(),
-  }),
-  error: Joi.object({
-    operation: Joi.string().valid("execute", "cancel").required(),
-    stepId: Joi.string().required(),
-    message: Joi.string().allow("").required(),
-    at: Joi.string().required(),
-  }),
-});
-/** 系统自产快照只校验协议形状；依赖、唯一性等在创建定义时检查。 */
-export function parseWorkflow(value: unknown): Workflow {
-  const result = workflowSchema.validate(value, {
-    convert: false,
-    allowUnknown: true,
-  });
-  if (result.error)
-    throw new Error(`任务流程数据无效：${result.error.message}`);
-  currentStep(result.value);
-  return result.value;
 }

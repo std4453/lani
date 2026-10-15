@@ -66,8 +66,6 @@ export default function EpisodeDetailsDialog({
       title={
         episode
           ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
-          : input?.taskId
-          ? '下载任务详情'
           : '剧集详情'
       }
       destroyOnClose

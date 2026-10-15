@@ -1,6 +1,7 @@
 import { buildWorkflowSnapshot, requestCancellation } from '@lani/workflow';
 import { LegacyTaskStage } from '@/generated/types';
-import { taskState, taskStateFilter, selectedTaskStates } from './status';
+import { taskState, selectedTaskStates } from '@/constants/task-status';
+import { taskStateFilter } from './filters';
 
 it('显示状态合并执行与取消，并将同一筛选转换为后端流程状态', () => {
   const registry = {
