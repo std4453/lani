@@ -243,6 +243,23 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     expect(ids[0]).toBe(ids[1]);
     expect(await prisma.task.count({ where: { episodeId } })).toBe(1);
   });
+  it('取消尚未完成时拒绝复用任务，不静默丢弃新的种子请求', async () => {
+    const start = jest.spyOn(service, 'start').mockResolvedValue();
+    const id = await downloads.downloadTorrentForEpisode(
+      episodeId,
+      'magnet:one',
+    );
+    await new WorkflowRunner(store, atoms, jest.fn()).transition(
+      id,
+      (workflow) => requestCancellation(workflow, new Date().toISOString()),
+    );
+    start.mockClear();
+    await expect(
+      downloads.downloadTorrentForEpisode(episodeId, 'magnet:two'),
+    ).rejects.toThrow('该剧集的任务正在取消，请稍后重试');
+    expect(await prisma.task.count({ where: { episodeId } })).toBe(1);
+    expect(start).not.toHaveBeenCalled();
+  });
   it('状态提交 CAS 拒绝旧版本，取消获胜后不能写入迟到产物', async () => {
     const flow = buildWorkflowSnapshot(
       downloadDefinition,

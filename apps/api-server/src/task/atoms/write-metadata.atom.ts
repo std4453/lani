@@ -78,9 +78,15 @@ export class WriteMetadataAtom extends AsyncAtom {
     const nfoContent = this.builder.buildObject(xmlObj);
     await context.assertActive();
     const temporary = `${nfoPath}.lani-${id}.tmp`;
-    await fs.writeFile(temporary, nfoContent, 'utf-8');
-    await context.assertActive();
-    await fs.rename(temporary, nfoPath);
+    try {
+      await fs.writeFile(temporary, nfoContent, 'utf-8');
+      await context.assertActive();
+      await fs.rename(temporary, nfoPath);
+    } catch (error) {
+      // 部分写入和取消也清理暂存文件；清理失败不能覆盖原始错误。
+      await fs.rm(temporary, { force: true }).catch(() => undefined);
+      throw error;
+    }
     return {
       nfoPath,
     };

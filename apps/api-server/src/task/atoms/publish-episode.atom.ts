@@ -24,7 +24,7 @@ export class PublishEpisodeAtom extends AsyncAtom {
       async ({ tx, workflow, saveCheckpoint }) => {
         await lockEpisode(tx, episodeId);
         const step = currentStep(workflow);
-        // 关联独立于任务收尾提交；恢复时相同关联不重复发布或发送通知。
+        // 关联独立于任务收尾提交；发布检查点避免恢复时重复通知。
         const result = await tx.episode.updateMany({
           where: { id: episodeId, jellyfinEpisodeId: null },
           data: { jellyfinEpisodeId },
@@ -42,7 +42,7 @@ export class PublishEpisodeAtom extends AsyncAtom {
           // 发布归属和关联同时提交；任务终态仍由执行器独立推进。
           await saveCheckpoint({ episodePublished: true });
         }
-        return !!result.count && !previouslyPublished;
+        return !previouslyPublished;
       },
     );
     if (published) {

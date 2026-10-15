@@ -7,6 +7,8 @@ import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { TaskService } from '@/task/index.service';
 import { LegacyTaskStage, TaskType } from '@lani/db';
 import { downloadDefinition } from './definition';
+import { parseWorkflow } from '@lani/workflow';
+import { LaniError } from '@/utils/error';
 @Injectable()
 @Resolver()
 export class DownloadJobService {
@@ -29,7 +31,11 @@ export class DownloadJobService {
         },
         orderBy: { id: 'desc' },
       });
-      if (existing) return existing.id;
+      if (existing) {
+        if (existing.workflow && parseWorkflow(existing.workflow).cancellation)
+          throw new LaniError('该剧集的任务正在取消，请稍后重试');
+        return existing.id;
+      }
       const task = await this.tasks.create(
         tx,
         TaskType.DOWNLOAD,

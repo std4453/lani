@@ -124,6 +124,15 @@ it('关联提交后尚未收尾时恢复，只通知首次发布', async () => {
   expect(claimEpisodePublication).toHaveBeenCalledWith(1, test.context, true);
 });
 
+it('已有相同关联但尚未发布时仍通知一次，恢复不重复通知', async () => {
+  const test = setup();
+  test.setAssociation('jellyfin-episode');
+  await test.atom.run(1, test.input, test.context);
+  await test.atom.recover(1, test.input, test.context);
+  expect(test.emit).toHaveBeenCalledTimes(1);
+  expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
+});
+
 it.each(['cancelled', 'stale-attempt', 'different-step'])(
   '事务内拒绝已失效执行：%s',
   async (reason) => {
