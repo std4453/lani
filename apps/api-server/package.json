@@ -107,7 +107,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/$1",
+      "^@lani/workflow$": "<rootDir>/../../../libs/workflow/src/index.ts"
     }
   },
   "files": [
