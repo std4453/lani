@@ -1,4 +1,3 @@
-jest.mock('pretty-bytes', () => () => '0 B');
 jest.mock('@/utils/useDownloadJobStates', () => ({
   useDownloadJobStates: () => ({ refetch: jest.fn() }),
 }));

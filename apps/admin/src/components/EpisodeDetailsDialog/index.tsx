@@ -1,13 +1,12 @@
 import DownloadWorkflowView, {
   WorkflowStatusTag,
 } from '@/components/DownloadWorkflow';
-import LegacyDownloadJob from '@/components/DownloadWorkflow/LegacyDownloadJob';
 import EpisodeHeader from './EpisodeHeader';
 import styles from './index.module.less';
 import JobScroll from '@/components/DownloadWorkflow/JobScroll';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { formatNumbering } from '@/utils/episode';
-import { DownloadStatus, GetEpisodeByIdDocument } from '@/generated/types';
+import { GetEpisodeByIdDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
@@ -76,6 +75,7 @@ export default function EpisodeDetailsDialog({
         {jobs.length > 0 ? (
           <Tabs
             className={styles.jobTabs}
+            tabBarGutter={16}
             activeKey={selectedJob}
             onChange={setActiveJob}
             tabBarExtraContent={{
@@ -101,24 +101,11 @@ export default function EpisodeDetailsDialog({
                 }
               >
                 <JobScroll active={visible && selectedJob === `${job.id}`}>
-                  {job.workflow ? (
-                    <DownloadWorkflowView
-                      job={job}
-                      active={visible && selectedJob === `${job.id}`}
-                      refresh={states.refetch}
-                    />
-                  ) : (
-                    <LegacyDownloadJob
-                      job={{
-                        ...job,
-                        isFailed:
-                          job.isFailed ||
-                          (!job.isCancelled &&
-                            job.status !== DownloadStatus.Available),
-                      }}
-                      jobIdToStatusMap={{}}
-                    />
-                  )}
+                  <DownloadWorkflowView
+                    job={job}
+                    active={visible && selectedJob === `${job.id}`}
+                    refresh={states.refetch}
+                  />
                 </JobScroll>
               </Tabs.TabPane>
             ))}

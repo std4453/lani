@@ -56,7 +56,7 @@
 .cancelled {
   :global(.ant-steps-item-title),
   .field > :first-child {
-    color: rgba(0, 0, 0, 0.45) !important;
+    color: var(--lani-text-secondary) !important;
   }
 }
 .cancelledIcon {
@@ -64,7 +64,7 @@
   position: relative;
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--lani-text-secondary);
   border-radius: 50%;
   vertical-align: top;
   &::after {
@@ -74,7 +74,7 @@
     height: 1px;
     top: 50%;
     left: 7px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--lani-text-secondary);
     transform: rotate(-45deg);
   }
 }

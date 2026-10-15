@@ -4,12 +4,15 @@
   word-break: break-all;
 }
 .dialog:global(.ant-modal) {
-  top: 24px;
+  top: ~'calc(24px + env(safe-area-inset-top, 0px))';
+  margin-top: 0;
+  margin-bottom: 0;
   padding-bottom: 0;
   :global(.ant-modal-content) {
     display: flex;
     flex-direction: column;
-    max-height: ~'min(800px, calc(100vh - 48px))';
+    max-height: ~'min(800px, calc(100vh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)))';
+    max-height: ~'min(800px, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)))';
   }
   :global(.ant-modal-header) {
     flex: none;
@@ -31,6 +34,7 @@
 .header {
   flex: none;
   max-height: 35vh;
+  max-height: 35dvh;
   overflow: auto;
 }
 .jobTabs:global(.ant-tabs) {

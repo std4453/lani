@@ -1,7 +1,8 @@
 import DownloadWorkflowView from '@/components/DownloadWorkflow';
-import LegacyDownloadJob from '@/components/DownloadWorkflow/LegacyDownloadJob';
+import JobScroll from '@/components/DownloadWorkflow/JobScroll';
+import styles from '../EpisodeDetailsDialog/index.module.less';
 import EpisodeDetailsDialog from '@/components/EpisodeDetailsDialog';
-import { DownloadStatus, GetTaskByIdDocument } from '@/generated/types';
+import { GetTaskByIdDocument } from '@/generated/types';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
@@ -44,6 +45,7 @@ export default function TaskDetailsDialog(
     );
   return (
     <Modal
+      className={styles.dialog}
       visible={visible}
       onCancel={reject}
       footer={false}
@@ -61,24 +63,13 @@ export default function TaskDetailsDialog(
               message="关联剧集不存在"
               style={{ marginBottom: 16 }}
             />
-            {job.workflow ? (
+            <JobScroll active={visible}>
               <DownloadWorkflowView
                 job={job}
                 active={visible}
                 refresh={states.refetch}
               />
-            ) : (
-              <LegacyDownloadJob
-                job={{
-                  ...job,
-                  isFailed:
-                    job.isFailed ||
-                    (!job.isCancelled &&
-                      job.status !== DownloadStatus.Available),
-                }}
-                jobIdToStatusMap={{}}
-              />
-            )}
+            </JobScroll>
           </>
         ) : (
           !loading && <Alert type="info" message="任务不存在" />

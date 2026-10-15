@@ -75,6 +75,7 @@ function useColumns({
       },
       {
         title: '步骤',
+        className: styles.step,
         dataIndex: 'status',
         render: (_, row) => {
           const state = jobState(row);

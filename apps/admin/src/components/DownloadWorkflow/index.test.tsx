@@ -22,6 +22,8 @@ import {
 import {
   CancelDownloadJobDocument,
   RetryJobStepDocument,
+  DownloadStatus,
+  TaskDetailsFieldsFragment,
 } from '@/generated/types';
 const registry = Object.fromEntries(
   atomTypes.map((atom) => [atom, { wants: [] }]),
@@ -209,3 +211,49 @@ it('取消任务先确认，接口返回后立即刷新', async () => {
     refresh.mock.invocationCallOrder[0],
   );
 });
+
+it.each([true, false])(
+  '旧任务复用可折叠步骤和失败表单（已记录失败：%s），重试仍调用原接口',
+  async (isFailed) => {
+    const job = {
+      id: 9,
+      workflow: null,
+      status: DownloadStatus.Downloading,
+      isFailed,
+      isCancelled: false,
+      createdAt: '2026-10-14',
+      failedAt: '2026-10-14T12:03:00Z',
+      failedReason: '种子不存在',
+      qbtTorrentHash: 'existing-hash',
+    } as TaskDetailsFieldsFragment;
+    const original = JSON.stringify(job);
+    act(() => {
+      ReactDOM.render(
+        <DownloadWorkflowView job={job} active refresh={refresh} />,
+        container,
+      );
+    });
+    const toggles = container.querySelectorAll<HTMLButtonElement>(
+      'button[aria-expanded]',
+    );
+    expect([...toggles].map((button) => button.textContent)).toEqual([
+      '任务信息',
+      '提交下载',
+    ]);
+    expect(toggles[1].getAttribute('aria-expanded')).toBe('false');
+    act(() => toggles[1].click());
+    expect(toggles[1].getAttribute('aria-expanded')).toBe('true');
+    const failed = container.querySelector('.ant-steps-item-error')!;
+    expect(failed.textContent).toContain('失败原因：种子不存在');
+    expect(failed.querySelector('button[aria-expanded]')).toBeNull();
+    expect(container.querySelector('button.ant-btn-dangerous')).toBeNull();
+    await act(async () =>
+      failed.querySelector<HTMLButtonElement>('button.ant-btn-link')!.click(),
+    );
+    expect(mutate).toHaveBeenCalledWith({
+      mutation: RetryJobStepDocument,
+      variables: { jobId: 9 },
+    });
+    expect(JSON.stringify(job)).toBe(original);
+  },
+);

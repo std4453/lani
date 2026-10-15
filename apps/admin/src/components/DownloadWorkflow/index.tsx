@@ -6,7 +6,7 @@ import {
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { useApolloClient } from '@apollo/client';
-import { AtomType, currentStep, parseWorkflow } from '@lani/download-workflow';
+import { AtomType, parseWorkflow } from '@lani/download-workflow';
 import { Button, Steps, Popconfirm, Space, Tag, Typography } from 'antd';
 import {
   DownOutlined,
@@ -17,6 +17,7 @@ import {
 import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
 import DownloadProgress from './DownloadProgress';
+import { JobPresentation, presentJob } from './presentation';
 
 type Job = TaskDetailsFieldsFragment;
 const formatTime = (value?: string) =>
@@ -135,12 +136,11 @@ function StepDetails({
   );
 }
 
-function FailureDetails({ job }: { job: Job }) {
-  const workflow = parseWorkflow(job.workflow);
+function FailureDetails({ error }: { error: JobPresentation['error'] }) {
   return (
     <div className={styles.failure}>
-      <Field label="失败时间">{formatTime(workflow.error?.at)}</Field>
-      <Field label="失败原因">{workflow.error?.message}</Field>
+      <Field label="失败时间">{formatTime(error?.at)}</Field>
+      <Field label="失败原因">{error?.message}</Field>
     </div>
   );
 }
@@ -154,15 +154,10 @@ export default function DownloadWorkflowView({
   active: boolean;
   refresh(): Promise<unknown>;
 }) {
-  const workflow = parseWorkflow(job.workflow);
-  const step = currentStep(workflow);
-  const hasStarted = workflow.steps.some(
-    (item) =>
-      item.attempt > 0 ||
-      !!item.startedAt ||
-      !['pending', 'cancelled'].includes(item.status),
-  );
-  const defaultExpanded = hasStarted ? `step:${step.id}` : 'job-info';
+  const view = presentJob(job);
+  const defaultExpanded = view.hasStarted
+    ? `step:${view.currentStepId}`
+    : 'job-info';
   const [expanded, setExpanded] = useState<string[]>([defaultExpanded]);
   const [busy, setBusy] = useState(false);
   const client = useApolloClient();
@@ -222,9 +217,10 @@ export default function DownloadWorkflowView({
           </StepDetails>
         }
       />
-      {workflow.steps.map((item) => {
-        const cancelledHere = workflow.cancellation?.stepId === item.id;
-        const failed = workflow.status === 'failed' && step.id === item.id;
+      {view.steps.map((item) => {
+        const cancelledHere = view.cancelledStepId === item.id;
+        const failed =
+          view.status === 'failed' && view.currentStepId === item.id;
         const cancelling = item.status === 'cancelling';
         const cancelled = item.status === 'cancelled';
         const collapsible = item.status === 'succeeded';
@@ -243,7 +239,7 @@ export default function DownloadWorkflowView({
         return (
           <Steps.Step
             key={item.id}
-            data-current-step={step.id === item.id}
+            data-current-step={view.currentStepId === item.id}
             data-step-id={item.id}
             data-step-status={item.status}
             status={stepStatuses[item.status]}
@@ -268,9 +264,7 @@ export default function DownloadWorkflowView({
                   >
                     重试
                   </Button>
-                ) : item.status === 'running' &&
-                  workflow.status === 'running' &&
-                  !workflow.cancellation ? (
+                ) : item.status === 'running' && view.canCancel ? (
                   <Popconfirm
                     placement="rightBottom"
                     arrowPointAtCenter
@@ -303,9 +297,7 @@ export default function DownloadWorkflowView({
             description={
               cancelled ? (
                 cancelledHere && (
-                  <Field label="取消时间">
-                    {formatTime(workflow.finishedAt)}
-                  </Field>
+                  <Field label="取消时间">{formatTime(view.cancelledAt)}</Field>
                 )
               ) : item.status !== 'pending' ? (
                 <StepDetails
@@ -313,7 +305,7 @@ export default function DownloadWorkflowView({
                   open={open}
                 >
                   {failed ? (
-                    <FailureDetails job={job} />
+                    <FailureDetails error={view.error} />
                   ) : cancelling ? (
                     atomViews[item.atom].cancelling?.(job) ?? null
                   ) : (
