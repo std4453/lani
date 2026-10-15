@@ -218,6 +218,7 @@ export default function DownloadWorkflowView({
         }
       />
       {view.steps.map((item) => {
+        const atomView = item.atom ? atomViews[item.atom] : undefined;
         const cancelledHere = view.cancelledStepId === item.id;
         const failed =
           view.status === 'failed' && view.currentStepId === item.id;
@@ -307,10 +308,10 @@ export default function DownloadWorkflowView({
                   {failed ? (
                     <FailureDetails error={view.error} />
                   ) : cancelling ? (
-                    atomViews[item.atom].cancelling?.(job) ?? null
+                    atomView?.cancelling?.(job) ?? null
                   ) : (
                     <>
-                      {atomViews[item.atom].fields(job)}
+                      {atomView?.fields(job)}
                       {item.atom === 'download' && (
                         <DownloadProgress
                           id={job.id}

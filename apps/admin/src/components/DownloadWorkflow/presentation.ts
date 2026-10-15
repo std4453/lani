@@ -10,7 +10,10 @@ import {
 /** 仅用于渲染，不生成或回写旧任务的流程快照、检查点及历史时间。 */
 export interface JobPresentation {
   status: WorkflowStatus;
-  steps: (StepDefinition & { status: StepStatus })[];
+  steps: (Pick<StepDefinition, 'id' | 'title'> & {
+    atom?: StepDefinition['atom'];
+    status: StepStatus;
+  })[];
   currentStepId: string;
   hasStarted: boolean;
   canCancel: boolean;
@@ -85,10 +88,25 @@ export function presentJob(job: TaskDetailsFieldsFragment): JobPresentation {
   const position =
     job.status === DownloadStatus.Available
       ? legacySteps.length - 1
-      : Math.max(
-          0,
-          legacySteps.findIndex((step) => step.legacyStatus === job.status),
-        );
+      : legacySteps.findIndex((step) => step.legacyStatus === job.status);
+  const error =
+    status === 'failed'
+      ? {
+          at: job.failedAt ?? undefined,
+          message: job.failedReason ?? undefined,
+        }
+      : undefined;
+  // 遗留枚举 RENAMING、UNAVAILABLE 无可靠的流程对应关系，不推算历史步骤。
+  if (position < 0)
+    return {
+      status,
+      steps: [{ id: 'legacy-unknown', title: '未知阶段', status }],
+      currentStepId: 'legacy-unknown',
+      hasStarted: true,
+      canCancel: false,
+      cancelledStepId: status === 'cancelled' ? 'legacy-unknown' : undefined,
+      error,
+    };
   return {
     status,
     currentStepId: legacySteps[position].id,
@@ -96,13 +114,7 @@ export function presentJob(job: TaskDetailsFieldsFragment): JobPresentation {
     canCancel: false,
     cancelledStepId:
       status === 'cancelled' ? legacySteps[position].id : undefined,
-    error:
-      status === 'failed'
-        ? {
-            at: job.failedAt ?? undefined,
-            message: job.failedReason ?? undefined,
-          }
-        : undefined,
+    error,
     steps: legacySteps.map(({ id, atom, title }, index) => ({
       id,
       atom,

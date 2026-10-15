@@ -57,3 +57,22 @@ it('旧任务缺失的失败时间保持为空，不使用创建时间替代', (
     'pending',
   ]);
 });
+
+it.each([DownloadStatus.Renaming, DownloadStatus.Unavailable])(
+  '无法确认对应步骤的旧状态 %s 显示未知阶段，不推算第一步或成功历史',
+  (status) => {
+    for (const cancelled of [false, true]) {
+      const view = presentJob(legacy(status, cancelled));
+      expect(view.steps).toEqual([
+        {
+          id: 'legacy-unknown',
+          title: '未知阶段',
+          status: cancelled ? 'cancelled' : 'failed',
+        },
+      ]);
+      expect(view.currentStepId).toBe('legacy-unknown');
+      expect(view.canCancel).toBe(false);
+      expect(view.cancelledAt).toBeUndefined();
+    }
+  },
+);
