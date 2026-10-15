@@ -1,20 +1,25 @@
 import {
   atomTypes,
   AtomType,
-  createWorkflow,
+  buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
   requestCancellation,
   retryWorkflow,
 } from '@lani/download-workflow';
 import {
-  Atoms,
-  Output,
-  StoredWorkflow,
+  Atoms as WorkflowAtoms,
+  Output as WorkflowOutput,
+  StoredWorkflow as Stored,
   WorkflowRunner,
-  WorkflowStore,
-} from './workflow-runner';
-import { AtomContext, ExecutionStopped } from './atoms';
+  WorkflowStore as Store,
+  WorkflowDefinition,
+} from '@/task/workflow-runner';
+import { AtomContext, ExecutionStopped } from '@/task/atom';
+type Atoms = WorkflowAtoms<WorkflowDefinition>;
+type Output = WorkflowOutput<WorkflowDefinition>;
+type StoredWorkflow = Stored<WorkflowDefinition>;
+type WorkflowStore = Store<WorkflowDefinition>;
 const now = '2026-10-14T12:00:00Z';
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -38,7 +43,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
   let state: StoredWorkflow = {
     id: 1,
     version: 0,
-    workflow: createWorkflow(
+    workflow: buildWorkflowSnapshot(
       types.map((atom) => ({ id: atom, atom, title: atom })),
       atoms,
       now,
@@ -152,7 +157,9 @@ it('重试和恢复复用成功产物，只执行当前未结束步骤', async (
   const recovered = new WorkflowRunner(test.store, test.atoms, test.errors);
   await recovered.start(1);
   expect(test.atoms.submitDownload.run).toHaveBeenCalledTimes(1);
-  expect(test.state().input.steps.submitDownload?.qbtTorrentHash).toBe('hash');
+  expect(test.state().input.steps.submitDownload).toEqual({
+    qbtTorrentHash: 'hash',
+  });
   expect(test.completions()).toBe(1);
 });
 it('取消中的任务重启继续取消，取消前的检查点仍可读取', async () => {
@@ -202,9 +209,9 @@ it('旧尝试的迟到检查点不能覆盖重试后的状态，重复启动不�
   ).rejects.toBeInstanceOf(ExecutionStopped);
   finish.resolve({ qbtTorrentHash: 'current' });
   await running;
-  expect(test.state().input.steps.submitDownload?.qbtTorrentHash).toBe(
-    'current',
-  );
+  expect(test.state().input.steps.submitDownload).toEqual({
+    qbtTorrentHash: 'current',
+  });
   expect(test.atoms.submitDownload.run).toHaveBeenCalledTimes(2);
   expect(test.completions()).toBe(1);
 });
@@ -219,4 +226,32 @@ it('启动时仍在执行的步骤调用恢复钩子，不重新调用执行钩�
   expect(test.atoms.download.recover).toHaveBeenCalledTimes(1);
   expect(test.atoms.download.run).not.toHaveBeenCalled();
   expect(test.state().workflow.status).toBe('succeeded');
+});
+
+it('中止队列等待后继续取消，不等待外部批次返回，也不接收迟到结果', async () => {
+  const test = setup(['download']);
+  const entered = deferred<void>();
+  const batch = deferred<{ downloadPath: string }>();
+  jest
+    .spyOn(test.atoms.download, 'run')
+    .mockImplementation(async (_id, _input, context) => {
+      entered.resolve();
+      return context.waitFor(batch.promise);
+    });
+  const running = test.runner.start(1);
+  await entered.promise;
+  const current = test.state();
+  await test.store.commit(current, requestCancellation(current.workflow, now));
+  void test.runner.start(1);
+  await running;
+  expect(test.state().workflow.status).toBe('cancelled');
+  batch.resolve({ downloadPath: '/late' });
+  await Promise.resolve();
+  expect(test.state().input.steps.download).toBeUndefined();
+});
+it('执行器不根据 atom 名称添加发布互斥', async () => {
+  const test = setup(['importFile']);
+  await test.runner.start(1);
+  expect(test.state().workflow.status).toBe('succeeded');
+  expect(test.state().workflow.publicationClaimed).toBeUndefined();
 });

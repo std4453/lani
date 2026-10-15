@@ -1,7 +1,7 @@
 import {
   atomTypes,
   AtomRegistry,
-  createWorkflow,
+  buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
   requestCancellation,
@@ -23,7 +23,7 @@ it("不同数量和顺序的流程不依赖固定六步", () => {
     ["refreshPlayer", "submitDownload"],
     ["importFile", "download", "findVideoFile"],
   ] as const) {
-    const workflow = createWorkflow(atoms.map(step), registry, now);
+    const workflow = buildWorkflowSnapshot(atoms.map(step), registry, now);
     expect(workflow.steps.map((s) => s.atom)).toEqual(atoms);
     expect(currentStep(workflow).atom).toBe(atoms[0]);
     expect(parseWorkflow(JSON.parse(JSON.stringify(workflow)))).toEqual(
@@ -65,12 +65,12 @@ it("依赖组之间 AND、组内 OR，且必须在之前出现", () => {
   ).toThrow();
 });
 it("拒绝空流程、重复标识和未注册原子", () => {
-  expect(() => createWorkflow([], registry, now)).toThrow();
+  expect(() => buildWorkflowSnapshot([], registry, now)).toThrow();
   expect(() =>
-    createWorkflow([step("download"), step("download")], registry, now)
+    buildWorkflowSnapshot([step("download"), step("download")], registry, now)
   ).toThrow();
   expect(() =>
-    createWorkflow(
+    buildWorkflowSnapshot(
       [{ id: "x", atom: "unknown", title: "未知" }] as never,
       registry,
       now
@@ -78,7 +78,7 @@ it("拒绝空流程、重复标识和未注册原子", () => {
   ).toThrow();
 });
 it("取消保留成功步骤，后续步骤取消，取消失败重试不能恢复执行", () => {
-  const original = createWorkflow(
+  const original = buildWorkflowSnapshot(
     [step("submitDownload"), step("download"), step("importFile")],
     registry,
     now
@@ -102,29 +102,31 @@ it("取消保留成功步骤，后续步骤取消，取消失败重试不能恢�
   expect(retried.cancellation?.requestedAt).toBe(now);
   expect(retried.steps[2].status).toBe("cancelled");
 });
-it("拒绝破损协议、未知版本和伪造取消恢复", () => {
-  const workflow = createWorkflow([step("download")], registry, now);
+it("拒绝未知版本和不完整形状，不重复检查内部时间和计数的业务语义", () => {
+  const workflow = buildWorkflowSnapshot([step("download")], registry, now);
   expect(() => parseWorkflow({ ...workflow, schemaVersion: 2 })).toThrow();
   expect(() =>
     parseWorkflow({ ...workflow, currentStepId: "missing" })
   ).toThrow();
-  expect(() => parseWorkflow({ ...workflow, createdAt: "invalid" })).toThrow();
-  expect(() =>
+  expect(() => parseWorkflow({ ...workflow, steps: [] })).toThrow();
+  expect(() => parseWorkflow({ ...workflow, createdAt: 12 })).toThrow();
+  expect(
     parseWorkflow({
       ...workflow,
-      cancellation: {
-        requestedAt: now,
-        stepId: "download",
-        completedAtoms: [],
-      },
-    })
-  ).toThrow();
+      createdAt: "internal-time",
+      definitionVersion: 0,
+    }).createdAt
+  ).toBe("internal-time");
 });
 
 it("定义版本保存在快照中，文件发布检查点必须包含身份", () => {
-  const workflow = createWorkflow([step("importFile")], registry, now, 7);
+  const workflow = buildWorkflowSnapshot(
+    [step("importFile")],
+    registry,
+    now,
+    7
+  );
   expect(parseWorkflow(workflow).definitionVersion).toBe(7);
-  expect(() => parseWorkflow({ ...workflow, definitionVersion: 0 })).toThrow();
   const corrupted = JSON.parse(JSON.stringify(workflow));
   corrupted.steps[0].checkpoint.file = {
     source: "/source",

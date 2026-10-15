@@ -1,7 +1,8 @@
 module.exports = {
   testEnvironment: 'jsdom',
   testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.test.tsx'],
-  transform: { '^.+\\.tsx?$': 'ts-jest' },
+  transform: { '^.+\\.[tj]sx?$': 'ts-jest' },
+  transformIgnorePatterns: ['/node_modules/(?!.*pretty-bytes)'],
   globals: { 'ts-jest': { tsconfig: '<rootDir>/tests/tsconfig.json' } },
   moduleNameMapper: {
     '^antd/es/.*/style(/index)?$': '<rootDir>/tests/style-mock.js',

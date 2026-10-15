@@ -2,7 +2,7 @@ jest.mock('@/utils/useApolloPoll', () => ({ useForegroundOnline: () => true }));
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
-import JobScroll from './JobScroll';
+import TaskScroll from './TaskScroll';
 
 it('仅离开视野的当前步骤在手动滚动停止 5 秒后滚回，关闭时停止', () => {
   jest.useFakeTimers();
@@ -10,7 +10,7 @@ it('仅离开视野的当前步骤在手动滚动停止 5 秒后滚回，关闭�
   const render = (active: boolean) =>
     act(() => {
       ReactDOM.render(
-        <JobScroll active={active}>
+        <TaskScroll active={active}>
           <div
             data-current-step="true"
             data-step-id="download"
@@ -18,7 +18,7 @@ it('仅离开视野的当前步骤在手动滚动停止 5 秒后滚回，关闭�
           >
             <button aria-expanded="false">已完成步骤</button>
           </div>
-        </JobScroll>,
+        </TaskScroll>,
         host,
       );
     });
@@ -80,13 +80,13 @@ it.each(['succeeded', 'failed', 'cancelled'])(
     const render = (id: string) =>
       act(() => {
         ReactDOM.render(
-          <JobScroll active>
+          <TaskScroll active>
             <div
               data-current-step="true"
               data-step-id={id}
               data-step-status={status}
             />
-          </JobScroll>,
+          </TaskScroll>,
           host,
         );
       });

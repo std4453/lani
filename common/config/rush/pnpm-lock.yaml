@@ -28669,13 +28669,14 @@ packages:
     dev: false
 
   file:projects/download-workflow.tgz_ts-node@10.9.2:
-    resolution: {integrity: sha512-kNN9pwR1bnFgHzJA1O+rY/U/dqK9WLx0WwrDjTDeR4Wa46FOfFqek7Hnr77Rz8HeksN+s0MWIuWp/XaQb90CNA==, tarball: file:projects/download-workflow.tgz}
+    resolution: {integrity: sha512-LzE66PwOllELkL4RNgi467G9ZY+JNt7OWeJVB84NgBbwTWjklxbaKfuVpxz0BkAcUYp9pk5QvSSyWjpzVuGT+w==, tarball: file:projects/download-workflow.tgz}
     id: file:projects/download-workflow.tgz
     name: '@rush-temp/download-workflow'
     version: 0.0.0
     dependencies:
       '@types/jest': 27.4.1
       jest: 27.5.1_ts-node@10.9.2
+      joi: 17.6.4
       ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
       typescript: 4.5.5
     transitivePeerDependencies:

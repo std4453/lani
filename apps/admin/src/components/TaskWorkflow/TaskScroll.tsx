@@ -1,8 +1,8 @@
 import { useForegroundOnline } from '@/utils/useApolloPoll';
 import { ReactNode, useEffect, useRef } from 'react';
-import styles from './JobScroll.module.less';
+import styles from './TaskScroll.module.less';
 
-export default function JobScroll({
+export default function TaskScroll({
   active,
   children,
 }: {
@@ -104,7 +104,7 @@ export default function JobScroll({
       className={styles.scroll}
       tabIndex={0}
       role="region"
-      aria-label="下载任务步骤"
+      aria-label="任务步骤"
     >
       {children}
     </div>

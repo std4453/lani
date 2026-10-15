@@ -11,11 +11,11 @@ jest.mock('@/utils/useApolloPoll', () => ({
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
-import DownloadWorkflowView from './index';
+import TaskWorkflowView from './index';
 import {
   AtomRegistry,
   atomTypes,
-  createWorkflow,
+  buildWorkflowSnapshot,
   requestCancellation,
   DownloadWorkflow,
 } from '@lani/download-workflow';
@@ -29,7 +29,7 @@ const registry = Object.fromEntries(
   atomTypes.map((atom) => [atom, { wants: [] }]),
 ) as unknown as AtomRegistry;
 const workflow = () =>
-  createWorkflow(
+  buildWorkflowSnapshot(
     [
       { id: 'metadata', atom: 'writeMetadata', title: '自定义第一步' },
       { id: 'submit', atom: 'submitDownload', title: '自定义第二步' },
@@ -42,7 +42,7 @@ const refresh = jest.fn(async () => undefined);
 const render = (flow: DownloadWorkflow) =>
   act(() => {
     ReactDOM.render(
-      <DownloadWorkflowView
+      <TaskWorkflowView
         job={{ id: 1, createdAt: '2026-10-14', workflow: flow } as never}
         active
         refresh={refresh}
@@ -229,7 +229,7 @@ it.each([true, false])(
     const original = JSON.stringify(job);
     act(() => {
       ReactDOM.render(
-        <DownloadWorkflowView job={job} active refresh={refresh} />,
+        <TaskWorkflowView job={job} active refresh={refresh} />,
         container,
       );
     });

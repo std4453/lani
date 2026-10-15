@@ -1,14 +1,21 @@
-import { JobService, downloadDefinition } from './index.service';
+import { DownloadJobService } from './index.service';
+import { downloadDefinition } from './definition';
+import { TaskService } from '@/task/index.service';
+import { DownloadTaskStore } from './task-store';
+import { DownloadTaskRuntime } from './runtime';
+import { claimEpisodePublication } from './atoms/publication';
 import { PrismaService } from '@/common/prisma.service';
 import { DownloadStatus, PrismaClient, TaskType } from '@lani/db';
 import {
   atomTypes,
-  createWorkflow,
+  buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
 } from '@lani/download-workflow';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Atoms } from './workflow-runner';
+import { Atoms as WorkflowAtoms } from '@/task/workflow-runner';
+import { DownloadWorkflowDefinition } from './atoms/types';
+type Atoms = WorkflowAtoms<DownloadWorkflowDefinition>;
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -23,7 +30,9 @@ const databaseUrl = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
 const databaseTests = databaseUrl ? describe : describe.skip;
 databaseTests('隔离数据库上的生命周期原子更新', () => {
   let prisma: PrismaClient;
-  let service: JobService;
+  let service: TaskService;
+  let downloads: DownloadJobService;
+  let store: DownloadTaskStore;
   let episodeId: number;
   let seasonId: number;
   let folderId: number;
@@ -72,9 +81,9 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       ]),
     ) as unknown as Atoms;
     emitter = new EventEmitter2();
-    service = new JobService(
-      prisma as PrismaService,
-      emitter,
+    store = new DownloadTaskStore(prisma as PrismaService, emitter);
+    const runtime = new DownloadTaskRuntime(
+      store,
       atoms.submitDownload as never,
       atoms.download as never,
       atoms.findVideoFile as never,
@@ -82,6 +91,8 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms.writeMetadata as never,
       atoms.refreshPlayer as never,
     );
+    service = new TaskService(prisma as PrismaService, runtime);
+    downloads = new DownloadJobService(prisma as PrismaService, runtime);
   });
   afterEach(async () => {
     await service?.onApplicationShutdown();
@@ -114,7 +125,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     );
   });
   it('新建任务保存快照，失败后允许另建任务', async () => {
-    const first = await service.downloadTorrentForEpisode(
+    const first = await downloads.downloadTorrentForEpisode(
       episodeId,
       'magnet:test',
     );
@@ -127,7 +138,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         break;
       await new Promise((done) => setTimeout(done, 10));
     }
-    const second = await service.downloadTorrentForEpisode(
+    const second = await downloads.downloadTorrentForEpisode(
       episodeId,
       'magnet:other',
     );
@@ -138,8 +149,16 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       downloadDefinition.map((step) => step.atom),
     );
   });
+  it('并发创建同集下载时，Prisma 插入事务只创建一个运行任务', async () => {
+    const ids = await Promise.all([
+      store.create(episodeId, 'magnet:one', atoms),
+      store.create(episodeId, 'magnet:two', atoms),
+    ]);
+    expect(ids[0]).toBe(ids[1]);
+    expect(await prisma.downloadJob.count({ where: { episodeId } })).toBe(1);
+  });
   it('状态提交 CAS 拒绝旧版本，取消获胜后不能完成或关联剧集', async () => {
-    const flow = createWorkflow(
+    const flow = buildWorkflowSnapshot(
       downloadDefinition,
       atoms,
       new Date().toISOString(),
@@ -151,13 +170,13 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         workflow: JSON.parse(JSON.stringify(flow)),
       },
     });
-    const stale = await (service as any).read(job.id);
+    const stale = await store.read(job.id);
     await service.cancelDownloadJob(job.id);
     const succeeded = parseWorkflow(stale.workflow);
     succeeded.status = 'succeeded';
     succeeded.finishedAt = new Date().toISOString();
     expect(
-      await (service as any).commit(stale, succeeded, {
+      await store.commit(stale, succeeded, {
         refreshPlayer: { jellyfinEpisodeId: 'late' },
       }),
     ).toBe(false);
@@ -167,7 +186,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     ).toBeNull();
   });
   it('同集另一任务占用发布区段时 fail-fast', async () => {
-    const flow = createWorkflow(
+    const flow = buildWorkflowSnapshot(
       downloadDefinition,
       atoms,
       new Date().toISOString(),
@@ -188,10 +207,18 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         workflow: JSON.parse(JSON.stringify(flow)),
       },
     });
-    const state = await (service as any).read(second.id);
+    const state = await store.read(second.id);
     currentStep(state.workflow).status = 'running';
     await expect(
-      (service as any).commit(state, state.workflow, {}, true),
+      claimEpisodePublication(prisma as PrismaService, state.id, {
+        stepId: 'import',
+        attempt: 0,
+        checkpoint: {},
+        assertActive: async () => undefined,
+        saveCheckpoint: async () => undefined,
+        wait: async () => undefined,
+        waitFor: async (operation) => operation,
+      }),
     ).rejects.toThrow('其他任务正在发布');
     expect(
       (await prisma.downloadJob.findUnique({ where: { id: first.id } }))
@@ -202,7 +229,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     await prisma.downloadJob.create({
       data: { episodeId, status: DownloadStatus.AVAILABLE },
     });
-    const flow = createWorkflow(
+    const flow = buildWorkflowSnapshot(
       downloadDefinition,
       atoms,
       new Date().toISOString(),
@@ -215,13 +242,21 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         workflow: JSON.parse(JSON.stringify(flow)),
       },
     });
-    const state = await (service as any).read(retry.id);
+    const state = await store.read(retry.id);
     await expect(
-      (service as any).commit(state, state.workflow, {}, true),
+      claimEpisodePublication(prisma as PrismaService, state.id, {
+        stepId: 'import',
+        attempt: 0,
+        checkpoint: {},
+        assertActive: async () => undefined,
+        saveCheckpoint: async () => undefined,
+        wait: async () => undefined,
+        waitFor: async (operation) => operation,
+      }),
     ).rejects.toThrow('其他任务正在发布或已发布');
   });
   it('仅获胜的成功提交关联剧集并发出一次完成通知', async () => {
-    const flow = createWorkflow(
+    const flow = buildWorkflowSnapshot(
       downloadDefinition,
       atoms,
       new Date().toISOString(),
@@ -233,16 +268,16 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         workflow: JSON.parse(JSON.stringify(flow)),
       },
     });
-    const state = await (service as any).read(job.id);
+    const state = await store.read(job.id);
     const succeeded = parseWorkflow(state.workflow);
     succeeded.status = 'succeeded';
     succeeded.finishedAt = new Date().toISOString();
     const emit = jest.spyOn(emitter, 'emit');
     const results = await Promise.all([
-      (service as any).commit(state, succeeded, {
+      store.commit(state, succeeded, {
         refreshPlayer: { jellyfinEpisodeId: 'winner' },
       }),
-      (service as any).commit(state, succeeded, {
+      store.commit(state, succeeded, {
         refreshPlayer: { jellyfinEpisodeId: 'loser' },
       }),
     ]);

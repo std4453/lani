@@ -1,0 +1,8 @@
+.status :global(.ant-badge-status-default) {
+  background-color: var(--lani-text-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .status :global(.ant-badge-status-processing)::after {
+    animation: none;
+  }
+}

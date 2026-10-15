@@ -1,4 +1,4 @@
-import { AsyncAtom, AtomContext, StepInput } from '@/download-job/atoms';
+import { AsyncAtom, AtomContext, StepInput } from '@/task/atom';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { Injectable } from '@nestjs/common';
@@ -19,31 +19,25 @@ export class SubmitDownloadAtom extends AsyncAtom<
     context: AtomContext,
   ) {
     if (!torrentLink) throw new Error('缺少种子地址');
-    const { hash, name } = await this.client.submitTorrentLink(torrentLink, {
-      assertActive: () => context.assertActive(),
-      prepared: async (info) => {
-        const previous = context.checkpoint.submission;
-        if (previous && previous.hash !== info.hash)
-          throw new Error('种子地址对应的 hash 已变化，请新建任务');
-        if (!previous)
-          await context.saveCheckpoint({
-            submission: {
-              hash: info.hash,
-              ...(info.name ? { name: info.name } : {}),
-              phase: 'prepared',
-            },
-          });
-      },
-      requested: async () => {
-        await context.saveCheckpoint({
-          submission: { ...context.checkpoint.submission!, phase: 'requested' },
-        });
-      },
-      confirmed: async () => {
-        await context.saveCheckpoint({
-          submission: { ...context.checkpoint.submission!, phase: 'confirmed' },
-        });
-      },
+    const torrent = await this.client.prepareTorrent(torrentLink);
+    const { hash, name } = torrent;
+    const previous = context.checkpoint.submission;
+    if (previous && previous.hash !== hash)
+      throw new Error('种子地址对应的 hash 已变化，请新建任务');
+    await context.assertActive();
+    if (!previous)
+      await context.saveCheckpoint({
+        submission: { hash, ...(name ? { name } : {}), phase: 'prepared' },
+      });
+    await context.assertActive();
+    await context.saveCheckpoint({
+      submission: { hash, ...(name ? { name } : {}), phase: 'requested' },
+    });
+    await context.assertActive();
+    // 请求与确认收敛后才进入取消清理，避免迟到添加覆盖已经完成的清理。
+    await this.client.submitTorrent(torrent);
+    await context.saveCheckpoint({
+      submission: { hash, ...(name ? { name } : {}), phase: 'confirmed' },
     });
     return { qbtTorrentHash: hash, torrentTitle: name };
   }

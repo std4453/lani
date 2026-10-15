@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { importFile } from './import-file.operation';
-import { AtomContext, ExecutionStopped } from './index';
+import { AtomContext, ExecutionStopped } from '@/task/atom';
 import { Checkpoint } from '@lani/download-workflow';
 let directory: string;
 beforeEach(async () => {
@@ -13,6 +13,9 @@ afterEach(async () => {
 });
 function context(checkpoint: Checkpoint = {}): AtomContext {
   return {
+    stepId: 'test',
+    attempt: 1,
+    waitFor: async (operation) => operation,
     checkpoint,
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(),

@@ -1,5 +1,6 @@
+import TaskStatus from '@/components/TaskStatus';
 import { applyJobSnapshots } from './snapshots';
-import { WorkflowStepTag } from '@/components/DownloadWorkflow/StepTag';
+import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
 import {
   jobState,
   jobStates,
@@ -28,7 +29,7 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Alert, Badge, Typography } from 'antd';
+import { Alert, Typography } from 'antd';
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
@@ -93,28 +94,7 @@ function useColumns({
       {
         title: '状态',
         key: 'lifecycle',
-        render: (_, row) => {
-          const state = jobState(row);
-          return (
-            <Badge
-              className={styles.status}
-              status={
-                state === 'running'
-                  ? 'processing'
-                  : state === 'failed'
-                  ? 'error'
-                  : 'default'
-              }
-              text={
-                <Typography.Text
-                  type={state === 'cancelled' ? 'secondary' : undefined}
-                >
-                  {jobStates[state].text}
-                </Typography.Text>
-              }
-            />
-          );
-        },
+        render: (_, row) => <TaskStatus job={row} variant="badge" />,
         valueEnum: jobStates,
         width: 120,
         filters: true,

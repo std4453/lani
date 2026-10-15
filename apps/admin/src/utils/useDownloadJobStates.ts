@@ -1,28 +1,14 @@
-import { GetDownloadJobStatesDocument } from '@/generated/types';
-import { gql, useApolloClient, useQuery } from '@apollo/client';
+import {
+  GetDownloadJobStatesDocument,
+  LiveDownloadJobFragmentDoc,
+  JobVersionFragmentDoc,
+  JobVersionFragment,
+} from '@/generated/types';
+import { useApolloClient, useQuery } from '@apollo/client';
 import { parseWorkflow, isActive } from '@lani/download-workflow';
 import { useEffect, useMemo, useRef } from 'react';
 import { useApolloPoll, useForegroundOnline } from './useApolloPoll';
 
-const stateFragment = gql`
-  fragment LiveDownloadJob on DownloadJob {
-    id
-    type
-    version
-    workflow
-    status
-    isFailed
-    isCancelled
-    failedReason
-    qbtTorrentHash
-    torrentTitle
-    downloadPath
-    importPath
-    filePath
-    nfoPath
-    jellyfinEpisodeId
-  }
-`;
 export function useDownloadJobStates(
   ids: number[],
   enabled: boolean = true,
@@ -52,18 +38,14 @@ export function useDownloadJobStates(
         __typename: 'DownloadJob',
         id: state.id,
       });
-      const old = client.cache.readFragment<{ version?: number }>({
+      const old = client.cache.readFragment<JobVersionFragment>({
         id,
-        fragment: gql`
-          fragment JobVersion on DownloadJob {
-            version
-          }
-        `,
+        fragment: JobVersionFragmentDoc,
       });
       if ((old?.version ?? -1) > state.version) continue;
       client.cache.writeFragment({
         id,
-        fragment: stateFragment,
+        fragment: LiveDownloadJobFragmentDoc,
         data: { ...state, workflow, __typename: 'DownloadJob' },
       });
     }

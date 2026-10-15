@@ -16,5 +16,8 @@
   },
   "files": [
     "/dist"
-  ]
+  ],
+  "dependencies": {
+    "joi": "~17.6.0"
+  }
 }

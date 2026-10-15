@@ -15,18 +15,11 @@ export type TorrentStatus =
 
 export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
 
-export interface SubmissionHooks {
-  prepared(info: TorrentInfo): Promise<void>;
-  requested(): Promise<void>;
-  confirmed(): Promise<void>;
-  assertActive(): Promise<void>;
-}
+export type PreparedTorrent = TorrentInfo & { input: string | Buffer };
 
 export abstract class IDownloadClient {
-  abstract submitTorrentLink(
-    torrentLink: string,
-    hooks?: SubmissionHooks,
-  ): Promise<TorrentInfo>;
+  abstract prepareTorrent(torrentLink: string): Promise<PreparedTorrent>;
+  abstract submitTorrent(torrent: PreparedTorrent): Promise<void>;
 
   abstract removeTorrent(hash: string): Promise<void>;
 

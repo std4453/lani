@@ -216,9 +216,7 @@ function useColumns({
                             },
                           });
                           if (data) {
-                            void message.success(
-                              `下载任务 #${data.downloadTorrentForEpisode} 已受理`,
-                            );
+                            void message.success('创建成功');
                             void openTaskDetails({
                               jobId: data.downloadTorrentForEpisode,
                             });

@@ -2,7 +2,7 @@ import { GlobalAxiosService, HttpRequestError } from '@/common/axios.service';
 import { LaniError } from '@/utils/error';
 import {
   IDownloadClient,
-  SubmissionHooks,
+  PreparedTorrent,
   TorrentInfo,
   TorrentInfoWithStatus,
 } from '@/download-job/client/IDownloadClient';
@@ -128,13 +128,12 @@ export class QBittorrentClient implements IDownloadClient {
    * qBittorrent 将任务记入 m_loadingTorrents 后调用 async_add_torrent，并立即返回 true：
    * https://github.com/qbittorrent/qBittorrent/blob/release-4.6.7/src/base/bittorrent/sessionimpl.cpp#L2959-L2965
    */
-  private async waitForTorrent(hash: string, hooks?: SubmissionHooks) {
+  private async waitForTorrent(hash: string) {
     const startedAt = Date.now();
     const deadline = startedAt + 30000;
     let polls = 0;
     let lastError: unknown;
     for (;;) {
-      await hooks?.assertActive();
       ++polls;
       try {
         if (await this.qbt.getTorrent(hash)) {
@@ -174,15 +173,10 @@ export class QBittorrentClient implements IDownloadClient {
    * 按 hash 保证幂等：已存在则复用，否则提交并等待可查询后才算成功。
    * 提交遇到暂时性错误时先查询确认，仍不存在才允许有限重试，避免重复提交。
    */
-  private async addAndConfirm(
-    hash: string,
-    params: FormData,
-    hooks?: SubmissionHooks,
-  ) {
+  private async addAndConfirm(hash: string, params: FormData) {
     // Buffer 可在鉴权恢复后重放；不重放已经消费过的 FormData 流。
     const data = params.getBuffer();
     for (let attempt = 0; ; ++attempt) {
-      await hooks?.assertActive();
       try {
         // 已存在时无需重复提交，相信 hash 不会碰撞。
         if (await this.qbt.getTorrent(hash)) {
@@ -209,9 +203,6 @@ export class QBittorrentClient implements IDownloadClient {
       let submissionError: HttpRequestError | undefined;
       let rejected = false;
       try {
-        await hooks?.assertActive();
-        await hooks?.requested();
-        await hooks?.assertActive();
         const response = await this.qbt.post<string>('/torrents/add', data, {
           headers: params.getHeaders(),
         });
@@ -256,7 +247,7 @@ export class QBittorrentClient implements IDownloadClient {
           `qBittorrent returned Fails. for torrent submission: hash=${hash}; checking whether it already exists or is still being added`,
         );
       }
-      if (await this.waitForTorrent(hash, hooks)) return;
+      if (await this.waitForTorrent(hash)) return;
       if (submissionError) {
         if (attempt < MAX_ATTEMPTS - 1) {
           const delay = 1000 * 2 ** attempt;
@@ -292,25 +283,26 @@ export class QBittorrentClient implements IDownloadClient {
     }
   }
 
-  async submitTorrentLink(torrentLink: string, hooks?: SubmissionHooks) {
-    const isMagnet = torrentLink.startsWith('magnet:');
-    const input = isMagnet ? torrentLink : await this.fetchTorrent(torrentLink);
+  async prepareTorrent(torrentLink: string): Promise<PreparedTorrent> {
+    const input = torrentLink.startsWith('magnet:')
+      ? torrentLink
+      : await this.fetchTorrent(torrentLink);
     const torrent = this.parseTorrentInput(input);
-    const hash = torrent.infoHash;
-    const name = Array.isArray(torrent.name) ? torrent.name[0] : torrent.name;
-    await hooks?.prepared({ hash, name });
+    return {
+      hash: torrent.infoHash,
+      name: Array.isArray(torrent.name) ? torrent.name[0] : torrent.name,
+      input,
+    };
+  }
+
+  async submitTorrent({ hash, name, input }: PreparedTorrent) {
     const params = new FormData();
-    if (isMagnet) {
-      params.append('urls', torrentLink);
-    } else {
-      params.append('torrents', input, { filename: name });
-    }
-    await this.addAndConfirm(hash, params, hooks);
-    await hooks?.confirmed();
+    if (typeof input === 'string') params.append('urls', input);
+    else params.append('torrents', input, { filename: name });
+    await this.addAndConfirm(hash, params);
     this.logger.log(
       `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed`,
     );
-    return { hash, name };
   }
 
   async removeTorrent(hash: string) {

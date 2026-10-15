@@ -1,4 +1,7 @@
-import { createWorkflow, requestCancellation } from '@lani/download-workflow';
+import {
+  buildWorkflowSnapshot,
+  requestCancellation,
+} from '@lani/download-workflow';
 import { DownloadStatus } from '@/generated/types';
 import { jobState, jobStateFilter, selectedJobStates } from './status';
 
@@ -11,7 +14,7 @@ it('显示状态合并执行与取消，并将同一筛选转换为后端流程�
     writeMetadata: { wants: [] },
     refreshPlayer: { wants: [] },
   };
-  const workflow = createWorkflow(
+  const workflow = buildWorkflowSnapshot(
     [{ id: 'download', atom: 'download', title: '下载中' }],
     registry,
     '2026-10-15T00:00:00Z',

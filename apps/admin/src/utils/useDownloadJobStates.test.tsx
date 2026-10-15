@@ -8,7 +8,7 @@ import {
 import {
   atomTypes,
   AtomRegistry,
-  createWorkflow,
+  buildWorkflowSnapshot,
 } from '@lani/download-workflow';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -30,7 +30,7 @@ it.each([2000, 3000])(
     const registry = Object.fromEntries(
       atomTypes.map((atom) => [atom, { wants: [] }]),
     ) as unknown as AtomRegistry;
-    const workflow = createWorkflow(
+    const workflow = buildWorkflowSnapshot(
       [{ id: 'submit', atom: 'submitDownload', title: '提交' }],
       registry,
       '2026-10-14T12:00:00Z',

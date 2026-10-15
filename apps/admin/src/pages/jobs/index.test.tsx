@@ -20,7 +20,7 @@ jest.mock('@/components/Layout', () => ({ Hamburger: () => null }));
 jest.mock('@/components/TaskDetailsDialog', () => ({
   useTaskDetailsDialog: () => [null, null, jest.fn()],
 }));
-jest.mock('@/components/DownloadWorkflow', () => ({}));
+jest.mock('@/components/TaskWorkflow', () => ({}));
 jest.mock('@/constants/download-status', () => ({}));
 jest.mock('@/constants/link', () => ({}));
 jest.mock('@/utils/useDownloadJobStates', () => ({

@@ -1,14 +1,22 @@
 import { SubmitDownloadAtom } from './submit-download.atom';
-import { IDownloadClient, SubmissionHooks } from '../client/IDownloadClient';
-import { AtomContext } from './index';
+import { IDownloadClient } from '../client/IDownloadClient';
+import { AtomContext } from '@/task/atom';
 import { Checkpoint } from '@lani/download-workflow';
 function setup(checkpoint: Checkpoint = {}) {
   const client = {
-    submitTorrentLink: jest.fn(),
+    prepareTorrent: jest.fn(async () => ({
+      hash: 'known',
+      name: 'video',
+      input: 'magnet:test',
+    })),
+    submitTorrent: jest.fn(),
     lookupTorrents: jest.fn(),
     removeTorrent: jest.fn(async () => undefined),
   };
   const context: AtomContext = {
+    stepId: 'test',
+    attempt: 1,
+    waitFor: async (operation) => operation,
     checkpoint,
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(async () => undefined),
@@ -26,19 +34,13 @@ function setup(checkpoint: Checkpoint = {}) {
 }
 it('先保存 hash 和提交意图，再确认完成', async () => {
   const test = setup();
-  test.client.submitTorrentLink.mockImplementation(
-    async (_link: string, hooks: SubmissionHooks) => {
-      await hooks.prepared({ hash: 'known' });
-      expect(test.context.checkpoint.submission).toEqual({
-        hash: 'known',
-        phase: 'prepared',
-      });
-      await hooks.requested();
-      expect(test.context.checkpoint.submission?.phase).toBe('requested');
-      await hooks.confirmed();
-      return { hash: 'known', name: 'video' };
-    },
-  );
+  test.client.submitTorrent.mockImplementation(async () => {
+    expect(test.context.checkpoint.submission).toEqual({
+      hash: 'known',
+      name: 'video',
+      phase: 'requested',
+    });
+  });
   await expect(test.atom.run(1, test.input, test.context)).resolves.toEqual({
     qbtTorrentHash: 'known',
     torrentTitle: 'video',

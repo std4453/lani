@@ -1,9 +1,7 @@
-import DownloadWorkflowView, {
-  WorkflowStatusTag,
-} from '@/components/DownloadWorkflow';
+import TaskStatus from '@/components/TaskStatus';
+import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
 import styles from './index.module.less';
-import JobScroll from '@/components/DownloadWorkflow/JobScroll';
 import { useDownloadJobStates } from '@/utils/useDownloadJobStates';
 import { formatNumbering } from '@/utils/episode';
 import { GetEpisodeByIdDocument } from '@/generated/types';
@@ -96,17 +94,15 @@ export default function EpisodeDetailsDialog({
                     }}
                   >
                     #{job.id}
-                    <WorkflowStatusTag job={job} />
+                    <TaskStatus job={job} />
                   </div>
                 }
               >
-                <JobScroll active={visible && selectedJob === `${job.id}`}>
-                  <DownloadWorkflowView
-                    job={job}
-                    active={visible && selectedJob === `${job.id}`}
-                    refresh={states.refetch}
-                  />
-                </JobScroll>
+                <TaskContent
+                  job={job}
+                  active={visible && selectedJob === `${job.id}`}
+                  refresh={states.refetch}
+                />
               </Tabs.TabPane>
             ))}
           </Tabs>

@@ -20,7 +20,7 @@ import {
 import {
   atomTypes,
   AtomRegistry,
-  createWorkflow,
+  buildWorkflowSnapshot,
 } from '@lani/download-workflow';
 
 const registry = Object.fromEntries(
@@ -46,7 +46,7 @@ const job: TaskDetailsFieldsFragment = {
   torrentLink: null,
   jellyfinEpisodeId: null,
   torrentTitle: null,
-  workflow: createWorkflow(
+  workflow: buildWorkflowSnapshot(
     [{ id: 'custom', atom: 'submitDownload', title: '自定义提交' }],
     registry,
     '2026-10-14T12:00:00Z',

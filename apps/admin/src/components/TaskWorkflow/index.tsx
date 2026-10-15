@@ -6,8 +6,7 @@ import {
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { useApolloClient } from '@apollo/client';
-import { AtomType, parseWorkflow } from '@lani/download-workflow';
-import { Button, Steps, Popconfirm, Space, Tag, Typography } from 'antd';
+import { Button, Steps, Popconfirm, Space } from 'antd';
 import {
   DownOutlined,
   LoadingOutlined,
@@ -16,97 +15,19 @@ import {
 } from '@ant-design/icons';
 import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
-import DownloadProgress from './DownloadProgress';
+import Field from './Field';
+import { atomViews } from './atoms';
 import { JobPresentation, presentJob } from './presentation';
 
 type Job = TaskDetailsFieldsFragment;
 const formatTime = (value?: string) =>
   value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-';
-const stateLabels = {
-  pending: '待执行',
-  running: '进行中',
-  cancelling: '取消中',
-  failed: '失败',
-  succeeded: '成功',
-  cancelled: '已取消',
-};
-export function WorkflowStatusTag({
-  job,
-}: {
-  job: {
-    workflow?: unknown;
-    isFailed: boolean;
-    isCancelled: boolean;
-    status: string;
-  };
-}) {
-  const status = job.workflow
-    ? parseWorkflow(job.workflow).status
-    : job.isCancelled
-    ? 'cancelled'
-    : job.isFailed
-    ? 'failed'
-    : job.status === 'AVAILABLE'
-    ? 'succeeded'
-    : 'failed';
-  return (
-    <Tag
-      color={
-        status === 'failed'
-          ? 'red'
-          : status === 'succeeded'
-          ? 'green'
-          : status === 'cancelled'
-          ? undefined
-          : 'blue'
-      }
-    >
-      {stateLabels[status]}
-    </Tag>
-  );
-}
-function Field({ label, children }: { label: string; children?: ReactNode }) {
-  return (
-    <div className={styles.field}>
-      <Typography.Text type="secondary">{label}：</Typography.Text>
-      <Typography.Text copyable={typeof children === 'string' && !!children}>
-        {children || '-'}
-      </Typography.Text>
-    </div>
-  );
-}
-const atomViews: Record<
-  AtomType,
-  {
-    fields(job: Job): ReactNode;
-    cancelling?(job: Job): ReactNode;
-  }
+const cancellationSuffix: Partial<
+  Record<import('@lani/download-workflow').StepStatus, string>
 > = {
-  submitDownload: {
-    fields: (job) => (
-      <>
-        <Field label="种子 Hash">{job.qbtTorrentHash}</Field>
-        <Field label="种子名称">{job.torrentTitle}</Field>
-      </>
-    ),
-  },
-  download: {
-    fields: (job) => <Field label="下载文件根路径">{job.downloadPath}</Field>,
-  },
-  findVideoFile: {
-    fields: (job) => <Field label="视频文件路径">{job.importPath}</Field>,
-  },
-  importFile: {
-    fields: (job) => <Field label="导入文件路径">{job.filePath}</Field>,
-  },
-  writeMetadata: {
-    fields: (job) => <Field label="元数据路径">{job.nfoPath}</Field>,
-  },
-  refreshPlayer: {
-    fields: (job) => (
-      <Field label="Jellyfin 剧集 ID">{job.jellyfinEpisodeId}</Field>
-    ),
-  },
+  cancelling: '（取消中）',
+  failed: '（取消失败）',
+  cancelled: '（已取消）',
 };
 const stepStatuses = {
   pending: 'wait',
@@ -145,7 +66,7 @@ function FailureDetails({ error }: { error: JobPresentation['error'] }) {
   );
 }
 
-export default function DownloadWorkflowView({
+export default function TaskWorkflowView({
   job,
   active,
   refresh,
@@ -229,13 +150,7 @@ export default function DownloadWorkflowView({
           ? expanded.includes(`step:${item.id}`)
           : item.status !== 'pending';
         const suffix = cancelledHere
-          ? cancelling
-            ? '（取消中）'
-            : failed
-            ? '（取消失败）'
-            : cancelled
-            ? '（已取消）'
-            : ''
+          ? cancellationSuffix[item.status] ?? ''
           : '';
         return (
           <Steps.Step
@@ -311,12 +226,9 @@ export default function DownloadWorkflowView({
                     atomView?.cancelling?.(job) ?? null
                   ) : (
                     <>
-                      {atomView?.fields(job)}
-                      {item.atom === 'download' && (
-                        <DownloadProgress
-                          id={job.id}
-                          enabled={active && open && item.status === 'running'}
-                        />
+                      {atomView?.fields(
+                        job,
+                        active && open && item.status === 'running',
                       )}
                     </>
                   )}

@@ -1,4 +1,4 @@
-import { AsyncAtom, StepInput } from '@/download-job/atoms';
+import { AsyncAtom, StepInput } from '@/task/atom';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
 import { VIDEO_FILE_MATCHER } from '@/download-job/types';

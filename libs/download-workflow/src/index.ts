@@ -1,13 +1,13 @@
 /** 流程协议仅包含可序列化的数据，不依赖浏览器、数据库或 NestJS。 */
-export const atomTypes = [
-  "submitDownload",
-  "download",
-  "findVideoFile",
-  "importFile",
-  "writeMetadata",
-  "refreshPlayer",
-] as const;
-export type AtomType = typeof atomTypes[number];
+import * as Joi from "joi";
+import { AtomType, Checkpoint, atomTypes, checkpointSchema } from "./atoms";
+export {
+  AtomType,
+  Checkpoint,
+  atomTypes,
+  FileIdentity,
+  FileCheckpoint,
+} from "./atoms";
 export type WorkflowStatus =
   | "running"
   | "cancelling"
@@ -20,34 +20,6 @@ export interface StepDefinition {
   id: string;
   atom: AtomType;
   title: string;
-}
-export interface FileIdentity {
-  dev: number;
-  ino: number;
-  size: number;
-  mtimeMs: number;
-}
-interface FileCheckpointBase {
-  source: string;
-  target: string;
-  temporary: string;
-  strategy: string;
-  sourceIdentity: FileIdentity;
-  removeSource?: boolean;
-}
-export type FileCheckpoint = FileCheckpointBase &
-  (
-    | { phase: "prepared"; stagedIdentity?: undefined }
-    | { phase: "staged" | "published"; stagedIdentity: FileIdentity }
-  );
-export interface Checkpoint {
-  submission?: {
-    hash: string;
-    name?: string;
-    phase: "prepared" | "requested" | "confirmed";
-  };
-  file?: FileCheckpoint;
-  refreshStartedAt?: string;
 }
 export interface WorkflowStep extends StepDefinition {
   status: StepStatus;
@@ -104,7 +76,7 @@ export function validateDefinition(
     atoms.add(step.atom);
   }
 }
-export function createWorkflow(
+export function buildWorkflowSnapshot(
   definition: readonly StepDefinition[],
   registry: AtomRegistry,
   now: string,
@@ -171,172 +143,59 @@ export function retryWorkflow(
   step.status = next.cancellation ? "cancelling" : "pending";
   delete step.finishedAt;
   step.startedAt = now;
-  if (!next.cancellation) delete step.checkpoint.refreshStartedAt;
   return next;
 }
 
-function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("任务流程数据无效");
-  return value as Record<string, unknown>;
-}
-function string(value: unknown): string {
-  if (typeof value !== "string") throw new Error("任务流程字符串无效");
-  return value;
-}
-function date(value: unknown): string {
-  const result = string(value);
-  if (!Number.isFinite(Date.parse(result))) throw new Error("任务流程时间无效");
-  return result;
-}
-function optionalDate(value: unknown): string | undefined {
-  return value === undefined ? undefined : date(value);
-}
-function number(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value))
-    throw new Error("任务流程数值无效");
-  return value;
-}
-function oneOf<T extends string>(value: unknown, values: readonly T[]): T {
-  if (typeof value !== "string" || !values.includes(value as T))
-    throw new Error("任务流程枚举无效");
-  return value as T;
-}
-function identity(value: unknown): FileIdentity {
-  const v = object(value);
-  return {
-    dev: number(v.dev),
-    ino: number(v.ino),
-    size: number(v.size),
-    mtimeMs: number(v.mtimeMs),
-  };
-}
-function checkpoint(value: unknown): Checkpoint {
-  const v = object(value);
-  const result: Checkpoint = {};
-  if (v.submission !== undefined) {
-    const s = object(v.submission);
-    result.submission = {
-      hash: string(s.hash),
-      phase: oneOf(s.phase, ["prepared", "requested", "confirmed"]),
-      ...(s.name === undefined ? {} : { name: string(s.name) }),
-    };
-  }
-  if (v.file !== undefined) {
-    const f = object(v.file);
-    if (f.removeSource !== undefined && typeof f.removeSource !== "boolean")
-      throw new Error("文件清理标志无效");
-    const phase = oneOf(f.phase, ["prepared", "staged", "published"]);
-    result.file = {
-      ...(f.removeSource === undefined
-        ? {}
-        : { removeSource: f.removeSource as boolean }),
-      source: string(f.source),
-      target: string(f.target),
-      temporary: string(f.temporary),
-      strategy: string(f.strategy),
-      sourceIdentity: identity(f.sourceIdentity),
-      ...(phase === "prepared"
-        ? { phase }
-        : { phase, stagedIdentity: identity(f.stagedIdentity) }),
-    };
-  }
-  if (v.refreshStartedAt !== undefined)
-    result.refreshStartedAt = date(v.refreshStartedAt);
-  return result;
-}
-/** 从不信任的 JSON 重建协议对象，同时拒绝不支持的版本。 */
-export function parseWorkflow(value: unknown): DownloadWorkflow {
-  const v = object(value);
-  if (v.schemaVersion !== 1 || !Array.isArray(v.steps) || !v.steps.length)
-    throw new Error("任务流程版本或步骤无效");
-  const steps = v.steps.map((raw): WorkflowStep => {
-    const s = object(raw);
-    const attempt = number(s.attempt);
-    if (!Number.isInteger(attempt) || attempt < 0)
-      throw new Error("任务尝试编号无效");
-    return {
-      id: string(s.id),
-      atom: oneOf(s.atom, atomTypes),
-      title: string(s.title),
-      status: oneOf(s.status, [
-        "pending",
-        "running",
-        "cancelling",
-        "failed",
-        "succeeded",
-        "cancelled",
-      ]),
-      attempt,
-      checkpoint: checkpoint(s.checkpoint),
-      ...(s.startedAt === undefined
-        ? {}
-        : { startedAt: optionalDate(s.startedAt) }),
-      ...(s.finishedAt === undefined
-        ? {}
-        : { finishedAt: optionalDate(s.finishedAt) }),
-    };
-  });
-  if (
-    steps.some((s) => !s.id) ||
-    new Set(steps.map((s) => s.id)).size !== steps.length ||
-    new Set(steps.map((s) => s.atom)).size !== steps.length
-  )
-    throw new Error("任务步骤重复或无效");
-  const definitionVersion = number(v.definitionVersion);
-  if (!Number.isInteger(definitionVersion) || definitionVersion < 1)
-    throw new Error("流程定义版本无效");
-  const result: DownloadWorkflow = {
-    schemaVersion: 1,
-    definitionVersion,
-    status: oneOf(v.status, [
-      "running",
-      "cancelling",
-      "failed",
-      "succeeded",
-      "cancelled",
-    ]),
-    currentStepId: string(v.currentStepId),
-    createdAt: date(v.createdAt),
-    steps,
-    ...(v.finishedAt === undefined
-      ? {}
-      : { finishedAt: optionalDate(v.finishedAt) }),
-  };
-  currentStep(result);
-  if (v.publicationClaimed !== undefined) {
-    if (typeof v.publicationClaimed !== "boolean")
-      throw new Error("任务发布标志无效");
-    result.publicationClaimed = v.publicationClaimed;
-  }
-  if (v.cancellation !== undefined) {
-    const c = object(v.cancellation);
-    if (!Array.isArray(c.completedAtoms)) throw new Error("任务取消检查点无效");
-    result.cancellation = {
-      requestedAt: date(c.requestedAt),
-      stepId: string(c.stepId),
-      completedAtoms: c.completedAtoms.map(string),
-    };
-    if (
-      result.cancellation.stepId !== result.currentStepId ||
-      result.status === "running" ||
-      result.status === "succeeded"
+const statuses = ["running", "cancelling", "failed", "succeeded", "cancelled"];
+const workflowSchema = Joi.object<DownloadWorkflow>({
+  schemaVersion: Joi.valid(1).required(),
+  definitionVersion: Joi.number().required(),
+  status: Joi.string()
+    .valid(...statuses)
+    .required(),
+  currentStepId: Joi.string().required(),
+  createdAt: Joi.string().required(),
+  finishedAt: Joi.string(),
+  publicationClaimed: Joi.boolean(),
+  steps: Joi.array()
+    .min(1)
+    .items(
+      Joi.object<WorkflowStep>({
+        id: Joi.string().required(),
+        atom: Joi.string()
+          .valid(...atomTypes)
+          .required(),
+        title: Joi.string().required(),
+        status: Joi.string()
+          .valid("pending", ...statuses)
+          .required(),
+        attempt: Joi.number().required(),
+        startedAt: Joi.string(),
+        finishedAt: Joi.string(),
+        checkpoint: checkpointSchema.required(),
+      })
     )
-      throw new Error("任务取消状态无效");
-  }
-  if (
-    (result.status === "cancelling" || result.status === "cancelled") &&
-    !result.cancellation
-  )
-    throw new Error("任务取消意图缺失");
-  if (v.error !== undefined) {
-    const e = object(v.error);
-    result.error = {
-      operation: oneOf(e.operation, ["execute", "cancel"]),
-      stepId: string(e.stepId),
-      message: string(e.message),
-      at: date(e.at),
-    };
-  }
-  return result;
+    .required(),
+  cancellation: Joi.object({
+    requestedAt: Joi.string().required(),
+    stepId: Joi.string().required(),
+    completedAtoms: Joi.array().items(Joi.string()).required(),
+  }),
+  error: Joi.object({
+    operation: Joi.string().valid("execute", "cancel").required(),
+    stepId: Joi.string().required(),
+    message: Joi.string().allow("").required(),
+    at: Joi.string().required(),
+  }),
+});
+/** 系统自产快照只校验协议形状；依赖、唯一性等在创建定义时检查。 */
+export function parseWorkflow(value: unknown): DownloadWorkflow {
+  const result = workflowSchema.validate(value, {
+    convert: false,
+    allowUnknown: true,
+  });
+  if (result.error)
+    throw new Error(`任务流程数据无效：${result.error.message}`);
+  currentStep(result.value);
+  return result.value;
 }

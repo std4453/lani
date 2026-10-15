@@ -1,3 +1,4 @@
+import prettyBytes from 'pretty-bytes';
 import {
   GetActiveDownloadJobStatusDocument,
   DownloadJobStatus,
@@ -13,16 +14,10 @@ import { Form, Progress } from 'antd';
 import styles from './DownloadProgress.module.less';
 
 export function formatBytes(value: number, digits: number = 1) {
-  const bytes = Number.isFinite(value) ? Math.max(0, value) : 0;
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const unit =
-    bytes > 0
-      ? Math.min(
-          Math.max(0, Math.floor(Math.log10(bytes) / 3)),
-          units.length - 1,
-        )
-      : 0;
-  return `${(bytes / 1000 ** unit).toFixed(digits)}${units[unit]}`;
+  return prettyBytes(Number.isFinite(value) ? Math.max(0, value) : 0, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).replace(' ', '');
 }
 export function formatEta(speed: number, eta?: number | null) {
   if (

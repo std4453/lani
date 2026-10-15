@@ -1,5 +1,4 @@
-import DownloadWorkflowView from '@/components/DownloadWorkflow';
-import JobScroll from '@/components/DownloadWorkflow/JobScroll';
+import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import styles from '../EpisodeDetailsDialog/index.module.less';
 import EpisodeDetailsDialog from '@/components/EpisodeDetailsDialog';
 import { GetTaskByIdDocument } from '@/generated/types';
@@ -63,13 +62,7 @@ export default function TaskDetailsDialog(
               message="关联剧集不存在"
               style={{ marginBottom: 16 }}
             />
-            <JobScroll active={visible}>
-              <DownloadWorkflowView
-                job={job}
-                active={visible}
-                refresh={states.refetch}
-              />
-            </JobScroll>
+            <TaskContent job={job} active={visible} refresh={states.refetch} />
           </>
         ) : (
           !loading && <Alert type="info" message="任务不存在" />

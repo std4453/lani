@@ -1,4 +1,7 @@
-import { AtomContext } from '@/download-job/atoms';
+jest.mock('@/download-job/atoms/publication', () => ({
+  claimEpisodePublication: jest.fn(async () => undefined),
+}));
+import { AtomContext } from '@/task/atom';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -26,6 +29,9 @@ jest.mock('@/config', () => ({
 function atomContext(): AtomContext {
   const context: AtomContext = {
     checkpoint: {},
+    stepId: 'import',
+    attempt: 1,
+    waitFor: async (operation) => operation,
     assertActive: async () => undefined,
     wait: async () => undefined,
     saveCheckpoint: async (patch) => {

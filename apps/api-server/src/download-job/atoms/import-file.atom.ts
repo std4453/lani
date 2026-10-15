@@ -1,3 +1,4 @@
+import { claimEpisodePublication } from './publication';
 import {
   getSeasonDirectory,
   resolveSeasonPath,
@@ -5,7 +6,7 @@ import {
 import { jellyfinNumber } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { AsyncAtom, AtomContext, StepInput } from '@/download-job/atoms';
+import { AsyncAtom, AtomContext, StepInput } from '@/task/atom';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
@@ -27,6 +28,7 @@ export class ImportFileAtom extends AsyncAtom<
     { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
     context: AtomContext,
   ) {
+    await claimEpisodePublication(this.prisma, _id, context);
     if (!steps.findVideoFile) {
       throw new Error('findVideoFile step not finished');
     }

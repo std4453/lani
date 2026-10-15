@@ -13,10 +13,13 @@ export type StepInput<
   steps: PartialOutput<D>;
 };
 export interface AtomContext {
+  readonly stepId: string;
+  readonly attempt: number;
   readonly checkpoint: Checkpoint;
   assertActive(): Promise<void>;
   saveCheckpoint(checkpoint: Checkpoint): Promise<void>;
   wait(milliseconds: number): Promise<void>;
+  waitFor<T>(operation: Promise<T>): Promise<T>;
 }
 export class ExecutionStopped extends Error {}
 export abstract class AsyncAtom<

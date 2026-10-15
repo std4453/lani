@@ -1,4 +1,4 @@
-import { AtomContext } from './index';
+import { AtomContext } from '@/task/atom';
 import { FileCheckpoint, FileIdentity } from '@lani/download-workflow';
 import fs from 'fs/promises';
 import { constants } from 'fs';

@@ -4,8 +4,11 @@ import {
   ExecutionStopped,
   StepInput,
   PartialOutput,
-} from './atoms';
-import { DownloadWorkflowDefinition } from './atoms/types';
+} from './atom';
+export interface WorkflowDefinition {
+  params: unknown;
+  steps: Record<AtomType, { output: unknown }>;
+}
 import {
   AtomType,
   Checkpoint,
@@ -15,33 +18,32 @@ import {
   parseWorkflow,
 } from '@lani/download-workflow';
 
-export type Output = PartialOutput<DownloadWorkflowDefinition>;
-export interface StoredWorkflow {
+export type Output<D extends WorkflowDefinition> = PartialOutput<D>;
+export interface StoredWorkflow<D extends WorkflowDefinition> {
   id: number;
   version: number;
   workflow: DownloadWorkflow;
-  input: StepInput<DownloadWorkflowDefinition>;
+  input: StepInput<D>;
 }
-export interface WorkflowStore {
-  read(id: number): Promise<StoredWorkflow>;
+export interface WorkflowStore<D extends WorkflowDefinition> {
+  read(id: number): Promise<StoredWorkflow<D>>;
   commit(
-    job: StoredWorkflow,
+    job: StoredWorkflow<D>,
     workflow: DownloadWorkflow,
-    output?: Output,
-    claimPublication?: boolean,
+    output?: Output<D>,
   ): Promise<boolean>;
 }
-export type Atoms = {
-  [K in AtomType]: AsyncAtom<DownloadWorkflowDefinition, K>;
+export type Atoms<D extends WorkflowDefinition> = {
+  [K in AtomType]: AsyncAtom<D, K>;
 };
-export class WorkflowRunner {
+export class WorkflowRunner<D extends WorkflowDefinition> {
   private running = new Map<number, Promise<void>>();
   private wake = new Map<number, () => void>();
   private stopping = false;
   private restart = new Set<number>();
   constructor(
-    private store: WorkflowStore,
-    private atoms: Atoms,
+    private store: WorkflowStore<D>,
+    private atoms: Atoms<D>,
     private onError: (error: unknown) => void,
   ) {}
 
@@ -68,21 +70,8 @@ export class WorkflowRunner {
     for (const wake of this.wake.values()) wake();
     await Promise.all(this.running.values());
   }
-  private async wait(id: number, milliseconds: number) {
-    if (this.stopping) throw new ExecutionStopped();
-    await new Promise<void>((resolve) => {
-      const finish = () => {
-        clearTimeout(timer);
-        this.wake.delete(id);
-        resolve();
-      };
-      const timer = setTimeout(finish, milliseconds);
-      this.wake.set(id, finish);
-    });
-    if (this.stopping) throw new ExecutionStopped();
-  }
   private context(
-    job: StoredWorkflow,
+    job: StoredWorkflow<D>,
     stepId: string,
     cancelling = false,
   ): AtomContext {
@@ -110,7 +99,35 @@ export class WorkflowRunner {
       )
         throw new ExecutionStopped();
     };
+    const waitFor = async <T>(operation: Promise<T>): Promise<T> => {
+      const interrupted = Symbol('interrupted');
+      // 立即接住批次失败；取消可能在检查活动状态期间结束等待。
+      const observed = operation.then(
+        (value) => ({ ok: true as const, value }),
+        (error) => ({ ok: false as const, error }),
+      );
+      for (;;) {
+        let wake: () => void;
+        const signal = new Promise<typeof interrupted>((resolve) => {
+          wake = () => resolve(interrupted);
+          this.wake.set(job.id, wake);
+        });
+        try {
+          await assertActive();
+          const result = await Promise.race([observed, signal]);
+          await assertActive();
+          if (result !== interrupted) {
+            if (!result.ok) throw result.error;
+            return result.value;
+          }
+        } finally {
+          if (this.wake.get(job.id) === wake!) this.wake.delete(job.id);
+        }
+      }
+    };
     return {
+      stepId,
+      attempt,
       get checkpoint() {
         return checkpoint;
       },
@@ -127,10 +144,18 @@ export class WorkflowRunner {
           }
         }
       },
+      waitFor,
       wait: async (milliseconds) => {
-        await assertActive();
-        await this.wait(job.id, milliseconds);
-        await assertActive();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          await waitFor(
+            new Promise<void>((resolve) => {
+              timer = setTimeout(resolve, milliseconds);
+            }),
+          );
+        } finally {
+          if (timer) clearTimeout(timer);
+        }
       },
     };
   }
@@ -166,7 +191,7 @@ export class WorkflowRunner {
       if (await this.store.commit(latest, next)) return;
     }
   }
-  private async cancel(job: StoredWorkflow) {
+  private async cancel(job: StoredWorkflow<D>) {
     const step = currentStep(job.workflow);
     try {
       // 已完成原子的资源也需要释放，但保留其成功展示状态。
@@ -222,20 +247,14 @@ export class WorkflowRunner {
         claimed.attempt += 1;
         claimed.startedAt = new Date().toISOString();
         delete claimed.finishedAt;
-        const critical = [
-          'importFile',
-          'writeMetadata',
-          'refreshPlayer',
-        ].includes(claimed.atom);
-        if (critical) next.publicationClaimed = true;
-        if (!(await this.store.commit(job, next, undefined, critical)))
-          continue;
+        if (!(await this.store.commit(job, next))) continue;
         job = await this.store.read(id);
         step = currentStep(job.workflow);
         const context = this.context(job, step.id);
         await context.assertActive();
         const atom = this.atoms[step.atom];
-        const output = recovering
+        const output: Output<D> = {};
+        output[step.atom] = recovering
           ? await atom.recover(id, job.input, context)
           : await atom.run(id, job.input, context);
         for (;;) {
@@ -259,10 +278,7 @@ export class WorkflowRunner {
             finished.status = 'succeeded';
             finished.finishedAt = now;
           }
-          if (
-            await this.store.commit(latest, finished, { [step.atom]: output })
-          )
-            break;
+          if (await this.store.commit(latest, finished, output)) break;
         }
       } catch (error) {
         if (this.stopping) return;

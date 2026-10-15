@@ -15,7 +15,7 @@ import {
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { IDownloadClient } from '@/download-job/client/IDownloadClient';
-import { JobService } from '@/download-job/index.service';
+import { DownloadJobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
 import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
@@ -31,7 +31,7 @@ export class AdminResolver {
 
   constructor(
     private prisma: PrismaService,
-    private job: JobService,
+    private job: DownloadJobService,
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
     private emitter: EventEmitter2,

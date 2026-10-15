@@ -1,7 +1,8 @@
+import { claimEpisodePublication } from './publication';
 import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import { DateFormat } from '@/constants/date-format';
-import { AsyncAtom, StepInput, AtomContext } from '@/download-job/atoms';
+import { AsyncAtom, StepInput, AtomContext } from '@/task/atom';
 import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
@@ -29,6 +30,7 @@ export class WriteMetadataAtom extends AsyncAtom<
     { params: { episodeId }, steps }: StepInput<DownloadWorkflowDefinition>,
     context: AtomContext,
   ) {
+    await claimEpisodePublication(this.prisma, _id, context, true);
     if (!steps.importFile) {
       throw new Error('input step not finished');
     }
