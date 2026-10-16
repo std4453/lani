@@ -17,8 +17,14 @@
 .tableScroll {
   min-height: 0;
   overflow: auto;
-  padding: 16px 24px 24px;
-  :global(.ant-table-cell) {
+  :global(.ant-table-thead) {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  :global(.ant-table.ant-table-small) :global(.ant-table-cell) {
+    padding-right: 24px;
+    padding-left: 24px;
     vertical-align: top;
     overflow-wrap: anywhere;
     word-break: break-all;

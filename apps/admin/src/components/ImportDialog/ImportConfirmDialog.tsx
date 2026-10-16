@@ -178,7 +178,7 @@ export default function ImportConfirmDialog({
     <Modal
       visible={visible}
       title={`确认导入（${title}）`}
-      width={1200}
+      width={740}
       centered
       destroyOnClose
       className={styles.importModal}
