@@ -161,7 +161,9 @@ export default function TaskWorkflowView({
           workflow.status === 'failed' && workflow.currentStepId === item.id;
         const cancelling = item.status === 'cancelling';
         const cancelled = item.status === 'cancelled';
-        const collapsible = item.status === 'succeeded';
+        const collapsible = item.status === 'succeeded' && !!atomView?.fields;
+        const hasDetails =
+          failed || (cancelling ? !!atomView?.cancelling : !!atomView?.fields);
         const open = collapsible
           ? expanded.includes(`step:${item.id}`)
           : item.status !== 'pending';
@@ -235,7 +237,7 @@ export default function TaskWorkflowView({
                     {formatTime(workflow.finishedAt)}
                   </Field>
                 )
-              ) : item.status !== 'pending' ? (
+              ) : item.status !== 'pending' && hasDetails ? (
                 <StepDetails
                   id={`task-${task.id}-step-step:${item.id}`}
                   open={open}
@@ -246,7 +248,7 @@ export default function TaskWorkflowView({
                     atomView?.cancelling?.(task) ?? null
                   ) : (
                     <>
-                      {atomView?.fields(
+                      {atomView?.fields?.(
                         task,
                         active && open && item.status === 'running',
                       )}

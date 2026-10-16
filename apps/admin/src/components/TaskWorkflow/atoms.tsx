@@ -6,7 +6,7 @@ import DownloadProgress from './DownloadProgress';
 export const atomViews: Record<
   AtomType,
   {
-    fields(task: Task, enabled: boolean): ReactNode;
+    fields: ((task: Task, enabled: boolean) => ReactNode) | null;
     cancelling?(task: Task): ReactNode;
   }
 > = {
@@ -35,7 +35,7 @@ export const atomViews: Record<
   writeMetadata: {
     fields: (task) => <Field label="元数据路径">{task.nfoPath}</Field>,
   },
-  publishEpisode: { fields: () => null },
+  publishEpisode: { fields: null },
   refreshPlayer: {
     fields: (task) => (
       <Field label="Jellyfin 剧集 ID">{task.jellyfinEpisodeId}</Field>
