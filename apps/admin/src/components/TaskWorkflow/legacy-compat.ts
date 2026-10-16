@@ -38,6 +38,12 @@ const legacySteps: (StepDefinition & { legacyStage: LegacyTaskStage })[] = [
     title: '刷新 Jellyfin',
     legacyStage: LegacyTaskStage.PlayerWaiting,
   },
+  {
+    id: 'publish',
+    atom: 'publishEpisode',
+    title: '完成',
+    legacyStage: LegacyTaskStage.Available,
+  },
 ];
 
 /** 只在前端映射旧任务，缺失的历史时间保持为空；绝不回写流程。 */

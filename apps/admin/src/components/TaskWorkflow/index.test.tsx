@@ -287,6 +287,12 @@ it.each([true, false])(
     expect(toggles[1].getAttribute('aria-expanded')).toBe('true');
     const failed = container.querySelector('.ant-steps-item-error')!;
     expect(failed.textContent).toContain('失败原因：种子不存在');
+    const completion = container.querySelector('[data-step-id="publish"]')!;
+    expect(completion.querySelector('.ant-steps-item-title')?.textContent).toBe(
+      '完成',
+    );
+    expect(completion.getAttribute('data-step-status')).toBe('pending');
+    expect(completion.querySelector('button')).toBeNull();
     expect(failed.querySelector('button[aria-expanded]')).toBeNull();
     expect(container.querySelector('button.ant-btn-dangerous')).toBeNull();
     await act(async () =>
