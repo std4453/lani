@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import Page401 from '@/pages/401';
 import Page403 from '@/pages/403';
 import { selectAuth } from '@/store/auth';
@@ -18,6 +19,7 @@ export default function AuthWrapper({ children }: { children?: ReactNode }) {
           alignItems: 'center',
         }}
       >
+        <PageTitle title="登录中" />
         <Spin size="large" />
       </div>
     );

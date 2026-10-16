@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import AsyncButton from '@/components/AsyncButton';
 import { TableTitle } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
@@ -226,39 +227,42 @@ function FoldersPage() {
   );
 
   return (
-    <MainTable<RowType>
-      columns={columns}
-      rowKey="id"
-      actionRef={action}
-      {...props}
-      headerTitle={<TableTitle>媒体库管理</TableTitle>}
-      search={false}
-      defaultSize="middle"
-      scroll={{ x: 1544 }}
-      toolBarRender={() => [
-        <AsyncButton
-          key={0}
-          type="primary"
-          onClick={async () => {
-            const hide = message.loading('同步中，请稍候……', 0);
-            try {
-              await client.mutate({
-                mutation: Folders_SyncJellyfinFoldersDocument,
-              });
-              void message.success('同步成功');
-              void action.current?.reload();
-            } catch (error) {
-              handleError(error, '同步失败');
-            } finally {
-              hide();
-            }
-          }}
-          icon={<HistoryOutlined />}
-        >
-          同步媒体库
-        </AsyncButton>,
-      ]}
-    />
+    <>
+      <PageTitle title="媒体库管理" />
+      <MainTable<RowType>
+        columns={columns}
+        rowKey="id"
+        actionRef={action}
+        {...props}
+        headerTitle={<TableTitle>媒体库管理</TableTitle>}
+        search={false}
+        defaultSize="middle"
+        scroll={{ x: 1544 }}
+        toolBarRender={() => [
+          <AsyncButton
+            key={0}
+            type="primary"
+            onClick={async () => {
+              const hide = message.loading('同步中，请稍候……', 0);
+              try {
+                await client.mutate({
+                  mutation: Folders_SyncJellyfinFoldersDocument,
+                });
+                void message.success('同步成功');
+                void action.current?.reload();
+              } catch (error) {
+                handleError(error, '同步失败');
+              } finally {
+                hide();
+              }
+            }}
+            icon={<HistoryOutlined />}
+          >
+            同步媒体库
+          </AsyncButton>,
+        ]}
+      />
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
 import image404 from '@/assets/undraw_page_not_found_re_e9o6.svg';
+import PageTitle from '@/components/PageTitle';
 
 export default function Page404() {
   return (
@@ -11,6 +12,7 @@ export default function Page404() {
         justifyContent: 'center',
       }}
     >
+      <PageTitle title="页面不存在" />
       <img src={image404} width={400} />
     </div>
   );

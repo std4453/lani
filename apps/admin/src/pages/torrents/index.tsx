@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import { formatEpisode } from '@/utils/episode';
 import TorrentSubtitle from '@/components/TorrentSubtitle';
 import AsyncButton from '@/components/AsyncButton';
@@ -417,6 +418,7 @@ export default withAntdSearch(function Torrents() {
 
   return (
     <>
+      <PageTitle title="种子列表" />
       <MainTable<TorrentTableRow>
         columns={columns}
         rowKey="id"

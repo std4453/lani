@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import {
   FormValues,
   SeasonPageContext,
@@ -36,6 +37,7 @@ export default function SeasonPage() {
 
   return (
     <SeasonPageContext.Provider value={values}>
+      <PageTitle title={initialValues?.title || '季度详情'} />
       <Spin spinning={loading}>
         <ProForm<FormValues>
           formRef={formRef}
