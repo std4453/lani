@@ -1,58 +1,46 @@
-.dialog {
-  :global(.ant-modal-content) {
+.summary {
+  :global(.ant-descriptions-item-container) {
     display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 80px);
+    align-items: baseline;
   }
-  :global(.ant-modal-body) {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
+  :global(.ant-descriptions-item-label) {
+    flex: none;
+    white-space: nowrap;
   }
-}
-.hint {
-  position: absolute;
-  right: 48px;
-  top: 0;
-  white-space: nowrap;
-  color: var(--lani-text-secondary);
-  font-size: 12px;
-  font-weight: normal;
-}
-.header {
-  flex: none;
-  max-height: 35vh;
-  overflow: auto;
-  margin-bottom: 16px;
+  :global(.ant-descriptions-item-content) {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
 }
 .entries {
   display: grid;
   gap: 8px;
-  margin-top: 8px;
+  width: 100%;
+  min-width: 0;
 }
 .entry {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 12px;
   overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.target {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  > :global(.anticon) {
+    flex: none;
+  }
+  > span:last-child {
+    min-width: 0;
+  }
 }
 @media (max-width: 600px) {
   .entry {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
-  }
-  .entry > :first-child {
-    padding-right: 24px;
-  }
-  .entry > :last-child {
-    padding-left: 24px;
-  }
-  .dialog :global(.ant-modal-title) {
-    padding-right: 16px;
-    padding-bottom: 16px;
-  }
-  .hint {
-    top: 22px;
   }
 }

@@ -25,3 +25,19 @@ it("范围不退化成首集编号", () =>
   expect(
     typeof parseVideoFilename("Anime - 01-12.mkv")?.episodeInfo.index
   ).not.toBe("number"));
+
+it.each([
+  ["/media/[Group] Anime - 13 [1080p].mkv", "13"],
+  ["/media/Anime - 13.5 [1080p].mkv", "13.5"],
+  ["/media/Anime S02E02 [1080p].mkv", "02"],
+  ["/media/Anime [13v2].mkv", "13"],
+  ["/media/Anime - １３ [1080p].mkv", "１３"],
+])("%s 仅高亮普通单集编号", (filename, expected) => {
+  const result = parseVideoFilename(filename)!;
+  expect(
+    filename.slice(
+      result.position.index,
+      result.position.index + result.position.length
+    )
+  ).toBe(expected);
+});

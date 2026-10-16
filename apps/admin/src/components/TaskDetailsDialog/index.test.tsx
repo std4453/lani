@@ -124,15 +124,15 @@ it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列�
   const modal = document.querySelector('.ant-modal');
   expect(modal).not.toBeNull();
   expect(modal?.querySelector('.ant-skeleton')).not.toBeNull();
-  expect(modal?.querySelector('.ant-modal-title')?.textContent).toBe(
-    '剧集详情',
-  );
+  expect(
+    modal?.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toBe('剧集详情');
   await settle(150);
   expect(document.querySelector('.ant-modal')).toBe(modal);
   expect(modal?.querySelector('.ant-skeleton')).toBeNull();
-  expect(document.querySelector('.ant-modal-title')?.textContent).toContain(
-    '异步剧集标题',
-  );
+  expect(
+    document.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toContain('异步剧集标题');
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '加载后的说明',
   );
@@ -140,9 +140,9 @@ it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列�
     '#42',
   );
   expect(document.querySelectorAll('.ant-tabs-tab')).toHaveLength(2);
-  expect(document.querySelector('.ant-modal-title')?.textContent).toBe(
-    '#3 - 异步剧集标题',
-  );
+  expect(
+    document.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toBe('#3 - 异步剧集标题');
   expect(document.querySelector('.ant-modal-body')?.textContent).not.toContain(
     '任务类型',
   );

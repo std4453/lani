@@ -91,7 +91,7 @@
 
 .import {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-columns: ~'minmax(0, 1fr) minmax(0, min(320px, calc((100% - 16px) / 3)))';
   align-items: center;
   gap: 16px;
   overflow-wrap: anywhere;
@@ -100,8 +100,9 @@
   position: relative;
   min-width: 0;
   padding-right: 28px;
+  word-break: break-all;
 }
-.deleteImport {
+.importPath .deleteImport {
   position: absolute;
   right: 0;
   top: 0;
@@ -156,10 +157,31 @@
     overflow-x: hidden;
   }
 }
-.importAlert {
-  && {
-    margin-bottom: 16px;
+.importFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  text-align: left;
+  :global(.ant-btn) + :global(.ant-btn) {
+    margin-left: 0;
   }
+}
+.offsetControl,
+.confirmActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.offsetLabel {
+  white-space: nowrap;
+}
+.offsetLabel :global(.anticon) {
+  color: var(--lani-text-secondary);
+}
+.confirmActions {
+  margin-left: auto;
 }
 @media (max-width: 600px) {
   .import {
@@ -169,7 +191,7 @@
   .importTarget {
     padding-left: 24px;
   }
-  .deleteImport {
+  .importPath .deleteImport {
     opacity: 1;
   }
 }

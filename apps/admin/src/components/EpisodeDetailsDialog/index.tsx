@@ -1,3 +1,4 @@
+import TaskDialog, { TaskDialogHeader } from '@/components/TaskDialog';
 import TaskStatus from '@/components/TaskStatus';
 import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
@@ -9,7 +10,7 @@ import { extractNode } from '@/utils/graphql';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useQuery } from '@apollo/client';
-import { Alert, Modal, Skeleton, Tabs, Typography } from 'antd';
+import { Alert, Skeleton, Tabs, Typography } from 'antd';
 import { useState, useEffect } from 'react';
 
 export default function EpisodeDetailsDialog({
@@ -58,23 +59,13 @@ export default function EpisodeDetailsDialog({
   const selectedTask = activeTask ?? (tasks[0] ? `${tasks[0].id}` : undefined);
 
   return (
-    <Modal
-      className={styles.dialog}
+    <TaskDialog
       visible={visible}
       onCancel={reject}
       footer={false}
-      closeIcon={
-        <>
-          <span className={styles.backgroundHint}>
-            {tasks.some((task) =>
-              ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
-            )
-              ? '后台执行中，可关闭弹窗'
-              : ''}
-          </span>
-          ×
-        </>
-      }
+      running={tasks.some((task) =>
+        ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
+      )}
       title={
         episode
           ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
@@ -97,13 +88,13 @@ export default function EpisodeDetailsDialog({
         />
       ) : (
         <>
-          <div className={styles.header}>
+          <TaskDialogHeader>
             {episode ? (
               <EpisodeHeader episode={episode} />
             ) : (
               <Alert type="info" message="关联剧集不存在" />
             )}
-          </div>
+          </TaskDialogHeader>
           {tasks.length > 0 ? (
             <Tabs
               className={styles.taskTabs}
@@ -136,11 +127,11 @@ export default function EpisodeDetailsDialog({
               ))}
             </Tabs>
           ) : (
-            '无任务'
+            <div className={styles.empty}>无任务</div>
           )}
         </>
       )}
-    </Modal>
+    </TaskDialog>
   );
 }
 export const useEpisodeDetailsDialog = createUseDialog(EpisodeDetailsDialog);

@@ -9,6 +9,33 @@ export interface ParsedVideoFilename {
   position: { index: number; length: number };
 }
 
+/** 普通单集只高亮数字，不包含分隔横线、括号、季度编号或修订后缀。 */
+function highlightPosition(
+  input: string,
+  info: EpisodeInfo,
+  position: { index: number; length: number }
+): { index: number; length: number } {
+  if (info.type !== "episode" || typeof info.index !== "number")
+    return position;
+  const marker = input.slice(position.index, position.index + position.length);
+  const matches = [...marker.matchAll(/[0-9０-９]+(?:[.．][0-9０-９]+)?/g)]
+    .filter((match) => !/[vV]$/.test(marker.slice(0, match.index)))
+    .filter(
+      (match) =>
+        Number(
+          match[0]
+            .replace(/[０-９]/g, (c) =>
+              String.fromCharCode(c.charCodeAt(0) - 0xfee0)
+            )
+            .replace("．", ".")
+        ) === info.index
+    );
+  const match = matches[matches.length - 1];
+  return match
+    ? { index: position.index + match.index!, length: match[0].length }
+    : position;
+}
+
 /** 文件可只有编号和单集标题；不要放宽种子标题的识别规则。 */
 export function parseVideoFilename(
   input: string
@@ -23,7 +50,10 @@ export function parseVideoFilename(
   if (parsed && position)
     return {
       episodeInfo: parsed.episodeInfo,
-      position: { index: start + position.index, length: position.length },
+      position: highlightPosition(input, parsed.episodeInfo, {
+        index: start + position.index,
+        length: position.length,
+      }),
     };
   const special = matchSpecialEpisode(name);
   if (special)
@@ -38,10 +68,14 @@ export function parseVideoFilename(
   if (explicit)
     return {
       episodeInfo: { type: "episode", index: explicit.value },
-      position: {
-        index: start + explicit.start,
-        length: explicit.end - explicit.start,
-      },
+      position: highlightPosition(
+        input,
+        { type: "episode", index: explicit.value },
+        {
+          index: start + explicit.start,
+          length: explicit.end - explicit.start,
+        }
+      ),
     };
   // 合集内常见 062-标题；排除年份、技术参数及编号范围。
   const leading = /^(\d{1,4}(?:\.5)?)(?=$|\s*[-_]\s*[^\d\s])/.exec(name);

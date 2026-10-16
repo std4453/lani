@@ -4,8 +4,13 @@ import {
   calcEpisodeStatus,
   DownloadStatusTag,
 } from '@/constants/download-status';
-import { ArrowRightOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Alert, Button, Modal, Select } from 'antd';
+import {
+  ArrowRightOutlined,
+  DeleteOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons';
+import { Button, Modal, Select, Tooltip } from 'antd';
+import NumberStepGroup from '@/components/NumberStepGroup';
 import { useEffect, useMemo, useState } from 'react';
 import {
   detectImportOffset,
@@ -42,6 +47,8 @@ export default function ImportConfirmDialog({
   const [paths, setPaths] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Record<string, number>>({});
   const [offset, setOffset] = useState(0);
+  const [manual, setManual] = useState<Set<string>>(new Set());
+  const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const parsed = useMemo(
     () => new Map(importPaths.map((path) => [path, parseVideoFilename(path)])),
@@ -52,7 +59,7 @@ export default function ImportConfirmDialog({
     for (const path of selected) {
       const info = parsed.get(path)?.episodeInfo;
       if (!info || typeof info.index !== 'number') continue;
-      const number = info.index - (info.type === 'episode' ? shift : 0);
+      const number = info.index + (info.type === 'episode' ? shift : 0);
       const matches = episodes.filter(
         (e) =>
           (e.numbering?.type ?? 'episode') === info.type &&
@@ -96,7 +103,9 @@ export default function ImportConfirmDialog({
         };
       }),
     );
-    const shift = detection.offset ?? 0;
+    const shift = -(detection.offset ?? 0);
+    setManual(new Set());
+    setAttempted(false);
     setPaths(sorted);
     setOffset(shift);
     setMapping(buildMapping(sorted, shift));
@@ -123,11 +132,52 @@ export default function ImportConfirmDialog({
       </span>
     ),
   }));
+  const changeOffset = (value: number) => {
+    setOffset(value);
+    const updated = buildMapping(paths, value);
+    // 始终从文件原编号计算，空映射仍可再次匹配；手动行不受偏移影响。
+    setMapping((previous) => {
+      const next = { ...previous };
+      for (const path of paths) {
+        const info = parsed.get(path)?.episodeInfo;
+        if (
+          !manual.has(path) &&
+          info?.type === 'episode' &&
+          typeof info.index === 'number'
+        ) {
+          if (updated[path]) next[path] = updated[path];
+          else delete next[path];
+        }
+      }
+      return next;
+    });
+  };
+  const reset = () => {
+    setOffset(0);
+    setMapping(buildMapping(paths, 0));
+    setManual(new Set());
+    setAttempted(false);
+  };
+  const submit = async () => {
+    if (submitting) return;
+    setAttempted(true);
+    if (!valid) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(
+        paths.map((path) => ({ importPath: path, episodeId: mapping[path] })),
+      );
+    } catch (error) {
+      handleError(error, '导入任务创建失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
     <Modal
       visible={visible}
       title={`确认导入（${title}）`}
-      width={1000}
+      width={1200}
       centered
       destroyOnClose
       className={styles.importModal}
@@ -136,52 +186,49 @@ export default function ImportConfirmDialog({
       }}
       maskClosable={!submitting}
       closable={!submitting}
-      okText="导入"
-      confirmLoading={submitting}
-      okButtonProps={{ disabled: !valid }}
-      cancelButtonProps={{ disabled: submitting }}
-      onOk={async () => {
-        if (!valid || submitting) return;
-        setSubmitting(true);
-        try {
-          await onSubmit(
-            paths.map((path) => ({
-              importPath: path,
-              episodeId: mapping[path],
-            })),
-          );
-        } catch (error) {
-          handleError(error, '导入任务创建失败');
-        } finally {
-          setSubmitting(false);
-        }
-      }}
+      footer={
+        <div className={styles.importFooter}>
+          <div className={styles.offsetControl}>
+            <span className={styles.offsetLabel}>
+              偏移{' '}
+              <Tooltip title="目标剧集编号＝文件编号＋偏移量。例如文件第 13 集对应季度第 1 集，偏移为 −12；通常用于年番后半季、第二季等文件编号不从 1 开始的情况。只调整普通单集，特别篇保持自身编号，手动选择过的行不随偏移变化。">
+                <InfoCircleOutlined tabIndex={0} aria-label="偏移说明" />
+              </Tooltip>
+            </span>
+            <NumberStepGroup
+              label="偏移"
+              value={offset}
+              onChange={changeOffset}
+              disabled={submitting}
+            />
+          </div>
+          <div className={styles.confirmActions}>
+            <Button
+              style={{ marginLeft: 0 }}
+              disabled={submitting}
+              onClick={reset}
+            >
+              重置
+            </Button>
+            <Button
+              style={{ marginLeft: 0 }}
+              disabled={submitting}
+              onClick={onCancel}
+            >
+              取消
+            </Button>
+            <Button
+              type="primary"
+              style={{ marginLeft: 0 }}
+              loading={submitting}
+              onClick={() => void submit()}
+            >
+              导入
+            </Button>
+          </div>
+        </div>
+      }
     >
-      <Alert
-        className={styles.importAlert}
-        type="info"
-        showIcon
-        message={
-          offset ? (
-            <>
-              已按文件编号{offset > 0 ? '减' : '加'} {Math.abs(offset)}{' '}
-              匹配，请核对后导入。
-              <Button
-                type="link"
-                disabled={submitting}
-                onClick={() => {
-                  setOffset(0);
-                  setMapping(buildMapping(paths, 0));
-                }}
-              >
-                恢复原编号
-              </Button>
-            </>
-          ) : (
-            '自动识别的剧集编号可能有误，请仔细检查后继续导入'
-          )
-        }
-      />
       <div className={styles.importList}>
         {paths.map((path) => {
           const position = parsed.get(path)?.position;
@@ -224,14 +271,18 @@ export default function ImportConfirmDialog({
                 <Select
                   value={mapping[path]}
                   disabled={submitting}
-                  onChange={(value) =>
-                    setMapping((previous) => ({ ...previous, [path]: value }))
-                  }
+                  onChange={(value) => {
+                    setManual((previous) => new Set(previous).add(path));
+                    setMapping((previous) => ({ ...previous, [path]: value }));
+                  }}
                   options={options}
                   className={styles.importSelect}
                   dropdownMatchSelectWidth={true}
                   status={
-                    (counts.get(mapping[path]) ?? 0) > 1 ? 'error' : undefined
+                    (attempted && !mapping[path]) ||
+                    (counts.get(mapping[path]) ?? 0) > 1
+                      ? 'error'
+                      : undefined
                   }
                 />
               </div>
