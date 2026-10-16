@@ -271,10 +271,12 @@ export default function ImportConfirmDialog({
                 <Select
                   value={mapping[path]}
                   disabled={submitting}
-                  onChange={(value) => {
-                    setManual((previous) => new Set(previous).add(path));
-                    setMapping((previous) => ({ ...previous, [path]: value }));
-                  }}
+                  onSelect={() =>
+                    setManual((previous) => new Set(previous).add(path))
+                  }
+                  onChange={(value) =>
+                    setMapping((previous) => ({ ...previous, [path]: value }))
+                  }
                   options={options}
                   className={styles.importSelect}
                   dropdownMatchSelectWidth={true}

@@ -9,12 +9,14 @@ jest.mock('antd', () => ({
     value,
     options,
     onChange,
+    onSelect,
     disabled,
     status,
   }: {
     value?: number;
     options: { value: number }[];
     onChange(value: number): void;
+    onSelect(): void;
     disabled?: boolean;
     status?: string;
   }) => (
@@ -22,7 +24,11 @@ jest.mock('antd', () => ({
       disabled={disabled}
       aria-invalid={status === 'error'}
       value={value ?? ''}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onChange={(e) => {
+        onChange(Number(e.target.value));
+        onSelect();
+      }}
+      onClick={onSelect}
     >
       <option value="">请选择</option>
       {options.map((o: { value: number }) => (
@@ -139,7 +145,9 @@ it('按钮允许越界，空洞之后仍按原编号匹配；输入仅在失焦�
   expect(step('增加', 12).disabled).toBe(false);
   act(() => Simulate.change(input(), { target: { value: '0' } } as never));
   expect(selected()).toEqual(['']);
-  act(() => Simulate.keyDown(input(), { key: 'Enter', keyCode: 13, which: 13 }));
+  act(() =>
+    Simulate.keyDown(input(), { key: 'Enter', keyCode: 13, which: 13 }),
+  );
   expect(selected()).toEqual(['4']);
   expect(document.querySelector('.ant-input-number-handler-wrap')).toBeNull();
 });
@@ -220,4 +228,11 @@ it('重置后的空映射仍参与后续偏移，不恢复已删除行', () => {
   expect(selected()).toEqual(['']);
   act(() => step('减少', 12).click());
   expect(selected()).toEqual(['1']);
+});
+
+it('重新选中当前剧集也标记为手动，后续偏移不改写', () => {
+  render(['/source/04.mkv']);
+  act(() => Simulate.click(selections()[0]));
+  act(() => step('增加', 1).click());
+  expect(selected()).toEqual(['4']);
 });
