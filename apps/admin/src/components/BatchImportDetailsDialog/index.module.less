@@ -14,33 +14,13 @@
     word-break: break-all;
   }
 }
-.entries {
-  display: grid;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-.entry {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 12px;
-  overflow-wrap: anywhere;
-  word-break: break-all;
-}
-.target {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  > :global(.anticon) {
-    flex: none;
-  }
-  > span:last-child {
-    min-width: 0;
-  }
-}
-@media (max-width: 600px) {
-  .entry {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
+.tableScroll {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 24px 24px;
+  :global(.ant-table-cell) {
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 }

@@ -1,4 +1,7 @@
-import TaskDialog, { TaskDialogHeader } from '@/components/TaskDialog';
+import TaskDialog, {
+  TaskDialogHeader,
+  TaskDialogTabs,
+} from '@/components/TaskDialog';
 import TaskStatus from '@/components/TaskStatus';
 import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
@@ -96,9 +99,7 @@ export default function EpisodeDetailsDialog({
             )}
           </TaskDialogHeader>
           {tasks.length > 0 ? (
-            <Tabs
-              className={styles.taskTabs}
-              tabBarGutter={16}
+            <TaskDialogTabs
               activeKey={selectedTask}
               onChange={setActiveTask}
               tabBarExtraContent={{
@@ -125,7 +126,7 @@ export default function EpisodeDetailsDialog({
                   />
                 </Tabs.TabPane>
               ))}
-            </Tabs>
+            </TaskDialogTabs>
           ) : (
             <div className={styles.empty}>无任务</div>
           )}

@@ -53,11 +53,25 @@
   max-height: 35dvh;
   overflow: auto;
   padding: 24px 24px 0;
-  border-bottom: 1px solid var(--lani-border);
   scrollbar-gutter: stable;
 }
 @media (max-width: 600px) {
   .hint {
     display: none;
+  }
+}
+
+.tabs:global(.ant-tabs) {
+  min-height: 0;
+  > :global(.ant-tabs-nav) {
+    margin: 0;
+    padding: 0 24px;
+  }
+  :global(.ant-tabs-content-holder),
+  :global(.ant-tabs-content),
+  :global(.ant-tabs-tabpane-active) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 }

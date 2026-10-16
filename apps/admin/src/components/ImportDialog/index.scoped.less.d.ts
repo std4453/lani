@@ -8,7 +8,6 @@ interface CssExports {
   'directory': string;
   'filename': string;
   'header': string;
-  'highlight': string;
   'import': string;
   'importFooter': string;
   'importList': string;

@@ -1,3 +1,4 @@
+import Highlight from '@/components/Highlight';
 import { formatNumbering } from '@/utils/episode';
 import { GetImportSeasonQuery } from '@/generated/types';
 import {
@@ -239,17 +240,14 @@ export default function ImportConfirmDialog({
             <div className={styles.import} key={path}>
               <div className={styles.importPath} title={path}>
                 <span>
-                  {index >= 0 && position ? (
-                    <>
-                      {basename.slice(0, index)}
-                      <span className={styles.highlight}>
-                        {basename.slice(index, index + position.length)}
-                      </span>
-                      {basename.slice(index + position.length)}
-                    </>
-                  ) : (
-                    basename
-                  )}
+                  <Highlight
+                    content={basename}
+                    match={() =>
+                      index >= 0 && position
+                        ? { index, length: position.length }
+                        : undefined
+                    }
+                  />
                 </span>
                 <Button
                   type="text"
