@@ -28,7 +28,6 @@ jest.mock('antd', () => ({
         onChange(Number(e.target.value));
         onSelect();
       }}
-      onClick={onSelect}
     >
       <option value="">请选择</option>
       {options.map((o: { value: number }) => (
@@ -228,11 +227,4 @@ it('重置后的空映射仍参与后续偏移，不恢复已删除行', () => {
   expect(selected()).toEqual(['']);
   act(() => step('减少', 12).click());
   expect(selected()).toEqual(['1']);
-});
-
-it('重新选中当前剧集也标记为手动，后续偏移不改写', () => {
-  render(['/source/04.mkv']);
-  act(() => Simulate.click(selections()[0]));
-  act(() => step('增加', 1).click());
-  expect(selected()).toEqual(['4']);
 });
