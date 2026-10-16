@@ -1,3 +1,4 @@
+import { taskEpisodeOutput } from '@/task/task-input';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { BilibiliBangumiCCService } from '@/bilibili-bangumi-cc/index.service';
 import { BilibiliProxyRegion } from '@/bilibili-bangumi-cc/types';
@@ -30,6 +31,7 @@ export class BilibiliBangumiCCResolver {
       include: {
         season: true,
         taskEpisodes: {
+          include: { task: true },
           where: {
             task: { legacyStage: LegacyTaskStage.AVAILABLE },
           },
@@ -55,7 +57,7 @@ export class BilibiliBangumiCCResolver {
       throw new ConflictException('no finished job found');
     }
     // TODO: 下载完成后记录filePath
-    const { filePath } = job;
+    const filePath = taskEpisodeOutput(job.task, episodeId)?.filePath;
     if (!filePath) {
       throw new ConflictException('last job does not have filePath');
     }

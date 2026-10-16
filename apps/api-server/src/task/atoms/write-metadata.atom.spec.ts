@@ -42,6 +42,7 @@ it.each(['cancel', 'partial-write', 'rename', 'cleanup'])(
       checkpoint: {},
       assertActive: jest.fn(async () => undefined),
       transaction: jest.fn(),
+      updateCheckpoint: jest.fn(),
       saveCheckpoint: jest.fn(),
       wait: jest.fn(),
       waitFor: async (operation) => operation,

@@ -1,14 +1,11 @@
-import { Task, TaskEpisode } from '@lani/db';
-import { TaskInput } from './atom';
+import { Task } from '@lani/db';
+import { batchImportEntries } from '@lani/workflow';
 
-export function taskInput(task: Task & { episodes: TaskEpisode[] }): TaskInput {
-  const first = task.episodes[0];
-  return {
-    ...task,
-    episodeId: first?.episodeId ?? null,
-    importPath: first?.importPath ?? null,
-    filePath: first?.filePath ?? null,
-    nfoPath: first?.nfoPath ?? null,
-    jellyfinEpisodeId: first?.jellyfinEpisodeId ?? null,
-  };
+/** 通知、字幕等业务读取指定剧集产物，不赋予关联表执行语义。 */
+export function taskEpisodeOutput(task: Task, episodeId: number) {
+  return task.type === 'BATCH_IMPORT'
+    ? batchImportEntries(task.batchEntries).find(
+        (entry) => entry.episodeId === episodeId,
+      )
+    : task;
 }

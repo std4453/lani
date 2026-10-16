@@ -1,3 +1,4 @@
+import { taskImportEntries } from '@/utils/task-episodes';
 import { ReactNode } from 'react';
 import { Tooltip, Typography } from 'antd';
 import { TaskType } from '@/generated/types';
@@ -16,7 +17,7 @@ function Paths({
 }) {
   if (task.type !== TaskType.BatchImport)
     return <Field label={label}>{task[field]}</Field>;
-  const paths = (task.taskEpisodesByTaskId?.nodes ?? []).flatMap((entry) =>
+  const paths = taskImportEntries(task).flatMap((entry) =>
     entry?.[field] ? [entry[field]!] : [],
   );
   const text = paths.join('\n');

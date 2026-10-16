@@ -51,11 +51,12 @@ it('事务提交后后台运行，返回任务 ID 并保存确认顺序和路径
     TaskType.BATCH_IMPORT,
     importDefinition,
     {
-      entries: [
-        { episodeId: 2, sourcePath: '/source/02.mkv' },
-        { episodeId: 1, sourcePath: '/source/01.mkv' },
+      batchEntries: [
+        { id: expect.any(String), episodeId: 2, sourcePath: '/source/02.mkv' },
+        { id: expect.any(String), episodeId: 1, sourcePath: '/source/01.mkv' },
       ],
     },
+    [2, 1],
   );
   expect(tasks.start).toHaveBeenCalledWith(42);
 });
@@ -66,7 +67,8 @@ it('单集导入复用任务流程', async () => {
     tx,
     TaskType.IMPORT,
     importDefinition,
-    { entries: [{ episodeId: 1, sourcePath: '/source/01.mkv' }] },
+    { episodeId: 1, sourcePath: '/source/01.mkv' },
+    [1],
   );
 });
 it.each([

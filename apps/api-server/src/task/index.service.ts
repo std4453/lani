@@ -1,5 +1,4 @@
-import { EpisodeAtom } from './episode-atom';
-import { taskInput } from './task-input';
+import { BatchImportAtom } from './batch-import-atom';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -31,11 +30,10 @@ import { TaskStore } from './task-store';
 import { Atoms } from './atom';
 import { legacyTaskFields } from './legacy-compat';
 
-export interface TaskParams {
-  episodeId?: number;
-  torrentLink?: string;
-  entries?: Array<{ episodeId: number; sourcePath?: string }>;
-}
+export type TaskParams = Omit<
+  Prisma.TaskUncheckedCreateInput,
+  'id' | 'type' | 'legacyStage' | 'workflow' | 'episodes'
+>;
 
 @Injectable()
 @Resolver()
@@ -59,12 +57,12 @@ export class TaskService
     this.atoms = {
       submitDownload,
       download,
-      findImportFiles: new EpisodeAtom(findImportFiles),
-      findVideoFile: new EpisodeAtom(findVideoFile),
-      importFile: new EpisodeAtom(importFile),
-      writeMetadata: new EpisodeAtom(writeMetadata),
-      refreshPlayer: new EpisodeAtom(refreshPlayer),
-      publishEpisode: new EpisodeAtom(publishEpisode),
+      findImportFiles: new BatchImportAtom(findImportFiles),
+      findVideoFile: new BatchImportAtom(findVideoFile),
+      importFile: new BatchImportAtom(importFile),
+      writeMetadata: new BatchImportAtom(writeMetadata),
+      refreshPlayer: new BatchImportAtom(refreshPlayer),
+      publishEpisode: new BatchImportAtom(publishEpisode),
     };
     const logger = new Logger(TaskService.name);
     this.runner = new WorkflowRunner(store, this.atoms, (error) =>
@@ -76,6 +74,7 @@ export class TaskService
     type: TaskType,
     definition: StepDefinition[],
     params: TaskParams,
+    episodeIds: number[] = [],
   ) {
     const workflow = buildWorkflowSnapshot(
       definition,
@@ -84,13 +83,8 @@ export class TaskService
     );
     return tx.task.create({
       data: {
-        torrentLink: params.torrentLink,
-        episodes: {
-          create: (
-            params.entries ??
-            (params.episodeId ? [{ episodeId: params.episodeId }] : [])
-          ).map((entry, position) => ({ ...entry, position })),
-        },
+        ...params,
+        episodes: { create: episodeIds.map((episodeId) => ({ episodeId })) },
         type,
         ...legacyTaskFields(workflow),
         workflow: JSON.parse(JSON.stringify(workflow)),
@@ -129,13 +123,11 @@ export class TaskService
     if (!taskIds.length) return [];
     const tasks = await this.prisma.task.findMany({
       where: { id: { in: taskIds } },
-      include: { episodes: { orderBy: { position: 'asc' } } },
     });
     return tasks.map((task) => {
       const workflow = task.workflow ? parseWorkflow(task.workflow) : null;
       return {
-        ...taskInput(task),
-        entries: task.episodes,
+        ...task,
         workflow,
         canRetry: !!workflow && workflow.status === 'failed',
         canCancel:

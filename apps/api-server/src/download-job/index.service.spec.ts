@@ -1,22 +1,19 @@
-import { EpisodeAtom } from '@/task/episode-atom';
-import { taskInput } from '@/task/task-input';
+import { BatchImportAtom } from '@/task/batch-import-atom';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
 import { TaskService } from '@/task/index.service';
 import { TaskStore } from '@/task/task-store';
-import { claimEpisodePublication } from '@/task/atoms/publication';
+import {
+  claimEpisodePublication,
+  completeEpisodePublication,
+} from '@/task/atoms/publication';
 import { PublishEpisodeAtom } from '@/task/atoms/publish-episode.atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/common/prisma.service';
-import {
-  LegacyTaskStage,
-  PrismaClient,
-  TaskType,
-  Prisma,
-  TaskEpisode,
-} from '@lani/db';
+import { LegacyTaskStage, PrismaClient, TaskType, Prisma } from '@lani/db';
 import {
   atomTypes,
+  batchImportEntries,
   buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
@@ -48,41 +45,16 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
   const createTask = async ({
     data,
   }: {
-    data: Omit<Prisma.TaskUncheckedCreateInput, 'episodes'> &
-      Pick<TaskEpisode, 'episodeId'> &
-      Partial<
-        Pick<
-          TaskEpisode,
-          'importPath' | 'filePath' | 'nfoPath' | 'jellyfinEpisodeId'
-        >
-      >;
-  }) => {
-    const {
-      episodeId,
-      importPath,
-      filePath,
-      nfoPath,
-      jellyfinEpisodeId,
-      ...rest
-    } = data;
-    const task = await prisma.task.create({
+    data: Prisma.TaskUncheckedCreateInput;
+  }) =>
+    prisma.task.create({
       data: {
-        ...rest,
-        episodes: {
-          create: {
-            episodeId,
-            position: 0,
-            importPath,
-            filePath,
-            nfoPath,
-            jellyfinEpisodeId,
-          },
-        },
+        ...data,
+        episodes: data.episodeId
+          ? { create: { episodeId: data.episodeId } }
+          : undefined,
       },
-      include: { episodes: true },
     });
-    return { ...task, ...taskInput(task) };
-  };
   const contextFor = async (id: number) => {
     const task = await store.read(id);
     return new WorkflowRunner(store, atoms, jest.fn())['context'](
@@ -497,27 +469,29 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       TaskType.BATCH_IMPORT,
       [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
       {
-        entries: [
-          { episodeId, sourcePath: '/a.mkv' },
-          { episodeId: otherEpisode.id, sourcePath: '/b.mkv' },
+        batchEntries: [
+          { id: 'a', episodeId, sourcePath: '/a.mkv' },
+          { id: 'b', episodeId: otherEpisode.id, sourcePath: '/b.mkv' },
         ],
       },
+      [episodeId, otherEpisode.id],
     );
     const run = jest.fn(async (id, input, context) => {
       await claimEpisodePublication(id, context);
       await context.saveCheckpoint(
-        { episodePublished: true },
+        {},
         {
           filePath: input.sourcePath,
           nfoPath: `${input.sourcePath}.nfo`,
           jellyfinEpisodeId: `jf-${input.episodeId}`,
         },
       );
+      await completeEpisodePublication(id, context);
       return {};
     });
     const batchAtoms = {
       ...atoms,
-      publishEpisode: new EpisodeAtom({
+      publishEpisode: new BatchImportAtom({
         wants: [],
         run,
         recover: run,
@@ -530,16 +504,15 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     expect((await service.getTaskStates([task.id]))[0]).toMatchObject({
       type: TaskType.BATCH_IMPORT,
       version: saved.version,
-      entries: expect.arrayContaining([
+      batchEntries: expect.arrayContaining([
         expect.objectContaining({ filePath: '/a.mkv' }),
         expect.objectContaining({ filePath: '/b.mkv' }),
       ]),
     });
-    expect(saved.input.episodes!.map((e) => e.filePath)).toEqual([
-      '/a.mkv',
-      '/b.mkv',
-    ]);
-    for (const entry of saved.input.episodes!)
+    expect(
+      batchImportEntries(saved.input.batchEntries).map((e) => e.filePath),
+    ).toEqual(['/a.mkv', '/b.mkv']);
+    for (const entry of batchImportEntries(saved.input.batchEntries))
       expect(currentStep(saved.workflow).checkpoint.entries![entry.id]).toEqual(
         { publicationClaimed: true, episodePublished: true, completed: true },
       );
@@ -552,13 +525,15 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       claimEpisodePublication(download.id, await contextFor(download.id)),
     ).rejects.toThrow('其他任务正在发布或已发布');
     await prisma.episode.delete({ where: { id: otherEpisode.id } });
-    expect((await store.read(task.id)).input.episodes![1]).toMatchObject({
-      episodeId: null,
+    expect(
+      batchImportEntries((await store.read(task.id)).input.batchEntries)[1],
+    ).toMatchObject({
+      episodeId: otherEpisode.id,
       filePath: '/b.mkv',
     });
   });
   it.each([TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT])(
-    '%s 关联排除自动下载，查询不再依赖旧剧集列',
+    '%s 关联排除自动下载',
     async (type) => {
       await prisma.season.update({
         where: { id: seasonId },

@@ -1,6 +1,7 @@
 import { Prisma } from '@lani/db';
 import {
   AtomContext,
+  CheckpointUpdate,
   ExecutionStopped,
   TaskInput,
   TaskOutput,
@@ -134,34 +135,37 @@ export class WorkflowRunner {
         }
       }
     };
-    const saveCheckpoint = async (
-      patch: Checkpoint,
-      output?: TaskOutput,
+    const updateCheckpoint = async (
+      update: CheckpointUpdate,
       tx?: Prisma.TransactionClient,
     ) => {
       for (;;) {
         const latest = await read(tx);
         const next = parseWorkflow(latest.workflow);
         const step = next.steps.find((s) => s.id === stepId)!;
-        const entries = { ...step.checkpoint.entries };
-        for (const [id, entry] of Object.entries(patch.entries ?? {})) {
-          entries[id] = {
-            ...(step.checkpoint.entries?.[id] ??
-              (step.checkpoint.entries ? {} : step.checkpoint)),
-            ...entry,
-          };
-        }
-        step.checkpoint = {
-          ...step.checkpoint,
-          ...patch,
-          ...(patch.entries ? { entries } : {}),
-        };
-        if (await this.store.commit(latest, next, output, tx)) {
+        const change = update({
+          checkpoint: step.checkpoint,
+          input: latest.input,
+        });
+        step.checkpoint = change.checkpoint;
+        if (await this.store.commit(latest, next, change.output, tx)) {
           if (!tx) checkpoint = step.checkpoint;
           return;
         }
       }
     };
+    const saveCheckpoint = (
+      patch: Checkpoint,
+      output?: TaskOutput,
+      tx?: Prisma.TransactionClient,
+    ) =>
+      updateCheckpoint(
+        ({ checkpoint }) => ({
+          checkpoint: { ...checkpoint, ...patch },
+          output,
+        }),
+        tx,
+      );
     return {
       stepId,
       attempt,
@@ -177,6 +181,7 @@ export class WorkflowRunner {
             tx,
             workflow: latest.workflow,
             input: latest.input,
+            updateCheckpoint: (update) => updateCheckpoint(update, tx),
             saveCheckpoint: (patch, output) =>
               saveCheckpoint(patch, output, tx),
           });
@@ -192,6 +197,7 @@ export class WorkflowRunner {
         return committed.value;
       },
       saveCheckpoint,
+      updateCheckpoint,
       waitFor,
       wait: async (milliseconds) => {
         let timer: ReturnType<typeof setTimeout> | undefined;

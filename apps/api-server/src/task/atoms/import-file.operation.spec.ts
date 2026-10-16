@@ -20,6 +20,7 @@ function context(checkpoint: Checkpoint = {}): AtomContext {
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(),
     transaction: jest.fn(),
+    updateCheckpoint: jest.fn(),
     saveCheckpoint: async (value) => {
       Object.assign(checkpoint, value);
     },

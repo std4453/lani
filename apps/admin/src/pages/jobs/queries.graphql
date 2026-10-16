@@ -1,8 +1,8 @@
 fragment listTasksFields on Task {
   id
-  taskEpisodesByTaskId(orderBy: POSITION_ASC) {
+  taskEpisodesByTaskId(orderBy: EPISODE_ID_ASC) {
     nodes {
-      id
+      episodeId
       episodeByEpisodeId {
         id
         numbering

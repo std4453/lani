@@ -238,7 +238,7 @@ it('取消任务先确认，接口返回后立即刷新', async () => {
   expect(
     confirm.querySelector('.ant-popover-message-title div:last-child')
       ?.textContent,
-  ).toBe('取消后需重新创建任务，已落地的文件会保留');
+  ).toBe('取消后需重新发起任务，媒体文件会保留');
   await act(async () => {
     confirm
       .querySelector<HTMLButtonElement>('button.ant-btn-dangerous')!

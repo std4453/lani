@@ -4,11 +4,11 @@
 
 ## 关联与恢复
 
-`Task` 保存任务类型、workflow、种子信息和下载根目录。`TaskEpisode` 按 `position` 保存最终确认的剧集映射、导入源路径、视频路径、目标路径、NFO 路径和 Jellyfin 剧集 ID。下载和单集导入各有一条关联，批量任务有多条。删除剧集只清空关联中的剧集 ID，保留任务和产物。
+`Task` 保存任务类型、workflow、下载输入和单集产物。批量导入的 `batchEntries` 按确认顺序保存内部条目 ID、剧集 ID、导入源路径及逐项产物，条目 ID 在创建后保持不变。`TaskEpisode` 仅包含任务 ID 与剧集 ID，用于关联查询。删除剧集会移除关联、清空单集任务的目标引用，但保留任务及已保存产物。
 
-导入步骤依次为：寻找视频文件、导入文件、写入元数据、刷新 Jellyfin、完成。每步等待所有文件操作结束，有任一失败就不进入下一步。检查点保存到 `workflow.steps[].checkpoint.entries[关联 ID]`，每项成功后设置 `completed`；重试跳过已成功项。任务行锁和版本检查保证并发更新不会覆盖其他项的检查点或产物。
+导入步骤依次为：寻找视频文件、导入文件、写入元数据、刷新 Jellyfin、完成。批量执行层等待全部在途操作，有任一失败就不进入下一步。它使用 `workflow.steps[].checkpoint.entries[内部条目 ID]` 保存逐项检查点及 `completed`，重试跳过成功项。单集任务继续使用根检查点，不包装成批量结构。runner 只提供基于最新快照的原子更新，批量层负责合并自己的检查点和任务条目；发布模块集中解释发布标记，在持有剧集锁的同一事务中检查冲突、写入占用或提交剧集关联与完成标记。
 
-取消唤醒所有等待项，并等待在途文件操作收敛；已经落地的文件和已经发布的关联保留。暂存文件和 Jellyfin 等待项按任务、关联区分，迟到结果不能写入新尝试。下载和导入共享剧集发布互斥，不覆盖其他任务的产物。导入完成不发送下载发布事件，不触发下载通知或 Lania 发布同步。
+取消唤醒所有等待项，并等待在途文件操作收敛；已经落地的文件和已经发布的关联保留。暂存文件和 Jellyfin 等待项按任务、内部条目区分，迟到结果不能写入新尝试。下载和导入共享剧集发布互斥，不覆盖其他任务的产物。导入完成不发送下载发布事件，不触发下载通知或 Lania 发布同步。
 
 导入任务的「任务信息」仅展示创建时间和类型。批量详情通过「任务流程」「导入列表」页签切换，右侧显示自动刷新状态。导入列表用表格展示源文件和最终剧集映射，各字段可独立复制；路径显示相对目录，复制时保留完整路径。概览与页签内容分别滚动，页签栏作为分界，不额外添加分割线。导入表格贴齐弹窗两侧及页签栏，单元格左右留白与概览对齐，表头在列表滚动时固定顶部。确认导入弹窗最大宽度为 740px。任务列表的固定内容列预留 16px 余量并单独计入 padding，剧集与失败原因按 3:2 分配剩余空间，分别保留 240px、160px 的最小宽度；长剧集标题在单元格内换行。
 
@@ -38,35 +38,32 @@
 
 ## 迁移与接口
 
-迁移 `20261016000000_task_episodes` 将现有下载任务的剧集和逐集产物移到关联表，然后移除 Task 上的旧物理列。没有 workflow 的历史任务继续展示完整流程，包括末尾的「完成」节点；已知失败阶段之后的步骤显示待执行，取消任务的后续步骤显示已取消，历史成功任务显示已完成。已有 workflow 的单集根检查点通过投影恢复，不改写历史快照，也不回填历史同步导入记录。
+迁移 `20261016000000_task_episodes` 只新增任务的导入字段、简单关联表及历史单集关联回填。现有任务的输入、产物和 workflow 原位保留，不搬迁或改写；历史同步导入记录不回填。没有 workflow 的历史任务继续展示完整流程，包括末尾的「完成」节点。
 
-GraphQL 的旧单集字段保留为基于关联表的只读投影。新的关联查询使用 `taskEpisodesByTaskId`；反向任务查询兼容 `tasksByEpisodeId`。原来基于外键生成的关联筛选和排序应改用任务—剧集关系。`importSingle`、`importMultiple` 返回值从同步结果改为 `Int` 任务 ID，调用方应打开任务详情查询执行结果。
+GraphQL 的原单集字段继续来自 Task，批量输入与产物读取 `batchEntries`；`taskEpisodesByTaskId` 只提供剧集关联。`tasksByEpisodeId` 反向查询覆盖下载及全部导入任务，单集目标的原生反向查询命名为 `singleTasksByEpisodeId`。`importSingle`、`importMultiple` 返回创建的任务 ID，调用方通过详情和状态轮询观察执行结果。
 
-发布时需停止旧 API worker 后迁移，并同时更新 API、Data Server 和 Admin；迁移后的数据库不能继续运行依赖旧物理列的代码。本次没有新增运行配置。
+发布时需停止旧 API worker 后迁移，并同时更新 API、Data Server 和 Admin；批量导入的新字段与接口需要前后端一起更新。本次没有新增运行配置。
 
 ## 验证
 
-除各包 Jest 测试及 Rush 构建外，在隔离的本地、数据库名以 `_test` 结尾的 PostgreSQL 上运行：
+除各包 Jest 测试及构建外，在隔离的本地、数据库名以 `_test` 结尾的 PostgreSQL 上运行 API 集成测试：
 
 ```bash
-LANI_LIFECYCLE_TEST_DATABASE_URL='postgresql://localhost/example_test' \
-  node libs/db/tests/task-episodes-migration.cjs
-
 cd apps/api-server
 LANI_LIFECYCLE_TEST_DATABASE_URL='postgresql://localhost/example_test' rushx test --runInBand
 ```
 
-迁移测试在事务内创建测试 schema 并回滚。API 集成测试覆盖真实数据库上的并发检查点、逐集产物、发布互斥和删除剧集后的保留行为。Jellyfin 和下载器使用可控替身验证取消及迟到响应，没有访问共享媒体服务。
+集成测试覆盖真实事务上的并发检查点、任务内逐项产物、发布互斥和删除剧集后的保留行为。Jellyfin 和下载器使用可控替身验证取消及迟到响应。任务列表签名轮询同时覆盖无筛选与清除筛选，避免发送后端拒绝的空 `filter`。
 
 以下截图使用真实组件，覆盖桌面、390px 移动端、长路径及弹窗切换。批量详情及导入表格使用真实文件导入完成后的任务数据，种子选择使用实际资源记录；同集任务截图包含真实单集导入、重复导入失败与显式构造的历史下载展示样本；下载样本不代表实际发起过下载。其余截图使用演示数据验证长路径与编号匹配。真实导入另外验证了源文件保留、硬链接一致、NFO 和 Jellyfin 剧集关联。
 
-| 页面     | 桌面                                           | 移动端                                        |
-| -------- | ---------------------------------------------- | --------------------------------------------- |
-| 确认映射 | [截图](./images/import-tasks/confirm-1440.png) | [截图](./images/import-tasks/confirm-390.png) |
-| 批量详情 | [截图](./images/import-tasks/batch-1440.png)   | [截图](./images/import-tasks/batch-390.png)   |
-| 导入表格 | [截图](./images/import-tasks/batch-list-1440.png) | [截图](./images/import-tasks/batch-list-390.png) |
-| 种子选择 | [截图](./images/import-tasks/torrent-1440.png) | [截图](./images/import-tasks/torrent-390.png) |
+| 页面     | 桌面                                                 | 移动端                                              |
+| -------- | ---------------------------------------------------- | --------------------------------------------------- |
+| 确认映射 | [截图](./images/import-tasks/confirm-1440.png)       | [截图](./images/import-tasks/confirm-390.png)       |
+| 批量详情 | [截图](./images/import-tasks/batch-1440.png)         | [截图](./images/import-tasks/batch-390.png)         |
+| 导入表格 | [截图](./images/import-tasks/batch-list-1440.png)    | [截图](./images/import-tasks/batch-list-390.png)    |
+| 种子选择 | [截图](./images/import-tasks/torrent-1440.png)       | [截图](./images/import-tasks/torrent-390.png)       |
 | 同集任务 | [截图](./images/import-tasks/episode-mixed-1440.png) | [截图](./images/import-tasks/episode-mixed-390.png) |
-| 剧集详情 | [截图](./images/import-tasks/episode-1440.png) | [截图](./images/import-tasks/episode-390.png) |
-| 任务管理 | [截图](./images/import-tasks/jobs-1440.png)    | [截图](./images/import-tasks/jobs-390.png)    |
-| 文件选择 | [截图](./images/import-tasks/select-1440.png)  | [截图](./images/import-tasks/select-390.png)  |
+| 剧集详情 | [截图](./images/import-tasks/episode-1440.png)       | [截图](./images/import-tasks/episode-390.png)       |
+| 任务管理 | [截图](./images/import-tasks/jobs-1440.png)          | [截图](./images/import-tasks/jobs-390.png)          |
+| 文件选择 | [截图](./images/import-tasks/select-1440.png)        | [截图](./images/import-tasks/select-390.png)        |

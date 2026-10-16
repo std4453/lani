@@ -5,6 +5,7 @@ import { TaskType } from '@lani/db';
 import { StepDefinition } from '@lani/workflow';
 import { LaniError } from '@/utils/error';
 import path from 'path';
+import { randomUUID } from 'crypto';
 
 export const importDefinition: StepDefinition[] = [
   { id: 'find', atom: 'findImportFiles', title: '寻找视频文件' },
@@ -52,9 +53,20 @@ export class ImportService {
         throw new LaniError('部分剧集不存在');
       if (new Set(episodes.map((e) => e.seasonId)).size !== 1)
         throw new LaniError('批量导入必须属于同一季度');
-      const task = await this.tasks.create(tx, type, importDefinition, {
-        entries: normalized,
-      });
+      const task = await this.tasks.create(
+        tx,
+        type,
+        importDefinition,
+        type === TaskType.BATCH_IMPORT
+          ? {
+              batchEntries: normalized.map((entry) => ({
+                id: randomUUID(),
+                ...entry,
+              })),
+            }
+          : normalized[0],
+        normalized.map((entry) => entry.episodeId),
+      );
       return task.id;
     });
     void this.tasks.start(id);

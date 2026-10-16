@@ -7,7 +7,7 @@ import { GetTaskByIdDocument } from '@/generated/types';
 import { DialogProps } from '@/utils/useDialog';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
 import { useTaskStates } from '@/utils/useTaskStates';
-import { commonDirectory } from '@/utils/task-episodes';
+import { commonDirectory, taskImportEntries } from '@/utils/task-episodes';
 import { formatNumbering } from '@/utils/episode';
 import { useQuery } from '@apollo/client';
 import { Alert, Skeleton, Table, Tabs, Typography } from 'antd';
@@ -37,10 +37,7 @@ export default function BatchImportDetailsDialog({
     query.data?.taskById?.id === input?.taskId
       ? query.data?.taskById
       : undefined;
-  const entries =
-    task?.taskEpisodesByTaskId?.nodes.filter(
-      (e): e is NonNullable<typeof e> => !!e,
-    ) ?? [];
+  const entries = taskImportEntries(task);
   const season = entries.find((e) => e.episodeByEpisodeId?.seasonBySeasonId)
     ?.episodeByEpisodeId?.seasonBySeasonId;
   const root = commonDirectory(

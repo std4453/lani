@@ -27,18 +27,20 @@ const source = '/downloads/complete/真实动画/[字幕组] 第14集.mkv';
 const mockTask = {
   id: 42,
   workflow: { status: 'succeeded' },
+  batchEntries: [
+    { id: 'first', episodeId: 1, sourcePath: source },
+    { id: 'deleted', episodeId: 2, sourcePath: '/deleted.mkv' },
+  ],
   taskEpisodesByTaskId: {
     nodes: [
       {
-        id: 1,
-        sourcePath: source,
+        episodeId: 1,
         episodeByEpisodeId: {
           title: '终章',
           numbering: { type: 'episode', number: '14' },
           seasonBySeasonId: { id: 2, title: '真实动画' },
         },
       },
-      { id: 2, sourcePath: null, episodeByEpisodeId: null },
     ],
   },
 };

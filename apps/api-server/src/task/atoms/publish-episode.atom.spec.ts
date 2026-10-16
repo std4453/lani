@@ -6,12 +6,7 @@ import { WorkflowRunner } from '@/task/workflow-runner';
 import { Atoms } from '@/task/atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PublishEpisodeAtom } from './publish-episode.atom';
-import { claimEpisodePublication } from './publication';
 
-jest.mock('./publication', () => ({
-  claimEpisodePublication: jest.fn(),
-  lockEpisode: jest.fn(),
-}));
 jest.mock('@/config', () => ({ __esModule: true, default: {} }));
 
 function setup() {
@@ -59,7 +54,7 @@ function setup() {
   };
   let version = 0;
   const tx = {
-    $queryRaw: jest.fn(async () => []),
+    $queryRaw: jest.fn(async (_query: TemplateStringsArray) => []),
     task: {
       findUnique: jest.fn(async () => ({
         ...input,
@@ -125,7 +120,7 @@ it('关联提交后尚未收尾时恢复，只通知首次发布', async () => {
   expect(test.emit).toHaveBeenCalledTimes(1);
   expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
   expect(test.tx.task.updateMany).toHaveBeenCalledTimes(1);
-  expect(claimEpisodePublication).toHaveBeenCalledWith(1, test.context, true);
+  expect(test.tx.$queryRaw).toHaveBeenCalled();
 });
 
 it('已有相同关联但尚未发布时仍通知一次，恢复不重复通知', async () => {
@@ -173,15 +168,15 @@ it('不覆盖其他 Jellyfin 关联', async () => {
   expect(test.emit).not.toHaveBeenCalled();
 });
 
-it('发布区段冲突时不进入关联事务', async () => {
+it('发布区段冲突时同一事务内拒绝关联更新', async () => {
   const test = setup();
-  jest
-    .mocked(claimEpisodePublication)
-    .mockRejectedValueOnce(new Error('其他任务已发布'));
-  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
-    '其他任务已发布',
+  test.tx.$queryRaw.mockImplementation(async (query) =>
+    query.join('').includes('SELECT t.id') ? ([{ id: 99 }] as never) : [],
   );
-  expect(test.tx.$queryRaw).not.toHaveBeenCalled();
+  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
+    '其他任务正在发布或已发布',
+  );
+  expect(test.episode.updateMany).not.toHaveBeenCalled();
   expect(test.emit).not.toHaveBeenCalled();
 });
 

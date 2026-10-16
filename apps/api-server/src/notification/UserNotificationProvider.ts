@@ -1,18 +1,11 @@
-import {
-  Task,
-  TaskEpisode,
-  Episode,
-  Image,
-  JellyfinFolder,
-  Season,
-} from '@lani/db';
+import { Task, Episode, Image, JellyfinFolder, Season } from '@lani/db';
 
 export type OnEpisodePublishEpisode = Episode & {
   season: Season & {
     jellyfinFolder: JellyfinFolder | null;
     posterImage: Image | null;
   };
-  tasks: (Task & Pick<TaskEpisode, 'filePath'>)[];
+  tasks: Task[];
 };
 
 export abstract class UserNotificationProvider {

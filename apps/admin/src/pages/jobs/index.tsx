@@ -77,7 +77,11 @@ function useColumns({
         key: 'episode',
         width: (tableWidth - fixedWidth) * 0.6,
         render: (_, r) => {
-          const episode = r.episodeByEpisodeId;
+          const episode =
+            r.episodeByEpisodeId ??
+            r.taskEpisodesByTaskId?.nodes.find(
+              (entry) => entry?.episodeByEpisodeId,
+            )?.episodeByEpisodeId;
           if (!episode) {
             return '-';
           }
@@ -308,7 +312,9 @@ export default function JobsPage() {
         variables: {
           offset: snapshot.offset,
           first: snapshot.first,
-          filter: snapshot.filter,
+          ...(Object.keys(snapshot.filter).length
+            ? { filter: snapshot.filter }
+            : {}),
         },
         fetchPolicy: 'network-only',
       });

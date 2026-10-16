@@ -1,3 +1,5 @@
+import { batchImportEntries } from '@lani/workflow';
+import { Prisma } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -178,9 +180,9 @@ export class SeasonEmitService {
     }
 
     // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
-    const jobs = await this.prisma.taskEpisode.findMany({
-      where: { episode: { seasonId: season.id } },
-      select: { id: true, filePath: true, nfoPath: true },
+    const jobs = await this.prisma.task.findMany({
+      where: { episodes: { some: { episode: { seasonId: season.id } } } },
+      select: { id: true, filePath: true, nfoPath: true, batchEntries: true },
     });
     const movePath = (value: string | null) => {
       if (!value) return value;
@@ -194,11 +196,19 @@ export class SeasonEmitService {
     };
     await this.prisma.$transaction(
       jobs.map((job) =>
-        this.prisma.taskEpisode.update({
+        this.prisma.task.update({
           where: { id: job.id },
           data: {
             filePath: movePath(job.filePath),
             nfoPath: movePath(job.nfoPath),
+            batchEntries:
+              job.batchEntries == null
+                ? Prisma.DbNull
+                : batchImportEntries(job.batchEntries).map((entry) => ({
+                    ...entry,
+                    filePath: movePath(entry.filePath ?? null),
+                    nfoPath: movePath(entry.nfoPath ?? null),
+                  })),
           },
         }),
       ),

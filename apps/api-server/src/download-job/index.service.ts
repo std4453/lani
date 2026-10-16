@@ -41,6 +41,7 @@ export class DownloadJobService {
         TaskType.DOWNLOAD,
         downloadDefinition,
         { episodeId, torrentLink },
+        [episodeId],
       );
       return task.id;
     });
@@ -77,7 +78,7 @@ export class DownloadJobService {
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
 		    AND NOT EXISTS (
-			    SELECT id from task_episodes WHERE episodes.id = task_episodes.episode_id
+			    SELECT 1 FROM task_episodes WHERE episodes.id = task_episodes.episode_id
 	    	)
     `;
   }

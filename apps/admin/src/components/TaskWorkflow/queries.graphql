@@ -1,13 +1,7 @@
 fragment taskDetailsFields on Task {
-  taskEpisodesByTaskId(orderBy: POSITION_ASC) {
+  taskEpisodesByTaskId(orderBy: EPISODE_ID_ASC) {
     nodes {
-      id
       episodeId
-      sourcePath
-      importPath
-      filePath
-      nfoPath
-      jellyfinEpisodeId
       episodeByEpisodeId {
         id
         title
@@ -22,6 +16,8 @@ fragment taskDetailsFields on Task {
   }
 
   type
+  batchEntries
+  sourcePath
   episodeId
   createdAt
   downloadPath
@@ -46,7 +42,7 @@ query GetTaskStates($taskIds: [Int!]!) {
   getTaskStates(taskIds: $taskIds) {
     id
     type
-    entries {
+    batchEntries {
       id
       episodeId
       sourcePath

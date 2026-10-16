@@ -1,12 +1,13 @@
 import {
   atomTypes,
+  batchImportEntries,
   buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
   requestCancellation,
   retryWorkflow,
 } from '@lani/workflow';
-import { EpisodeAtom, entryCheckpoint } from './episode-atom';
+import { BatchImportAtom } from './batch-import-atom';
 import { AsyncAtom, Atoms, TaskInput } from './atom';
 import { StoredTask, TaskStorePort, WorkflowRunner } from './workflow-runner';
 const now = '2026-10-16T00:00:00Z';
@@ -29,7 +30,7 @@ function setup(atom: AsyncAtom) {
       },
     ]),
   ) as unknown as Atoms;
-  atoms.findImportFiles = new EpisodeAtom(atom);
+  atoms.findImportFiles = new BatchImportAtom(atom);
   let state: StoredTask = {
     id: 1,
     version: 0,
@@ -43,11 +44,19 @@ function setup(atom: AsyncAtom) {
     ),
     input: {
       id: 1,
-      episodes: [1, 2].map((id) => ({
-        id,
-        taskId: 1,
+      type: 'BATCH_IMPORT',
+      episodeId: null,
+      torrentLink: null,
+      qbtTorrentHash: null,
+      torrentTitle: null,
+      downloadPath: null,
+      importPath: null,
+      filePath: null,
+      nfoPath: null,
+      jellyfinEpisodeId: null,
+      batchEntries: [1, 2].map((id) => ({
+        id: `entry-${id}`,
         episodeId: id,
-        position: id - 1,
         sourcePath: `/${id}.mkv`,
         importPath: null,
         filePath: null,
@@ -61,15 +70,11 @@ function setup(atom: AsyncAtom) {
     transaction: jest.fn(),
     commit: async (previous, next, output = {}) => {
       if (state.version !== previous.version) return false;
-      const entries = state.input.episodes!.map((entry) => ({
-        ...entry,
-        ...output.episodeOutputs?.find((e) => e.id === entry.id),
-      }));
       state = {
         ...state,
         version: state.version + 1,
         workflow: parseWorkflow(next),
-        input: { ...state.input, episodes: entries },
+        input: { ...state.input, ...output } as TaskInput,
       };
       return true;
     },
@@ -99,9 +104,12 @@ it('等待全部在途项；失败后不进入下一步，重试只执行失败�
   await running;
   expect(test.state().workflow.status).toBe('failed');
   expect(
-    currentStep(test.state().workflow).checkpoint.entries?.[1].completed,
+    currentStep(test.state().workflow).checkpoint.entries?.['entry-1']
+      .completed,
   ).toBe(true);
-  expect(test.state().input.episodes![0].importPath).toBe('/1.mkv');
+  expect(
+    batchImportEntries(test.state().input.batchEntries)[0].importPath,
+  ).toBe('/1.mkv');
   fail = false;
   await test.runner.transition(1, (flow) => retryWorkflow(flow, now));
   await test.runner.start(1);
@@ -109,10 +117,11 @@ it('等待全部在途项；失败后不进入下一步，重试只执行失败�
   expect(
     run.mock.calls.filter(([, input]) => input.episodeId === 1),
   ).toHaveLength(1);
-  expect(test.state().input.episodes!.map((e) => e.importPath)).toEqual([
-    '/1.mkv',
-    '/2.mkv',
-  ]);
+  expect(
+    batchImportEntries(test.state().input.batchEntries).map(
+      (e) => e.importPath,
+    ),
+  ).toEqual(['/1.mkv', '/2.mkv']);
 });
 it('并发检查点合并保留双方字段，重启跳过已成功项', async () => {
   const run = jest.fn(async (_id, input: TaskInput, context) => {
@@ -123,8 +132,8 @@ it('并发检查点合并保留双方字段，重启跳过已成功项', async (
   await test.runner.start(1);
   const entries = test.state().workflow.steps[0].checkpoint.entries!;
   expect(entries).toEqual({
-    1: { publicationClaimed: true, completed: true },
-    2: { publicationClaimed: true, completed: true },
+    'entry-1': { publicationClaimed: true, completed: true },
+    'entry-2': { publicationClaimed: true, completed: true },
   });
   const flow = parseWorkflow(test.state().workflow);
   flow.status = 'running';
@@ -156,15 +165,28 @@ it('取消唤醒同一步骤所有等待项，迟到结果不能写入产物', a
   expect(cancel).toHaveBeenCalledTimes(2);
   late.resolve();
   await Promise.resolve();
-  expect(test.state().input.episodes!.every((e) => e.importPath === null)).toBe(
-    true,
-  );
+  expect(
+    batchImportEntries(test.state().input.batchEntries).every(
+      (e) => e.importPath === null,
+    ),
+  ).toBe(true);
 });
-it('旧单集检查点直接投影，新检查点不会混入其他项', () => {
-  expect(entryCheckpoint({ publicationClaimed: true }, 3)).toEqual({
-    publicationClaimed: true,
+it('单集任务直接复用根检查点，不增加条目或 completed 标记', async () => {
+  const atom = {
+    wants: [],
+    run: jest.fn(async () => ({ filePath: '/single.mkv' })),
+    recover: jest.fn(async () => ({})),
+    cancel: jest.fn(),
+  };
+  const wrapper = new BatchImportAtom(atom);
+  const input = { id: 1, type: 'IMPORT' } as TaskInput;
+  const context = { checkpoint: { publicationClaimed: true } } as never;
+  expect(await wrapper.run(1, input, context)).toEqual({
+    filePath: '/single.mkv',
   });
-  expect(entryCheckpoint({ entries: { 1: { completed: true } } }, 3)).toEqual(
-    {},
-  );
+  expect(atom.run).toHaveBeenCalledWith(1, input, context);
+  await wrapper.recover(1, input, context);
+  expect(atom.recover).toHaveBeenCalledWith(1, input, context);
+  await wrapper.cancel(1, input, context);
+  expect(atom.cancel).toHaveBeenCalledWith(1, input, context);
 });

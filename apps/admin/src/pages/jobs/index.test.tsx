@@ -125,3 +125,42 @@ it('迟到的旧版本响应不能覆盖当前页状态', () => {
   ] as never);
   expect(result[0]).toBe(rows[0]);
 });
+
+it('无筛选及清除筛选后的签名轮询省略空 filter，避免接口返回 400', async () => {
+  query.mockReset();
+  query.mockImplementation(async ({ variables }) => {
+    if (variables.filter && !Object.keys(variables.filter).length)
+      throw new Error('Empty filter rejected');
+    return { data: { allTasks: { edges: [], totalCount: 0 } } };
+  });
+  const container = document.createElement('div');
+  act(() => {
+    ReactDOM.render(<JobsPage />, container);
+  });
+  try {
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[0][0].variables).not.toHaveProperty('filter');
+    await act(async () => {
+      await table.request({ current: 1 }, {}, { type: [TaskType.Import] });
+    });
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[2][0].variables.filter).toEqual({
+      type: { in: [TaskType.Import] },
+    });
+    await act(async () => {
+      await table.request({ current: 1 }, {}, { type: [], lifecycle: [] });
+    });
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[4][0].variables).not.toHaveProperty('filter');
+  } finally {
+    act(() => {
+      ReactDOM.unmountComponentAtNode(container);
+    });
+  }
+});

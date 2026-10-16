@@ -69,7 +69,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
         ...state,
         version: state.version + 1,
         workflow: parseWorkflow(workflow),
-        input: { ...state.input, ...output },
+        input: JSON.parse(JSON.stringify({ ...state.input, ...output })),
       };
       return true;
     },

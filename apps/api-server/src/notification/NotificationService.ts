@@ -58,11 +58,7 @@ export class NotificationService {
       EPISODE_PUBLISH_EVENT,
       new EpisodePublishEvent({
         ...episode,
-        tasks: episode.taskEpisodes.map(({ task, ...entry }) => ({
-          ...task,
-          ...entry,
-          id: task.id,
-        })),
+        tasks: episode.taskEpisodes.map(({ task }) => task),
       }),
     );
     return 'ok';

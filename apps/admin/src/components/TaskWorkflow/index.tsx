@@ -218,7 +218,7 @@ export default function TaskWorkflowView({
                     title={
                       <>
                         <div>确认取消任务？</div>
-                        <div>取消后需重新创建任务，已落地的文件会保留</div>
+                        <div>取消后需重新发起任务，媒体文件会保留</div>
                       </>
                     }
                     okText="取消任务"

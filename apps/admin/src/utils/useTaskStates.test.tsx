@@ -10,6 +10,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { useTaskStates } from './useTaskStates';
+import { LiveTaskFragmentDoc } from '@/generated/types';
+import { batchImportEntries } from '@lani/workflow';
 
 it.each([2000, 3000])(
   '按 %i ms 仅刷新活动任务，终态停止高频刷新',
@@ -43,8 +45,19 @@ it.each([2000, 3000])(
               data: {
                 getTaskStates: ids.map((id) => ({
                   __typename: 'TaskState',
-                  type: 'DOWNLOAD',
-                  entries: [],
+                  type: 'BATCH_IMPORT',
+                  batchEntries: [
+                    {
+                      __typename: 'BatchImportEntryState',
+                      id: 'stable-entry',
+                      episodeId: 5,
+                      sourcePath: '/source.mkv',
+                      importPath: '/source.mkv',
+                      filePath: '/target.mkv',
+                      nfoPath: null,
+                      jellyfinEpisodeId: null,
+                    },
+                  ],
                   id,
                   version: requested.length,
                   workflow:
@@ -99,6 +112,16 @@ it.each([2000, 3000])(
       });
       await tick(1);
       expect(requested).toEqual([[1, 2]]);
+      const cached = client.cache.readFragment<{ batchEntries: unknown }>({
+        id: 'Task:1',
+        fragment: LiveTaskFragmentDoc,
+      });
+      expect(batchImportEntries(cached?.batchEntries)).toEqual([
+        expect.objectContaining({
+          id: 'stable-entry',
+          filePath: '/target.mkv',
+        }),
+      ]);
       await tick(interval);
       expect(requested).toEqual([[1, 2], [1]]);
       expect(latest!.data?.getTaskStates.map((task) => task.id)).toEqual([

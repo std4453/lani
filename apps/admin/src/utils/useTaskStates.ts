@@ -1,7 +1,6 @@
 import {
   GetTaskStatesDocument,
   LiveTaskFragmentDoc,
-  LiveTaskEpisodeFragmentDoc,
   TaskVersionFragmentDoc,
   TaskVersionFragment,
 } from '@/generated/types';
@@ -44,20 +43,17 @@ export function useTaskStates(
         fragment: TaskVersionFragmentDoc,
       });
       if ((old?.version ?? -1) > state.version) continue;
-      for (const entry of state.entries ?? []) {
-        client.cache.writeFragment({
-          id: client.cache.identify({
-            __typename: 'TaskEpisode',
-            id: entry.id,
-          }),
-          fragment: LiveTaskEpisodeFragmentDoc,
-          data: { ...entry, __typename: 'TaskEpisode' },
-        });
-      }
       client.cache.writeFragment({
         id,
         fragment: LiveTaskFragmentDoc,
-        data: { ...state, workflow, __typename: 'Task' },
+        data: {
+          ...state,
+          workflow,
+          batchEntries:
+            state.batchEntries?.map(({ __typename, ...entry }) => entry) ??
+            null,
+          __typename: 'Task',
+        },
       });
     }
   }, [query.data, client]);

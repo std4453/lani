@@ -7,10 +7,10 @@ registerEnumType(LegacyTaskStage, { name: 'LegacyTaskStage' });
 registerEnumType(TaskType, { name: 'TaskType' });
 
 @ObjectType()
-export class TaskEpisodeState {
-  @Field(() => Int) id: number;
-  @Field(() => Int, { nullable: true }) episodeId?: number | null;
-  @Field(() => String, { nullable: true }) sourcePath?: string | null;
+export class BatchImportEntryState {
+  @Field() id: string;
+  @Field(() => Int) episodeId: number;
+  @Field() sourcePath: string;
   @Field(() => String, { nullable: true }) importPath?: string | null;
   @Field(() => String, { nullable: true }) filePath?: string | null;
   @Field(() => String, { nullable: true }) nfoPath?: string | null;
@@ -19,7 +19,9 @@ export class TaskEpisodeState {
 
 @ObjectType()
 export class TaskState {
-  @Field(() => [TaskEpisodeState]) entries: TaskEpisodeState[];
+  @Field(() => [BatchImportEntryState], { nullable: true }) batchEntries?:
+    | BatchImportEntryState[]
+    | null;
   @Field(() => Int) id: number;
   @Field(() => TaskType) type: TaskType;
   @Field(() => Int) version: number;

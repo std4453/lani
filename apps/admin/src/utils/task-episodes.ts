@@ -1,3 +1,5 @@
+import { batchImportEntries } from '@lani/workflow';
+import { TaskDetailsFieldsFragment } from '@/generated/types';
 import { TaskType } from '@/generated/types';
 import { formatNumbering, EpisodeNumbering } from './episode';
 
@@ -66,4 +68,17 @@ export function commonDirectory(paths: string[]): string {
     ),
   );
   return common.join('/') || '/';
+}
+
+/** 输入顺序来自 Task，关联表只补充当前仍存在的剧集信息。 */
+export function taskImportEntries(task?: TaskDetailsFieldsFragment | null) {
+  const episodes = new Map(
+    (task?.taskEpisodesByTaskId?.nodes ?? []).flatMap((entry) =>
+      entry ? [[entry.episodeId, entry.episodeByEpisodeId] as const] : [],
+    ),
+  );
+  return batchImportEntries(task?.batchEntries).map((entry) => ({
+    ...entry,
+    episodeByEpisodeId: episodes.get(entry.episodeId),
+  }));
 }

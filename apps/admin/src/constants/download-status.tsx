@@ -12,7 +12,6 @@ import dayjs from 'dayjs';
 
 export type EpisodeStatus =
   | AtomType
-  | 'findImportFiles'
   | 'AVAILABLE'
   | 'UNKNOWN'
   | 'DOWNLOAD_FAILED'
@@ -93,7 +92,6 @@ export const EPISODE_STATUS_TAGS: Record<
   EpisodeStatus,
   Pick<TagProps, 'children' | 'color'>
 > = {
-  findImportFiles: { children: '寻找文件', color: 'purple' },
   AVAILABLE: {
     children: '可用',
     color: 'green',
@@ -103,6 +101,10 @@ export const EPISODE_STATUS_TAGS: Record<
     color: 'blue',
   },
   findVideoFile: {
+    children: '寻找文件',
+    color: 'purple',
+  },
+  findImportFiles: {
     children: '寻找文件',
     color: 'purple',
   },

@@ -1,18 +1,20 @@
 import { AtomType, Checkpoint, Wants, Workflow } from '@lani/workflow';
-import { Prisma, Task, TaskEpisode } from '@lani/db';
+import { Prisma, Task } from '@lani/db';
 
 export type TaskInput = Pick<
   Task,
-  'id' | 'torrentLink' | 'qbtTorrentHash' | 'torrentTitle' | 'downloadPath'
+  | 'id'
+  | 'episodeId'
+  | 'torrentLink'
+  | 'qbtTorrentHash'
+  | 'torrentTitle'
+  | 'downloadPath'
+  | 'importPath'
+  | 'filePath'
+  | 'nfoPath'
+  | 'jellyfinEpisodeId'
 > &
-  Pick<
-    TaskEpisode,
-    'episodeId' | 'importPath' | 'filePath' | 'nfoPath' | 'jellyfinEpisodeId'
-  > & {
-    type?: Task['type'];
-    sourcePath?: string | null;
-    episodes?: TaskEpisode[];
-  };
+  Partial<Pick<Task, 'type' | 'sourcePath' | 'batchEntries'>>;
 export type TaskOutput = Partial<
   Pick<
     TaskInput,
@@ -24,24 +26,21 @@ export type TaskOutput = Partial<
     | 'nfoPath'
     | 'jellyfinEpisodeId'
   >
-> & {
-  episodeOutputs?: Array<
-    Partial<
-      Pick<
-        TaskEpisode,
-        'importPath' | 'filePath' | 'nfoPath' | 'jellyfinEpisodeId'
-      >
-    > & { id: number }
-  >;
-};
+> & { batchEntries?: Prisma.InputJsonValue };
+/** 在任务最新快照上计算更新；调用方负责自己的数据结构。 */
+export type CheckpointUpdate = (state: {
+  checkpoint: Checkpoint;
+  input: TaskInput;
+}) => { checkpoint: Checkpoint; output?: TaskOutput };
 export interface AtomTransaction {
   tx: Prisma.TransactionClient;
   workflow: Workflow;
   input: TaskInput;
+  updateCheckpoint(update: CheckpointUpdate): Promise<void>;
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
 }
 export interface AtomContext {
-  readonly entryId?: number;
+  readonly entryId?: string;
   readonly stepId: string;
   readonly attempt: number;
   readonly checkpoint: Checkpoint;
@@ -49,6 +48,7 @@ export interface AtomContext {
   transaction<T>(
     operation: (transaction: AtomTransaction) => Promise<T>,
   ): Promise<T>;
+  updateCheckpoint(update: CheckpointUpdate): Promise<void>;
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
   wait(milliseconds: number): Promise<void>;
   waitFor<T>(operation: Promise<T>): Promise<T>;
