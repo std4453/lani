@@ -5,7 +5,7 @@ import { PrismaService } from '@/common/prisma.service';
 import { JellyfinHelp } from '@/api/jellyfin';
 import { ConflictException } from '@nestjs/common';
 import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
-import { DownloadStatus } from '@lani/db';
+import { LegacyTaskStage } from '@lani/db';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -22,16 +22,16 @@ export class BilibiliBangumiCCResolver {
       index,
       jellyfinEpisodeId,
       season: { bilibiliThmId, title },
-      downloadJobs: [job],
+      tasks: [job],
     } = await this.prisma.episode.findUnique({
       where: {
         id: episodeId,
       },
       include: {
         season: true,
-        downloadJobs: {
+        tasks: {
           where: {
-            status: DownloadStatus.AVAILABLE,
+            legacyStage: LegacyTaskStage.AVAILABLE,
           },
           orderBy: {
             createdAt: 'desc',

@@ -1,30 +1,48 @@
+import TaskStatus from '@/components/TaskStatus';
+import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
+import {
+  taskState,
+  TASK_STATES,
+  selectedTaskStates,
+} from '@/constants/task-status';
+import { taskStateFilter } from './filters';
+import styles from './index.module.less';
+import { useTaskStates } from '@/utils/useTaskStates';
+import { useApolloPoll } from '@/utils/useApolloPoll';
+import { parseWorkflow, currentStep } from '@lani/workflow';
+import { GetTaskPageSignatureDocument } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { Hamburger } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
 import tableStyles from '@/components/MainTable/index.module.less';
-import { DownloadStatusTag } from '@/constants/download-status';
+import {
+  DownloadStatusTag,
+  LEGACY_EPISODE_STATUS,
+} from '@/constants/download-status';
 import { jellyfinEpisodeLink } from '@/constants/link';
 import {
-  DownloadJobFilter,
-  ListDownloadJobsDocument,
-  ListDownloadJobsFieldsFragment,
+  TaskFilter,
+  TaskType,
+  GetTaskStatesQuery,
+  ListTasksDocument,
+  ListTasksFieldsFragment,
 } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Typography } from 'antd';
-import { useMemo, useRef } from 'react';
+import { Alert, Typography } from 'antd';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
 
 function useColumns({
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   return useMemo(
-    (): ProColumns<ListDownloadJobsFieldsFragment>[] => [
+    (): ProColumns<ListTasksFieldsFragment>[] => [
       {
         title: 'ID',
         dataIndex: 'id',
@@ -60,27 +78,28 @@ function useColumns({
       },
       {
         title: '步骤',
+        className: styles.step,
         dataIndex: 'status',
-        render: (_, r) => (
-          <div>
-            <DownloadStatusTag status={r.status} />
-          </div>
-        ),
-        width: 84,
+        render: (_, row) => {
+          const state = taskState(row);
+          if (state === 'cancelled') return '-';
+          if (state === 'succeeded')
+            return <DownloadStatusTag status="AVAILABLE" />;
+          return row.workflow ? (
+            <WorkflowStepTag step={currentStep(parseWorkflow(row.workflow))} />
+          ) : (
+            <DownloadStatusTag
+              status={LEGACY_EPISODE_STATUS[row.legacyStage]}
+            />
+          );
+        },
+        width: 128,
       },
       {
         title: '状态',
-        dataIndex: 'isFailed',
-        valueEnum: {
-          true: {
-            text: '运行失败',
-            status: 'Error',
-          },
-          false: {
-            text: '正常',
-            status: 'Default',
-          },
-        },
+        key: 'lifecycle',
+        render: (_, row) => <TaskStatus task={row} variant="badge" />,
+        valueEnum: TASK_STATES,
         width: 120,
         filters: true,
       },
@@ -88,7 +107,25 @@ function useColumns({
         title: '失败原因',
         dataIndex: 'failedReason',
         width: 240,
-        ellipsis: false,
+        render: (_, row) =>
+          row.failedReason ? (
+            <Typography.Text
+              className={styles.failureReason}
+              ellipsis={{
+                tooltip: {
+                  title: row.failedReason,
+                  overlayInnerStyle: {
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                  },
+                },
+              }}
+            >
+              {row.failedReason}
+            </Typography.Text>
+          ) : (
+            '-'
+          ),
       },
       {
         title: 'Jellyfin',
@@ -113,12 +150,7 @@ function useColumns({
           <Typography.Link
             key={0}
             onClick={() => {
-              if (r.episodeByEpisodeId?.id) {
-                void openEpisodeDetails({
-                  episodeId: r.episodeByEpisodeId.id,
-                  jobId: r.id,
-                });
-              }
+              void openTaskDetails({ taskId: r.id, taskType: r.type });
             }}
           >
             详情
@@ -129,11 +161,11 @@ function useColumns({
         fixed: 'right',
       },
     ],
-    [openEpisodeDetails],
+    [openTaskDetails],
   );
 }
 
-async function queryDownloadJobs(
+async function queryTasks(
   client: ApolloClient<object>,
   // search
   {
@@ -148,30 +180,28 @@ async function queryDownloadJobs(
   _sort: any,
   // filter
   {
-    isFailed,
+    lifecycle,
+    type,
   }: {
-    isFailed?: ('true' | 'false')[];
+    lifecycle?: string[];
+    type?: TaskType[];
   },
 ) {
-  const filter: DownloadJobFilter = {
-    ...(isFailed
-      ? {
-          isFailed: {
-            in: isFailed.map((value) => value === 'true'),
-          },
-        }
-      : undefined),
+  const filter: TaskFilter = {
+    ...(type?.length ? { type: { in: type } } : {}),
+    ...taskStateFilter(selectedTaskStates(lifecycle)),
   };
   try {
     const { data } = await client.query({
-      query: ListDownloadJobsDocument,
+      query: ListTasksDocument,
+      fetchPolicy: 'network-only',
       variables: {
         first: pageSize,
         offset: pageSize * (current - 1),
         ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       },
     });
-    const result = data.allDownloadJobs;
+    const result = data.allTasks;
     if (!result) {
       return {
         success: false,
@@ -190,21 +220,122 @@ async function queryDownloadJobs(
   }
 }
 
+/** 固定当前页的成员和顺序，只应用不早于已展示版本的状态。 */
+export function applyTaskStates(
+  rows: ListTasksFieldsFragment[],
+  states: GetTaskStatesQuery['getTaskStates'],
+): ListTasksFieldsFragment[] {
+  const byId = new Map(states.map((state) => [state.id, state]));
+  return rows.map((row) => {
+    const live = byId.get(row.id);
+    return live && live.version >= row.version
+      ? {
+          ...row,
+          version: live.version,
+          type: live.type,
+          workflow: live.workflow,
+          legacyStage: live.legacyStage,
+          isFailed: live.isFailed,
+          isCancelled: live.isCancelled,
+          failedReason: live.failedReason,
+          jellyfinEpisodeId: live.jellyfinEpisodeId,
+        }
+      : row;
+  });
+}
+
 export default function JobsPage() {
   const client = useApolloClient();
-  const [episodeDetailsDiglog, , openEpisodeDetails] =
-    useEpisodeDetailsDialog();
-  const columns = useColumns({ openEpisodeDetails });
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
+  const columns = useColumns({ openTaskDetails });
   const actionRef = useRef<ActionType>();
+  const [rows, setRows] = useState<ListTasksFieldsFragment[]>([]);
+  const [changed, setChanged] = useState(false);
+  const requestSequence = useRef(0);
+  const baseline = useRef({
+    offset: 0,
+    first: 30,
+    filter: {} as TaskFilter,
+    ids: [] as number[],
+    total: 0,
+  });
+  const states = useTaskStates(rows.map((row) => row.id));
+  const displayed = applyTaskStates(rows, states.data?.getTaskStates ?? []);
+  useApolloPoll({
+    pollInterval: 30000,
+    refetch: async () => {
+      const snapshot = baseline.current;
+      const { data } = await client.query({
+        query: GetTaskPageSignatureDocument,
+        variables: {
+          offset: snapshot.offset,
+          first: snapshot.first,
+          filter: snapshot.filter,
+        },
+        fetchPolicy: 'network-only',
+      });
+      if (snapshot !== baseline.current) return;
+      const latest = data.allTasks;
+      if (!latest) return;
+      setChanged(
+        latest.totalCount !== snapshot.total ||
+          (extractNode(latest) ?? []).map((task) => task.id).join(',') !==
+            snapshot.ids.join(','),
+      );
+    },
+  });
 
   return (
     <>
-      <MainTable<ListDownloadJobsFieldsFragment>
+      {changed && (
+        <Alert
+          type="info"
+          message={
+            <Typography.Link
+              onClick={() => {
+                void actionRef.current?.reload();
+              }}
+            >
+              任务列表有变化，点击更新
+            </Typography.Link>
+          }
+        />
+      )}
+      <MainTable<ListTasksFieldsFragment>
         columns={columns}
         rowKey="id"
-        request={(params, sort, filter) =>
-          queryDownloadJobs(client, params, sort, filter)
-        }
+        dataSource={displayed}
+        request={async (params, sort, filter) => {
+          const sequence = ++requestSequence.current;
+          const result = await queryTasks(client, params, sort, filter);
+          if (
+            sequence === requestSequence.current &&
+            result.success &&
+            result.data
+          ) {
+            setRows(result.data);
+            setChanged(false);
+            baseline.current = {
+              offset: ((params.current ?? 1) - 1) * (params.pageSize ?? 30),
+              first: params.pageSize ?? 30,
+              filter: {
+                ...taskStateFilter(selectedTaskStates(filter.lifecycle)),
+                ...(filter.type?.length
+                  ? {
+                      type: {
+                        in: Object.values(TaskType).filter((type) =>
+                          filter.type?.includes(type),
+                        ),
+                      },
+                    }
+                  : {}),
+              },
+              ids: result.data.map((row) => row.id),
+              total: result.total ?? 0,
+            };
+          }
+          return result;
+        }}
         pagination={{
           pageSize: 30,
         }}
@@ -218,10 +349,10 @@ export default function JobsPage() {
         search={false}
         defaultSize="middle"
         scroll={{
-          x: 1342,
+          x: 1276,
         }}
       />
-      {episodeDetailsDiglog}
+      {taskDetailsDialog}
     </>
   );
 }

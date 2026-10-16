@@ -13,9 +13,12 @@ export default function ManualDownloadMagnetDialog({
   resolve,
   visible,
   input,
-}: DialogPropsWithOnResolve<{
-  episodeId: number;
-}>) {
+}: DialogPropsWithOnResolve<
+  {
+    episodeId: number;
+  },
+  number
+>) {
   const client = useApolloClient();
   return (
     <ModalForm<{
@@ -30,15 +33,16 @@ export default function ManualDownloadMagnetDialog({
       autoFocusFirstInput
       onFinish={async ({ torrentLink }) => {
         try {
-          await client.mutate({
+          const { data } = await client.mutate({
             mutation: DownloadTorrentForEpisodeDocument,
             variables: {
               episodeId: input?.episodeId ?? 0,
               torrentLink,
             },
           });
+          if (!data) throw new Error('下载任务响应为空');
           void message.success('下载任务创建成功');
-          await resolve();
+          await resolve(data.downloadTorrentForEpisode);
           return true;
         } catch (error) {
           handleError(error, '下载任务创建失败');

@@ -3,7 +3,7 @@ import { PrismaService } from '@/common/prisma.service';
 import {
   EpisodePublishEvent,
   EPISODE_PUBLISH_EVENT,
-} from '@/download-job/events';
+} from '@/task/atoms/publish-episode.event';
 import { env } from '@/env';
 import { ManagementNotificationProvider } from '@/notification/ManagementNotificationProvider';
 import { UserNotificationProvider } from '@/notification/UserNotificationProvider';
@@ -45,7 +45,7 @@ export class NotificationService {
             posterImage: true,
           },
         },
-        downloadJobs: {
+        tasks: {
           orderBy: {
             id: 'desc',
           },
@@ -109,7 +109,7 @@ export class NotificationService {
       },
       include: {
         season: true,
-        downloadJobs: {
+        tasks: {
           orderBy: {
             id: 'desc',
           },

@@ -1,3 +1,4 @@
+import { parseWorkflow } from '@lani/workflow';
 import { episodeLabel } from '@/utils/episode-number';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -20,7 +21,7 @@ import {
   OnEpisodePublishEpisode,
   UserNotificationProvider,
 } from '@/notification/UserNotificationProvider';
-import { DownloadJob, DownloadStatus } from '@lani/db';
+import { Task, LegacyTaskStage } from '@lani/db';
 import * as lark from '@larksuiteoapi/allcore';
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ID, Mutation, Resolver } from '@nestjs/graphql';
@@ -148,20 +149,23 @@ export class LarkBot
     );
   }
 
-  private getDownloadJobState(job: DownloadJob) {
+  private getDownloadJobState(job: Task) {
+    if (job.isCancelled) return '已取消';
+    if (job.workflow && parseWorkflow(job.workflow).status === 'cancelling')
+      return '取消中';
     if (job.isFailed) {
       return `已失败，原因为${job.failedReason}`;
     } else {
       return (
         {
-          [DownloadStatus.AVAILABLE]: '可用',
-          [DownloadStatus.DOWNLOADING]: '下载中',
-          [DownloadStatus.DOWNLOAD_COMPLETED]: '寻找文件',
-          [DownloadStatus.IMPORTING]: '导入中',
-          [DownloadStatus.PLAYER_WAITING]: '等待识别',
-          [DownloadStatus.WRITING_METADATA]: '写入元数据',
-          [DownloadStatus.DOWNLOAD_SUBMITTING]: '提交下载',
-        }[job.status] ?? '未知'
+          [LegacyTaskStage.AVAILABLE]: '可用',
+          [LegacyTaskStage.DOWNLOADING]: '下载中',
+          [LegacyTaskStage.DOWNLOAD_COMPLETED]: '寻找文件',
+          [LegacyTaskStage.IMPORTING]: '导入中',
+          [LegacyTaskStage.PLAYER_WAITING]: '等待识别',
+          [LegacyTaskStage.WRITING_METADATA]: '写入元数据',
+          [LegacyTaskStage.DOWNLOAD_SUBMITTING]: '提交下载',
+        }[job.legacyStage] ?? '未知'
       );
     }
   }
@@ -194,10 +198,8 @@ export class LarkBot
               text: ` #${episodeLabel(episode)} (发布于 ${dayjs(
                 episode.airTime,
               ).format(DateFormat.DateTime)}${
-                episode.downloadJobs.length > 0
-                  ? `，下载状态：${this.getDownloadJobState(
-                      episode.downloadJobs[0],
-                    )}`
+                episode.tasks.length > 0
+                  ? `，下载状态：${this.getDownloadJobState(episode.tasks[0])}`
                   : ''
               })`,
             },

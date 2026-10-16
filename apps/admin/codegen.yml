@@ -9,6 +9,8 @@ generates:
       - typescript-operations
       - typed-document-node
 config:
+  dedupeFragments: true
   scalars:
     DateTime: 'string'
     JSON: 'any'
+    Workflow: '@lani/workflow#Workflow'

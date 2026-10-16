@@ -3,7 +3,7 @@ import config from '@/config';
 import {
   EpisodePublishEvent,
   EPISODE_PUBLISH_EVENT,
-} from '@/download-job/events';
+} from '@/task/atoms/publish-episode.event';
 import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { Injectable, Logger } from '@nestjs/common';
@@ -71,13 +71,13 @@ export class LaniaService {
       title,
       description,
       airTime,
-      downloadJobs,
+      tasks,
       season: { laniaSync },
     } = event.episode;
     if (!laniaSync) {
       return;
     }
-    if (!downloadJobs.length) {
+    if (!tasks.length) {
       this.logger.warn(
         `Episode published ${id} but no download job, skipping lania queue`,
       );
@@ -94,7 +94,7 @@ export class LaniaService {
         ep: index,
         title,
         description,
-        file_path: downloadJobs[0].filePath,
+        file_path: tasks[0].filePath,
         air_time: airTime,
       },
       {

@@ -34,19 +34,19 @@ type RawEpisode = NonNullable<
 >;
 
 export interface EpisodeStatusFields {
-  jobStatus: EpisodeStatus;
-  jobId?: number;
+  taskStatus: EpisodeStatus;
+  taskId?: number;
 }
 
-export type Episode = Omit<RawEpisode, 'downloadJobsByEpisodeId'> &
+export type Episode = Omit<RawEpisode, 'tasksByEpisodeId'> &
   EpisodeStatusFields;
 
 export function mapEpisode(episode: RawEpisode): Episode {
-  const { status, jobId } = calcEpisodeStatus(episode);
+  const { status, taskId } = calcEpisodeStatus(episode);
   return {
     ...episode,
-    jobStatus: status,
-    jobId,
+    taskStatus: status,
+    taskId,
   };
 }
 
@@ -200,7 +200,6 @@ function useJellyfinId(id: number) {
       variables: {
         id,
       },
-      pollInterval: 2000,
     },
   );
   useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 2000 });

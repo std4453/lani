@@ -1,53 +1,38 @@
 query GetEpisodeById($episodeByIdId: Int!) {
   episodeById(id: $episodeByIdId) {
-    rawAirTime
-    airTime
-    createdAt
-    description
-    downloadJobsByEpisodeId(orderBy: ID_DESC) {
-      edges {
-        node {
-          createdAt
-          downloadPath
-          failedAt
-          failedReason
-          filePath
-          id
-          importPath
-          isFailed
-          nfoPath
-          qbtTorrentHash
-          status
-          torrentLink
-          jellyfinEpisodeId
-          torrentTitle
-        }
-      }
-    }
-    id
-    index
-    numbering
-    jellyfinEpisodeId
-    seasonBySeasonId {
-      id
-      title
-      downloadOffsetHours
-    }
-    title
+    ...episodeDetailsFields
   }
 }
 
-mutation RetryJobStep($jobId: Int!) {
-  retryJobStep(jobId: $jobId)
+fragment episodeDetailsFields on Episode {
+  rawAirTime
+  airTime
+  createdAt
+  description
+  tasksByEpisodeId(orderBy: ID_DESC) {
+    edges {
+      node {
+        ...taskDetailsFields
+      }
+    }
+  }
+  id
+  index
+  numbering
+  jellyfinEpisodeId
+  seasonBySeasonId {
+    id
+    title
+    downloadOffsetHours
+  }
+  title
 }
 
-query GetActiveDownloadJobStatus($jobIds: [Int!]!) {
-  getActiveDownloadJobStatus(jobIds: $jobIds) {
-    downloaded
-    eta
-    id
-    peers
-    speed
-    total
+query GetTaskById($id: Int!) {
+  taskById(id: $id) {
+    ...taskDetailsFields
+    episodeByEpisodeId {
+      ...episodeDetailsFields
+    }
   }
 }

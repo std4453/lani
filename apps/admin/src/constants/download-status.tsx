@@ -1,30 +1,71 @@
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
-import { DownloadStatus, EpisodeStatusFieldsFragment } from '@/generated/types';
+import { AtomType, currentStep, parseWorkflow } from '@lani/workflow';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
+import {
+  LegacyTaskStage,
+  EpisodeStatusFieldsFragment,
+  TaskType,
+} from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { SelectOutlined } from '@ant-design/icons';
 import { Tag, TagProps } from 'antd';
 import dayjs from 'dayjs';
 
 export type EpisodeStatus =
-  | DownloadStatus
+  | AtomType
+  | 'AVAILABLE'
+  | 'UNKNOWN'
   | 'DOWNLOAD_FAILED'
+  | 'CANCELLED'
+  | 'CANCELLING'
   | 'NOT_AIRED'
   | 'DATE_UNKNOWN'
   | 'RESOURCE_WAITING'
   | 'RESOURCE_MISSING';
 
+/** 旧任务保留的阶段只在这里转译，展示状态不再沿用数据库枚举。 */
+export const LEGACY_EPISODE_STATUS: Record<LegacyTaskStage, EpisodeStatus> = {
+  [LegacyTaskStage.Available]: 'AVAILABLE',
+  [LegacyTaskStage.DownloadSubmitting]: 'submitDownload',
+  [LegacyTaskStage.Downloading]: 'download',
+  [LegacyTaskStage.DownloadCompleted]: 'findVideoFile',
+  [LegacyTaskStage.Importing]: 'importFile',
+  [LegacyTaskStage.WritingMetadata]: 'writeMetadata',
+  [LegacyTaskStage.PlayerWaiting]: 'refreshPlayer',
+  [LegacyTaskStage.Renaming]: 'UNKNOWN',
+  [LegacyTaskStage.Unavailable]: 'UNKNOWN',
+};
+
 export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   status: EpisodeStatus;
-  jobId?: number;
+  taskId?: number;
 } {
-  const job = extractNode(episode.jobs)?.[0];
+  const task = extractNode(episode.tasks)?.[0];
   if (episode.jellyfinEpisodeId) {
-    return { status: DownloadStatus.Available };
-  } else if (job) {
-    if (job.isFailed) {
-      return { status: 'DOWNLOAD_FAILED', jobId: job.id };
+    return { status: 'AVAILABLE' };
+  } else if (task) {
+    if (task.workflow) {
+      const workflow = parseWorkflow(task.workflow);
+      const status: EpisodeStatus =
+        workflow.status === 'running'
+          ? currentStep(workflow).atom
+          : (
+              {
+                succeeded: 'AVAILABLE',
+                failed: 'DOWNLOAD_FAILED',
+                cancelled: 'CANCELLED',
+                cancelling: 'CANCELLING',
+              } as const
+            )[workflow.status];
+      return { status, taskId: task.id };
     }
-    return { status: job.status, jobId: job.id };
+    return {
+      status: task.isCancelled
+        ? 'CANCELLED'
+        : task.isFailed || task.legacyStage !== LegacyTaskStage.Available
+        ? 'DOWNLOAD_FAILED'
+        : LEGACY_EPISODE_STATUS[task.legacyStage],
+      taskId: task.id,
+    };
   } else {
     if (episode.airTime) {
       const now = dayjs();
@@ -45,37 +86,42 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   }
 }
 
-export const downloadStatusMap: Partial<
-  Record<EpisodeStatus, Pick<TagProps, 'children' | 'color'>>
+export const EPISODE_STATUS_TAGS: Record<
+  EpisodeStatus,
+  Pick<TagProps, 'children' | 'color'>
 > = {
-  [DownloadStatus.Available]: {
+  AVAILABLE: {
     children: '可用',
     color: 'green',
   },
-  [DownloadStatus.Downloading]: {
+  download: {
     children: '下载中',
     color: 'blue',
   },
-  [DownloadStatus.DownloadCompleted]: {
+  findVideoFile: {
     children: '寻找文件',
     color: 'purple',
   },
-  [DownloadStatus.Importing]: {
+  importFile: {
     children: '导入中',
     color: 'purple',
   },
-  [DownloadStatus.PlayerWaiting]: {
+  refreshPlayer: {
     children: '等待识别',
     color: 'cyan',
   },
-  [DownloadStatus.WritingMetadata]: {
+  writeMetadata: {
     children: '写入元数据',
     color: 'purple',
   },
-  [DownloadStatus.DownloadSubmitting]: {
+  submitDownload: {
     children: '提交下载',
     color: 'blue',
   },
+  publishEpisode: { children: '下载完成', color: 'green' },
+  UNKNOWN: { children: '未知状态', color: 'red' },
+  CANCELLED: { children: '已取消' },
+  CANCELLING: { children: '取消中', color: 'orange' },
   NOT_AIRED: {
     children: '未放送',
   },
@@ -98,21 +144,18 @@ export const downloadStatusMap: Partial<
 
 export function DownloadStatusTag({
   status,
-  episodeId,
-  jobId,
-  openEpisodeDetails,
+  taskId,
+  openTaskDetails,
 }: {
   status: EpisodeStatus;
-  episodeId?: number;
-  jobId?: number;
-  openEpisodeDetails?: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  taskId?: number;
+  openTaskDetails?: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
-  const tagProps = downloadStatusMap[status];
+  const tagProps = EPISODE_STATUS_TAGS[status];
   if (tagProps) {
     const { children, color } = tagProps;
     // 可用状态隐藏按钮
-    const showDialog =
-      episodeId && jobId && status !== DownloadStatus.Available;
+    const showDialog = taskId && status !== 'AVAILABLE';
     return (
       <Tag
         color={color}
@@ -121,9 +164,9 @@ export function DownloadStatusTag({
         }}
         onClick={() => {
           if (showDialog) {
-            void openEpisodeDetails?.({
-              episodeId,
-              jobId,
+            void openTaskDetails?.({
+              taskId,
+              taskType: TaskType.Download,
             });
           }
         }}

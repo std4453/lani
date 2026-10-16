@@ -1,9 +1,13 @@
+jest.mock('@/task/atoms/publication', () => ({
+  claimEpisodePublication: jest.fn(async () => undefined),
+}));
+import { AtomContext } from '@/task/atom';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { ImportService } from './index.service';
-import { ImportFileAtom } from '@/download-job/atoms/import-file.atom';
-import { WriteMetadataAtom } from '@/download-job/atoms/write-metadata.atom';
+import { ImportFileAtom } from '@/task/atoms/import-file.atom';
+import { WriteMetadataAtom } from '@/task/atoms/write-metadata.atom';
 import { SeasonEmitService } from '@/season-emit/index.service';
 import xml2js from 'xml2js';
 
@@ -21,6 +25,22 @@ jest.mock('@/config', () => ({
     s3: { bucket: 'test' },
   },
 }));
+
+function atomContext(): AtomContext {
+  const context: AtomContext = {
+    checkpoint: {},
+    stepId: 'import',
+    attempt: 1,
+    waitFor: async (operation) => operation,
+    assertActive: async () => undefined,
+    wait: async () => undefined,
+    transaction: jest.fn(),
+    saveCheckpoint: async (patch) => {
+      Object.assign(context.checkpoint, patch);
+    },
+  };
+  return context;
+}
 
 it.each(['manual', 'download'])(
   'imports %s videos into the recorded directory',
@@ -52,10 +72,14 @@ it.each(['manual', 'download'])(
               source,
             )
           : (
-              await new ImportFileAtom({} as any, prisma as any).run(1, {
-                params: { episodeId: 1 },
-                steps: { findVideoFile: { importPath: source } },
-              } as any)
+              await new ImportFileAtom(prisma as any).run(
+                1,
+                {
+                  episodeId: 1,
+                  importPath: source,
+                } as any,
+                atomContext(),
+              )
             ).filePath;
       expect(target).toBe(
         path.join(root, 'A／B', 'Season 1', 'Episode - S01E01.mkv'),
@@ -113,14 +137,14 @@ it.each(['manual', 'download'])(
         await importer.importSingle(episode.id, source);
       } else {
         const input = {
-          params: { episodeId: episode.id },
-          steps: { findVideoFile: { importPath: source } },
+          episodeId: episode.id,
+          importPath: source,
         } as any;
-        input.steps.importFile = await new ImportFileAtom(
-          {} as any,
-          prisma as any,
-        ).run(1, input);
-        await new WriteMetadataAtom({} as any, prisma as any).run(1, input);
+        Object.assign(
+          input,
+          await new ImportFileAtom(prisma as any).run(1, input, atomContext()),
+        );
+        await new WriteMetadataAtom(prisma as any).run(1, input, atomContext());
       }
 
       const target = path.join(root, 'A／B');

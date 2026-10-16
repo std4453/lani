@@ -55,7 +55,8 @@
     "@larksuiteoapi/allcore": "~1.0.14",
     "joi": "~17.6.0",
     "aws-sdk": "~2.1152.0",
-    "@lani/parse-torrent-title": "~1.0.0"
+    "@lani/parse-torrent-title": "~1.0.0",
+    "@lani/workflow": "~1.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -106,7 +107,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/$1",
+      "^@lani/workflow$": "<rootDir>/../../../libs/workflow/src/index.ts"
     }
   },
   "files": [

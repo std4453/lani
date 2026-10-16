@@ -1,5 +1,5 @@
 import { EpisodeType } from '@/generated/types';
-import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { TableTitle } from '@/components/Layout';
 import MainTable from '@/components/MainTable';
 import tableStyles from '@/components/MainTable/index.module.less';
@@ -33,6 +33,7 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
+import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
 import { PlusOutlined } from '@ant-design/icons';
@@ -125,10 +126,10 @@ enum EpisodesFilter {
 
 function SeasonStatusTag({
   season,
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
   season: ListSeasonsFieldsFragment;
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const seasonsStatus = useContext(SeasonsStatusContext);
   const episodeStatus = useMemo(() => {
@@ -146,18 +147,17 @@ function SeasonStatusTag({
     <div>
       <DownloadStatusTag
         status={episodeStatus.status}
-        episodeId={episodeStatus.id}
-        jobId={episodeStatus.jobId}
-        openEpisodeDetails={openEpisodeDetails}
+        taskId={episodeStatus.taskId}
+        openTaskDetails={openTaskDetails}
       />
     </div>
   );
 }
 
 function useColumns({
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const history = useHistory();
   const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
@@ -313,10 +313,7 @@ function useColumns({
           width: 126,
           className: clsx(tableStyles.compactCell, styles.latestEpisodeCell),
           render: (_, r) => (
-            <SeasonStatusTag
-              season={r}
-              openEpisodeDetails={openEpisodeDetails}
-            />
+            <SeasonStatusTag season={r} openTaskDetails={openTaskDetails} />
           ),
         },
         {
@@ -465,7 +462,7 @@ function useColumns({
         semesterOptions,
         foldersOptions,
         hasHiddenFolder,
-        openEpisodeDetails,
+        openTaskDetails,
         history,
         client,
       ],
@@ -709,10 +706,23 @@ function useSeasonsStatus(seasonIds: number[]) {
         seasonIds,
         now: nowRef.current,
       },
-      pollInterval: 5000,
     },
   );
-  useApolloPoll({ startPolling, stopPolling, refetch, pollInterval: 5000 });
+  const taskIds = (extractNode(data?.allSeasons) ?? []).flatMap(
+    (season) =>
+      extractNode(season.latestEpisode?.tasks)?.map((task) => task.id) ?? [],
+  );
+  useTaskStates(taskIds);
+  useApolloPoll({
+    startPolling,
+    stopPolling,
+    refetch: () => {
+      nowRef.current = new Date();
+      return refetch({ seasonIds, now: nowRef.current });
+    },
+    pollInterval: 30000,
+    enabled: !!seasonIds.length,
+  });
   return useMemo(() => {
     const seasonsStatusMap: Record<number, EpisodeStatusFieldsFragment> = {};
     for (const season of extractNode(data?.allSeasons) ?? []) {
@@ -732,9 +742,8 @@ export default withAntdSearch(function MetadataPage() {
     (state) => state.auth.config?.testRoutingEnabled === true,
   );
 
-  const [episodeDetailsDiglog, , openEpisodeDetails] =
-    useEpisodeDetailsDialog();
-  const columns = useColumns({ openEpisodeDetails });
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
+  const columns = useColumns({ openTaskDetails });
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
@@ -821,7 +830,7 @@ export default withAntdSearch(function MetadataPage() {
       />
       {createSeasonDialog}
       {addFromBangumiDialog}
-      {episodeDetailsDiglog}
+      {taskDetailsDialog}
     </SeasonsStatusContext.Provider>
   );
 });

@@ -1,5 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
   output        = "../dist"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
@@ -40,7 +41,7 @@ model Episode {
   jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
   lastMissingNotifyTime DateTime?     @map("last_missing_notify_time") @db.Timestamptz(6)
   season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  downloadJobs          DownloadJob[] @relation("download_jobsToepisodes")
+  tasks          Task[] @relation("download_jobsToepisodes")
 
   @@unique([seasonId, index])
   @@unique([seasonId, episodeType, episodeNumber])
@@ -156,44 +157,56 @@ model Torrent {
   @@map("torrents")
 }
 
-model DownloadJob {
-  id Int @id @default(autoincrement())
+enum TaskType {
+  DOWNLOAD
+
+  @@map("task_type")
+}
+
+model Task {
+  id			Int			@id @default(autoincrement())
+  type			TaskType		@default(DOWNLOAD)
 
   // 入参
-  episodeId   Int?     @map("episode_id")
-  episode     Episode? @relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
-  torrentLink String?  @map("torrent_link")
+  episodeId		Int?			@map("episode_id")
+  episode		Episode?		@relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
+  torrentLink		String?			@map("torrent_link")
+
+  // 流程快照为空的任务只作历史展示，不恢复执行。
+  workflow		Json?
+  version		Int			@default(0)
+  updatedAt		DateTime		@default(now()) @map("updated_at") @db.Timestamptz(6)
 
   // 任务状态
-  status       DownloadStatus
-  isCancelled  Boolean        @default(false) @map("is_cancelled")
-  cancelledAt  DateTime?      @map("cancelled_at") @db.Timestamptz(6)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  isFailed     Boolean        @default(false) @map("is_failed")
-  failedAt     DateTime?      @map("failed_at") @db.Timestamptz(6)
-  failedReason String         @default("") @map("failed_reason")
+  legacyStage		LegacyTaskStage		@map("status")
+  isCancelled		Boolean			@default(false) @map("is_cancelled")
+  cancelledAt		DateTime?		@map("cancelled_at") @db.Timestamptz(6)
+  createdAt		DateTime		@default(now()) @map("created_at") @db.Timestamptz(6)
+  isFailed		Boolean			@default(false) @map("is_failed")
+  failedAt		DateTime?		@map("failed_at") @db.Timestamptz(6)
+  failedReason		String			@default("") @map("failed_reason")
 
   // 步骤 - 提交下载
-  qbtTorrentHash String? @map("qbt_torrent_hash")
-  torrentTitle   String? @default("") @map("torrent_title")
+  qbtTorrentHash	String?			@map("qbt_torrent_hash")
+  torrentTitle		String?			@default("") @map("torrent_title")
 
   // 步骤 - 下载
-  downloadPath String? @map("download_path")
+  downloadPath		String?			@map("download_path")
 
   // 步骤 - 寻找视频文件
-  importPath String? @map("import_path")
+  importPath		String?			@map("import_path")
 
   // 步骤 - 导入
-  filePath String? @map("file_path")
+  filePath		String?			@map("file_path")
 
   // 步骤 - 写入元数据
-  nfoPath String? @map("nfo_path")
+  nfoPath		String?			@map("nfo_path")
 
   // 步骤 - 刷新Jellyfin
-  jellyfinEpisodeId String? @map("jellyfin_episode_id")
+  jellyfinEpisodeId	String?			@map("jellyfin_episode_id")
 
   // deprecated
-  qbtLastSync DateTime? @map("qbt_last_sync") @db.Timestamptz(6)
+  qbtLastSync		DateTime?		@map("qbt_last_sync") @db.Timestamptz(6)
 
   @@index([episodeId])
   @@map("download_jobs")
@@ -211,7 +224,7 @@ model JellyfinFolder {
   @@map("jellyfin_folders")
 }
 
-enum DownloadStatus {
+enum LegacyTaskStage {
   UNAVAILABLE
   DOWNLOADING
   RENAMING

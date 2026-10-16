@@ -1,4 +1,6 @@
 import { formatNumbering } from '@/utils/episode';
+import { TaskType } from '@/generated/types';
+import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import FormDependency from '@/components/FormDependency';
 import {
@@ -23,6 +25,7 @@ import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-
 import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
+import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -61,10 +64,10 @@ const EpisodesStatusContext = createContext<
 
 function EpisodeStatusTag({
   episode,
-  openEpisodeDetails,
+  openTaskDetails,
 }: {
   episode: Episode;
-  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const episodesStatus = useContext(EpisodesStatusContext);
   const mergedEpisode = { ...episode, ...episodesStatus?.[episode.id] };
@@ -72,10 +75,9 @@ function EpisodeStatusTag({
   return (
     <div>
       <DownloadStatusTag
-        status={mergedEpisode.jobStatus}
-        episodeId={mergedEpisode.id}
-        jobId={mergedEpisode.jobId}
-        openEpisodeDetails={openEpisodeDetails}
+        status={mergedEpisode.taskStatus}
+        taskId={mergedEpisode.taskId}
+        openTaskDetails={openTaskDetails}
       />
     </div>
   );
@@ -85,12 +87,14 @@ function useColumns({
   tableWidth,
   openDownloadMagnet,
   openEpisodeDetails,
+  openTaskDetails,
   openSearchTorrent,
   openImportSingleDialog,
   refetchEpisodesStatus,
 }: {
   tableWidth: number;
   openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
+  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
   openDownloadMagnet: ReturnType<typeof useManualDownloadMagnetDialog>[2];
   openSearchTorrent: ReturnType<typeof useSearchTorrentDialog>[2];
   openImportSingleDialog: ReturnType<typeof useImportSingleDialog>[2];
@@ -140,13 +144,10 @@ function useColumns({
       },
       {
         title: '下载状态',
-        dataIndex: 'jobStatus',
+        dataIndex: 'taskStatus',
         width: fixedColumnWidths.status,
         render: (_, r) => (
-          <EpisodeStatusTag
-            episode={r}
-            openEpisodeDetails={openEpisodeDetails}
-          />
+          <EpisodeStatusTag episode={r} openTaskDetails={openTaskDetails} />
         ),
       },
       {
@@ -208,14 +209,20 @@ function useColumns({
                       seasonFullName: formRef.current?.getFieldValue('title'),
                       async onResolve(torrent: TorrentFieldsFragment) {
                         try {
-                          await client.mutate({
+                          const { data } = await client.mutate({
                             mutation: DownloadTorrentForEpisodeDocument,
                             variables: {
                               episodeId: r.id,
                               torrentLink: torrent.torrentLink,
                             },
                           });
-                          void message.success('下载任务创建成功');
+                          if (data) {
+                            void message.success('下载任务创建成功');
+                            void openTaskDetails({
+                              taskId: data.downloadTorrentForEpisode,
+                              taskType: TaskType.Download,
+                            });
+                          }
                           void reloadEpisodes();
                           void refetchEpisodesStatus();
                         } catch (error) {
@@ -231,7 +238,11 @@ function useColumns({
                   onClick={() => {
                     void openDownloadMagnet({
                       episodeId: r.id,
-                      onResolve: () => {
+                      onResolve: (taskId) => {
+                        void openTaskDetails({
+                          taskId,
+                          taskType: TaskType.Download,
+                        });
                         void reloadEpisodes();
                         void refetchEpisodesStatus();
                       },
@@ -314,6 +325,7 @@ function useColumns({
       remainingColumnWidth,
       openDownloadMagnet,
       openEpisodeDetails,
+      openTaskDetails,
       openSearchTorrent,
       openImportSingleDialog,
       reloadEpisodes,
@@ -338,10 +350,19 @@ function useEpisodeStatus(episodes: Episode[]) {
       variables: {
         episodeIds,
       },
-      pollInterval: 5000,
     },
   );
-  useApolloPoll({ pollInterval: 5000, startPolling, stopPolling, refetch });
+  const taskIds = (extractNode(data?.allEpisodes) ?? []).flatMap(
+    (episode) => extractNode(episode.tasks)?.map((task) => task.id) ?? [],
+  );
+  useTaskStates(taskIds);
+  useApolloPoll({
+    pollInterval: 30000,
+    startPolling,
+    stopPolling,
+    refetch,
+    enabled: !!episodeIds.length,
+  });
   const result = useMemo(() => {
     const episodesStatus = extractNode(data?.allEpisodes);
     if (!episodesStatus) {
@@ -349,10 +370,10 @@ function useEpisodeStatus(episodes: Episode[]) {
     }
     const episodesStatusMap: Record<number, EpisodeStatusFields> = {};
     for (const item of episodesStatus) {
-      const { status, jobId } = calcEpisodeStatus(item);
+      const { status, taskId } = calcEpisodeStatus(item);
       episodesStatusMap[item.id] = {
-        jobStatus: status,
-        jobId,
+        taskStatus: status,
+        taskId,
       };
     }
     return episodesStatusMap;
@@ -379,6 +400,7 @@ export default function Episodes() {
   const ref = useRef<ActionType>();
   const [episodeDetailsDiglog, , openEpisodeDetails] =
     useEpisodeDetailsDialog();
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
   const [importSingleDialog, , openImportSingleDialog] =
     useImportSingleDialog();
@@ -392,6 +414,7 @@ export default function Episodes() {
     tableWidth: Math.max(minTableWidth, tableSize?.width ?? 0),
     openDownloadMagnet,
     openEpisodeDetails,
+    openTaskDetails,
     openSearchTorrent,
     openImportSingleDialog,
     refetchEpisodesStatus,
@@ -557,6 +580,7 @@ export default function Episodes() {
       </EpisodesStatusContext.Provider>
       {downloadMagnetDialog}
       {episodeDetailsDiglog}
+      {taskDetailsDialog}
       {searchTorrentDialog}
       {importSingleDialog}
       {importMultipleDialog}

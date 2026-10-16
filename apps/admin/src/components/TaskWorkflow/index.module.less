@@ -1,0 +1,93 @@
+.field {
+  overflow-wrap: anywhere;
+}
+.stepTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  &:focus-visible {
+    outline: 2px solid #1890ff;
+    outline-offset: 4px;
+  }
+}
+.steps .action {
+  padding: 0;
+  height: auto;
+  border: 0;
+  :global(.anticon) + span {
+    margin-left: 4px;
+  }
+}
+.chevron {
+  font-size: 12px;
+  opacity: 0.45;
+  :global(svg) {
+    transition: transform 0.2s;
+  }
+}
+.details {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.2s ease, visibility 0.2s;
+}
+.open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+.detailsContent {
+  min-height: 0;
+  overflow: hidden;
+}
+.steps :global(.ant-steps-item-description) {
+  width: 100%;
+}
+.failure .field > :first-child {
+  color: #ff4d4f;
+}
+.cancelled {
+  :global(.ant-steps-item-title),
+  .field > :first-child {
+    color: var(--lani-text-secondary) !important;
+  }
+}
+.cancelledIcon {
+  display: inline-block;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--lani-text-secondary);
+  border-radius: 50%;
+  vertical-align: top;
+  &::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 1px;
+    top: 50%;
+    left: 7px;
+    background: var(--lani-text-secondary);
+    transform: rotate(-45deg);
+  }
+}
+.running {
+  color: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .details,
+  .chevron :global(svg) {
+    transition: none;
+  }
+  .running :global(svg),
+  :global(.ant-progress-status-active .ant-progress-bg::before) {
+    animation: none !important;
+  }
+}

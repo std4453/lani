@@ -88,7 +88,7 @@ export class SaveSeasonPatch {
 }
 
 @ObjectType()
-export class DownloadJobStatus {
+export class DownloadProgress {
   id: number;
   /**
    * 当前速度，单位: byte/s
@@ -109,7 +109,9 @@ export class DownloadJobStatus {
    */
   eta?: number;
   /**
-   * 做种人数
+   * 下载者人数
    */
   peers?: number;
+  /** 已连接的做种者人数 */
+  seeds?: number;
 }

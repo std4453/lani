@@ -1,0 +1,67 @@
+.progressItem:global(.ant-form-item) {
+  margin: 0;
+  font-size: inherit;
+  line-height: 22px;
+  :global(.ant-form-item-row) {
+    flex-wrap: nowrap;
+  }
+  :global(.ant-form-item-label) {
+    flex: none;
+    padding: 0;
+    > label {
+      height: 22px;
+      color: var(--lani-text-secondary);
+      &::after {
+        content: '：';
+        margin: 0;
+      }
+    }
+  }
+  :global(.ant-form-item-control) {
+    min-width: 0;
+  }
+  :global(.ant-form-item-control-input) {
+    min-height: 0;
+  }
+}
+.progressLine,
+.statusLine {
+  height: 22px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.progressLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  > :global(.ant-progress) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    line-height: 22px;
+    font-size: inherit;
+  }
+}
+.percent {
+  flex: 0 0 42px;
+  text-align: left;
+}
+.statusLine {
+  display: grid;
+  grid-template-columns: minmax(0, 78px) minmax(0, 154px) minmax(0, 100px) minmax(
+      0,
+      100px
+    );
+  gap: 12px;
+  color: var(--lani-text-secondary);
+  span {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+.counts {
+  display: flex;
+  gap: 8px;
+}

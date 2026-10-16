@@ -1,8 +1,8 @@
-import { DownloadJob, Episode, Season } from '@lani/db';
+import { Task, Episode, Season } from '@lani/db';
 
 export type OnEpisodesMissingEpisode = Episode & {
   season: Season;
-  downloadJobs: DownloadJob[];
+  tasks: Task[];
 };
 
 export abstract class ManagementNotificationProvider {

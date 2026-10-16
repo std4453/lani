@@ -1,133 +1,52 @@
+import { lockEpisode } from '@/task/atoms/publication';
 import { PrismaService } from '@/common/prisma.service';
-import {
-  StepCompletion,
-  StepInput,
-  WorkflowManager,
-  WorkflowState,
-} from '@/download-job/atoms';
-import { DownloadAtom } from '@/download-job/atoms/download-atom';
-import { FindVideoFileAtom } from '@/download-job/atoms/find-video-file.atom';
-import { ImportFileAtom } from '@/download-job/atoms/import-file.atom';
-import { RefreshPlayerAtom } from '@/download-job/atoms/refresh-player.atom';
-import { SubmitDownloadAtom } from '@/download-job/atoms/submit-download.atom';
-import { DownloadWorkflowDefinition } from '@/download-job/atoms/types';
-import { WriteMetadataAtom } from '@/download-job/atoms/write-metadata.atom';
-import {
-  EpisodePublishEvent,
-  EPISODE_PUBLISH_EVENT,
-} from '@/download-job/events';
-import { LaniError } from '@/utils/error';
-import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { DownloadJob, DownloadStatus } from '@lani/db';
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Args, ID, Int, Mutation, Resolver } from '@nestjs/graphql';
+import { Injectable, Logger } from '@nestjs/common';
+import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
-
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
+import { TaskService } from '@/task/index.service';
+import { LegacyTaskStage, TaskType } from '@lani/db';
+import { downloadDefinition } from './definition';
+import { parseWorkflow } from '@lani/workflow';
+import { LaniError } from '@/utils/error';
 @Injectable()
 @Resolver()
-export class JobService
-  extends WorkflowManager<DownloadWorkflowDefinition>
-  implements OnApplicationBootstrap
-{
-  constructor(
-    private prisma: PrismaService,
-    private emitter: EventEmitter2,
-
-    // atoms
-    submitDownload: SubmitDownloadAtom,
-    download: DownloadAtom,
-    findVideoFile: FindVideoFileAtom,
-    importFile: ImportFileAtom,
-    writeMetadata: WriteMetadataAtom,
-    refreshPlayer: RefreshPlayerAtom,
-  ) {
-    super({
-      initialType: 'submitDownload',
-      steps: {
-        submitDownload: {
-          atom: submitDownload,
-          next: 'download',
-        },
-        download: {
-          atom: download,
-          next: 'findVideoFile',
-        },
-        findVideoFile: {
-          atom: findVideoFile,
-          next: 'importFile',
-        },
-        importFile: {
-          atom: importFile,
-          next: 'writeMetadata',
-        },
-        writeMetadata: {
-          atom: writeMetadata,
-          next: 'refreshPlayer',
-        },
-        refreshPlayer: {
-          atom: refreshPlayer,
-        },
-      },
-    });
-  }
-
+export class DownloadJobService {
+  private logger = new Logger(DownloadJobService.name);
+  constructor(private prisma: PrismaService, private tasks: TaskService) {}
   @Mutation(() => Int)
   async downloadTorrentForEpisode(
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
-    const currentJob = await this.prisma.downloadJob.findFirst({
-      where: {
-        episodeId,
-        isFailed: false,
-        isCancelled: false,
-        status: {
-          not: DownloadStatus.AVAILABLE,
+    const id = await this.prisma.$transaction(async (tx) => {
+      await lockEpisode(tx, episodeId);
+      const existing = await tx.task.findFirst({
+        where: {
+          episodeId,
+          type: TaskType.DOWNLOAD,
+          isFailed: false,
+          isCancelled: false,
+          legacyStage: { not: LegacyTaskStage.AVAILABLE },
         },
-      },
+        orderBy: { id: 'desc' },
+      });
+      if (existing) {
+        if (existing.workflow && parseWorkflow(existing.workflow).cancellation)
+          throw new LaniError('该剧集的任务正在取消，请稍后重试');
+        return existing.id;
+      }
+      const task = await this.tasks.create(
+        tx,
+        TaskType.DOWNLOAD,
+        downloadDefinition,
+        { episodeId, torrentLink },
+      );
+      return task.id;
     });
-    if (currentJob) {
-      throw new LaniError('剧集已在下载中');
-    } else {
-      return await this.triggerWorkflow({ episodeId, torrentLink });
-    }
+    void this.tasks.start(id);
+    return id;
   }
-
-  @Mutation(() => ID)
-  async retryJobStep(@Args('jobId') jobId: number) {
-    const job = await this.prisma.downloadJob.findUnique({
-      where: { id: jobId },
-      include: {
-        episode: {
-          include: {
-            season: true,
-          },
-        },
-      },
-    });
-    if (!job.isFailed) {
-      throw new Error('not failed');
-    }
-    this.logger.log(
-      `Retrying job #${jobId}${
-        job.episode
-          ? ` (for ${job.episode.season.title} / #${job.episode.index})`
-          : ''
-      } at step ${job.status}...`,
-    );
-    await this.prisma.downloadJob.update({
-      where: { id: jobId },
-      data: {
-        isFailed: false,
-        failedAt: null,
-        failedReason: '',
-      },
-    });
-    this.triggerWorkflowStep(this.jobToInput(job));
-    return 'ok';
-  }
-
   async findTorrentsToDownload() {
     // pattern 可跨季度复用；按 season_id 关联，按 episodes.id 去重，避免多条规则重复入队。
     // 选择所有：
@@ -184,209 +103,11 @@ export class JobService
     }
     for (const { episode_id, torrent_link } of result) {
       try {
-        await this.triggerWorkflow({
-          episodeId: episode_id,
-          torrentLink: torrent_link,
-        });
+        await this.downloadTorrentForEpisode(episode_id, torrent_link);
       } catch (error) {
         this.logger.error(error);
       }
     }
     return result.length;
-  }
-
-  private completionToStatus(
-    completion: StepCompletion<DownloadWorkflowDefinition>,
-  ): DownloadStatus {
-    switch (completion) {
-      case 'submitDownload':
-        return DownloadStatus.DOWNLOAD_SUBMITTING;
-      case 'download':
-        return DownloadStatus.DOWNLOADING;
-      case 'findVideoFile':
-        return DownloadStatus.DOWNLOAD_COMPLETED;
-      case 'writeMetadata':
-        return DownloadStatus.WRITING_METADATA;
-      case 'importFile':
-        return DownloadStatus.IMPORTING;
-      case 'refreshPlayer':
-        return DownloadStatus.PLAYER_WAITING;
-    }
-  }
-
-  private statusToCompletion(
-    status: DownloadStatus,
-  ): StepCompletion<DownloadWorkflowDefinition> {
-    switch (status) {
-      case DownloadStatus.DOWNLOAD_SUBMITTING:
-        return 'submitDownload';
-      case DownloadStatus.DOWNLOADING:
-        return 'download';
-      case DownloadStatus.DOWNLOAD_COMPLETED:
-        return 'findVideoFile';
-      case DownloadStatus.WRITING_METADATA:
-        return 'writeMetadata';
-      case DownloadStatus.IMPORTING:
-        return 'importFile';
-      case DownloadStatus.PLAYER_WAITING:
-        return 'refreshPlayer';
-      case DownloadStatus.AVAILABLE:
-        return 'refreshPlayer';
-      default:
-        throw new Error(`Unknown status: ${status}`);
-    }
-  }
-
-  private jobToInput(job: DownloadJob): StepInput<DownloadWorkflowDefinition> {
-    return {
-      id: job.id,
-      completion: this.statusToCompletion(job.status),
-      params: {
-        episodeId: job.episodeId ?? undefined,
-        torrentLink: job.torrentLink ?? '',
-      },
-      steps: {
-        submitDownload: job.qbtTorrentHash
-          ? {
-              qbtTorrentHash: job.qbtTorrentHash,
-            }
-          : undefined,
-        download: job.downloadPath
-          ? { downloadPath: job.downloadPath }
-          : undefined,
-        findVideoFile: job.importPath
-          ? { importPath: job.importPath }
-          : undefined,
-        importFile: job.filePath ? { filePath: job.filePath } : undefined,
-        writeMetadata: job.nfoPath ? { nfoPath: job.nfoPath } : undefined,
-        refreshPlayer: job.jellyfinEpisodeId
-          ? { jellyfinEpisodeId: job.jellyfinEpisodeId }
-          : undefined,
-      },
-    };
-  }
-
-  protected async createWorkflow(
-    completion: StepCompletion<DownloadWorkflowDefinition>,
-    params: { episodeId: number; torrentLink: string },
-  ) {
-    const status = this.completionToStatus(completion);
-    this.logger.log(
-      `Creating download workflow for episode #${params.episodeId}, starting with status = ${status} (torrent = ${params.torrentLink})`,
-    );
-    const newJob = await this.prisma.downloadJob.create({
-      data: {
-        status,
-        episodeId: params.episodeId,
-        torrentLink: params.torrentLink,
-      },
-    });
-    return this.jobToInput(newJob);
-  }
-
-  protected async persistWorkflowState(
-    id: number,
-    state: WorkflowState<DownloadWorkflowDefinition>,
-    finished: boolean,
-  ) {
-    if (finished) {
-      this.logger.log(`Job #${id} completed`);
-    } else {
-      this.logger.log(`Job #${id} is now at step ${state.completion}`);
-    }
-    const { episode, ...newJob } = await this.prisma.downloadJob.update({
-      where: { id },
-      data: {
-        status: finished
-          ? DownloadStatus.AVAILABLE
-          : this.completionToStatus(state.completion),
-        qbtTorrentHash: state.steps.submitDownload?.qbtTorrentHash,
-        torrentTitle: state.steps.submitDownload?.torrentTitle,
-        downloadPath: state.steps.download?.downloadPath,
-        importPath: state.steps.findVideoFile?.importPath,
-        filePath: state.steps.importFile?.filePath,
-        nfoPath: state.steps.writeMetadata?.nfoPath,
-        jellyfinEpisodeId: state.steps.refreshPlayer?.jellyfinEpisodeId,
-        isFailed: false,
-        failedAt: null,
-        failedReason: '',
-        // 完成流程后设置剧集上的jellyfinEpisodeId
-        ...(finished
-          ? {
-              episode: {
-                update: {
-                  jellyfinEpisodeId:
-                    state.steps.refreshPlayer?.jellyfinEpisodeId,
-                },
-              },
-            }
-          : undefined),
-      },
-      include: {
-        episode: {
-          include: {
-            season: {
-              include: {
-                jellyfinFolder: true,
-                posterImage: true,
-              },
-            },
-            downloadJobs: {
-              where: { id },
-            },
-          },
-        },
-      },
-    });
-    if (finished && episode) {
-      this.emitter.emit(
-        EPISODE_PUBLISH_EVENT,
-        new EpisodePublishEvent(episode),
-      );
-    }
-    return this.jobToInput(newJob);
-  }
-
-  protected async persistWorkflowError(id: number, reason: any) {
-    this.logger.error(`Job #${id} failed, fail reason:`);
-    this.logger.error(reason);
-    await this.prisma.downloadJob.update({
-      where: { id },
-      data: {
-        isFailed: true,
-        failedAt: new Date(),
-        failedReason: reason?.message,
-      },
-    });
-  }
-
-  async onApplicationBootstrap() {
-    const jobs = await this.prisma.downloadJob.findMany({
-      where: {
-        isFailed: false,
-        status: {
-          in: [
-            DownloadStatus.DOWNLOAD_SUBMITTING,
-            DownloadStatus.DOWNLOADING,
-            DownloadStatus.DOWNLOAD_COMPLETED,
-            DownloadStatus.WRITING_METADATA,
-            DownloadStatus.IMPORTING,
-            DownloadStatus.PLAYER_WAITING,
-          ],
-        },
-      },
-    });
-    if (jobs.length > 0) {
-      this.logger.log('Unfinished jobs will be resumed after 5 seconds...');
-      setTimeout(() => {
-        for (const job of jobs) {
-          const input = this.jobToInput(job);
-          this.logger.log(
-            `Resuming job #${job.id} from step ${input.completion}`,
-          );
-          this.triggerWorkflowStep(input);
-        }
-      }, 5000);
-    }
   }
 }

@@ -1,7 +1,11 @@
-fragment listDownloadJobsFields on DownloadJob {
+fragment listTasksFields on Task {
   id
-  status
+  type
+  legacyStage
   isFailed
+  isCancelled
+  workflow
+  version
   jellyfinEpisodeId
   episodeByEpisodeId {
     id
@@ -18,22 +22,28 @@ fragment listDownloadJobsFields on DownloadJob {
   failedReason
 }
 
-query ListDownloadJobs($offset: Int, $first: Int, $filter: DownloadJobFilter) {
-  allDownloadJobs(
-    offset: $offset
-    first: $first
-    filter: $filter
-    orderBy: ID_DESC
-  ) {
+query ListTasks($offset: Int, $first: Int, $filter: TaskFilter) {
+  allTasks(offset: $offset, first: $first, filter: $filter, orderBy: ID_DESC) {
     pageInfo {
       hasNextPage
     }
     totalCount
     edges {
       node {
-        ...listDownloadJobsFields
+        ...listTasksFields
       }
       cursor
+    }
+  }
+}
+
+query GetTaskPageSignature($offset: Int, $first: Int, $filter: TaskFilter) {
+  allTasks(offset: $offset, first: $first, filter: $filter, orderBy: ID_DESC) {
+    totalCount
+    edges {
+      node {
+        id
+      }
     }
   }
 }

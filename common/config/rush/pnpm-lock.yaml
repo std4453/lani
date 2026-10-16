@@ -52,6 +52,7 @@ specifiers:
   '@rush-temp/framework': file:./projects/framework.tgz
   '@rush-temp/gateway': file:./projects/gateway.tgz
   '@rush-temp/parse-torrent-title': file:./projects/parse-torrent-title.tgz
+  '@rush-temp/workflow': file:./projects/workflow.tgz
   '@rushstack/eslint-config': ~2.5.1
   '@sentry/node': ~6.19.2
   '@sentry/react': ~6.17.8
@@ -212,6 +213,7 @@ dependencies:
   '@rush-temp/framework': file:projects/framework.tgz
   '@rush-temp/gateway': file:projects/gateway.tgz
   '@rush-temp/parse-torrent-title': file:projects/parse-torrent-title.tgz_ts-node@10.9.2
+  '@rush-temp/workflow': file:projects/workflow.tgz_ts-node@10.9.2
   '@rushstack/eslint-config': 2.5.4_eslint@7.32.0+typescript@4.5.5
   '@sentry/node': 6.19.7
   '@sentry/react': 6.17.9_react@17.0.2
@@ -28342,7 +28344,7 @@ packages:
     dev: false
 
   file:projects/admin.tgz_e9135e3aadee9fadc8ca05347d60aedd:
-    resolution: {integrity: sha512-E8qSIu1eWxtOLTXfX/jNVc2EMLIejmrh+zXebE+f1mtlq7hWWChVtmJcrZ9QRACHKmQ6XSH7wl7j2yT/92Awaw==, tarball: file:projects/admin.tgz}
+    resolution: {integrity: sha512-efTN4iIDgn/NAwBKAzzIDvdARklxlPBG6l855qos4yFKF/WiVg+Rah9V0FL8qztswoNF68WCjYXeTluEIPun9A==, tarball: file:projects/admin.tgz}
     id: file:projects/admin.tgz
     name: '@rush-temp/admin'
     version: 0.0.0
@@ -28362,6 +28364,7 @@ packages:
       '@rushstack/eslint-config': 2.5.4_eslint@7.32.0+typescript@4.5.5
       '@sentry/react': 6.17.9_react@17.0.2
       '@types/history': 2.0.45
+      '@types/jest': 27.4.1
       '@types/lodash': 4.14.202
       '@types/md5': 2.3.6
       '@types/qs': 6.9.18
@@ -28378,6 +28381,7 @@ packages:
       eslint: 7.32.0
       eslint-plugin-react-hooks: 4.3.0_eslint@7.32.0
       hsluv: 0.1.0
+      jest: 27.5.1_ts-node@10.9.2
       lodash: 4.17.23
       md5: 2.3.0
       oidc-client-ts: 2.0.6
@@ -28391,20 +28395,24 @@ packages:
       redux: 4.2.1
       redux-thunk: 2.4.2_redux@4.2.1
       store2: 2.14.4
+      ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
       typescript: 4.5.5
       umi: 3.5.43
       virtualizedtableforantd4: 1.3.2_86eca5dc0cbd109eb4ca30c673925bd5
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/node'
+      - babel-jest
       - bufferutil
       - canvas
       - cosmiconfig-toml-loader
       - debug
       - dva-core
       - encoding
+      - esbuild
       - graphql
       - graphql-ws
+      - node-notifier
       - rc-field-form
       - react-native
       - react-router
@@ -28424,7 +28432,7 @@ packages:
     dev: false
 
   file:projects/api-server.tgz_15893210049667005b57ffcd3361e91c:
-    resolution: {integrity: sha512-cNKBnddJraTBc9nhqr3teXZ7up0hFVbzTNlnE9f88tXMCK+KgPfJVq59XTkjqtRhUUwWWG7EmfeCkh1BeTK2ZQ==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-EFlHkyDAsBooQxFcPDCboDvFsmijll7FaJyHIfaR5llVYX2+2/5uF1bGPnvoT6KLeEd+iN+xzYXctyK07SkctA==, tarball: file:projects/api-server.tgz}
     id: file:projects/api-server.tgz
     name: '@rush-temp/api-server'
     version: 0.0.0
@@ -28715,6 +28723,29 @@ packages:
       ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
       typescript: 4.5.5
       typescript-transform-paths: 3.3.1_typescript@4.5.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-jest
+      - bufferutil
+      - canvas
+      - esbuild
+      - node-notifier
+      - supports-color
+      - ts-node
+      - utf-8-validate
+    dev: false
+
+  file:projects/workflow.tgz_ts-node@10.9.2:
+    resolution: {integrity: sha512-EnHBsCxn0SFVS4I01eSx2UgHxPpuZBzaXbMph8N5GoWtFl7ShNbrwY58mUR87syZvUnTFiA9lxfGPXVVCv2mgg==, tarball: file:projects/workflow.tgz}
+    id: file:projects/workflow.tgz
+    name: '@rush-temp/workflow'
+    version: 0.0.0
+    dependencies:
+      '@types/jest': 27.4.1
+      jest: 27.5.1_ts-node@10.9.2
+      joi: 17.6.4
+      ts-jest: 27.1.5_8fa130d172bf7d71653f05507c50c5a3
+      typescript: 4.5.5
     transitivePeerDependencies:
       - '@babel/core'
       - babel-jest

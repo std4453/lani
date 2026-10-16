@@ -42,7 +42,7 @@ export no_proxy="$NO_PROXY"
 `rushx start:dev` 设置 `NODE_ENV=development`，但不会自动关闭 API 后台任务：
 
 - `JellyfinSyncService.onApplicationBootstrap()` 会同步媒体文件夹并写数据库。
-- `JobService.onApplicationBootstrap()` 会恢复未完成的下载任务。
+- `TaskService.onApplicationBootstrap()` 会恢复未完成的下载任务。
 - Cron 任务仍可能运行，`LaniFilterCron` 只处理异常，不会因开发模式跳过任务。
 
 启动 API 前，应确认数据库、下载器、媒体服务、存储及通知配置均用于隔离的开发环境。需要连接共享或维护者环境时，先确认目标和预期副作用，并遵守私有操作说明；不能将开发启动当作只读验证。
@@ -93,7 +93,7 @@ query LocalGatewayRouteProbe {
   allSeasons(first: 1) {
     totalCount
   }
-  allDownloadJobs(first: 1) {
+  allTasks(first: 1) {
     totalCount
   }
 }

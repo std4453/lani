@@ -1,7 +1,8 @@
+import { parseWorkflow } from '@lani/workflow';
 import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
-  DownloadJobStatus,
+  DownloadProgress,
   SaveSeasonPatch,
   SearchBangumiSeason,
 } from '@/admin/index.model';
@@ -13,11 +14,11 @@ import {
 } from '@/api/bangumi';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { IDownloadClient } from '@/download-job/client/IDownloadClient';
-import { JobService } from '@/download-job/index.service';
+import { IDownloadClient } from '@/download-client/IDownloadClient';
+import { DownloadJobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
-import { DownloadSource, DownloadStatus, Prisma } from '@lani/db';
+import { DownloadSource, LegacyTaskStage, Prisma } from '@lani/db';
 import { Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -30,7 +31,7 @@ export class AdminResolver {
 
   constructor(
     private prisma: PrismaService,
-    private job: JobService,
+    private job: DownloadJobService,
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
     private emitter: EventEmitter2,
@@ -315,44 +316,52 @@ export class AdminResolver {
     return 'ok';
   }
 
-  @Query(() => [DownloadJobStatus])
-  async getActiveDownloadJobStatus(
+  @Query(() => [DownloadProgress])
+  async getDownloadProgress(
     @Args({
-      name: 'jobIds',
+      name: 'taskIds',
       type: () => [Int],
     })
-    jobIds: number[],
+    taskIds: number[],
   ) {
-    const jobs = await this.prisma.downloadJob.findMany({
+    if (!taskIds.length) return [];
+    const jobs = await this.prisma.task.findMany({
       where: {
+        isFailed: false,
+        isCancelled: false,
         id: {
-          in: jobIds,
+          in: taskIds,
         },
-        status: DownloadStatus.DOWNLOADING,
+        legacyStage: LegacyTaskStage.DOWNLOADING,
         qbtTorrentHash: {
           not: null,
         },
       },
     });
+    const activeJobs = jobs.filter(
+      (job) => job.workflow && parseWorkflow(job.workflow).status === 'running',
+    );
+    if (!activeJobs.length) return [];
     const torrents = await this.client.getActiveTorrentsStatus(
-      jobs
+      activeJobs
         .map((job) => job.qbtTorrentHash)
         .filter((hash): hash is Exclude<typeof hash, null> => hash !== null),
     );
-    const result: DownloadJobStatus[] = [];
+    const result: DownloadProgress[] = [];
     for (const torrent of torrents) {
-      const job = jobs.find((job) => job.qbtTorrentHash === torrent.hash);
-      if (!job) {
-        continue;
+      for (const job of activeJobs.filter(
+        (job) => job.qbtTorrentHash === torrent.hash,
+      )) {
+        result.push({
+          id: job.id,
+          downloaded: BigInt(torrent.downloaded),
+          speed: torrent.speed,
+          total: BigInt(torrent.total),
+          eta: torrent.eta,
+          peers: torrent.peers,
+          seeds: torrent.seeds,
+        });
       }
-      result.push({
-        id: job.id,
-        downloaded: BigInt(torrent.downloaded),
-        speed: torrent.speed,
-        total: BigInt(torrent.total),
-        eta: torrent.eta,
-        peers: torrent.peers,
-      });
     }
     return result;
   }
