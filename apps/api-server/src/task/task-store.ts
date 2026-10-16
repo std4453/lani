@@ -58,7 +58,7 @@ export class TaskStore implements TaskStorePort {
     return result.count > 0;
   }
 }
-// Prisma 3 updateMany 会先选 ID 再更新；行锁保证版本检查和写入不可分割。
+// 锁定任务行，使同一任务的事务操作串行执行；锁在事务结束时释放。
 async function lockTask(tx: Prisma.TransactionClient, id: number) {
   await tx.$queryRaw`SELECT id FROM download_jobs WHERE id=${id} FOR UPDATE`;
 }
