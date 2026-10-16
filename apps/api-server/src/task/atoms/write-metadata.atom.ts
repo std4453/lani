@@ -77,7 +77,7 @@ export class WriteMetadataAtom extends AsyncAtom {
     );
     const nfoContent = this.builder.buildObject(xmlObj);
     await context.assertActive();
-    const temporary = `${nfoPath}.lani-${id}.tmp`;
+    const temporary = `${nfoPath}.lani-${id}-${context.entryId ?? 0}.tmp`;
     try {
       await fs.writeFile(temporary, nfoContent, 'utf-8');
       await context.assertActive();

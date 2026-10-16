@@ -155,7 +155,7 @@ it.each(['pending', 'running', 'succeeded'] as const)(
     flow.steps[0].status = status;
     render(flow);
     const step = container.querySelector('[data-step-id="publish"]')!;
-    expect(step.textContent).toContain('下载完成');
+    expect(step.textContent).toContain('完成');
     expect(step.querySelector('button[aria-expanded]')).toBeNull();
     expect(step.querySelector('[id="task-1-step-step:publish"]')).toBeNull();
     expect(step.querySelector('[aria-label="down"]')).toBeNull();
@@ -238,7 +238,7 @@ it('取消任务先确认，接口返回后立即刷新', async () => {
   expect(
     confirm.querySelector('.ant-popover-message-title div:last-child')
       ?.textContent,
-  ).toBe('取消后需重新发起下载，已下载的文件会保留');
+  ).toBe('取消后需重新创建任务，已落地的文件会保留');
   await act(async () => {
     confirm
       .querySelector<HTMLButtonElement>('button.ant-btn-dangerous')!

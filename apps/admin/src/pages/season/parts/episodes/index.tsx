@@ -77,6 +77,7 @@ function EpisodeStatusTag({
       <DownloadStatusTag
         status={mergedEpisode.taskStatus}
         taskId={mergedEpisode.taskId}
+        taskType={mergedEpisode.taskType}
         openTaskDetails={openTaskDetails}
       />
     </div>

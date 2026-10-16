@@ -1,4 +1,5 @@
 import PageTitle from '@/components/PageTitle';
+import { TASK_TYPE_LABELS, taskEpisodesLabel } from '@/utils/task-episodes';
 import TaskStatus from '@/components/TaskStatus';
 import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
 import {
@@ -66,7 +67,10 @@ function useColumns({
           return (
             <div>
               <Link to={`/season/${season.id}`}>{season.title}</Link>
-              &nbsp;/&nbsp;#{formatNumbering(episode.numbering)}
+              &nbsp;/&nbsp;
+              {r.type === TaskType.BatchImport
+                ? taskEpisodesLabel(r)
+                : `#${formatNumbering(episode.numbering)}`}
             </div>
           );
         },
@@ -76,6 +80,13 @@ function useColumns({
         dataIndex: 'createdAt',
         valueType: 'dateTime',
         width: 220,
+      },
+      {
+        title: '类型',
+        dataIndex: 'type',
+        filters: true,
+        valueEnum: TASK_TYPE_LABELS,
+        width: 110,
       },
       {
         title: '步骤',
@@ -214,7 +225,7 @@ async function queryTasks(
       total: result.totalCount,
     };
   } catch (error) {
-    handleError(error, '下载任务获取失败');
+    handleError(error, '任务获取失败');
     return {
       success: false,
     };
@@ -344,7 +355,7 @@ export default function JobsPage() {
         headerTitle={
           <>
             <Hamburger inTable />
-            下载任务
+            下载/导入任务
           </>
         }
         actionRef={actionRef}

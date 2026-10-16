@@ -19,3 +19,13 @@ fragment LiveTask on Task {
 fragment TaskVersion on Task {
   version
 }
+
+fragment LiveTaskEpisode on TaskEpisode {
+  id
+  episodeId
+  sourcePath
+  importPath
+  filePath
+  nfoPath
+  jellyfinEpisodeId
+}

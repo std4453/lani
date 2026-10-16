@@ -1,7 +1,7 @@
 import { ImportMultipleEntry } from '@/import/index.model';
 import { ImportService } from '@/import/index.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
 
 @Injectable()
 @Resolver()
@@ -10,16 +10,15 @@ export class ImportResolver {
 
   constructor(private importService: ImportService) {}
 
-  @Mutation(() => ID)
+  @Mutation(() => Int)
   async importSingle(
     @Args('episodeId') episodeId: number,
     @Args('importPath') importPath: string,
   ) {
-    await this.importService.importSingle(episodeId, importPath);
-    return 'ok';
+    return this.importService.importSingle(episodeId, importPath);
   }
 
-  @Mutation(() => ID)
+  @Mutation(() => Int)
   async importMultiple(
     @Args({
       name: 'entries',
@@ -27,14 +26,6 @@ export class ImportResolver {
     })
     entries: ImportMultipleEntry[],
   ) {
-    // TODO: 异步任务
-
-    await Promise.all(
-      entries.map((entry) =>
-        this.importService.importSingle(entry.episodeId, entry.importPath),
-      ),
-    );
-
-    return 'ok';
+    return this.importService.importMultiple(entries);
   }
 }

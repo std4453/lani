@@ -54,6 +54,7 @@ function setup() {
     findUnique: jest.fn(async () => ({
       id: 2,
       jellyfinEpisodeId: association,
+      taskEpisodes: [],
     })),
   };
   let version = 0;
@@ -62,6 +63,9 @@ function setup() {
     task: {
       findUnique: jest.fn(async () => ({
         ...input,
+        episodes: [
+          { ...input, id: 1, position: 0, taskId: 1, sourcePath: null },
+        ],
         version,
         workflow: parseWorkflow(workflow),
       })),
@@ -180,3 +184,15 @@ it('发布区段冲突时不进入关联事务', async () => {
   expect(test.tx.$queryRaw).not.toHaveBeenCalled();
   expect(test.emit).not.toHaveBeenCalled();
 });
+
+it.each(['IMPORT', 'BATCH_IMPORT'] as const)(
+  '%s 发布关联但不发送下载发布事件',
+  async (type) => {
+    const test = setup();
+    test.input.type = type;
+    await test.atom.run(1, test.input, test.context);
+    expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
+    expect(test.episode.updateMany).toHaveBeenCalled();
+    expect(test.emit).not.toHaveBeenCalled();
+  },
+);

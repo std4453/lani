@@ -44,6 +44,7 @@ it.each([2000, 3000])(
                 getTaskStates: ids.map((id) => ({
                   __typename: 'TaskState',
                   type: 'DOWNLOAD',
+                  entries: [],
                   id,
                   version: requested.length,
                   workflow:

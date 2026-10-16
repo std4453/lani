@@ -10,6 +10,7 @@ import {
   SeasonEpisodesFragment,
   SyncEpisodeDataDocument,
   SyncMetadataDocument,
+  TaskType,
 } from '@/generated/types';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
@@ -36,17 +37,19 @@ type RawEpisode = NonNullable<
 export interface EpisodeStatusFields {
   taskStatus: EpisodeStatus;
   taskId?: number;
+  taskType?: TaskType;
 }
 
 export type Episode = Omit<RawEpisode, 'tasksByEpisodeId'> &
   EpisodeStatusFields;
 
 export function mapEpisode(episode: RawEpisode): Episode {
-  const { status, taskId } = calcEpisodeStatus(episode);
+  const { status, taskId, taskType } = calcEpisodeStatus(episode);
   return {
     ...episode,
     taskStatus: status,
     taskId,
+    taskType,
   };
 }
 

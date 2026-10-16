@@ -52,3 +52,22 @@
     min-height: 0;
   }
 }
+
+.backgroundHint {
+  position: absolute;
+  right: 48px;
+  top: 0;
+  white-space: nowrap;
+  color: var(--lani-text-secondary);
+  font-size: 12px;
+  font-weight: normal;
+}
+
+@media (max-width: 600px) {
+  .dialog :global(.ant-modal-title) {
+    padding-bottom: 16px;
+  }
+  .backgroundHint {
+    top: 22px;
+  }
+}

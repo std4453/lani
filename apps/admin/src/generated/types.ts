@@ -486,9 +486,23 @@ export type Episode = Node & {
   seasonBySeasonId?: Maybe<Season>;
   seasonId: Scalars['Int'];
   sourceData?: Maybe<Scalars['JSON']>;
+  /** Reads and enables pagination through a set of `TaskEpisode`. */
+  taskEpisodesByEpisodeId: TaskEpisodesConnection;
   /** Reads and enables pagination through a set of `Task`. */
   tasksByEpisodeId: TasksConnection;
   title: Scalars['String'];
+};
+
+
+export type EpisodeTaskEpisodesByEpisodeIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<TaskEpisodeCondition>;
+  filter?: InputMaybe<TaskEpisodeFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<TaskEpisodesOrderBy>>;
 };
 
 
@@ -577,10 +591,10 @@ export type EpisodeFilter = {
   seasonId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `sourceData` field. */
   sourceData?: InputMaybe<JsonFilter>;
-  /** Filter by the object’s `tasksByEpisodeId` relation. */
-  tasksByEpisodeId?: InputMaybe<EpisodeToManyTaskFilter>;
-  /** Some related `tasksByEpisodeId` exist. */
-  tasksByEpisodeIdExist?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `taskEpisodesByEpisodeId` relation. */
+  taskEpisodesByEpisodeId?: InputMaybe<EpisodeToManyTaskEpisodeFilter>;
+  /** Some related `taskEpisodesByEpisodeId` exist. */
+  taskEpisodesByEpisodeIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `title` field. */
   title?: InputMaybe<StringFilter>;
 };
@@ -604,14 +618,14 @@ export type EpisodePatch = {
   title?: InputMaybe<Scalars['String']>;
 };
 
-/** A filter to be used against many `Task` object types. All fields are combined with a logical ‘and.’ */
-export type EpisodeToManyTaskFilter = {
-  /** Every related `Task` matches the filter criteria. All fields are combined with a logical ‘and.’ */
-  every?: InputMaybe<TaskFilter>;
-  /** No related `Task` matches the filter criteria. All fields are combined with a logical ‘and.’ */
-  none?: InputMaybe<TaskFilter>;
-  /** Some related `Task` matches the filter criteria. All fields are combined with a logical ‘and.’ */
-  some?: InputMaybe<TaskFilter>;
+/** A filter to be used against many `TaskEpisode` object types. All fields are combined with a logical ‘and.’ */
+export type EpisodeToManyTaskEpisodeFilter = {
+  /** Every related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<TaskEpisodeFilter>;
+  /** No related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<TaskEpisodeFilter>;
+  /** Some related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<TaskEpisodeFilter>;
 };
 
 export enum EpisodeType {
@@ -770,96 +784,44 @@ export enum EpisodesOrderBy {
   SeasonIdDesc = 'SEASON_ID_DESC',
   SourceDataAsc = 'SOURCE_DATA_ASC',
   SourceDataDesc = 'SOURCE_DATA_DESC',
-  TasksByEpisodeIdCountAsc = 'TASKS_BY_EPISODE_ID__COUNT_ASC',
-  TasksByEpisodeIdCountDesc = 'TASKS_BY_EPISODE_ID__COUNT_DESC',
-  TasksByEpisodeIdMaxCancelledAtAsc = 'TASKS_BY_EPISODE_ID__MAX_CANCELLED_AT_ASC',
-  TasksByEpisodeIdMaxCancelledAtDesc = 'TASKS_BY_EPISODE_ID__MAX_CANCELLED_AT_DESC',
-  TasksByEpisodeIdMaxCreatedAtAsc = 'TASKS_BY_EPISODE_ID__MAX_CREATED_AT_ASC',
-  TasksByEpisodeIdMaxCreatedAtDesc = 'TASKS_BY_EPISODE_ID__MAX_CREATED_AT_DESC',
-  TasksByEpisodeIdMaxDownloadPathAsc = 'TASKS_BY_EPISODE_ID__MAX_DOWNLOAD_PATH_ASC',
-  TasksByEpisodeIdMaxDownloadPathDesc = 'TASKS_BY_EPISODE_ID__MAX_DOWNLOAD_PATH_DESC',
-  TasksByEpisodeIdMaxEpisodeIdAsc = 'TASKS_BY_EPISODE_ID__MAX_EPISODE_ID_ASC',
-  TasksByEpisodeIdMaxEpisodeIdDesc = 'TASKS_BY_EPISODE_ID__MAX_EPISODE_ID_DESC',
-  TasksByEpisodeIdMaxFailedAtAsc = 'TASKS_BY_EPISODE_ID__MAX_FAILED_AT_ASC',
-  TasksByEpisodeIdMaxFailedAtDesc = 'TASKS_BY_EPISODE_ID__MAX_FAILED_AT_DESC',
-  TasksByEpisodeIdMaxFailedReasonAsc = 'TASKS_BY_EPISODE_ID__MAX_FAILED_REASON_ASC',
-  TasksByEpisodeIdMaxFailedReasonDesc = 'TASKS_BY_EPISODE_ID__MAX_FAILED_REASON_DESC',
-  TasksByEpisodeIdMaxFilePathAsc = 'TASKS_BY_EPISODE_ID__MAX_FILE_PATH_ASC',
-  TasksByEpisodeIdMaxFilePathDesc = 'TASKS_BY_EPISODE_ID__MAX_FILE_PATH_DESC',
-  TasksByEpisodeIdMaxIdAsc = 'TASKS_BY_EPISODE_ID__MAX_ID_ASC',
-  TasksByEpisodeIdMaxIdDesc = 'TASKS_BY_EPISODE_ID__MAX_ID_DESC',
-  TasksByEpisodeIdMaxImportPathAsc = 'TASKS_BY_EPISODE_ID__MAX_IMPORT_PATH_ASC',
-  TasksByEpisodeIdMaxImportPathDesc = 'TASKS_BY_EPISODE_ID__MAX_IMPORT_PATH_DESC',
-  TasksByEpisodeIdMaxIsCancelledAsc = 'TASKS_BY_EPISODE_ID__MAX_IS_CANCELLED_ASC',
-  TasksByEpisodeIdMaxIsCancelledDesc = 'TASKS_BY_EPISODE_ID__MAX_IS_CANCELLED_DESC',
-  TasksByEpisodeIdMaxIsFailedAsc = 'TASKS_BY_EPISODE_ID__MAX_IS_FAILED_ASC',
-  TasksByEpisodeIdMaxIsFailedDesc = 'TASKS_BY_EPISODE_ID__MAX_IS_FAILED_DESC',
-  TasksByEpisodeIdMaxJellyfinEpisodeIdAsc = 'TASKS_BY_EPISODE_ID__MAX_JELLYFIN_EPISODE_ID_ASC',
-  TasksByEpisodeIdMaxJellyfinEpisodeIdDesc = 'TASKS_BY_EPISODE_ID__MAX_JELLYFIN_EPISODE_ID_DESC',
-  TasksByEpisodeIdMaxLegacyStageAsc = 'TASKS_BY_EPISODE_ID__MAX_LEGACY_STAGE_ASC',
-  TasksByEpisodeIdMaxLegacyStageDesc = 'TASKS_BY_EPISODE_ID__MAX_LEGACY_STAGE_DESC',
-  TasksByEpisodeIdMaxNfoPathAsc = 'TASKS_BY_EPISODE_ID__MAX_NFO_PATH_ASC',
-  TasksByEpisodeIdMaxNfoPathDesc = 'TASKS_BY_EPISODE_ID__MAX_NFO_PATH_DESC',
-  TasksByEpisodeIdMaxQbtLastSyncAsc = 'TASKS_BY_EPISODE_ID__MAX_QBT_LAST_SYNC_ASC',
-  TasksByEpisodeIdMaxQbtLastSyncDesc = 'TASKS_BY_EPISODE_ID__MAX_QBT_LAST_SYNC_DESC',
-  TasksByEpisodeIdMaxQbtTorrentHashAsc = 'TASKS_BY_EPISODE_ID__MAX_QBT_TORRENT_HASH_ASC',
-  TasksByEpisodeIdMaxQbtTorrentHashDesc = 'TASKS_BY_EPISODE_ID__MAX_QBT_TORRENT_HASH_DESC',
-  TasksByEpisodeIdMaxTorrentLinkAsc = 'TASKS_BY_EPISODE_ID__MAX_TORRENT_LINK_ASC',
-  TasksByEpisodeIdMaxTorrentLinkDesc = 'TASKS_BY_EPISODE_ID__MAX_TORRENT_LINK_DESC',
-  TasksByEpisodeIdMaxTorrentTitleAsc = 'TASKS_BY_EPISODE_ID__MAX_TORRENT_TITLE_ASC',
-  TasksByEpisodeIdMaxTorrentTitleDesc = 'TASKS_BY_EPISODE_ID__MAX_TORRENT_TITLE_DESC',
-  TasksByEpisodeIdMaxTypeAsc = 'TASKS_BY_EPISODE_ID__MAX_TYPE_ASC',
-  TasksByEpisodeIdMaxTypeDesc = 'TASKS_BY_EPISODE_ID__MAX_TYPE_DESC',
-  TasksByEpisodeIdMaxUpdatedAtAsc = 'TASKS_BY_EPISODE_ID__MAX_UPDATED_AT_ASC',
-  TasksByEpisodeIdMaxUpdatedAtDesc = 'TASKS_BY_EPISODE_ID__MAX_UPDATED_AT_DESC',
-  TasksByEpisodeIdMaxVersionAsc = 'TASKS_BY_EPISODE_ID__MAX_VERSION_ASC',
-  TasksByEpisodeIdMaxVersionDesc = 'TASKS_BY_EPISODE_ID__MAX_VERSION_DESC',
-  TasksByEpisodeIdMaxWorkflowAsc = 'TASKS_BY_EPISODE_ID__MAX_WORKFLOW_ASC',
-  TasksByEpisodeIdMaxWorkflowDesc = 'TASKS_BY_EPISODE_ID__MAX_WORKFLOW_DESC',
-  TasksByEpisodeIdMinCancelledAtAsc = 'TASKS_BY_EPISODE_ID__MIN_CANCELLED_AT_ASC',
-  TasksByEpisodeIdMinCancelledAtDesc = 'TASKS_BY_EPISODE_ID__MIN_CANCELLED_AT_DESC',
-  TasksByEpisodeIdMinCreatedAtAsc = 'TASKS_BY_EPISODE_ID__MIN_CREATED_AT_ASC',
-  TasksByEpisodeIdMinCreatedAtDesc = 'TASKS_BY_EPISODE_ID__MIN_CREATED_AT_DESC',
-  TasksByEpisodeIdMinDownloadPathAsc = 'TASKS_BY_EPISODE_ID__MIN_DOWNLOAD_PATH_ASC',
-  TasksByEpisodeIdMinDownloadPathDesc = 'TASKS_BY_EPISODE_ID__MIN_DOWNLOAD_PATH_DESC',
-  TasksByEpisodeIdMinEpisodeIdAsc = 'TASKS_BY_EPISODE_ID__MIN_EPISODE_ID_ASC',
-  TasksByEpisodeIdMinEpisodeIdDesc = 'TASKS_BY_EPISODE_ID__MIN_EPISODE_ID_DESC',
-  TasksByEpisodeIdMinFailedAtAsc = 'TASKS_BY_EPISODE_ID__MIN_FAILED_AT_ASC',
-  TasksByEpisodeIdMinFailedAtDesc = 'TASKS_BY_EPISODE_ID__MIN_FAILED_AT_DESC',
-  TasksByEpisodeIdMinFailedReasonAsc = 'TASKS_BY_EPISODE_ID__MIN_FAILED_REASON_ASC',
-  TasksByEpisodeIdMinFailedReasonDesc = 'TASKS_BY_EPISODE_ID__MIN_FAILED_REASON_DESC',
-  TasksByEpisodeIdMinFilePathAsc = 'TASKS_BY_EPISODE_ID__MIN_FILE_PATH_ASC',
-  TasksByEpisodeIdMinFilePathDesc = 'TASKS_BY_EPISODE_ID__MIN_FILE_PATH_DESC',
-  TasksByEpisodeIdMinIdAsc = 'TASKS_BY_EPISODE_ID__MIN_ID_ASC',
-  TasksByEpisodeIdMinIdDesc = 'TASKS_BY_EPISODE_ID__MIN_ID_DESC',
-  TasksByEpisodeIdMinImportPathAsc = 'TASKS_BY_EPISODE_ID__MIN_IMPORT_PATH_ASC',
-  TasksByEpisodeIdMinImportPathDesc = 'TASKS_BY_EPISODE_ID__MIN_IMPORT_PATH_DESC',
-  TasksByEpisodeIdMinIsCancelledAsc = 'TASKS_BY_EPISODE_ID__MIN_IS_CANCELLED_ASC',
-  TasksByEpisodeIdMinIsCancelledDesc = 'TASKS_BY_EPISODE_ID__MIN_IS_CANCELLED_DESC',
-  TasksByEpisodeIdMinIsFailedAsc = 'TASKS_BY_EPISODE_ID__MIN_IS_FAILED_ASC',
-  TasksByEpisodeIdMinIsFailedDesc = 'TASKS_BY_EPISODE_ID__MIN_IS_FAILED_DESC',
-  TasksByEpisodeIdMinJellyfinEpisodeIdAsc = 'TASKS_BY_EPISODE_ID__MIN_JELLYFIN_EPISODE_ID_ASC',
-  TasksByEpisodeIdMinJellyfinEpisodeIdDesc = 'TASKS_BY_EPISODE_ID__MIN_JELLYFIN_EPISODE_ID_DESC',
-  TasksByEpisodeIdMinLegacyStageAsc = 'TASKS_BY_EPISODE_ID__MIN_LEGACY_STAGE_ASC',
-  TasksByEpisodeIdMinLegacyStageDesc = 'TASKS_BY_EPISODE_ID__MIN_LEGACY_STAGE_DESC',
-  TasksByEpisodeIdMinNfoPathAsc = 'TASKS_BY_EPISODE_ID__MIN_NFO_PATH_ASC',
-  TasksByEpisodeIdMinNfoPathDesc = 'TASKS_BY_EPISODE_ID__MIN_NFO_PATH_DESC',
-  TasksByEpisodeIdMinQbtLastSyncAsc = 'TASKS_BY_EPISODE_ID__MIN_QBT_LAST_SYNC_ASC',
-  TasksByEpisodeIdMinQbtLastSyncDesc = 'TASKS_BY_EPISODE_ID__MIN_QBT_LAST_SYNC_DESC',
-  TasksByEpisodeIdMinQbtTorrentHashAsc = 'TASKS_BY_EPISODE_ID__MIN_QBT_TORRENT_HASH_ASC',
-  TasksByEpisodeIdMinQbtTorrentHashDesc = 'TASKS_BY_EPISODE_ID__MIN_QBT_TORRENT_HASH_DESC',
-  TasksByEpisodeIdMinTorrentLinkAsc = 'TASKS_BY_EPISODE_ID__MIN_TORRENT_LINK_ASC',
-  TasksByEpisodeIdMinTorrentLinkDesc = 'TASKS_BY_EPISODE_ID__MIN_TORRENT_LINK_DESC',
-  TasksByEpisodeIdMinTorrentTitleAsc = 'TASKS_BY_EPISODE_ID__MIN_TORRENT_TITLE_ASC',
-  TasksByEpisodeIdMinTorrentTitleDesc = 'TASKS_BY_EPISODE_ID__MIN_TORRENT_TITLE_DESC',
-  TasksByEpisodeIdMinTypeAsc = 'TASKS_BY_EPISODE_ID__MIN_TYPE_ASC',
-  TasksByEpisodeIdMinTypeDesc = 'TASKS_BY_EPISODE_ID__MIN_TYPE_DESC',
-  TasksByEpisodeIdMinUpdatedAtAsc = 'TASKS_BY_EPISODE_ID__MIN_UPDATED_AT_ASC',
-  TasksByEpisodeIdMinUpdatedAtDesc = 'TASKS_BY_EPISODE_ID__MIN_UPDATED_AT_DESC',
-  TasksByEpisodeIdMinVersionAsc = 'TASKS_BY_EPISODE_ID__MIN_VERSION_ASC',
-  TasksByEpisodeIdMinVersionDesc = 'TASKS_BY_EPISODE_ID__MIN_VERSION_DESC',
-  TasksByEpisodeIdMinWorkflowAsc = 'TASKS_BY_EPISODE_ID__MIN_WORKFLOW_ASC',
-  TasksByEpisodeIdMinWorkflowDesc = 'TASKS_BY_EPISODE_ID__MIN_WORKFLOW_DESC',
+  TaskEpisodesByEpisodeIdCountAsc = 'TASK_EPISODES_BY_EPISODE_ID__COUNT_ASC',
+  TaskEpisodesByEpisodeIdCountDesc = 'TASK_EPISODES_BY_EPISODE_ID__COUNT_DESC',
+  TaskEpisodesByEpisodeIdMaxEpisodeIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_EPISODE_ID_ASC',
+  TaskEpisodesByEpisodeIdMaxEpisodeIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_EPISODE_ID_DESC',
+  TaskEpisodesByEpisodeIdMaxFilePathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_FILE_PATH_ASC',
+  TaskEpisodesByEpisodeIdMaxFilePathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_FILE_PATH_DESC',
+  TaskEpisodesByEpisodeIdMaxIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_ID_ASC',
+  TaskEpisodesByEpisodeIdMaxIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_ID_DESC',
+  TaskEpisodesByEpisodeIdMaxImportPathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_IMPORT_PATH_ASC',
+  TaskEpisodesByEpisodeIdMaxImportPathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_IMPORT_PATH_DESC',
+  TaskEpisodesByEpisodeIdMaxJellyfinEpisodeIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_JELLYFIN_EPISODE_ID_ASC',
+  TaskEpisodesByEpisodeIdMaxJellyfinEpisodeIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_JELLYFIN_EPISODE_ID_DESC',
+  TaskEpisodesByEpisodeIdMaxNfoPathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_NFO_PATH_ASC',
+  TaskEpisodesByEpisodeIdMaxNfoPathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_NFO_PATH_DESC',
+  TaskEpisodesByEpisodeIdMaxPositionAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_POSITION_ASC',
+  TaskEpisodesByEpisodeIdMaxPositionDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_POSITION_DESC',
+  TaskEpisodesByEpisodeIdMaxSourcePathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_SOURCE_PATH_ASC',
+  TaskEpisodesByEpisodeIdMaxSourcePathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_SOURCE_PATH_DESC',
+  TaskEpisodesByEpisodeIdMaxTaskIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_TASK_ID_ASC',
+  TaskEpisodesByEpisodeIdMaxTaskIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MAX_TASK_ID_DESC',
+  TaskEpisodesByEpisodeIdMinEpisodeIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_EPISODE_ID_ASC',
+  TaskEpisodesByEpisodeIdMinEpisodeIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_EPISODE_ID_DESC',
+  TaskEpisodesByEpisodeIdMinFilePathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_FILE_PATH_ASC',
+  TaskEpisodesByEpisodeIdMinFilePathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_FILE_PATH_DESC',
+  TaskEpisodesByEpisodeIdMinIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_ID_ASC',
+  TaskEpisodesByEpisodeIdMinIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_ID_DESC',
+  TaskEpisodesByEpisodeIdMinImportPathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_IMPORT_PATH_ASC',
+  TaskEpisodesByEpisodeIdMinImportPathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_IMPORT_PATH_DESC',
+  TaskEpisodesByEpisodeIdMinJellyfinEpisodeIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_JELLYFIN_EPISODE_ID_ASC',
+  TaskEpisodesByEpisodeIdMinJellyfinEpisodeIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_JELLYFIN_EPISODE_ID_DESC',
+  TaskEpisodesByEpisodeIdMinNfoPathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_NFO_PATH_ASC',
+  TaskEpisodesByEpisodeIdMinNfoPathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_NFO_PATH_DESC',
+  TaskEpisodesByEpisodeIdMinPositionAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_POSITION_ASC',
+  TaskEpisodesByEpisodeIdMinPositionDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_POSITION_DESC',
+  TaskEpisodesByEpisodeIdMinSourcePathAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_SOURCE_PATH_ASC',
+  TaskEpisodesByEpisodeIdMinSourcePathDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_SOURCE_PATH_DESC',
+  TaskEpisodesByEpisodeIdMinTaskIdAsc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_TASK_ID_ASC',
+  TaskEpisodesByEpisodeIdMinTaskIdDesc = 'TASK_EPISODES_BY_EPISODE_ID__MIN_TASK_ID_DESC',
   TitleAsc = 'TITLE_ASC',
   TitleDesc = 'TITLE_DESC'
 }
@@ -1907,8 +1869,8 @@ export type Mutation = {
   downloadBilibiliCC: Scalars['ID'];
   downloadTorrentForEpisode: Scalars['Int'];
   enqueueDownloadJobs: Scalars['Int'];
-  importMultiple: Scalars['ID'];
-  importSingle: Scalars['ID'];
+  importMultiple: Scalars['Int'];
+  importSingle: Scalars['Int'];
   mockEpisodePublish: Scalars['ID'];
   notifyMissingEpisodes: Scalars['Int'];
   parseTorrentTitleForAll: Scalars['ID'];
@@ -2163,6 +2125,8 @@ export type Query = {
   allJellyfinFolders?: Maybe<JellyfinFoldersConnection>;
   /** Reads and enables pagination through a set of `Season`. */
   allSeasons?: Maybe<SeasonsConnection>;
+  /** Reads and enables pagination through a set of `TaskEpisode`. */
+  allTaskEpisodes?: Maybe<TaskEpisodesConnection>;
   /** Reads and enables pagination through a set of `Task`. */
   allTasks?: Maybe<TasksConnection>;
   /** Reads and enables pagination through a set of `Torrent`. */
@@ -2201,6 +2165,11 @@ export type Query = {
   /** Reads a single `Task` using its globally unique `ID`. */
   task?: Maybe<Task>;
   taskById?: Maybe<Task>;
+  /** Reads a single `TaskEpisode` using its globally unique `ID`. */
+  taskEpisode?: Maybe<TaskEpisode>;
+  taskEpisodeById?: Maybe<TaskEpisode>;
+  taskEpisodeByTaskIdAndEpisodeId?: Maybe<TaskEpisode>;
+  taskEpisodeByTaskIdAndPosition?: Maybe<TaskEpisode>;
   /** Reads a single `Torrent` using its globally unique `ID`. */
   torrent?: Maybe<Torrent>;
   torrentByHash?: Maybe<Torrent>;
@@ -2265,6 +2234,18 @@ export type QueryAllSeasonsArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
+};
+
+
+export type QueryAllTaskEpisodesArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<TaskEpisodeCondition>;
+  filter?: InputMaybe<TaskEpisodeFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<TaskEpisodesOrderBy>>;
 };
 
 
@@ -2423,6 +2404,28 @@ export type QueryTaskArgs = {
 
 export type QueryTaskByIdArgs = {
   id: Scalars['Int'];
+};
+
+
+export type QueryTaskEpisodeArgs = {
+  nodeId: Scalars['ID'];
+};
+
+
+export type QueryTaskEpisodeByIdArgs = {
+  id: Scalars['Int'];
+};
+
+
+export type QueryTaskEpisodeByTaskIdAndEpisodeIdArgs = {
+  episodeId: Scalars['Int'];
+  taskId: Scalars['Int'];
+};
+
+
+export type QueryTaskEpisodeByTaskIdAndPositionArgs = {
+  position: Scalars['Int'];
+  taskId: Scalars['Int'];
 };
 
 
@@ -3228,7 +3231,6 @@ export type Task = Node & {
   cancelledAt?: Maybe<Scalars['Datetime']>;
   createdAt: Scalars['Datetime'];
   downloadPath?: Maybe<Scalars['String']>;
-  /** Reads a single `Episode` that is related to this `Task`. */
   episodeByEpisodeId?: Maybe<Episode>;
   episodeId?: Maybe<Scalars['Int']>;
   failedAt?: Maybe<Scalars['Datetime']>;
@@ -3245,12 +3247,26 @@ export type Task = Node & {
   nodeId: Scalars['ID'];
   qbtLastSync?: Maybe<Scalars['Datetime']>;
   qbtTorrentHash?: Maybe<Scalars['String']>;
+  /** Reads and enables pagination through a set of `TaskEpisode`. */
+  taskEpisodesByTaskId: TaskEpisodesConnection;
   torrentLink?: Maybe<Scalars['String']>;
   torrentTitle?: Maybe<Scalars['String']>;
   type: TaskType;
   updatedAt: Scalars['Datetime'];
   version: Scalars['Int'];
   workflow?: Maybe<Scalars['JSON']>;
+};
+
+
+export type TaskTaskEpisodesByTaskIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<TaskEpisodeCondition>;
+  filter?: InputMaybe<TaskEpisodeFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<TaskEpisodesOrderBy>>;
 };
 
 /** A condition to be used against `Task` object types. All fields are tested for equality and combined with a logical ‘and.’ */
@@ -3261,28 +3277,18 @@ export type TaskCondition = {
   createdAt?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `downloadPath` field. */
   downloadPath?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `episodeId` field. */
-  episodeId?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `failedAt` field. */
   failedAt?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `failedReason` field. */
   failedReason?: InputMaybe<Scalars['String']>;
-  /** Checks for equality with the object’s `filePath` field. */
-  filePath?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `id` field. */
   id?: InputMaybe<Scalars['Int']>;
-  /** Checks for equality with the object’s `importPath` field. */
-  importPath?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `isCancelled` field. */
   isCancelled?: InputMaybe<Scalars['Boolean']>;
   /** Checks for equality with the object’s `isFailed` field. */
   isFailed?: InputMaybe<Scalars['Boolean']>;
-  /** Checks for equality with the object’s `jellyfinEpisodeId` field. */
-  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `legacyStage` field. */
   legacyStage?: InputMaybe<LegacyTaskStage>;
-  /** Checks for equality with the object’s `nfoPath` field. */
-  nfoPath?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `qbtLastSync` field. */
   qbtLastSync?: InputMaybe<Scalars['Datetime']>;
   /** Checks for equality with the object’s `qbtTorrentHash` field. */
@@ -3301,6 +3307,206 @@ export type TaskCondition = {
   workflow?: InputMaybe<Scalars['JSON']>;
 };
 
+export type TaskEpisode = Node & {
+  __typename?: 'TaskEpisode';
+  /** Reads a single `Episode` that is related to this `TaskEpisode`. */
+  episodeByEpisodeId?: Maybe<Episode>;
+  episodeId?: Maybe<Scalars['Int']>;
+  filePath?: Maybe<Scalars['String']>;
+  id: Scalars['Int'];
+  importPath?: Maybe<Scalars['String']>;
+  jellyfinEpisodeId?: Maybe<Scalars['String']>;
+  nfoPath?: Maybe<Scalars['String']>;
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  position: Scalars['Int'];
+  sourcePath?: Maybe<Scalars['String']>;
+  /** Reads a single `Task` that is related to this `TaskEpisode`. */
+  taskByTaskId?: Maybe<Task>;
+  taskId: Scalars['Int'];
+};
+
+/**
+ * A condition to be used against `TaskEpisode` object types. All fields are tested
+ * for equality and combined with a logical ‘and.’
+ */
+export type TaskEpisodeCondition = {
+  /** Checks for equality with the object’s `episodeId` field. */
+  episodeId?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `filePath` field. */
+  filePath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `importPath` field. */
+  importPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `nfoPath` field. */
+  nfoPath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `position` field. */
+  position?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `sourcePath` field. */
+  sourcePath?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `taskId` field. */
+  taskId?: InputMaybe<Scalars['Int']>;
+};
+
+/** A filter to be used against `TaskEpisode` object types. All fields are combined with a logical ‘and.’ */
+export type TaskEpisodeFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<TaskEpisodeFilter>>;
+  /** Filter by the object’s `episodeByEpisodeId` relation. */
+  episodeByEpisodeId?: InputMaybe<EpisodeFilter>;
+  /** A related `episodeByEpisodeId` exists. */
+  episodeByEpisodeIdExists?: InputMaybe<Scalars['Boolean']>;
+  /** Filter by the object’s `episodeId` field. */
+  episodeId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `filePath` field. */
+  filePath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `importPath` field. */
+  importPath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `jellyfinEpisodeId` field. */
+  jellyfinEpisodeId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `nfoPath` field. */
+  nfoPath?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<TaskEpisodeFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<TaskEpisodeFilter>>;
+  /** Filter by the object’s `position` field. */
+  position?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `sourcePath` field. */
+  sourcePath?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `taskByTaskId` relation. */
+  taskByTaskId?: InputMaybe<TaskFilter>;
+  /** Filter by the object’s `taskId` field. */
+  taskId?: InputMaybe<IntFilter>;
+};
+
+export type TaskEpisodeState = {
+  __typename?: 'TaskEpisodeState';
+  episodeId?: Maybe<Scalars['Int']>;
+  filePath?: Maybe<Scalars['String']>;
+  id: Scalars['Int'];
+  importPath?: Maybe<Scalars['String']>;
+  jellyfinEpisodeId?: Maybe<Scalars['String']>;
+  nfoPath?: Maybe<Scalars['String']>;
+  sourcePath?: Maybe<Scalars['String']>;
+};
+
+/** A connection to a list of `TaskEpisode` values. */
+export type TaskEpisodesConnection = {
+  __typename?: 'TaskEpisodesConnection';
+  /** A list of edges which contains the `TaskEpisode` and cursor to aid in pagination. */
+  edges: Array<TaskEpisodesEdge>;
+  /** A list of `TaskEpisode` objects. */
+  nodes: Array<Maybe<TaskEpisode>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `TaskEpisode` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `TaskEpisode` edge in the connection. */
+export type TaskEpisodesEdge = {
+  __typename?: 'TaskEpisodesEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `TaskEpisode` at the end of the edge. */
+  node?: Maybe<TaskEpisode>;
+};
+
+/** Methods to use when ordering `TaskEpisode`. */
+export enum TaskEpisodesOrderBy {
+  EpisodeByEpisodeIdAirTimeAsc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_ASC',
+  EpisodeByEpisodeIdAirTimeDesc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_DESC',
+  EpisodeByEpisodeIdBangumiEpisodeIdAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_ASC',
+  EpisodeByEpisodeIdBangumiEpisodeIdDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_DESC',
+  EpisodeByEpisodeIdBangumiSortAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_ASC',
+  EpisodeByEpisodeIdBangumiSortDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_DESC',
+  EpisodeByEpisodeIdCreatedAtAsc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_ASC',
+  EpisodeByEpisodeIdCreatedAtDesc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_DESC',
+  EpisodeByEpisodeIdDescriptionAsc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_ASC',
+  EpisodeByEpisodeIdDescriptionDesc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_DESC',
+  EpisodeByEpisodeIdEpisodeNumberAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_ASC',
+  EpisodeByEpisodeIdEpisodeNumberDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_DESC',
+  EpisodeByEpisodeIdEpisodeTypeAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_ASC',
+  EpisodeByEpisodeIdEpisodeTypeDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_DESC',
+  EpisodeByEpisodeIdIdAsc = 'EPISODE_BY_EPISODE_ID__ID_ASC',
+  EpisodeByEpisodeIdIdDesc = 'EPISODE_BY_EPISODE_ID__ID_DESC',
+  EpisodeByEpisodeIdIndexAsc = 'EPISODE_BY_EPISODE_ID__INDEX_ASC',
+  EpisodeByEpisodeIdIndexDesc = 'EPISODE_BY_EPISODE_ID__INDEX_DESC',
+  EpisodeByEpisodeIdJellyfinEpisodeIdAsc = 'EPISODE_BY_EPISODE_ID__JELLYFIN_EPISODE_ID_ASC',
+  EpisodeByEpisodeIdJellyfinEpisodeIdDesc = 'EPISODE_BY_EPISODE_ID__JELLYFIN_EPISODE_ID_DESC',
+  EpisodeByEpisodeIdLastMissingNotifyTimeAsc = 'EPISODE_BY_EPISODE_ID__LAST_MISSING_NOTIFY_TIME_ASC',
+  EpisodeByEpisodeIdLastMissingNotifyTimeDesc = 'EPISODE_BY_EPISODE_ID__LAST_MISSING_NOTIFY_TIME_DESC',
+  EpisodeByEpisodeIdRawAirTimeAsc = 'EPISODE_BY_EPISODE_ID__RAW_AIR_TIME_ASC',
+  EpisodeByEpisodeIdRawAirTimeDesc = 'EPISODE_BY_EPISODE_ID__RAW_AIR_TIME_DESC',
+  EpisodeByEpisodeIdSeasonIdAsc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_ASC',
+  EpisodeByEpisodeIdSeasonIdDesc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_DESC',
+  EpisodeByEpisodeIdSourceDataAsc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_ASC',
+  EpisodeByEpisodeIdSourceDataDesc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_DESC',
+  EpisodeByEpisodeIdTitleAsc = 'EPISODE_BY_EPISODE_ID__TITLE_ASC',
+  EpisodeByEpisodeIdTitleDesc = 'EPISODE_BY_EPISODE_ID__TITLE_DESC',
+  EpisodeIdAsc = 'EPISODE_ID_ASC',
+  EpisodeIdDesc = 'EPISODE_ID_DESC',
+  FilePathAsc = 'FILE_PATH_ASC',
+  FilePathDesc = 'FILE_PATH_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  ImportPathAsc = 'IMPORT_PATH_ASC',
+  ImportPathDesc = 'IMPORT_PATH_DESC',
+  JellyfinEpisodeIdAsc = 'JELLYFIN_EPISODE_ID_ASC',
+  JellyfinEpisodeIdDesc = 'JELLYFIN_EPISODE_ID_DESC',
+  Natural = 'NATURAL',
+  NfoPathAsc = 'NFO_PATH_ASC',
+  NfoPathDesc = 'NFO_PATH_DESC',
+  PositionAsc = 'POSITION_ASC',
+  PositionDesc = 'POSITION_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  SourcePathAsc = 'SOURCE_PATH_ASC',
+  SourcePathDesc = 'SOURCE_PATH_DESC',
+  TaskByTaskIdCancelledAtAsc = 'TASK_BY_TASK_ID__CANCELLED_AT_ASC',
+  TaskByTaskIdCancelledAtDesc = 'TASK_BY_TASK_ID__CANCELLED_AT_DESC',
+  TaskByTaskIdCreatedAtAsc = 'TASK_BY_TASK_ID__CREATED_AT_ASC',
+  TaskByTaskIdCreatedAtDesc = 'TASK_BY_TASK_ID__CREATED_AT_DESC',
+  TaskByTaskIdDownloadPathAsc = 'TASK_BY_TASK_ID__DOWNLOAD_PATH_ASC',
+  TaskByTaskIdDownloadPathDesc = 'TASK_BY_TASK_ID__DOWNLOAD_PATH_DESC',
+  TaskByTaskIdFailedAtAsc = 'TASK_BY_TASK_ID__FAILED_AT_ASC',
+  TaskByTaskIdFailedAtDesc = 'TASK_BY_TASK_ID__FAILED_AT_DESC',
+  TaskByTaskIdFailedReasonAsc = 'TASK_BY_TASK_ID__FAILED_REASON_ASC',
+  TaskByTaskIdFailedReasonDesc = 'TASK_BY_TASK_ID__FAILED_REASON_DESC',
+  TaskByTaskIdIdAsc = 'TASK_BY_TASK_ID__ID_ASC',
+  TaskByTaskIdIdDesc = 'TASK_BY_TASK_ID__ID_DESC',
+  TaskByTaskIdIsCancelledAsc = 'TASK_BY_TASK_ID__IS_CANCELLED_ASC',
+  TaskByTaskIdIsCancelledDesc = 'TASK_BY_TASK_ID__IS_CANCELLED_DESC',
+  TaskByTaskIdIsFailedAsc = 'TASK_BY_TASK_ID__IS_FAILED_ASC',
+  TaskByTaskIdIsFailedDesc = 'TASK_BY_TASK_ID__IS_FAILED_DESC',
+  TaskByTaskIdLegacyStageAsc = 'TASK_BY_TASK_ID__LEGACY_STAGE_ASC',
+  TaskByTaskIdLegacyStageDesc = 'TASK_BY_TASK_ID__LEGACY_STAGE_DESC',
+  TaskByTaskIdQbtLastSyncAsc = 'TASK_BY_TASK_ID__QBT_LAST_SYNC_ASC',
+  TaskByTaskIdQbtLastSyncDesc = 'TASK_BY_TASK_ID__QBT_LAST_SYNC_DESC',
+  TaskByTaskIdQbtTorrentHashAsc = 'TASK_BY_TASK_ID__QBT_TORRENT_HASH_ASC',
+  TaskByTaskIdQbtTorrentHashDesc = 'TASK_BY_TASK_ID__QBT_TORRENT_HASH_DESC',
+  TaskByTaskIdTorrentLinkAsc = 'TASK_BY_TASK_ID__TORRENT_LINK_ASC',
+  TaskByTaskIdTorrentLinkDesc = 'TASK_BY_TASK_ID__TORRENT_LINK_DESC',
+  TaskByTaskIdTorrentTitleAsc = 'TASK_BY_TASK_ID__TORRENT_TITLE_ASC',
+  TaskByTaskIdTorrentTitleDesc = 'TASK_BY_TASK_ID__TORRENT_TITLE_DESC',
+  TaskByTaskIdTypeAsc = 'TASK_BY_TASK_ID__TYPE_ASC',
+  TaskByTaskIdTypeDesc = 'TASK_BY_TASK_ID__TYPE_DESC',
+  TaskByTaskIdUpdatedAtAsc = 'TASK_BY_TASK_ID__UPDATED_AT_ASC',
+  TaskByTaskIdUpdatedAtDesc = 'TASK_BY_TASK_ID__UPDATED_AT_DESC',
+  TaskByTaskIdVersionAsc = 'TASK_BY_TASK_ID__VERSION_ASC',
+  TaskByTaskIdVersionDesc = 'TASK_BY_TASK_ID__VERSION_DESC',
+  TaskByTaskIdWorkflowAsc = 'TASK_BY_TASK_ID__WORKFLOW_ASC',
+  TaskByTaskIdWorkflowDesc = 'TASK_BY_TASK_ID__WORKFLOW_DESC',
+  TaskIdAsc = 'TASK_ID_ASC',
+  TaskIdDesc = 'TASK_ID_DESC'
+}
+
 /** A filter to be used against `Task` object types. All fields are combined with a logical ‘and.’ */
 export type TaskFilter = {
   /** Checks for all expressions in this list. */
@@ -3311,10 +3517,6 @@ export type TaskFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `downloadPath` field. */
   downloadPath?: InputMaybe<StringFilter>;
-  /** Filter by the object’s `episodeByEpisodeId` relation. */
-  episodeByEpisodeId?: InputMaybe<EpisodeFilter>;
-  /** A related `episodeByEpisodeId` exists. */
-  episodeByEpisodeIdExists?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `episodeId` field. */
   episodeId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `failedAt` field. */
@@ -3345,6 +3547,10 @@ export type TaskFilter = {
   qbtLastSync?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `qbtTorrentHash` field. */
   qbtTorrentHash?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `taskEpisodesByTaskId` relation. */
+  taskEpisodesByTaskId?: InputMaybe<TaskToManyTaskEpisodeFilter>;
+  /** Some related `taskEpisodesByTaskId` exist. */
+  taskEpisodesByTaskIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `torrentLink` field. */
   torrentLink?: InputMaybe<StringFilter>;
   /** Filter by the object’s `torrentTitle` field. */
@@ -3364,6 +3570,7 @@ export type TaskState = {
   canCancel: Scalars['Boolean'];
   canRetry: Scalars['Boolean'];
   downloadPath?: Maybe<Scalars['String']>;
+  entries: Array<TaskEpisodeState>;
   failedReason: Scalars['String'];
   filePath?: Maybe<Scalars['String']>;
   id: Scalars['Int'];
@@ -3380,8 +3587,20 @@ export type TaskState = {
   workflow?: Maybe<Scalars['Workflow']>;
 };
 
+/** A filter to be used against many `TaskEpisode` object types. All fields are combined with a logical ‘and.’ */
+export type TaskToManyTaskEpisodeFilter = {
+  /** Every related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<TaskEpisodeFilter>;
+  /** No related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<TaskEpisodeFilter>;
+  /** Some related `TaskEpisode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<TaskEpisodeFilter>;
+};
+
 export enum TaskType {
-  Download = 'DOWNLOAD'
+  BatchImport = 'BATCH_IMPORT',
+  Download = 'DOWNLOAD',
+  Import = 'IMPORT'
 }
 
 /** A filter to be used against TaskType fields. All fields are combined with a logical ‘and.’ */
@@ -3440,65 +3659,63 @@ export enum TasksOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   DownloadPathAsc = 'DOWNLOAD_PATH_ASC',
   DownloadPathDesc = 'DOWNLOAD_PATH_DESC',
-  EpisodeByEpisodeIdAirTimeAsc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_ASC',
-  EpisodeByEpisodeIdAirTimeDesc = 'EPISODE_BY_EPISODE_ID__AIR_TIME_DESC',
-  EpisodeByEpisodeIdBangumiEpisodeIdAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_ASC',
-  EpisodeByEpisodeIdBangumiEpisodeIdDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_EPISODE_ID_DESC',
-  EpisodeByEpisodeIdBangumiSortAsc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_ASC',
-  EpisodeByEpisodeIdBangumiSortDesc = 'EPISODE_BY_EPISODE_ID__BANGUMI_SORT_DESC',
-  EpisodeByEpisodeIdCreatedAtAsc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_ASC',
-  EpisodeByEpisodeIdCreatedAtDesc = 'EPISODE_BY_EPISODE_ID__CREATED_AT_DESC',
-  EpisodeByEpisodeIdDescriptionAsc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_ASC',
-  EpisodeByEpisodeIdDescriptionDesc = 'EPISODE_BY_EPISODE_ID__DESCRIPTION_DESC',
-  EpisodeByEpisodeIdEpisodeNumberAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_ASC',
-  EpisodeByEpisodeIdEpisodeNumberDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_NUMBER_DESC',
-  EpisodeByEpisodeIdEpisodeTypeAsc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_ASC',
-  EpisodeByEpisodeIdEpisodeTypeDesc = 'EPISODE_BY_EPISODE_ID__EPISODE_TYPE_DESC',
-  EpisodeByEpisodeIdIdAsc = 'EPISODE_BY_EPISODE_ID__ID_ASC',
-  EpisodeByEpisodeIdIdDesc = 'EPISODE_BY_EPISODE_ID__ID_DESC',
-  EpisodeByEpisodeIdIndexAsc = 'EPISODE_BY_EPISODE_ID__INDEX_ASC',
-  EpisodeByEpisodeIdIndexDesc = 'EPISODE_BY_EPISODE_ID__INDEX_DESC',
-  EpisodeByEpisodeIdJellyfinEpisodeIdAsc = 'EPISODE_BY_EPISODE_ID__JELLYFIN_EPISODE_ID_ASC',
-  EpisodeByEpisodeIdJellyfinEpisodeIdDesc = 'EPISODE_BY_EPISODE_ID__JELLYFIN_EPISODE_ID_DESC',
-  EpisodeByEpisodeIdLastMissingNotifyTimeAsc = 'EPISODE_BY_EPISODE_ID__LAST_MISSING_NOTIFY_TIME_ASC',
-  EpisodeByEpisodeIdLastMissingNotifyTimeDesc = 'EPISODE_BY_EPISODE_ID__LAST_MISSING_NOTIFY_TIME_DESC',
-  EpisodeByEpisodeIdRawAirTimeAsc = 'EPISODE_BY_EPISODE_ID__RAW_AIR_TIME_ASC',
-  EpisodeByEpisodeIdRawAirTimeDesc = 'EPISODE_BY_EPISODE_ID__RAW_AIR_TIME_DESC',
-  EpisodeByEpisodeIdSeasonIdAsc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_ASC',
-  EpisodeByEpisodeIdSeasonIdDesc = 'EPISODE_BY_EPISODE_ID__SEASON_ID_DESC',
-  EpisodeByEpisodeIdSourceDataAsc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_ASC',
-  EpisodeByEpisodeIdSourceDataDesc = 'EPISODE_BY_EPISODE_ID__SOURCE_DATA_DESC',
-  EpisodeByEpisodeIdTitleAsc = 'EPISODE_BY_EPISODE_ID__TITLE_ASC',
-  EpisodeByEpisodeIdTitleDesc = 'EPISODE_BY_EPISODE_ID__TITLE_DESC',
-  EpisodeIdAsc = 'EPISODE_ID_ASC',
-  EpisodeIdDesc = 'EPISODE_ID_DESC',
   FailedAtAsc = 'FAILED_AT_ASC',
   FailedAtDesc = 'FAILED_AT_DESC',
   FailedReasonAsc = 'FAILED_REASON_ASC',
   FailedReasonDesc = 'FAILED_REASON_DESC',
-  FilePathAsc = 'FILE_PATH_ASC',
-  FilePathDesc = 'FILE_PATH_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  ImportPathAsc = 'IMPORT_PATH_ASC',
-  ImportPathDesc = 'IMPORT_PATH_DESC',
   IsCancelledAsc = 'IS_CANCELLED_ASC',
   IsCancelledDesc = 'IS_CANCELLED_DESC',
   IsFailedAsc = 'IS_FAILED_ASC',
   IsFailedDesc = 'IS_FAILED_DESC',
-  JellyfinEpisodeIdAsc = 'JELLYFIN_EPISODE_ID_ASC',
-  JellyfinEpisodeIdDesc = 'JELLYFIN_EPISODE_ID_DESC',
   LegacyStageAsc = 'LEGACY_STAGE_ASC',
   LegacyStageDesc = 'LEGACY_STAGE_DESC',
   Natural = 'NATURAL',
-  NfoPathAsc = 'NFO_PATH_ASC',
-  NfoPathDesc = 'NFO_PATH_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   QbtLastSyncAsc = 'QBT_LAST_SYNC_ASC',
   QbtLastSyncDesc = 'QBT_LAST_SYNC_DESC',
   QbtTorrentHashAsc = 'QBT_TORRENT_HASH_ASC',
   QbtTorrentHashDesc = 'QBT_TORRENT_HASH_DESC',
+  TaskEpisodesByTaskIdCountAsc = 'TASK_EPISODES_BY_TASK_ID__COUNT_ASC',
+  TaskEpisodesByTaskIdCountDesc = 'TASK_EPISODES_BY_TASK_ID__COUNT_DESC',
+  TaskEpisodesByTaskIdMaxEpisodeIdAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_EPISODE_ID_ASC',
+  TaskEpisodesByTaskIdMaxEpisodeIdDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_EPISODE_ID_DESC',
+  TaskEpisodesByTaskIdMaxFilePathAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_FILE_PATH_ASC',
+  TaskEpisodesByTaskIdMaxFilePathDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_FILE_PATH_DESC',
+  TaskEpisodesByTaskIdMaxIdAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_ID_ASC',
+  TaskEpisodesByTaskIdMaxIdDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_ID_DESC',
+  TaskEpisodesByTaskIdMaxImportPathAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_IMPORT_PATH_ASC',
+  TaskEpisodesByTaskIdMaxImportPathDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_IMPORT_PATH_DESC',
+  TaskEpisodesByTaskIdMaxJellyfinEpisodeIdAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_JELLYFIN_EPISODE_ID_ASC',
+  TaskEpisodesByTaskIdMaxJellyfinEpisodeIdDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_JELLYFIN_EPISODE_ID_DESC',
+  TaskEpisodesByTaskIdMaxNfoPathAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_NFO_PATH_ASC',
+  TaskEpisodesByTaskIdMaxNfoPathDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_NFO_PATH_DESC',
+  TaskEpisodesByTaskIdMaxPositionAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_POSITION_ASC',
+  TaskEpisodesByTaskIdMaxPositionDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_POSITION_DESC',
+  TaskEpisodesByTaskIdMaxSourcePathAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_SOURCE_PATH_ASC',
+  TaskEpisodesByTaskIdMaxSourcePathDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_SOURCE_PATH_DESC',
+  TaskEpisodesByTaskIdMaxTaskIdAsc = 'TASK_EPISODES_BY_TASK_ID__MAX_TASK_ID_ASC',
+  TaskEpisodesByTaskIdMaxTaskIdDesc = 'TASK_EPISODES_BY_TASK_ID__MAX_TASK_ID_DESC',
+  TaskEpisodesByTaskIdMinEpisodeIdAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_EPISODE_ID_ASC',
+  TaskEpisodesByTaskIdMinEpisodeIdDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_EPISODE_ID_DESC',
+  TaskEpisodesByTaskIdMinFilePathAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_FILE_PATH_ASC',
+  TaskEpisodesByTaskIdMinFilePathDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_FILE_PATH_DESC',
+  TaskEpisodesByTaskIdMinIdAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_ID_ASC',
+  TaskEpisodesByTaskIdMinIdDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_ID_DESC',
+  TaskEpisodesByTaskIdMinImportPathAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_IMPORT_PATH_ASC',
+  TaskEpisodesByTaskIdMinImportPathDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_IMPORT_PATH_DESC',
+  TaskEpisodesByTaskIdMinJellyfinEpisodeIdAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_JELLYFIN_EPISODE_ID_ASC',
+  TaskEpisodesByTaskIdMinJellyfinEpisodeIdDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_JELLYFIN_EPISODE_ID_DESC',
+  TaskEpisodesByTaskIdMinNfoPathAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_NFO_PATH_ASC',
+  TaskEpisodesByTaskIdMinNfoPathDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_NFO_PATH_DESC',
+  TaskEpisodesByTaskIdMinPositionAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_POSITION_ASC',
+  TaskEpisodesByTaskIdMinPositionDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_POSITION_DESC',
+  TaskEpisodesByTaskIdMinSourcePathAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_SOURCE_PATH_ASC',
+  TaskEpisodesByTaskIdMinSourcePathDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_SOURCE_PATH_DESC',
+  TaskEpisodesByTaskIdMinTaskIdAsc = 'TASK_EPISODES_BY_TASK_ID__MIN_TASK_ID_ASC',
+  TaskEpisodesByTaskIdMinTaskIdDesc = 'TASK_EPISODES_BY_TASK_ID__MIN_TASK_ID_DESC',
   TorrentLinkAsc = 'TORRENT_LINK_ASC',
   TorrentLinkDesc = 'TORRENT_LINK_DESC',
   TorrentTitleAsc = 'TORRENT_TITLE_ASC',
@@ -4151,16 +4368,16 @@ export type GetEpisodeByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetEpisodeByIdQuery = { __typename?: 'Query', episodeById?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null };
+export type GetEpisodeByIdQuery = { __typename?: 'Query', episodeById?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', id: number, title: string, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, jellyfinId: string } | null } | null } | null> } } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null };
 
-export type EpisodeDetailsFieldsFragment = { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null };
+export type EpisodeDetailsFieldsFragment = { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', id: number, title: string, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, jellyfinId: string } | null } | null } | null> } } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null };
 
 export type GetTaskByIdQueryVariables = Exact<{
   id: Scalars['Int'];
 }>;
 
 
-export type GetTaskByIdQuery = { __typename?: 'Query', taskById?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null } | null };
+export type GetTaskByIdQuery = { __typename?: 'Query', taskById?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', rawAirTime?: any | null, airTime?: any | null, createdAt: any, description: string, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasksByEpisodeId: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', id: number, title: string, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, jellyfinId: string } | null } | null } | null> } } | null }> }, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, downloadOffsetHours: number } | null } | null, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', id: number, title: string, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, jellyfinId: string } | null } | null } | null> } } | null };
 
 export type ListFilesQueryVariables = Exact<{
   path: Scalars['String'];
@@ -4175,14 +4392,22 @@ export type ImportSingleMutationVariables = Exact<{
 }>;
 
 
-export type ImportSingleMutation = { __typename?: 'Mutation', importSingle: string };
+export type ImportSingleMutation = { __typename?: 'Mutation', importSingle: number };
 
 export type ImportMultipleMutationVariables = Exact<{
   entries: Array<ImportMultipleEntry> | ImportMultipleEntry;
 }>;
 
 
-export type ImportMultipleMutation = { __typename?: 'Mutation', importMultiple: string };
+export type ImportMultipleMutation = { __typename?: 'Mutation', importMultiple: number };
+
+export type GetImportSeasonQueryVariables = Exact<{
+  id: Scalars['Int'];
+  offset: Scalars['Int'];
+}>;
+
+
+export type GetImportSeasonQuery = { __typename?: 'Query', seasonById?: { __typename?: 'Season', id: number, title: string, episodesBySeasonId: { __typename?: 'EpisodesConnection', totalCount: number, nodes: Array<{ __typename?: 'Episode', id: number, title: string, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, airTime?: any | null, matchingTasks: { __typename?: 'TasksConnection', nodes: Array<{ __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null> }, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null> } } | null };
 
 export type SearchTorrentQueryVariables = Exact<{
   keyword: Scalars['String'];
@@ -4193,14 +4418,14 @@ export type SearchTorrentQueryVariables = Exact<{
 
 export type SearchTorrentQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', node?: { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null } | null }> } | null };
 
-export type TaskDetailsFieldsFragment = { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null };
+export type TaskDetailsFieldsFragment = { __typename?: 'Task', type: TaskType, episodeId?: number | null, createdAt: any, downloadPath?: string | null, failedAt?: any | null, failedReason: string, filePath?: string | null, id: number, importPath?: string | null, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, nfoPath?: string | null, qbtTorrentHash?: string | null, legacyStage: LegacyTaskStage, torrentLink?: string | null, jellyfinEpisodeId?: string | null, torrentTitle?: string | null, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, episodeByEpisodeId?: { __typename?: 'Episode', id: number, title: string, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string, jellyfinId: string } | null } | null } | null> } };
 
 export type GetTaskStatesQueryVariables = Exact<{
   taskIds: Array<Scalars['Int']> | Scalars['Int'];
 }>;
 
 
-export type GetTaskStatesQuery = { __typename?: 'Query', getTaskStates: Array<{ __typename?: 'TaskState', id: number, type: TaskType, version: number, workflow?: Workflow | null, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, failedReason: string, canRetry: boolean, canCancel: boolean, qbtTorrentHash?: string | null, torrentTitle?: string | null, downloadPath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null }> };
+export type GetTaskStatesQuery = { __typename?: 'Query', getTaskStates: Array<{ __typename?: 'TaskState', id: number, type: TaskType, version: number, workflow?: Workflow | null, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, failedReason: string, canRetry: boolean, canCancel: boolean, qbtTorrentHash?: string | null, torrentTitle?: string | null, downloadPath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null, entries: Array<{ __typename?: 'TaskEpisodeState', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null }> }> };
 
 export type CancelTaskMutationVariables = Exact<{
   taskId: Scalars['Int'];
@@ -4223,9 +4448,9 @@ export type GetDownloadProgressQueryVariables = Exact<{
 
 export type GetDownloadProgressQuery = { __typename?: 'Query', getDownloadProgress: Array<{ __typename?: 'DownloadProgress', downloaded: any, eta?: number | null, id: number, peers?: number | null, seeds?: number | null, speed: number, total: any }> };
 
-export type TaskStatusFieldsFragment = { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number };
+export type TaskStatusFieldsFragment = { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number };
 
-export type EpisodeStatusFieldsFragment = { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } };
+export type EpisodeStatusFieldsFragment = { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } };
 
 export type Folders_ListFoldersFieldsFragment = { __typename?: 'JellyfinFolder', jellyfinId: string, location: string, name: string, id: number, isDefault: boolean, isHidden: boolean, mappedLocation?: string | null };
 
@@ -4259,7 +4484,7 @@ export type Folders_SyncJellyfinFoldersMutationVariables = Exact<{ [key: string]
 
 export type Folders_SyncJellyfinFoldersMutation = { __typename?: 'Mutation', syncJellyfinFolders: string };
 
-export type ListTasksFieldsFragment = { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null };
+export type ListTasksFieldsFragment = { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeByEpisodeId?: { __typename?: 'Episode', id: number, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null> }, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null };
 
 export type ListTasksQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -4268,7 +4493,7 @@ export type ListTasksQueryVariables = Exact<{
 }>;
 
 
-export type ListTasksQuery = { __typename?: 'Query', allTasks?: { __typename?: 'TasksConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'TasksEdge', cursor?: any | null, node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null }> } | null };
+export type ListTasksQuery = { __typename?: 'Query', allTasks?: { __typename?: 'TasksConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'TasksEdge', cursor?: any | null, node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number, jellyfinEpisodeId?: string | null, createdAt: any, failedReason: string, taskEpisodesByTaskId: { __typename?: 'TaskEpisodesConnection', nodes: Array<{ __typename?: 'TaskEpisode', id: number, episodeByEpisodeId?: { __typename?: 'Episode', id: number, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null> }, episodeByEpisodeId?: { __typename?: 'Episode', id: number, airTime?: any | null, title: string, index?: number | null, numbering?: any | null, seasonBySeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null } | null }> } | null };
 
 export type GetTaskPageSignatureQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -4284,7 +4509,7 @@ export type GetEpisodesStatusQueryVariables = Exact<{
 }>;
 
 
-export type GetEpisodesStatusQuery = { __typename?: 'Query', allEpisodes?: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } | null };
+export type GetEpisodesStatusQuery = { __typename?: 'Query', allEpisodes?: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } | null };
 
 export type MockEpisodePublishMutationVariables = Exact<{
   episodeId: Scalars['Int'];
@@ -4295,7 +4520,7 @@ export type MockEpisodePublishMutation = { __typename?: 'Mutation', mockEpisodeP
 
 export type DisplayImageFieldsFragment = { __typename?: 'Image', id: number, downloadPath?: string | null };
 
-export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } };
+export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } };
 
 export type SeasonConfigFieldsFragment = { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null };
 
@@ -4306,7 +4531,7 @@ export type GetSeasonByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } } | null };
+export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } } | null };
 
 export type UpdateSeasonByIdMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -4387,7 +4612,7 @@ export type SaveSeasonMutationVariables = Exact<{
 
 export type SaveSeasonMutation = { __typename?: 'Mutation', saveSeason: string };
 
-export type ListSeasonsFieldsFragment = { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null };
+export type ListSeasonsFieldsFragment = { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null };
 
 export type ListSeasonsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -4398,7 +4623,7 @@ export type ListSeasonsQueryVariables = Exact<{
 }>;
 
 
-export type ListSeasonsQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'SeasonsEdge', cursor?: any | null, node?: { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null } | null }> } | null };
+export type ListSeasonsQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean }, edges: Array<{ __typename?: 'SeasonsEdge', cursor?: any | null, node?: { __typename?: 'Season', bangumiId: string, airTime: string, weekday?: number | null, isMonitoring: boolean, title: string, id: number, yearAndSemester: string, tvdbId: string, tvdbSeason?: number | null, bilibiliThmId: string, bilibiliMainlandId: string, jellyfinId: string, jellyfinFolderByJellyfinFolderId?: { __typename?: 'JellyfinFolder', name: string } | null, allEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, airedEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, availableEpisodes: { __typename?: 'EpisodesConnection', totalCount: number }, firstEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, nextEpisode: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null } | null }> }, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null } | null }> } | null };
 
 export type CreateSeasonMutationVariables = Exact<{
   season: SeasonInput;
@@ -4447,7 +4672,7 @@ export type GetSeasonsStatusQueryVariables = Exact<{
 }>;
 
 
-export type GetSeasonsStatusQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', edges: Array<{ __typename?: 'SeasonsEdge', node?: { __typename?: 'Season', id: number, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null } | null }> } | null };
+export type GetSeasonsStatusQuery = { __typename?: 'Query', allSeasons?: { __typename?: 'SeasonsConnection', edges: Array<{ __typename?: 'SeasonsEdge', node?: { __typename?: 'Season', id: number, latestEpisode?: { __typename?: 'Episode', jellyfinEpisodeId?: string | null, airTime?: any | null, id: number, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null } | null }> } | null };
 
 export type TorrentFieldsFragment = { __typename?: 'Torrent', id: number, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null };
 
@@ -4477,11 +4702,13 @@ export type LiveTaskFragment = { __typename?: 'Task', id: number, type: TaskType
 
 export type TaskVersionFragment = { __typename?: 'Task', version: number };
 
-export const TaskDetailsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"taskDetailsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"episodeId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}}]}}]} as unknown as DocumentNode<TaskDetailsFieldsFragment, unknown>;
+export type LiveTaskEpisodeFragment = { __typename?: 'TaskEpisode', id: number, episodeId?: number | null, sourcePath?: string | null, importPath?: string | null, filePath?: string | null, nfoPath?: string | null, jellyfinEpisodeId?: string | null };
+
+export const TaskDetailsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"taskDetailsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"taskEpisodesByTaskId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"POSITION_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"episodeId"}},{"kind":"Field","name":{"kind":"Name","value":"sourcePath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"episodeId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}}]}}]} as unknown as DocumentNode<TaskDetailsFieldsFragment, unknown>;
 export const EpisodeDetailsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"episodeDetailsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Episode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"tasksByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskDetailsFields"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]} as unknown as DocumentNode<EpisodeDetailsFieldsFragment, unknown>;
 export const Folders_ListFoldersFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"folders_listFoldersFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"mappedLocation"}}]}}]} as unknown as DocumentNode<Folders_ListFoldersFieldsFragment, unknown>;
-export const ListTasksFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listTasksFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}}]}}]} as unknown as DocumentNode<ListTasksFieldsFragment, unknown>;
-export const TaskStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"taskStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskStatusFieldsFragment, unknown>;
+export const ListTasksFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listTasksFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"taskEpisodesByTaskId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"POSITION_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"seasonBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}}]}}]} as unknown as DocumentNode<ListTasksFieldsFragment, unknown>;
+export const TaskStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"taskStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskStatusFieldsFragment, unknown>;
 export const EpisodeStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"episodeStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Episode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"tasks"},"name":{"kind":"Name","value":"tasksByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskStatusFields"}}]}}]}}]}}]}}]} as unknown as DocumentNode<EpisodeStatusFieldsFragment, unknown>;
 export const SeasonEpisodesFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonEpisodes"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodesLastSync"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SeasonEpisodesFragment, unknown>;
 export const DisplayImageFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"displayImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}}]}}]} as unknown as DocumentNode<DisplayImageFieldsFragment, unknown>;
@@ -4492,13 +4719,15 @@ export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind
 export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
 export const LiveTaskFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"LiveTask"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]} as unknown as DocumentNode<LiveTaskFragment, unknown>;
 export const TaskVersionFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TaskVersion"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskVersionFragment, unknown>;
+export const LiveTaskEpisodeFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"LiveTaskEpisode"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TaskEpisode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"episodeId"}},{"kind":"Field","name":{"kind":"Name","value":"sourcePath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]} as unknown as DocumentNode<LiveTaskEpisodeFragment, unknown>;
 export const GetEpisodeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeDetailsFields"}}]}}]}},...EpisodeDetailsFieldsFragmentDoc.definitions,...TaskDetailsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetEpisodeByIdQuery, GetEpisodeByIdQueryVariables>;
 export const GetTaskByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTaskById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"taskById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskDetailsFields"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeDetailsFields"}}]}}]}}]}},...TaskDetailsFieldsFragmentDoc.definitions,...EpisodeDetailsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetTaskByIdQuery, GetTaskByIdQueryVariables>;
 export const ListFilesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListFiles"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"path"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"listFiles"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"path"},"value":{"kind":"Variable","name":{"kind":"Name","value":"path"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lastModified"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"path"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<ListFilesQuery, ListFilesQueryVariables>;
 export const ImportSingleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ImportSingle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"path"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"importSingle"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"episodeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"importPath"},"value":{"kind":"Variable","name":{"kind":"Name","value":"path"}}}]}]}}]} as unknown as DocumentNode<ImportSingleMutation, ImportSingleMutationVariables>;
 export const ImportMultipleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ImportMultiple"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entries"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ImportMultipleEntry"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"importMultiple"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"entries"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entries"}}}]}]}}]} as unknown as DocumentNode<ImportMultipleMutation, ImportMultipleMutationVariables>;
+export const GetImportSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetImportSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"seasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"100"}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}},{"kind":"Field","alias":{"kind":"Name","value":"matchingTasks"},"name":{"kind":"Name","value":"tasksByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskStatusFields"}}]}}]}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions,...TaskStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetImportSeasonQuery, GetImportSeasonQueryVariables>;
 export const SearchTorrentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchTorrent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"keyword"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"0"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"title"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"includesInsensitive"},"value":{"kind":"Variable","name":{"kind":"Name","value":"keyword"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"PUBLISH_DATE_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions]} as unknown as DocumentNode<SearchTorrentQuery, SearchTorrentQueryVariables>;
-export const GetTaskStatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTaskStates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTaskStates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"taskIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"canRetry"}},{"kind":"Field","name":{"kind":"Name","value":"canCancel"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]}}]} as unknown as DocumentNode<GetTaskStatesQuery, GetTaskStatesQueryVariables>;
+export const GetTaskStatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTaskStates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTaskStates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"taskIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"entries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"episodeId"}},{"kind":"Field","name":{"kind":"Name","value":"sourcePath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"canRetry"}},{"kind":"Field","name":{"kind":"Name","value":"canCancel"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]}}]} as unknown as DocumentNode<GetTaskStatesQuery, GetTaskStatesQueryVariables>;
 export const CancelTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CancelTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cancelTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"taskId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskId"}}}]}]}}]} as unknown as DocumentNode<CancelTaskMutation, CancelTaskMutationVariables>;
 export const RetryTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RetryTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"retryTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"taskId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskId"}}}]}]}}]} as unknown as DocumentNode<RetryTaskMutation, RetryTaskMutationVariables>;
 export const GetDownloadProgressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDownloadProgress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getDownloadProgress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"taskIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloaded"}},{"kind":"Field","name":{"kind":"Name","value":"eta"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"peers"}},{"kind":"Field","name":{"kind":"Name","value":"seeds"}},{"kind":"Field","name":{"kind":"Name","value":"speed"}},{"kind":"Field","name":{"kind":"Name","value":"total"}}]}}]}}]} as unknown as DocumentNode<GetDownloadProgressQuery, GetDownloadProgressQueryVariables>;

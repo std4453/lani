@@ -26,9 +26,13 @@ export class RefreshPlayerAtom extends AsyncAtom {
       throw new Error('未获取到季度对应的 Jellyfin ID，无法刷新');
     const { season, index } = jellyfinNumber(episode);
     await context.assertActive();
+    const key =
+      context.entryId === undefined
+        ? id
+        : `${id}:${context.entryId}:${context.attempt}`;
     try {
       return await context.waitFor(
-        this.refresh.enqueue(id, {
+        this.refresh.enqueue(key, {
           seriesId: jellyfinSeriesId,
           season,
           index,
@@ -39,7 +43,7 @@ export class RefreshPlayerAtom extends AsyncAtom {
         }),
       );
     } finally {
-      this.refresh.remove(id);
+      this.refresh.remove(key);
     }
   }
 }

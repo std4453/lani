@@ -1,22 +1,39 @@
 import { AtomType, Checkpoint, Wants, Workflow } from '@lani/workflow';
-import { Prisma, Task } from '@lani/db';
+import { Prisma, Task, TaskEpisode } from '@lani/db';
 
 export type TaskInput = Pick<
   Task,
-  | 'id'
-  | 'episodeId'
-  | 'torrentLink'
-  | 'qbtTorrentHash'
-  | 'torrentTitle'
-  | 'downloadPath'
-  | 'importPath'
-  | 'filePath'
-  | 'nfoPath'
-  | 'jellyfinEpisodeId'
->;
+  'id' | 'torrentLink' | 'qbtTorrentHash' | 'torrentTitle' | 'downloadPath'
+> &
+  Pick<
+    TaskEpisode,
+    'episodeId' | 'importPath' | 'filePath' | 'nfoPath' | 'jellyfinEpisodeId'
+  > & {
+    type?: Task['type'];
+    sourcePath?: string | null;
+    episodes?: TaskEpisode[];
+  };
 export type TaskOutput = Partial<
-  Omit<TaskInput, 'id' | 'episodeId' | 'torrentLink'>
->;
+  Pick<
+    TaskInput,
+    | 'qbtTorrentHash'
+    | 'torrentTitle'
+    | 'downloadPath'
+    | 'importPath'
+    | 'filePath'
+    | 'nfoPath'
+    | 'jellyfinEpisodeId'
+  >
+> & {
+  episodeOutputs?: Array<
+    Partial<
+      Pick<
+        TaskEpisode,
+        'importPath' | 'filePath' | 'nfoPath' | 'jellyfinEpisodeId'
+      >
+    > & { id: number }
+  >;
+};
 export interface AtomTransaction {
   tx: Prisma.TransactionClient;
   workflow: Workflow;
@@ -24,6 +41,7 @@ export interface AtomTransaction {
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
 }
 export interface AtomContext {
+  readonly entryId?: number;
   readonly stepId: string;
   readonly attempt: number;
   readonly checkpoint: Checkpoint;

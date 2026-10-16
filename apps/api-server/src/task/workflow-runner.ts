@@ -36,7 +36,7 @@ export interface TaskStorePort {
 }
 export class WorkflowRunner {
   private running = new Map<number, Promise<void>>();
-  private wake = new Map<number, () => void>();
+  private wake = new Map<number, Set<() => void>>();
   private stopping = false;
   private restart = new Set<number>();
   constructor(
@@ -46,7 +46,7 @@ export class WorkflowRunner {
   ) {}
 
   start(id: number): Promise<void> {
-    this.wake.get(id)?.();
+    this.wake.get(id)?.forEach((wake) => wake());
     const existing = this.running.get(id);
     if (existing) {
       this.restart.add(id);
@@ -65,7 +65,7 @@ export class WorkflowRunner {
   }
   async stop() {
     this.stopping = true;
-    for (const wake of this.wake.values()) wake();
+    for (const waiters of this.wake.values()) waiters.forEach((wake) => wake());
     await Promise.all(this.running.values());
   }
   async transition(id: number, change: (workflow: Workflow) => Workflow) {
@@ -116,7 +116,9 @@ export class WorkflowRunner {
         let wake: () => void;
         const signal = new Promise<typeof interrupted>((resolve) => {
           wake = () => resolve(interrupted);
-          this.wake.set(task.id, wake);
+          const waiters = this.wake.get(task.id) ?? new Set();
+          waiters.add(wake);
+          this.wake.set(task.id, waiters);
         });
         try {
           await assertActive();
@@ -127,7 +129,8 @@ export class WorkflowRunner {
             return result.value;
           }
         } finally {
-          if (this.wake.get(task.id) === wake!) this.wake.delete(task.id);
+          this.wake.get(task.id)?.delete(wake!);
+          if (!this.wake.get(task.id)?.size) this.wake.delete(task.id);
         }
       }
     };
@@ -140,7 +143,19 @@ export class WorkflowRunner {
         const latest = await read(tx);
         const next = parseWorkflow(latest.workflow);
         const step = next.steps.find((s) => s.id === stepId)!;
-        step.checkpoint = { ...step.checkpoint, ...patch };
+        const entries = { ...step.checkpoint.entries };
+        for (const [id, entry] of Object.entries(patch.entries ?? {})) {
+          entries[id] = {
+            ...(step.checkpoint.entries?.[id] ??
+              (step.checkpoint.entries ? {} : step.checkpoint)),
+            ...entry,
+          };
+        }
+        step.checkpoint = {
+          ...step.checkpoint,
+          ...patch,
+          ...(patch.entries ? { entries } : {}),
+        };
         if (await this.store.commit(latest, next, output, tx)) {
           if (!tx) checkpoint = step.checkpoint;
           return;

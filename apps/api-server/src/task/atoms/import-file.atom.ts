@@ -14,7 +14,7 @@ import path from 'path';
 
 @Injectable()
 export class ImportFileAtom extends AsyncAtom {
-  readonly wants = [['findVideoFile']] as const;
+  readonly wants = [['findVideoFile', 'findImportFiles']] as const;
   constructor(private prisma: PrismaService) {
     super();
   }
@@ -61,7 +61,7 @@ export class ImportFileAtom extends AsyncAtom {
         .padStart(2, '0')}${path.extname(importPath)}`,
     );
     const importedFile = await importFile(
-      id,
+      context.entryId === undefined ? id : `${id}-${context.entryId}`,
       sourcePath,
       targetPath,
       config.lani.moveStrategy,

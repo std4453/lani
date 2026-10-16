@@ -15,3 +15,25 @@ mutation ImportSingle($episodeId: Int!, $path: String!) {
 mutation ImportMultiple($entries: [ImportMultipleEntry!]!) {
   importMultiple(entries: $entries)
 }
+
+query GetImportSeason($id: Int!, $offset: Int!) {
+  seasonById(id: $id) {
+    id
+    title
+    episodesBySeasonId(first: 100, offset: $offset, orderBy: ID_ASC) {
+      totalCount
+      nodes {
+        id
+        title
+        index
+        numbering
+        ...episodeStatusFields
+        matchingTasks: tasksByEpisodeId {
+          nodes {
+            ...taskStatusFields
+          }
+        }
+      }
+    }
+  }
+}

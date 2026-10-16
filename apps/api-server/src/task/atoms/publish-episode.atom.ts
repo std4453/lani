@@ -45,17 +45,24 @@ export class PublishEpisodeAtom extends AsyncAtom {
         return !previouslyPublished;
       },
     );
-    if (published) {
+    if (published && (!input.type || input.type === 'DOWNLOAD')) {
       const episode = await this.prisma.episode.findUnique({
         where: { id: episodeId },
         include: {
           season: { include: { jellyfinFolder: true, posterImage: true } },
-          tasks: { where: { id } },
+          taskEpisodes: { where: { taskId: id }, include: { task: true } },
         },
       });
       this.emitter.emit(
         EPISODE_PUBLISH_EVENT,
-        new EpisodePublishEvent(episode),
+        new EpisodePublishEvent({
+          ...episode,
+          tasks: episode.taskEpisodes.map(({ task, ...entry }) => ({
+            ...task,
+            ...entry,
+            id: task.id,
+          })),
+        }),
       );
     }
     return {};

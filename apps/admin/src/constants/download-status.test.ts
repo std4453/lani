@@ -3,6 +3,7 @@ import {
   EpisodeStatusFieldsFragment,
   LegacyTaskStage,
   TaskStatusFieldsFragment,
+  TaskType,
 } from '@/generated/types';
 import {
   calcEpisodeStatus,
@@ -38,6 +39,7 @@ const episode = (
       {
         node: {
           id: 5,
+          type: TaskType.Download,
           version: 1,
           workflow: null,
           legacyStage: LegacyTaskStage.Unavailable,
@@ -59,7 +61,11 @@ it('新任务按当前 atom 显示，旧阶段和兼容标记不覆盖流程状�
         isCancelled: true,
       }),
     );
-    expect(state).toEqual({ status: atom, taskId: 5 });
+    expect(state).toEqual({
+      status: atom,
+      taskId: 5,
+      taskType: TaskType.Download,
+    });
     expect(EPISODE_STATUS_TAGS[atom]).toBeDefined();
   }
 });

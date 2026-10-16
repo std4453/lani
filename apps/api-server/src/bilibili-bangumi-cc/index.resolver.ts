@@ -22,19 +22,19 @@ export class BilibiliBangumiCCResolver {
       index,
       jellyfinEpisodeId,
       season: { bilibiliThmId, title },
-      tasks: [job],
+      taskEpisodes: [job],
     } = await this.prisma.episode.findUnique({
       where: {
         id: episodeId,
       },
       include: {
         season: true,
-        tasks: {
+        taskEpisodes: {
           where: {
-            legacyStage: LegacyTaskStage.AVAILABLE,
+            task: { legacyStage: LegacyTaskStage.AVAILABLE },
           },
           orderBy: {
-            createdAt: 'desc',
+            taskId: 'desc',
           },
           take: 1,
         },

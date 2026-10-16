@@ -32,6 +32,7 @@ const task: TaskDetailsFieldsFragment = {
   __typename: 'Task',
   id: 42,
   type: TaskType.Download,
+  taskEpisodesByTaskId: { nodes: [] },
   episodeId: 7,
   createdAt: '2026-10-14T12:00:00Z',
   downloadPath: null,

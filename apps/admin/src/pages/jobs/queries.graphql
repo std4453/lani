@@ -1,5 +1,18 @@
 fragment listTasksFields on Task {
   id
+  taskEpisodesByTaskId(orderBy: POSITION_ASC) {
+    nodes {
+      id
+      episodeByEpisodeId {
+        id
+        numbering
+        seasonBySeasonId {
+          id
+          title
+        }
+      }
+    }
+  }
   type
   legacyStage
   isFailed

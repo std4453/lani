@@ -45,15 +45,26 @@ export class NotificationService {
             posterImage: true,
           },
         },
-        tasks: {
+        taskEpisodes: {
+          include: { task: true },
           orderBy: {
-            id: 'desc',
+            taskId: 'desc',
           },
           take: 1,
         },
       },
     });
-    this.emitter.emit(EPISODE_PUBLISH_EVENT, new EpisodePublishEvent(episode));
+    this.emitter.emit(
+      EPISODE_PUBLISH_EVENT,
+      new EpisodePublishEvent({
+        ...episode,
+        tasks: episode.taskEpisodes.map(({ task, ...entry }) => ({
+          ...task,
+          ...entry,
+          id: task.id,
+        })),
+      }),
+    );
     return 'ok';
   }
 
@@ -109,9 +120,10 @@ export class NotificationService {
       },
       include: {
         season: true,
-        tasks: {
+        taskEpisodes: {
+          include: { task: true },
           orderBy: {
-            id: 'desc',
+            taskId: 'desc',
           },
           take: 1,
         },
@@ -130,7 +142,12 @@ export class NotificationService {
       this.logger.verbose(
         `Sending missing episodes notification for ${episodes.length} episodes...`,
       );
-      await this.management.onEpisodesMissing(episodes);
+      await this.management.onEpisodesMissing(
+        episodes.map((episode) => ({
+          ...episode,
+          tasks: episode.taskEpisodes.map(({ task }) => task),
+        })),
+      );
       return episodes.length;
     } else if (episodes.length > 0) {
       this.logger.verbose(

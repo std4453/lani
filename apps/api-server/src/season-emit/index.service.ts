@@ -178,8 +178,8 @@ export class SeasonEmitService {
     }
 
     // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
-    const jobs = await this.prisma.task.findMany({
-      where: { type: TaskType.DOWNLOAD, episode: { seasonId: season.id } },
+    const jobs = await this.prisma.taskEpisode.findMany({
+      where: { episode: { seasonId: season.id } },
       select: { id: true, filePath: true, nfoPath: true },
     });
     const movePath = (value: string | null) => {
@@ -194,7 +194,7 @@ export class SeasonEmitService {
     };
     await this.prisma.$transaction(
       jobs.map((job) =>
-        this.prisma.task.update({
+        this.prisma.taskEpisode.update({
           where: { id: job.id },
           data: {
             filePath: movePath(job.filePath),

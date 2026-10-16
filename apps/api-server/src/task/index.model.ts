@@ -7,7 +7,19 @@ registerEnumType(LegacyTaskStage, { name: 'LegacyTaskStage' });
 registerEnumType(TaskType, { name: 'TaskType' });
 
 @ObjectType()
+export class TaskEpisodeState {
+  @Field(() => Int) id: number;
+  @Field(() => Int, { nullable: true }) episodeId?: number | null;
+  @Field(() => String, { nullable: true }) sourcePath?: string | null;
+  @Field(() => String, { nullable: true }) importPath?: string | null;
+  @Field(() => String, { nullable: true }) filePath?: string | null;
+  @Field(() => String, { nullable: true }) nfoPath?: string | null;
+  @Field(() => String, { nullable: true }) jellyfinEpisodeId?: string | null;
+}
+
+@ObjectType()
 export class TaskState {
+  @Field(() => [TaskEpisodeState]) entries: TaskEpisodeState[];
   @Field(() => Int) id: number;
   @Field(() => TaskType) type: TaskType;
   @Field(() => Int) version: number;

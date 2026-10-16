@@ -16,6 +16,7 @@ import {
 import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
 import Field from './Field';
+import { TASK_TYPE_LABELS, taskEpisodesLabel } from '@/utils/task-episodes';
 import { atomViews } from './atoms';
 import { parseWorkflow } from '@lani/workflow';
 import { legacyWorkflow } from './legacy-compat';
@@ -150,7 +151,12 @@ export default function TaskWorkflowView({
             open={expanded.includes('task-info')}
           >
             <Field label="创建时间">{formatTime(task.createdAt)}</Field>
-            <Field label="种子地址">{task.torrentLink}</Field>
+            <Field label="类型">{TASK_TYPE_LABELS[task.type]}</Field>
+            {task.type === 'DOWNLOAD' ? (
+              <Field label="种子地址">{task.torrentLink}</Field>
+            ) : (
+              <Field label="剧集">{taskEpisodesLabel(task)}</Field>
+            )}
           </StepDetails>
         }
       />
@@ -187,7 +193,12 @@ export default function TaskWorkflowView({
             }
             title={
               <Space size={8}>
-                {title(`step:${item.id}`, item.title + suffix, collapsible)}
+                {title(
+                  `step:${item.id}`,
+                  (item.atom === 'publishEpisode' ? '完成' : item.title) +
+                    suffix,
+                  collapsible,
+                )}
                 {failed ? (
                   <Button
                     type="link"
@@ -209,7 +220,7 @@ export default function TaskWorkflowView({
                     title={
                       <>
                         <div>确认取消任务？</div>
-                        <div>取消后需重新发起下载，已下载的文件会保留</div>
+                        <div>取消后需重新创建任务，已落地的文件会保留</div>
                       </>
                     }
                     okText="取消任务"

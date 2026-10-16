@@ -23,7 +23,7 @@ export class DownloadJobService {
       await lockEpisode(tx, episodeId);
       const existing = await tx.task.findFirst({
         where: {
-          episodeId,
+          episodes: { some: { episodeId } },
           type: TaskType.DOWNLOAD,
           isFailed: false,
           isCancelled: false,
@@ -77,7 +77,7 @@ export class DownloadJobService {
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
 		    AND NOT EXISTS (
-			    SELECT id from download_jobs WHERE episodes.id = download_jobs.episode_id
+			    SELECT id from task_episodes WHERE episodes.id = task_episodes.episode_id
 	    	)
     `;
   }

@@ -362,6 +362,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
           loading={loading}
           dataSource={dataFiltered}
           rowKey="path"
+          tableLayout="fixed"
           size="small"
           columns={[
             {
@@ -379,6 +380,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
             {
               title: '名称',
               dataIndex: 'name',
+              className: styles.filename,
               render: (name: string) => (
                 <Highlight content={name} keyword={search} />
               ),
@@ -386,6 +388,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
             {
               title: '修改时间',
               dataIndex: 'lastModified',
+              responsive: ['md'],
               render: (date: string) => (
                 <>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</>
               ),
@@ -394,6 +397,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
             {
               title: '大小',
               dataIndex: 'size',
+              responsive: ['sm'],
               render: (size: string) => (
                 <>{size ? prettyBytes(parseInt(size, 10)) : '-'}</>
               ),

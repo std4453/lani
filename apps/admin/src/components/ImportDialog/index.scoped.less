@@ -50,7 +50,7 @@
   align-items: flex-start;
 }
 
-.search {
+.header .search {
   width: 200px;
   flex-shrink: 0;
   flex-grow: 0;
@@ -59,6 +59,7 @@
 .breadcrumbContainer {
   padding: 5px 0;
   flex-grow: 1;
+  min-width: 0;
   overflow-x: auto;
 
   :global(.ant-breadcrumb) ol {
@@ -89,32 +90,103 @@
 }
 
 .import {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   align-items: center;
   gap: 16px;
+  overflow-wrap: anywhere;
 }
-
+.importPath {
+  position: relative;
+  min-width: 0;
+  padding-right: 28px;
+}
+.deleteImport {
+  position: absolute;
+  right: 0;
+  top: 0;
+  opacity: 0;
+}
+.importPath:hover .deleteImport,
+.importPath:focus-within .deleteImport {
+  opacity: 1;
+}
+.highlight {
+  color: var(--lani-primary);
+  font-weight: 600;
+}
+.importTarget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
 .importList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
-
 .importSelect {
-  flex-shrink: 0;
-  flex-grow: 0;
-  width: 260px;
+  flex: 1;
+  min-width: 0;
 }
-
+.option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.option > :first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.option > :last-child {
+  flex: none;
+}
+.option :global(.ant-tag) {
+  margin-right: 0;
+}
 .importModal {
   :global(.ant-modal-body) {
     padding-top: 16px;
     padding-bottom: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+.importAlert {
+  && {
+    margin-bottom: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .import {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .importTarget {
+    padding-left: 24px;
+  }
+  .deleteImport {
+    opacity: 1;
   }
 }
 
-.importAlert {
-  && {
-    margin-bottom: 12px;
+.filename {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+@media (max-width: 600px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header .search {
+    width: 100%;
+  }
+  .breadcrumbContainer {
+    flex-basis: calc(100% - 136px);
   }
 }

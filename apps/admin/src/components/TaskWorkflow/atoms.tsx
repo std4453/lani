@@ -1,8 +1,41 @@
 import { ReactNode } from 'react';
+import { Tooltip, Typography } from 'antd';
+import { TaskType } from '@/generated/types';
 import { AtomType } from '@lani/workflow';
 import { TaskDetailsFieldsFragment as Task } from '@/generated/types';
 import Field from './Field';
 import DownloadProgress from './DownloadProgress';
+function Paths({
+  task,
+  field,
+  label,
+}: {
+  task: Task;
+  field: 'importPath' | 'filePath' | 'nfoPath';
+  label: string;
+}) {
+  if (task.type !== TaskType.BatchImport)
+    return <Field label={label}>{task[field]}</Field>;
+  const paths = (task.taskEpisodesByTaskId?.nodes ?? []).flatMap((entry) =>
+    entry?.[field] ? [entry[field]!] : [],
+  );
+  const text = paths.join('\n');
+  return (
+    <Field label={label}>
+      <Tooltip
+        title={
+          <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+            {text}
+          </div>
+        }
+      >
+        <Typography.Text copyable={text ? { text } : false}>
+          {paths.length} 个文件
+        </Typography.Text>
+      </Tooltip>
+    </Field>
+  );
+}
 export const atomViews: Record<
   AtomType,
   {
@@ -26,19 +59,37 @@ export const atomViews: Record<
       </>
     ),
   },
+  findImportFiles: {
+    fields: (task) => (
+      <Paths task={task} field="importPath" label="视频文件路径" />
+    ),
+  },
   findVideoFile: {
-    fields: (task) => <Field label="视频文件路径">{task.importPath}</Field>,
+    fields: (task) => (
+      <Paths task={task} field="importPath" label="视频文件路径" />
+    ),
   },
   importFile: {
-    fields: (task) => <Field label="导入文件路径">{task.filePath}</Field>,
+    fields: (task) => (
+      <Paths task={task} field="filePath" label="导入文件路径" />
+    ),
   },
   writeMetadata: {
-    fields: (task) => <Field label="元数据路径">{task.nfoPath}</Field>,
+    fields: (task) => <Paths task={task} field="nfoPath" label="元数据路径" />,
   },
   publishEpisode: { fields: null },
   refreshPlayer: {
-    fields: (task) => (
-      <Field label="Jellyfin 剧集 ID">{task.jellyfinEpisodeId}</Field>
-    ),
+    fields: (task) =>
+      task.type === TaskType.BatchImport ? (
+        <Field label="Jellyfin 季度 ID">
+          {
+            task.taskEpisodesByTaskId?.nodes.find(
+              (entry) => entry?.episodeByEpisodeId?.seasonBySeasonId,
+            )?.episodeByEpisodeId?.seasonBySeasonId?.jellyfinId
+          }
+        </Field>
+      ) : (
+        <Field label="Jellyfin 剧集 ID">{task.jellyfinEpisodeId}</Field>
+      ),
   },
 };

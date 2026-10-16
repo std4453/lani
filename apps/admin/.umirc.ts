@@ -62,7 +62,7 @@ export default defineConfig({
           path: '/jobs',
           exact: true,
           component: '@/pages/jobs',
-          name: '下载任务',
+          name: '任务管理',
           wrappers: ['@/wrappers/auth'],
         },
         {

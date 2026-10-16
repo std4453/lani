@@ -63,6 +63,18 @@ export default function EpisodeDetailsDialog({
       visible={visible}
       onCancel={reject}
       footer={false}
+      closeIcon={
+        <>
+          <span className={styles.backgroundHint}>
+            {tasks.some((task) =>
+              ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
+            )
+              ? '后台执行中，可关闭弹窗'
+              : ''}
+          </span>
+          ×
+        </>
+      }
       title={
         episode
           ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
@@ -99,7 +111,7 @@ export default function EpisodeDetailsDialog({
               activeKey={selectedTask}
               onChange={setActiveTask}
               tabBarExtraContent={{
-                left: <div style={{ marginRight: 16 }}>下载任务</div>,
+                left: <div style={{ marginRight: 16 }}>任务</div>,
                 right: (
                   <Typography.Text type="secondary">自动刷新中</Typography.Text>
                 ),
@@ -124,7 +136,7 @@ export default function EpisodeDetailsDialog({
               ))}
             </Tabs>
           ) : (
-            '无下载任务'
+            '无任务'
           )}
         </>
       )}

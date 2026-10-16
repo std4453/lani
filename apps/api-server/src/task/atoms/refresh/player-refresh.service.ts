@@ -19,7 +19,8 @@ interface PlayerRequest {
 @Resolver()
 export class PlayerRefreshService extends BatchQueue<
   PlayerRequest,
-  { jellyfinEpisodeId: string }
+  { jellyfinEpisodeId: string },
+  string | number
 > {
   @Interval(15000)
   @Mutation(() => Int)
@@ -28,7 +29,7 @@ export class PlayerRefreshService extends BatchQueue<
   }
   protected async refreshBatch(
     entries: Map<
-      number,
+      string | number,
       QueueEntry<PlayerRequest, { jellyfinEpisodeId: string }>
     >,
   ) {

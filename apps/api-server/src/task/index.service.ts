@@ -1,3 +1,6 @@
+import { EpisodeAtom } from './episode-atom';
+import { taskInput } from './task-input';
+import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
 import { FindVideoFileAtom } from './atoms/find-video-file.atom';
@@ -31,6 +34,7 @@ import { legacyTaskFields } from './legacy-compat';
 export interface TaskParams {
   episodeId?: number;
   torrentLink?: string;
+  entries?: Array<{ episodeId: number; sourcePath?: string }>;
 }
 
 @Injectable()
@@ -50,15 +54,17 @@ export class TaskService
     writeMetadata: WriteMetadataAtom,
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
+    findImportFiles: FindImportFilesAtom,
   ) {
     this.atoms = {
       submitDownload,
       download,
-      findVideoFile,
-      importFile,
-      writeMetadata,
-      refreshPlayer,
-      publishEpisode,
+      findImportFiles: new EpisodeAtom(findImportFiles),
+      findVideoFile: new EpisodeAtom(findVideoFile),
+      importFile: new EpisodeAtom(importFile),
+      writeMetadata: new EpisodeAtom(writeMetadata),
+      refreshPlayer: new EpisodeAtom(refreshPlayer),
+      publishEpisode: new EpisodeAtom(publishEpisode),
     };
     const logger = new Logger(TaskService.name);
     this.runner = new WorkflowRunner(store, this.atoms, (error) =>
@@ -78,7 +84,13 @@ export class TaskService
     );
     return tx.task.create({
       data: {
-        ...params,
+        torrentLink: params.torrentLink,
+        episodes: {
+          create: (
+            params.entries ??
+            (params.episodeId ? [{ episodeId: params.episodeId }] : [])
+          ).map((entry, position) => ({ ...entry, position })),
+        },
         type,
         ...legacyTaskFields(workflow),
         workflow: JSON.parse(JSON.stringify(workflow)),
@@ -117,11 +129,13 @@ export class TaskService
     if (!taskIds.length) return [];
     const tasks = await this.prisma.task.findMany({
       where: { id: { in: taskIds } },
+      include: { episodes: { orderBy: { position: 'asc' } } },
     });
     return tasks.map((task) => {
       const workflow = task.workflow ? parseWorkflow(task.workflow) : null;
       return {
-        ...task,
+        ...taskInput(task),
+        entries: task.episodes,
         workflow,
         canRetry: !!workflow && workflow.status === 'failed',
         canCancel:

@@ -52,7 +52,7 @@ function setup(patch: any = {}) {
         return state;
       }),
     },
-    task: {
+    taskEpisode: {
       findMany: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
     },
@@ -107,7 +107,7 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
     lastWriteToDisk: new Date(),
     jellyfinId: 'old-id',
   });
-  prisma.task.findMany.mockResolvedValue([
+  prisma.taskEpisode.findMany.mockResolvedValue([
     {
       id: 1,
       filePath: path.join(old, 'Season 1', 'episode.mkv'),
@@ -126,11 +126,11 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.uniqueid[0]._).toBe('12');
   expect(tvshow.tag).toBeUndefined();
   expect(tvshow.plot).toEqual(['keep']);
-  expect(prisma.task.findMany).toHaveBeenCalledWith({
-    where: { type: TaskType.DOWNLOAD, episode: { seasonId: 12 } },
+  expect(prisma.taskEpisode.findMany).toHaveBeenCalledWith({
+    where: { episode: { seasonId: 12 } },
     select: { id: true, filePath: true, nfoPath: true },
   });
-  expect(prisma.task.update).toHaveBeenCalledWith({
+  expect(prisma.taskEpisode.update).toHaveBeenCalledWith({
     where: { id: 1 },
     data: {
       filePath: path.join(target, 'Season 1', 'episode.mkv'),

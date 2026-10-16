@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 
 export type EpisodeStatus =
   | AtomType
+  | 'findImportFiles'
   | 'AVAILABLE'
   | 'UNKNOWN'
   | 'DOWNLOAD_FAILED'
@@ -38,6 +39,7 @@ export const LEGACY_EPISODE_STATUS: Record<LegacyTaskStage, EpisodeStatus> = {
 export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   status: EpisodeStatus;
   taskId?: number;
+  taskType?: TaskType;
 } {
   const task = extractNode(episode.tasks)?.[0];
   if (episode.jellyfinEpisodeId) {
@@ -56,7 +58,7 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
                 cancelling: 'CANCELLING',
               } as const
             )[workflow.status];
-      return { status, taskId: task.id };
+      return { status, taskId: task.id, taskType: task.type };
     }
     return {
       status: task.isCancelled
@@ -65,6 +67,7 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
         ? 'DOWNLOAD_FAILED'
         : LEGACY_EPISODE_STATUS[task.legacyStage],
       taskId: task.id,
+      taskType: task.type,
     };
   } else {
     if (episode.airTime) {
@@ -90,6 +93,7 @@ export const EPISODE_STATUS_TAGS: Record<
   EpisodeStatus,
   Pick<TagProps, 'children' | 'color'>
 > = {
+  findImportFiles: { children: '寻找文件', color: 'purple' },
   AVAILABLE: {
     children: '可用',
     color: 'green',
@@ -118,7 +122,7 @@ export const EPISODE_STATUS_TAGS: Record<
     children: '提交下载',
     color: 'blue',
   },
-  publishEpisode: { children: '下载完成', color: 'green' },
+  publishEpisode: { children: '完成', color: 'green' },
   UNKNOWN: { children: '未知状态', color: 'red' },
   CANCELLED: { children: '已取消' },
   CANCELLING: { children: '取消中', color: 'orange' },
@@ -126,7 +130,7 @@ export const EPISODE_STATUS_TAGS: Record<
     children: '未放送',
   },
   DOWNLOAD_FAILED: {
-    children: '下载失败',
+    children: '任务失败',
     color: 'red',
   },
   RESOURCE_WAITING: {
@@ -145,10 +149,12 @@ export const EPISODE_STATUS_TAGS: Record<
 export function DownloadStatusTag({
   status,
   taskId,
+  taskType,
   openTaskDetails,
 }: {
   status: EpisodeStatus;
   taskId?: number;
+  taskType?: TaskType;
   openTaskDetails?: ReturnType<typeof useTaskDetailsDialog>[2];
 }) {
   const tagProps = EPISODE_STATUS_TAGS[status];
@@ -166,7 +172,7 @@ export function DownloadStatusTag({
           if (showDialog) {
             void openTaskDetails?.({
               taskId,
-              taskType: TaskType.Download,
+              taskType: taskType ?? TaskType.Download,
             });
           }
         }}

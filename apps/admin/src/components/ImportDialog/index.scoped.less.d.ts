@@ -3,14 +3,20 @@
 interface CssExports {
   'actions': string;
   'breadcrumbContainer': string;
+  'deleteImport': string;
   'directory': string;
+  'filename': string;
   'header': string;
+  'highlight': string;
   'import': string;
   'importAlert': string;
   'importList': string;
   'importModal': string;
+  'importPath': string;
   'importSelect': string;
+  'importTarget': string;
   'modal': string;
+  'option': string;
   'row': string;
   'search': string;
   'selected': string;

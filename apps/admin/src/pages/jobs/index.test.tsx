@@ -56,7 +56,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       second = table.request(
         { current: 2, pageSize: 10 },
         {},
-        { lifecycle: ['failed'], type: [TaskType.Download] },
+        { lifecycle: ['failed'], type: [TaskType.BatchImport] },
       );
     });
     const result = (id: number) => ({
@@ -89,7 +89,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       first: 10,
       filter: {
         ...taskStateFilter(['failed']),
-        type: { in: [TaskType.Download] },
+        type: { in: [TaskType.BatchImport] },
       },
     });
     expect(query.mock.calls[1][0].variables.filter).toEqual(

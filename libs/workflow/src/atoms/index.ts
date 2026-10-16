@@ -9,6 +9,8 @@ import { episodePublishedSchema } from "./publish-episode";
 import { publicationCheckpointSchema } from "./publication";
 export { FileIdentity, FileCheckpoint } from "./import-file";
 export interface Checkpoint {
+  entries?: Record<string, Checkpoint>;
+  completed?: boolean;
   submission?: SubmissionCheckpoint;
   file?: FileCheckpoint;
   refreshStartedAt?: string;
@@ -20,6 +22,7 @@ export const atomSchemas = {
   submitDownload: { submission: submissionCheckpointSchema },
   download: {},
   findVideoFile: {},
+  findImportFiles: {},
   importFile: { ...publicationCheckpointSchema, file: fileCheckpointSchema },
   writeMetadata: publicationCheckpointSchema,
   refreshPlayer: {
@@ -33,6 +36,11 @@ export const atomSchemas = {
 };
 export type AtomType = keyof typeof atomSchemas;
 export const atomTypes = Object.keys(atomSchemas) as AtomType[];
-export const checkpointSchema = Joi.object<Checkpoint>(
-  Object.assign({}, ...Object.values(atomSchemas))
-);
+const checkpointFields = {
+  ...Object.assign({}, ...Object.values(atomSchemas)),
+  completed: Joi.boolean(),
+};
+export const checkpointSchema = Joi.object<Checkpoint>({
+  ...checkpointFields,
+  entries: Joi.object().pattern(Joi.string(), Joi.object(checkpointFields)),
+});
