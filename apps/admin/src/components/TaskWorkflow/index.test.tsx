@@ -144,6 +144,53 @@ it.each(['execute', 'cancel'] as const)(
     expect(refresh).toHaveBeenCalledTimes(1);
   },
 );
+it.each(['pending', 'running', 'succeeded'] as const)(
+  '无表单步骤在 %s 状态下不显示展开按钮或空详情',
+  (status) => {
+    const flow = buildWorkflowSnapshot(
+      [{ id: 'publish', atom: 'publishEpisode', title: '下载完成' }],
+      registry,
+      '2026-10-14T12:00:00Z',
+    );
+    flow.steps[0].status = status;
+    render(flow);
+    const step = container.querySelector('[data-step-id="publish"]')!;
+    expect(step.textContent).toContain('下载完成');
+    expect(step.querySelector('button[aria-expanded]')).toBeNull();
+    expect(step.querySelector('[id="task-1-step-step:publish"]')).toBeNull();
+    expect(step.querySelector('[aria-label="down"]')).toBeNull();
+  },
+);
+it('无表单步骤失败时仍展示失败详情并支持重试', async () => {
+  const flow = buildWorkflowSnapshot(
+    [{ id: 'publish', atom: 'publishEpisode', title: '下载完成' }],
+    registry,
+    '2026-10-14T12:00:00Z',
+  );
+  flow.status = 'failed';
+  flow.steps[0].status = 'failed';
+  flow.error = {
+    operation: 'execute',
+    stepId: 'publish',
+    message: '更新剧集状态失败',
+    at: '2026-10-14T12:02:00Z',
+  };
+  render(flow);
+  const step = container.querySelector('[data-step-id="publish"]')!;
+  expect(step.querySelector('button[aria-expanded]')).toBeNull();
+  expect(step.querySelector('[aria-hidden="false"]')?.textContent).toContain(
+    '失败原因：更新剧集状态失败',
+  );
+  expect(step.textContent).toContain('失败时间：');
+  await act(async () => {
+    step.querySelector<HTMLButtonElement>('button.ant-btn-link')!.click();
+  });
+  expect(mutate).toHaveBeenCalledWith({
+    mutation: RetryTaskDocument,
+    variables: { taskId: 1 },
+  });
+  expect(refresh).toHaveBeenCalledTimes(1);
+});
 it('取消中默认无表单和操作，取消完成只有当前位置显示取消时间且不可折叠', () => {
   const base = workflow();
   base.steps[0].status = 'running';
@@ -152,9 +199,7 @@ it('取消中默认无表单和操作，取消完成只有当前位置显示取�
   expect(container.querySelector('[aria-label="loading"]')).not.toBeNull();
   const current = container.querySelector('.ant-steps-item-process')!;
   expect(current.querySelector('button')).toBeNull();
-  expect(
-    current.querySelector('.ant-steps-item-description')?.textContent,
-  ).toBe('');
+  expect(current.querySelector('.ant-steps-item-description')).toBeNull();
   expect(container.textContent).toContain('自定义第一步（取消中）');
   flow.status = 'cancelled';
   flow.steps[0].status = 'cancelled';
