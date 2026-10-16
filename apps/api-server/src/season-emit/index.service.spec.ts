@@ -4,7 +4,6 @@ import os from 'os';
 import path from 'path';
 import xml2js from 'xml2js';
 import { SeasonEmitService } from './index.service';
-import { TaskType } from '@lani/db';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/common/s3.service', () => ({ S3Service: class {} }));
@@ -55,10 +54,15 @@ function setup(patch: any = {}) {
     },
     task: {
       findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn(async (queries) => Promise.all(queries)),
+    $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
   };
+  prisma.$transaction.mockImplementation(async (operation) =>
+    operation(prisma),
+  );
   const jellyfin = {
     refreshAfterFolderRename: jest.fn(),
     refreshAfterWriteToDisk: jest.fn(),
@@ -108,13 +112,12 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
     lastWriteToDisk: new Date(),
     jellyfinId: 'old-id',
   });
-  prisma.task.findMany.mockResolvedValue([
-    {
-      id: 1,
-      filePath: path.join(old, 'Season 1', 'episode.mkv'),
-      nfoPath: path.join(old, 'Season 1', 'episode.nfo'),
-    },
-  ]);
+  prisma.task.findMany.mockResolvedValue([{ id: 1 }]);
+  prisma.task.findUnique.mockResolvedValue({
+    id: 1,
+    filePath: path.join(old, 'Season 1', 'episode.mkv'),
+    nfoPath: path.join(old, 'Season 1', 'episode.nfo'),
+  });
   await write();
   const target = path.join(root, 'A／B');
   expect(
@@ -129,7 +132,7 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.plot).toEqual(['keep']);
   expect(prisma.task.findMany).toHaveBeenCalledWith({
     where: { episodes: { some: { episode: { seasonId: 12 } } } },
-    select: { id: true, filePath: true, nfoPath: true, batchEntries: true },
+    select: { id: true },
   });
   expect(prisma.task.update).toHaveBeenCalledWith({
     where: { id: 1 },
@@ -137,6 +140,7 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
       filePath: path.join(target, 'Season 1', 'episode.mkv'),
       nfoPath: path.join(target, 'Season 1', 'episode.nfo'),
       batchEntries: Prisma.DbNull,
+      version: { increment: 1 },
     },
   });
   expect(jellyfin.refreshAfterFolderRename).toHaveBeenCalled();
@@ -296,4 +300,51 @@ it('deletes from the last written directory rather than a changed display title'
   });
   await service.deleteSeasonFiles(state());
   expect(await fs.readdir(root)).toEqual(['new']);
+});
+
+it('目录改名在任务锁内读取新产物，保留并发写入的批量条目并推进版本', async () => {
+  const old = path.join(root, 'A', 'B');
+  await fs.mkdir(old, { recursive: true });
+  const { write, prisma } = setup({
+    lastWriteTitle: 'A/B',
+    lastWriteToDisk: new Date(),
+  });
+  prisma.task.findMany.mockResolvedValue([{ id: 1 }]);
+  let entry = {
+    id: 'stable',
+    episodeId: 101,
+    sourcePath: '/source.mkv',
+    filePath: path.join(old, 'episode.mkv'),
+    nfoPath: null as string | null,
+    jellyfinEpisodeId: null as string | null,
+  };
+  prisma.$queryRaw.mockImplementation(async () => {
+    // 模拟改名等待任务锁时，执行器刚刚保存的产物。
+    entry = {
+      ...entry,
+      nfoPath: path.join(old, 'episode.nfo'),
+      jellyfinEpisodeId: 'published',
+    };
+    return [];
+  });
+  prisma.task.findUnique.mockImplementation(async () => {
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    return { id: 1, filePath: null, nfoPath: null, batchEntries: [entry] };
+  });
+  await write();
+  expect(prisma.task.update).toHaveBeenCalledWith({
+    where: { id: 1 },
+    data: {
+      filePath: null,
+      nfoPath: null,
+      version: { increment: 1 },
+      batchEntries: [
+        {
+          ...entry,
+          filePath: path.join(root, 'A／B', 'episode.mkv'),
+          nfoPath: path.join(root, 'A／B', 'episode.nfo'),
+        },
+      ],
+    },
+  });
 });

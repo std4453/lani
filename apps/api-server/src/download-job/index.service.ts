@@ -52,7 +52,7 @@ export class DownloadJobService {
     // pattern 可跨季度复用；按 season_id 关联，按 episodes.id 去重，避免多条规则重复入队。
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
-    // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
+    // 已有下载任务保留原有去重行为；失败/取消且未发布的导入不阻止自动下载。
     // TODO: 这里目前是根据 jellyfin_episode_id 判断是否已下载的，当前为了快速迭代
     // 先放着，之后需要改成基于具体的剧集状态枚举进行判断
     return this.prisma.$queryRaw<
@@ -78,7 +78,9 @@ export class DownloadJobService {
         AND episodes.jellyfin_episode_id IS NULL
         AND episodes.air_time < now()
 		    AND NOT EXISTS (
-			    SELECT 1 FROM task_episodes WHERE episodes.id = task_episodes.episode_id
+			    SELECT 1 FROM task_episodes te JOIN download_jobs task ON task.id=te.task_id
+          WHERE episodes.id = te.episode_id
+            AND (task.type='DOWNLOAD' OR (NOT task.is_failed AND NOT task.is_cancelled))
 	    	)
     `;
   }
@@ -97,7 +99,7 @@ export class DownloadJobService {
   async enqueueDownloadJobsInternal() {
     // 选择所有：
     // 种子标题符合（未停用的）下载定义、且对应的季度未被删除、对应的剧集已经发布
-    // 且没有对应的任务（如果有对应的任务，一般是已经在下载中，无需创建新的下载任务）
+    // 已有下载任务保留原有去重行为；失败/取消且未发布的导入不阻止自动下载。
     const result = await this.findTorrentsToDownload();
     if (result.length > 0) {
       this.logger.log(`Found ${result.length} new torrents to download`);

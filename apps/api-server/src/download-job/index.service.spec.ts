@@ -532,9 +532,19 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       filePath: '/b.mkv',
     });
   });
-  it.each([TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT])(
-    '%s 关联排除自动下载',
-    async (type) => {
+  it.each(
+    [TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT].flatMap(
+      (type) =>
+        ['running', 'failed', 'cancelled'].flatMap((status) =>
+          (type !== TaskType.DOWNLOAD && status !== 'running'
+            ? [false, true]
+            : [false]
+          ).map((hasMedia) => ({ type, status, hasMedia })),
+        ),
+    ),
+  )(
+    '$type / $status / media=$hasMedia 自动下载排除',
+    async ({ type, status, hasMedia }) => {
       await prisma.season.update({
         where: { id: seasonId },
         data: { jellyfinId: 'auto-exclusion' },
@@ -566,13 +576,24 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           ]),
         );
         await createTask({
-          data: { type, episodeId, legacyStage: LegacyTaskStage.IMPORTING },
+          data: {
+            type,
+            episodeId,
+            legacyStage: LegacyTaskStage.IMPORTING,
+            isFailed: status === 'failed',
+            isCancelled: status === 'cancelled',
+          },
         });
+        if (hasMedia)
+          await prisma.episode.update({
+            where: { id: episodeId },
+            data: { jellyfinEpisodeId: 'published' },
+          });
         expect(
           (await downloads.findTorrentsToDownload()).some(
             (row) => row.episode_id === episodeId,
           ),
-        ).toBe(false);
+        ).toBe(type !== TaskType.DOWNLOAD && status !== 'running' && !hasMedia);
       } finally {
         await prisma.downloadSource.delete({ where: { id: source.id } });
         await prisma.torrent.delete({ where: { id: torrent.id } });
