@@ -4,7 +4,7 @@
 
 ## 安装与构建
 
-本地开发、GitHub Actions 和后端镜像统一使用 Node.js 22（最低 22.21.1）。使用 nvm 时先执行 `nvm install && nvm use`，并通过 `node --version` 确认版本。Rush 和 pnpm 版本由 `rush.json` 固定，使用下列仓库脚本，无需全局安装它们。
+本地开发、GitHub Actions 和后端镜像统一使用 Node.js 22（最低 22.21.1）。`.nvmrc` 固定为已验证的 22.23.2。使用 nvm 时先执行 `nvm install && nvm use`，并通过 `node --version` 确认版本。Rush 和 pnpm 版本由 `rush.json` 固定，使用下列仓库脚本，无需全局安装它们。
 
 工具链使用 Rush 5.181.0、pnpm 9.15.9，锁文件格式为 pnpm 9。不要使用旧版 pnpm 更新锁文件。文档站使用 Docusaurus 2.4.3；`common/config/rush/pnpm-config.json` 将其 Webpack 固定为 5.105.4，避开旧进度插件与 5.106 起参数校验的不兼容。
 
@@ -19,9 +19,7 @@ node common/scripts/install-run-rush.js build --to @lani/gateway
 
 按需把构建目标替换为 `@lani/api-server`、`@lani/data-server` 或 `@lani/admin`。修改依赖后运行 `node common/scripts/install-run-rush.js update` 更新锁文件，不单独维护包级锁文件。Admin 使用的 Umi 3/Webpack 在 Node.js 22 下仍需兼容设置；构建时将 `NODE_OPTIONS=--openssl-legacy-provider` 仅用于该构建命令。
 
-后端、all-in-one 和 Prisma 迁移镜像使用 `node:22-bullseye-slim`。Prisma 3.15.2 的 Linux 引擎链接系统 OpenSSL，Bullseye 使用 `debian-openssl-1.1.x`；不要根据 Node 自带的 OpenSSL 3.x 修改这个目标。API 和迁移镜像显式安装 OpenSSL 与 CA 证书，迁移镜像在构建时准备引擎。Bullseye 已归档，需要安装系统包的镜像使用 Debian 官方归档源，保留软件包签名验证。
-
-all-in-one 的 MinIO 官方二进制下载地址已失效，改为在独立 Go 构建阶段编译固定的上游发布版本 `RELEASE.2025-10-15T17-29-55Z`，然后复制静态二进制到 Bullseye 运行镜像；构建时需要访问 Go 模块源。
+镜像构建及系统依赖说明见 [CI/CD 指南](ci-cd.md#镜像构建)。
 
 Prisma 3.15.2 对宿主机 OpenSSL 3.2 等较新 minor 的平台识别存在限制，可能报 `Unknown binaryTarget debian-openssl-3.2.x`。遇到此类错误，应在与镜像一致的 Bullseye/OpenSSL 1.1 容器中构建和验证数据库操作；不要将 `--openssl-legacy-provider` 当作 Prisma 平台识别的修复，它只影响 Node 自身的加密算法。
 
@@ -79,31 +77,31 @@ Data Server 使用 8083，避免与 Gateway 冲突：
 
 ```bash
 cd apps/data-server
-PORT=8083 CONFIG_FILENAME=./config.yaml rushx dev
+PORT=8083 CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js dev
 ```
 
 确认 API 的依赖隔离后启动 API Server：
 
 ```bash
 cd apps/api-server
-CONFIG_FILENAME=./config.yaml rushx start:dev
+CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js start:dev
 ```
 
 两个 subgraph 就绪后启动 Gateway：
 
 ```bash
 cd apps/gateway
-CONFIG_FILENAME=./config.yaml rushx dev
+CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js dev
 ```
 
 需要前端时再启动 Admin：
 
 ```bash
 cd apps/admin
-rushx dev:umi
+node ../../common/scripts/install-run-rushx.js dev:umi
 ```
 
-Umi 将 `/api/gateway` 代理到 `http://localhost:8080/`。GraphQL schema 或文档变化后，在 Gateway 可访问时于 `apps/admin` 执行 `rushx generate`；通常不必常驻 `dev:codegen`。
+Umi 将 `/api/gateway` 代理到 `http://localhost:8080/`。GraphQL schema 或文档变化后，在 Gateway 可访问时于 `apps/admin` 执行 `node ../../common/scripts/install-run-rushx.js generate`；通常不必常驻 `dev:codegen`。
 
 ## 验证与清理
 

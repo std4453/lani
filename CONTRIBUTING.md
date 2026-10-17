@@ -96,7 +96,7 @@ git switch -c docs/commit-branch-guide origin/next
 
 ## PR 测试部署
 
-自动测试部署与 `[skip-cd]` 规则见 [.github/README.md](.github/README.md)。
+自动测试部署与 `[skip-cd]` 规则见 [CI/CD 指南](docs/docs/ci-cd.md)。
 
 ## 构建 manifest 与提交 hook
 

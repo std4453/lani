@@ -79,7 +79,7 @@ jobs:
       - uses: actions/setup-node@v4
         name: Setup Node
         with:
-          node-version: "22"
+          node-version: "22.23.2"
 
       # https://github.com/microsoft/rushstack/issues/1847#issuecomment-993825253
 
