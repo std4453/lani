@@ -3,10 +3,10 @@
   "algorithmVersion": 1,
   "images": {
     "admin": {
-      "fingerprint": "f7a0aa047587a9aced357663f39685464cbebec16ce85c329ad92ea3ae0ab717"
+      "fingerprint": "8668d195ba7110225cca519be80dc0460eb433a54582ca64cfb39d60caacde97"
     },
     "api-server": {
-      "fingerprint": "56e79ba0253b11ea6fa3cebdc1f87966017bc88e6f9e9c9a005f6b8da9fa72d0"
+      "fingerprint": "d7979b45b12c14e76ed2241c5f4b7e4b9c411ad6a3f6468e21310363fdea8588"
     },
     "data-server": {
       "fingerprint": "6e9991eee57f3e355e4ec42ed1694a3b222e9e4e0361abae37490c0694abe719"

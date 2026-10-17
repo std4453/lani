@@ -27,26 +27,43 @@ it.each([
   ['v1', v1Info, 'sha1'],
   ['hybrid', { ...v1Info, ...v2Info }, 'sha1'],
   ['v2', v2Info, 'sha256'],
-] as const)('解析 %s 文件，保留正确的内容身份', (_kind, info, algorithm) => {
+] as const)('解析 %s 文件，保留正确的内容身份', (kind, info, algorithm) => {
   const buffer = Buffer.from(toTorrentFile({ info }));
   // 顶层仅包含 info：d4:info<原始字节>e，独立计算期望值。
   const expected = createHash(algorithm)
     .update(buffer.subarray(7, -1))
     .digest('hex');
-  expect(parseTorrentInput(buffer)).toEqual({ hash: expected, name });
+  const clientHash = createHash(kind === 'v1' ? 'sha1' : 'sha256')
+    .update(buffer.subarray(7, -1))
+    .digest('hex')
+    .slice(0, 40);
+  expect(parseTorrentInput(buffer)).toEqual({
+    hash: expected,
+    clientHash,
+    name,
+  });
 });
 
 const v1 = 'a'.repeat(40);
 const v2 = 'b'.repeat(64);
 it.each([
-  [`magnet:?xt=urn:btih:${v1.toUpperCase()}`, v1],
-  [`magnet:?xt=urn:btmh:1220${v2}`, v2],
-  [`magnet:?xt=urn:btih:${v1}&xt=urn:btmh:1220${v2}`, v1],
-  [`magnet:?xt=${encodeURIComponent(`urn:btmh:1220${v2}`)}`, v2],
-  ['magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', '0'.repeat(40)],
-])('接受有效磁力身份 %s', (uri, hash) => {
+  [`magnet:?xt=urn:btih:${v1.toUpperCase()}`, v1, v1],
+  [`magnet:?xt=urn:btmh:1220${v2}`, v2, v2.slice(0, 40)],
+  [`magnet:?xt=urn:btih:${v1}&xt=urn:btmh:1220${v2}`, v1, v2.slice(0, 40)],
+  [
+    `magnet:?xt=${encodeURIComponent(`urn:btmh:1220${v2}`)}`,
+    v2,
+    v2.slice(0, 40),
+  ],
+  [
+    'magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    '0'.repeat(40),
+    '0'.repeat(40),
+  ],
+])('接受有效磁力身份 %s', (uri, hash, clientHash) => {
   expect(parseTorrentInput(uri + '&dn=test+file')).toEqual({
     hash,
+    clientHash,
     name: 'test file',
   });
 });

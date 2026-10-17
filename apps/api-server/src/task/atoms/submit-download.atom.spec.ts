@@ -6,6 +6,7 @@ function setup(checkpoint: Checkpoint = {}) {
   const client = {
     prepareTorrent: jest.fn(async () => ({
       hash: 'known',
+      clientHash: 'prepared-id',
       name: 'video',
       input: 'magnet:test',
     })),
@@ -49,6 +50,7 @@ it('先保存 hash 和提交意图，再确认完成', async () => {
   test.client.submitTorrent.mockImplementation(async () => {
     expect(test.context.checkpoint.submission).toEqual({
       hash: 'known',
+      clientHash: 'prepared-id',
       name: 'video',
       phase: 'requested',
     });
@@ -65,9 +67,14 @@ it('先保存 hash 和提交意图，再确认完成', async () => {
   expect(test.context.saveCheckpoint).toHaveBeenNthCalledWith(
     1,
     {
-      submission: { hash: 'known', name: 'video', phase: 'requested' },
+      submission: {
+        hash: 'known',
+        clientHash: 'prepared-id',
+        name: 'video',
+        phase: 'requested',
+      },
     },
-    { qbtTorrentHash: 'known', torrentTitle: 'video' },
+    { qbtTorrentHash: 'prepared-id', torrentTitle: 'video' },
   );
 });
 it('确认后保存实际 ID，重启重试仍按原内容身份校验', async () => {
@@ -132,4 +139,34 @@ it('尚未向下载器提交时无需清理', async () => {
   await test.atom.cancel(1, test.input, test.context);
   expect(test.client.lookupTorrents).not.toHaveBeenCalled();
   expect(test.client.removeTorrent).not.toHaveBeenCalled();
+});
+
+it('纯 v2 提交结果未确认时，取消按已保存的截断 ID 查询', async () => {
+  const hash = 'a'.repeat(64);
+  const clientHash = hash.slice(0, 40);
+  const test = setup();
+  test.client.prepareTorrent.mockResolvedValue({
+    hash,
+    clientHash,
+    name: 'video',
+    input: 'magnet:test',
+  });
+  test.client.submitTorrent.mockRejectedValue(new Error('timeout'));
+  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
+    'timeout',
+  );
+  expect(test.context.checkpoint.submission).toEqual({
+    hash,
+    clientHash,
+    name: 'video',
+    phase: 'requested',
+  });
+  expect(test.context.saveCheckpoint).toHaveBeenCalledWith(
+    { submission: { hash, clientHash, name: 'video', phase: 'requested' } },
+    { qbtTorrentHash: clientHash, torrentTitle: 'video' },
+  );
+  test.client.lookupTorrents.mockResolvedValue([{ hash: clientHash }]);
+  await test.atom.cancel(1, test.input, test.context);
+  expect(test.client.lookupTorrents).toHaveBeenCalledWith([clientHash]);
+  expect(test.client.removeTorrent).toHaveBeenCalledWith(clientHash);
 });

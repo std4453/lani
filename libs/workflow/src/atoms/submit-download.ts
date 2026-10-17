@@ -1,7 +1,7 @@
 import * as Joi from "joi";
 export interface SubmissionCheckpoint {
   hash: string;
-  // hash 保留提交内容的身份；clientHash 是下载器确认后的实际 ID。
+  // hash 保留提交内容的身份；clientHash 是提交时的下载器 ID，确认后更新为实际 ID。
   clientHash?: string;
   name?: string;
   phase: "requested" | "confirmed";

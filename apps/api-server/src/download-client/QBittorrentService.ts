@@ -281,53 +281,28 @@ export class QBittorrentService extends AxiosService {
   }
 
   /**
-   * API 的 hashes 过滤器可能只接受实际 ID，不接受 hybrid 的 v1 或完整 v2。
-   * 先批量查询，未命中时共用一次全量查询；保留请求标识到实际种子的对应关系。
+   * 按实际 ID 查询，未命中时通过 infohash_v1 兼容历史任务。
+   * btih 磁力链接取得 hybrid 元数据后的 ID 变化也走同一路径。
    */
   async resolveTorrents(hashes: string[]): Promise<Map<string, QBTTorrent>> {
-    const requested = [...new Set(hashes.filter(Boolean))];
-    if (!requested.length) return new Map();
-    const candidates = [
-      ...new Set(
-        requested.flatMap((hash) => {
-          const normalized = hash.toLowerCase();
-          return /^[a-f\d]{64}$/.test(normalized)
-            ? [normalized, normalized.slice(0, 40)]
-            : [normalized];
-        }),
-      ),
-    ];
-    const match = (torrents: QBTTorrent[]) => {
-      const aliases = new Map<string, QBTTorrent[]>();
-      for (const torrent of torrents) {
-        const keys = [torrent.hash, torrent.infohash_v1, torrent.infohash_v2];
-        if (/^[a-f\d]{64}$/i.test(torrent.infohash_v2 ?? ''))
-          keys.push(torrent.infohash_v2.slice(0, 40));
-        for (const key of new Set(
-          keys.filter(Boolean).map((key) => key.toLowerCase()),
-        )) {
-          if (/^0+$/.test(key)) continue;
-          const matches = aliases.get(key) ?? [];
-          if (!matches.some((item) => item.hash === torrent.hash))
-            matches.push(torrent);
-          aliases.set(key, matches);
-        }
-      }
-      const result = new Map<string, QBTTorrent>();
-      for (const hash of requested) {
-        const matches = aliases.get(hash.toLowerCase()) ?? [];
-        if (matches.length > 1)
-          throw new LaniError(
-            `种子 hash 对应多个下载器条目，无法确定目标（${hash}）`,
-          );
-        if (matches[0]) result.set(hash, matches[0]);
-      }
-      return result;
-    };
-    const result = match(await this.listTorrents({ hashes: candidates }));
-    if (result.size === requested.length) return result;
-    // 全量结果是更新的快照；不保留第一次查询中可能已被移除的条目。
-    return match(await this.listTorrents());
+    if (!hashes.length) return new Map();
+    let torrents = await this.listTorrents({ hashes });
+    if (
+      hashes.some((hash) => !torrents.some((torrent) => torrent.hash === hash))
+    )
+      torrents = await this.listTorrents();
+
+    const byHash = new Map<string, QBTTorrent>();
+    for (const torrent of torrents) {
+      byHash.set(torrent.hash, torrent);
+      if (torrent.infohash_v1) byHash.set(torrent.infohash_v1, torrent);
+    }
+    const result = new Map<string, QBTTorrent>();
+    for (const hash of hashes) {
+      const torrent = byHash.get(hash);
+      if (torrent) result.set(hash, torrent);
+    }
+    return result;
   }
 
   async getTorrent(hash: string): Promise<QBTTorrent | undefined> {

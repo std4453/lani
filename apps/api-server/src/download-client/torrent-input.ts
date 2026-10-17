@@ -1,15 +1,21 @@
 import { hashes, info } from '@ctrl/torrent-file';
 import magnet from 'magnet-uri';
-import { TorrentInfo } from './IDownloadClient';
+import { PreparedTorrent } from './IDownloadClient';
 
-/** 内容身份优先保留 v1；纯 v2 使用完整 SHA-256，下载器 ID 由查询确认。 */
-export function parseTorrentInput(input: string | Buffer): TorrentInfo {
+/** 内容身份优先保留 v1；下载器 ID 遵循 qBittorrent/libtorrent 2 的 get_best()。 */
+export function parseTorrentInput(
+  input: string | Buffer,
+): Omit<PreparedTorrent, 'input'> {
   if (Buffer.isBuffer(input)) {
     const identity = hashes(input);
     const metadata = info(input);
     const hash = identity.infoHash ?? identity.infoHashV2;
     if (!hash || !metadata.name) throw new Error('Missing torrent identity');
-    return { hash, name: metadata.name };
+    return {
+      hash,
+      clientHash: (identity.infoHashV2 ?? hash).slice(0, 40),
+      name: metadata.name,
+    };
   }
 
   const url = new URL(input);
@@ -33,5 +39,9 @@ export function parseTorrentInput(input: string | Buffer): TorrentInfo {
   ) as ReturnType<typeof magnet> & { infoHashV2?: string };
   const hash = parsed.infoHash ?? parsed.infoHashV2;
   if (!hash) throw new Error('Missing magnet identity');
-  return { hash, name: url.searchParams.get('dn') ?? undefined };
+  return {
+    hash,
+    clientHash: (parsed.infoHashV2 ?? hash).slice(0, 40),
+    name: url.searchParams.get('dn') ?? undefined,
+  };
 }

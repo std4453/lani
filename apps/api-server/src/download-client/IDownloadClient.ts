@@ -15,7 +15,11 @@ export type TorrentStatus =
 
 export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
 
-export type PreparedTorrent = TorrentInfo & { input: string | Buffer };
+export type PreparedTorrent = TorrentInfo & {
+  /** 提交时的下载器 ID：已知 v2 时取前 40 位，否则使用 v1。 */
+  clientHash: string;
+  input: string | Buffer;
+};
 
 export abstract class IDownloadClient {
   abstract prepareTorrent(torrentLink: string): Promise<PreparedTorrent>;

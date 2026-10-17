@@ -290,11 +290,11 @@ export class QBittorrentClient implements IDownloadClient {
     };
   }
 
-  async submitTorrent({ hash, name, input }: PreparedTorrent) {
+  async submitTorrent({ hash, clientHash, name, input }: PreparedTorrent) {
     const params = new FormData();
     if (typeof input === 'string') params.append('urls', input);
     else params.append('torrents', input, { filename: name });
-    const confirmed = await this.addAndConfirm(hash, params);
+    const confirmed = await this.addAndConfirm(clientHash, params);
     this.logger.log(
       `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed as ${
         confirmed.hash
