@@ -1,4 +1,4 @@
-FROM node:20-bullseye-slim
+FROM node:22-bullseye-slim
 
 WORKDIR /deploy/apps/gateway
 COPY ./common/deploy /deploy

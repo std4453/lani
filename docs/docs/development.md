@@ -4,7 +4,11 @@
 
 ## 安装与构建
 
-当前 GitHub Actions 使用 Node 20，开发时优先对齐该版本；根目录 `.nvmrc` 仍为旧版本，不能据此认为当前 CI 使用 Node 16。
+本地开发、GitHub Actions 和后端镜像统一使用 Node.js 22（最低 22.21.1）。`.nvmrc` 固定为已验证的 22.23.2。使用 nvm 时先执行 `nvm install && nvm use`，并通过 `node --version` 确认版本。Rush 和 pnpm 版本由 `rush.json` 固定，使用下列仓库脚本，无需全局安装它们。
+
+工具链使用 Rush 5.181.0、pnpm 9.15.9，锁文件格式为 pnpm 9。不要使用旧版 pnpm 更新锁文件。文档站使用 Docusaurus 2.4.3；`common/config/rush/pnpm-config.json` 将其 Webpack 固定为 5.105.4，避开旧进度插件与 5.106 起参数校验的不兼容。
+
+TypeScript 保持在 4.7.4，以兼容现有 Nest GraphQL 编译插件；4.8 起的 AST 接口变更需要单独评估插件升级。`@types/node` 保留在现有 17.x 类型系列，它只决定类型检查，不改变实际使用的 Node.js 22 运行时。
 
 在仓库根目录运行：
 
@@ -13,7 +17,25 @@ node common/scripts/install-run-rush.js install
 node common/scripts/install-run-rush.js build --to @lani/gateway
 ```
 
-按需把构建目标替换为 `@lani/api-server`、`@lani/data-server` 或 `@lani/admin`。修改依赖后用 `rush update` 更新锁文件，不单独维护包级锁文件。Admin 使用的旧版 Umi/Webpack 在 Node 20 下需要兼容设置；构建时可对齐 CI，将 `NODE_OPTIONS=--openssl-legacy-provider` 仅用于该构建命令。
+按需把构建目标替换为 `@lani/api-server`、`@lani/data-server` 或 `@lani/admin`。修改依赖后运行 `node common/scripts/install-run-rush.js update` 更新锁文件，不单独维护包级锁文件。Admin 使用的 Umi 3/Webpack 在 Node.js 22 下仍需兼容设置；构建时将 `NODE_OPTIONS=--openssl-legacy-provider` 仅用于该构建命令。
+
+镜像构建及系统依赖说明见 [CI/CD 指南](ci-cd.md#镜像构建)。
+
+Prisma 3.15.2 对宿主机 OpenSSL 3.2 等较新 minor 的平台识别存在限制，可能报 `Unknown binaryTarget debian-openssl-3.2.x`。遇到此类错误，应在与镜像一致的 Bullseye/OpenSSL 1.1 容器中构建和验证数据库操作；不要将 `--openssl-legacy-provider` 当作 Prisma 平台识别的修复，它只影响 Node 自身的加密算法。
+
+## 单元测试
+
+先构建测试依赖：
+
+```bash
+node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --parallelism 1
+```
+
+随后分别在 `libs/workflow`、`libs/parse-torrent-title`、`apps/api-server`、`apps/admin` 中运行 `node ../../common/scripts/install-run-rushx.js test --runInBand`；在 `apps/gateway` 中运行 `node ../../common/scripts/install-run-rushx.js test`。
+
+独立的 `.github/workflows/test.yaml` 对目标为 `next` 的 PR、`next` push 和手动触发执行这些测试，不发布镜像，不执行 e2e，不读取 `[skip-cd]` 标记。CI 使用一次性的 PostgreSQL 14 service，先执行现有迁移，再用 `prisma db push --skip-generate` 对齐当前 schema（历史迁移遗漏了一部分已有字段，此步骤仅用于一次性测试库），然后通过 `LANI_LIFECYCLE_TEST_DATABASE_URL` 启用 API 的数据库集成测试；下载器和媒体服务使用测试替身。
+
+本地完整验证也应准备隔离 PostgreSQL，将数据库命名为 `*_test`，通过 `127.0.0.1` 连接。在 `libs/db` 使用该连接作为 `DATABASE_URL` 执行 `node ../../common/scripts/install-run-rushx.js migrate:deploy`，再执行 `node ../../common/scripts/install-run-rushx.js prisma:push --skip-generate` 对齐测试库 schema，然后把同一连接作为 `LANI_LIFECYCLE_TEST_DATABASE_URL` 运行 API 测试。不设置此变量时数据库测试会跳过，不能据此声称完整测试通过。`No tests found` 是失败，不应使用 `--passWithNoTests` 隐藏。
 
 ## 配置与依赖
 
@@ -55,31 +77,31 @@ Data Server 使用 8083，避免与 Gateway 冲突：
 
 ```bash
 cd apps/data-server
-PORT=8083 CONFIG_FILENAME=./config.yaml rushx dev
+PORT=8083 CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js dev
 ```
 
 确认 API 的依赖隔离后启动 API Server：
 
 ```bash
 cd apps/api-server
-CONFIG_FILENAME=./config.yaml rushx start:dev
+CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js start:dev
 ```
 
 两个 subgraph 就绪后启动 Gateway：
 
 ```bash
 cd apps/gateway
-CONFIG_FILENAME=./config.yaml rushx dev
+CONFIG_FILENAME=./config.yaml node ../../common/scripts/install-run-rushx.js dev
 ```
 
 需要前端时再启动 Admin：
 
 ```bash
 cd apps/admin
-rushx dev:umi
+node ../../common/scripts/install-run-rushx.js dev:umi
 ```
 
-Umi 将 `/api/gateway` 代理到 `http://localhost:8080/`。GraphQL schema 或文档变化后，在 Gateway 可访问时于 `apps/admin` 执行 `rushx generate`；通常不必常驻 `dev:codegen`。
+Umi 将 `/api/gateway` 代理到 `http://localhost:8080/`。GraphQL schema 或文档变化后，在 Gateway 可访问时于 `apps/admin` 执行 `node ../../common/scripts/install-run-rushx.js generate`；通常不必常驻 `dev:codegen`。
 
 ## 验证与清理
 

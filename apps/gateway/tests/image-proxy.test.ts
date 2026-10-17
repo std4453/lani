@@ -4,7 +4,7 @@ import { AddressInfo } from "net";
 import express from "express";
 import { createImageProxy } from "../src/image-proxy";
 
-// The repository's Node 17 types predate the Node 20 test runner used in CI.
+// 当前 Node 17 类型不包含 CI 使用的 Node 22 测试接口。
 const test: (name: string, run: () => Promise<void> | void) => void =
   require("node:test").test;
 

@@ -1,7 +1,6 @@
-"""Run with python3; requires initdb, pg_ctl and psql on PATH (non-root).
+"""使用临时 PostgreSQL 集群验证迁移和当前选源 SQL，不读取 DATABASE_URL。
 
-Uses an isolated temporary PostgreSQL cluster, never DATABASE_URL.
-Exercises the actual migrations and enqueue SQL from the service.
+通过非 root 用户运行，需要 PATH 中存在 initdb、pg_ctl 和 psql。
 """
 from pathlib import Path
 import re
@@ -33,7 +32,7 @@ with tempfile.TemporaryDirectory(prefix='lani-download-test-') as directory:
                        '-v', 'ON_ERROR_STOP=1', '-Atq', input=statement)
 
         migrations = sorted(MIGRATIONS.glob('*/migration.sql'))
-        # Simulate the metadata table that Prisma creates before migrations.
+        # 模拟 Prisma 在迁移前创建的元数据表。
         sql('CREATE TABLE "_prisma_migrations" (id text PRIMARY KEY);')
         sql(migrations[0].read_text())
         sql("""
@@ -47,12 +46,12 @@ with tempfile.TemporaryDirectory(prefix='lani-download-test-') as directory:
                        (2, 2, 1, now() - interval '1 day'),
                        (3, 3, 1, now() - interval '1 day'),
                        (4, 4, 1, now() - interval '1 day');
-            INSERT INTO torrents (title, torrent_link, size, publish_date, hash, episode_index)
+            INSERT INTO torrents (title, torrent_link, size, publish_date, hash, "index")
                 VALUES ('Shared 1', 'torrent-1', 1, now(), 'hash-1', 1),
                        ('Shared 13', 'torrent-13', 1, now(), 'hash-13', 13);
         """)
         before = sql('SELECT row_to_json(d) FROM download_sources d ORDER BY id')
-        assert sql(query[1]) == '1|torrent-1'
+        # 当前选源 SQL 依赖后续新增的剧集编号及任务关系，必须在完整迁移后执行。
         for migration in migrations[1:]:
             sql(migration.read_text())
         assert before == sql('SELECT row_to_json(d) FROM download_sources d ORDER BY id')
@@ -73,10 +72,12 @@ with tempfile.TemporaryDirectory(prefix='lani-download-test-') as directory:
                 END;
             END $$;
         """)
-        # Shared pattern, independent offsets, overlapping rules, disabled source,
-        # and a season without a source: exactly one candidate per eligible episode.
+        # 共享 pattern、独立 offset、重叠规则、禁用源和无源季度下，每集只选一个资源。
         assert sorted(sql(query[1]).splitlines()) == ['1|torrent-1', '2|torrent-13']
-        sql("INSERT INTO download_jobs (episode_id, status) VALUES (1, 'DOWNLOAD_SUBMITTING')")
+        sql("""WITH task AS (
+            INSERT INTO download_jobs (episode_id, status) VALUES (1, 'DOWNLOAD_SUBMITTING')
+            RETURNING id, episode_id
+        ) INSERT INTO task_episodes(task_id, episode_id) SELECT id, episode_id FROM task""")
         assert sql(query[1]) == '2|torrent-13'
         sql("UPDATE episodes SET air_time = now() + interval '1 day' WHERE id = 2")
         assert sql(query[1]) == ''
@@ -85,12 +86,12 @@ with tempfile.TemporaryDirectory(prefix='lani-download-test-') as directory:
         sql("UPDATE episodes SET jellyfin_episode_id = NULL WHERE id = 2")
         sql("UPDATE seasons SET jellyfin_id = '' WHERE id = 2")
         assert sql(query[1]) == ''
-        # Fresh installations must also accept the full migration chain.
+        # 全新安装也必须支持完整迁移链。
         sql('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
         for migration in migrations:
             sql(migration.read_text())
         assert sql("SELECT to_regclass('download_sources_season_id_pattern_key') IS NOT NULL") == 't'
-        # Older manually managed databases may have a real UNIQUE constraint.
+        # 兼容旧库手动创建的 UNIQUE 约束。
         sql('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
         sql(migrations[0].read_text())
         sql('ALTER TABLE download_sources ADD CONSTRAINT download_sources_pattern_key '

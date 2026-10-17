@@ -96,13 +96,13 @@ git switch -c docs/commit-branch-guide origin/next
 
 ## PR 测试部署
 
-自动测试部署与 `[skip-cd]` 规则见 [.github/README.md](.github/README.md)。
+自动测试部署与 `[skip-cd]` 规则见 [CI/CD 指南](docs/docs/ci-cd.md)。
 
 ## 构建 manifest 与提交 hook
 
 执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
 
-Rush 5.58 会重建默认 hooks 目录；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
+Rush 安装依赖时会配置仓库 hooks；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
 
 先暂存本次源码再提交。hook 只生成并暂存 `build-manifest.json`，不改变其他文件的部分暂存；manifest 有人工未暂存修改或冲突时会报错，不覆盖内容。
 

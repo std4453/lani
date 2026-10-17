@@ -49,8 +49,8 @@ jobs:
       revision: ${{ steps.build_info.outputs.revision }}
     env:
       PROJECT_NAME: ${{ inputs.app }}
-      # Prisma 3 uses OpenSSL 1.1 in the migration runtime, independent of the runner.
-      PRISMA_CLI_BINARY_TARGETS: debian-openssl-1.1.x
+      # 运行镜像使用 OpenSSL 1.1，Ubuntu runner 使用系统 OpenSSL 3.0。
+      PRISMA_CLI_BINARY_TARGETS: debian-openssl-1.1.x,debian-openssl-3.0.x
     steps:
       - name: Validate project
         shell: bash
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/setup-node@v4
         name: Setup Node
         with:
-          node-version: "20"
+          node-version: "22.23.2"
 
       # https://github.com/microsoft/rushstack/issues/1847#issuecomment-993825253
 
@@ -88,14 +88,14 @@ jobs:
         with:
           path: |
             common/temp/install-run
-          key: ${{ runner.os }}-${{ hashFiles('rush.json') }}
+          key: ${{ runner.os }}-node22-rush-${{ hashFiles('rush.json') }}
 
       - name: Cache pnpm
         uses: actions/cache@v4
         with:
           path: |
             common/temp/pnpm-store
-          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-node22-pnpm-${{ hashFiles('rush.json', 'common/config/rush/pnpm-lock.yaml') }}
 
       - name: Install Dependencies
         run: |

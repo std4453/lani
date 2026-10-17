@@ -4,7 +4,7 @@
 
 ## 配置与迁移
 
-参考 `example.config.yaml`。这是原 SPA OAuth 配置的替换方案，需要前后端配套更新；旧 `clientConfig` 不再支持，已有浏览器登录在迁移后需要重新建立一次 Cookie。从此前保存 OAuth token 的 Cookie 实现升级也需要重新登录一次；新 Cookie 名为 `__Host-lani-gateway`（本地 HTTP 为 `lani-local-gateway`），成功登录时清理旧会话 Cookie。运行时要求 Node 20.19+ 或 22.12+。
+参考 `example.config.yaml`。这是原 SPA OAuth 配置的替换方案，需要前后端配套更新；旧 `clientConfig` 不再支持，已有浏览器登录在迁移后需要重新建立一次 Cookie。从此前保存 OAuth token 的 Cookie 实现升级也需要重新登录一次；新 Cookie 名为 `__Host-lani-gateway`（本地 HTTP 为 `lani-local-gateway`），成功登录时清理旧会话 Cookie。运行时统一使用 Node.js 22（最低 22.21.1）。
 
 - `authority` 是 realm 的公开 issuer，保持与 JWT `iss` 一致。
 - `backchannelAuthority` 是同一 realm 的内网 URL。使用 `client_secret_post` 兼容 Keycloak 15 的 client ID 编码行为；保留 `/auth/realms/...` 路径。gateway 根据 Keycloak 的固定端点构造 metadata，启动不请求 discovery。
