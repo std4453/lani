@@ -131,7 +131,7 @@ it('更新提示浮在表格外且持续显示，刷新失败可重试，成功�
       },
     },
   });
-  const notices = () => document.querySelectorAll('.ant-alert');
+  const notices = () => document.querySelectorAll('.ant-message-notice');
   const settle = async () => {
     await act(async () => {
       jest.advanceTimersByTime(1000);
@@ -154,7 +154,7 @@ it('更新提示浮在表格外且持续显示，刷新失败可重试，成功�
     await settle();
     expect(notices()).toHaveLength(1);
     expect(document.body.textContent).toContain('任务列表有更新');
-    expect(container.textContent).toContain('任务列表有更新');
+    expect(container.textContent).not.toContain('任务列表有更新');
     await act(async () => {
       jest.advanceTimersByTime(60000);
       await poll.refetch();
@@ -167,7 +167,7 @@ it('更新提示浮在表格外且持续显示，刷新失败可重试，成功�
     query.mockResolvedValue({ data: { allTasks: null } });
     await act(async () => {
       (
-        document.querySelector('.ant-alert button') as HTMLButtonElement
+        document.querySelector('.ant-message button') as HTMLButtonElement
       ).click();
     });
     await settle();
@@ -178,7 +178,7 @@ it('更新提示浮在表格外且持续显示，刷新失败可重试，成功�
     query.mockResolvedValue(result(2));
     await act(async () => {
       (
-        document.querySelector('.ant-alert button') as HTMLButtonElement
+        document.querySelector('.ant-message button') as HTMLButtonElement
       ).click();
     });
     await settle();
@@ -218,7 +218,7 @@ it.each([false, true])(
         allTasks: { edges: [{ node: { id, version: 1 } }], totalCount: 1 },
       },
     });
-    const notices = () => document.querySelectorAll('.ant-alert');
+    const notices = () => document.querySelectorAll('.ant-message-notice');
     const settle = async () => {
       await act(async () => {
         jest.advanceTimersByTime(1000);

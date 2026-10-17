@@ -12,13 +12,3 @@
   width: 100%;
   max-width: 100%;
 }
-
-// 固定定位不占表格高度，层级始终低于 Modal 默认遮罩（1000）。
-.updateToast {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  z-index: 999;
-  max-width: calc(100vw - 32px);
-  transform: translateX(-50%);
-}

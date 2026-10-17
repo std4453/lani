@@ -3,3 +3,8 @@
 html, body {
   overflow: hidden;
 }
+
+// 所有 toast 均低于弹窗遮罩（1000）。
+body .ant-message {
+  z-index: 999;
+}
