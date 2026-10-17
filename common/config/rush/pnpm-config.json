@@ -1,0 +1,8 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/pnpm-config.schema.json",
+  "useWorkspaces": false,
+  // Docusaurus 2 的进度插件尚不兼容 Webpack 5.106 新增的参数验证。
+  "globalOverrides": {
+    "@docusaurus/core@2.4.3>webpack": "5.105.4"
+  }
+}

@@ -16,6 +16,6 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Validate the complete candidate tree
         run: node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"

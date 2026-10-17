@@ -70,7 +70,7 @@ export class AxiosService extends Axios {
   ): Promise<R> {
     return new Promise((resolve, reject) => {
       const timeout = config.timeout ?? this.requestConfig.timeout ?? 0;
-      // 部署镜像使用 Node 14，不能依赖全局 AbortController。
+      // 沿用 Axios 0.26 的取消机制，同时保留调用方的取消订阅。
       const cancellation = axios.CancelToken.source();
       const callerToken = config.cancelToken ?? this.defaults.cancelToken;
       if (callerToken?.reason) cancellation.cancel(callerToken.reason.message);

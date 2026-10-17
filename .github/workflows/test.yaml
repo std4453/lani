@@ -1,0 +1,83 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [next]
+  push:
+    branches: [next]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: lani_test
+          POSTGRES_USER: lani
+          POSTGRES_PASSWORD: lani_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lani -d lani_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: "true"
+      CHECKPOINT_DISABLE: "1"
+      PRISMA_CLI_BINARY_TARGETS: debian-openssl-1.1.x,debian-openssl-3.0.x
+      LANI_LIFECYCLE_TEST_DATABASE_URL: postgresql://lani:lani_test@127.0.0.1:5432/lani_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/cache@v4
+        with:
+          path: common/temp/pnpm-store
+          key: ${{ runner.os }}-node22-pnpm-${{ hashFiles('rush.json', 'common/config/rush/pnpm-lock.yaml') }}
+      - name: Install dependencies
+        run: node common/scripts/install-run-rush.js install
+      - name: Build test dependencies
+        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --parallelism 1
+      - name: Prepare isolated test database
+        working-directory: libs/db
+        env:
+          DATABASE_URL: ${{ env.LANI_LIFECYCLE_TEST_DATABASE_URL }}
+        run: |
+          node ../../common/scripts/install-run-rushx.js migrate:deploy
+          # 仅一次性测试库：补齐历史迁移未记录、当前 schema 已有的字段。
+          node ../../common/scripts/install-run-rushx.js prisma:push --skip-generate
+      - name: Test database functions
+        run: psql "$LANI_LIFECYCLE_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f libs/db/tests/episode-metadata.sql
+      - name: Test database migration compatibility
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          python3 libs/db/tests/download-source-migration.py
+      - name: Test workflow
+        working-directory: libs/workflow
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand
+      - name: Test torrent title parser
+        working-directory: libs/parse-torrent-title
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand
+      - name: Test API server
+        working-directory: apps/api-server
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand
+      - name: Test gateway
+        working-directory: apps/gateway
+        run: node ../../common/scripts/install-run-rushx.js test
+      - name: Test admin
+        working-directory: apps/admin
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand

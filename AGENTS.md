@@ -34,6 +34,8 @@
 
 ## 构建、测试与开发
 
+本地开发、CI 和后端镜像统一使用 Node.js 22（最低 22.21.1）；先按 `.nvmrc` 切换版本。Rush/pnpm 使用 `rush.json` 中固定的版本。单元测试由独立的 `.github/workflows/test.yaml` 执行，不受 `[skip-cd]` 影响，当前不运行 e2e。
+
 - `node common/scripts/install-run-rush.js install`：安装锁定的依赖图。
 - `node common/scripts/install-run-rush.js build --to @lani/gateway`：按依赖顺序构建指定包；按改动范围替换目标包。
 - `cd <project> && rushx lint`：运行该包的 ESLint（若提供）；API 包的 lint 带 `--fix`，运行后检查差异。

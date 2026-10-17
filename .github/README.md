@@ -1,5 +1,11 @@
 # Build and deployment handoff
 
+构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为
+`next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway 和
+Admin 的单元测试，以及使用一次性 PostgreSQL service 的 API 数据库集成测试；
+不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。
+本机对应命令见[开发指南](../docs/docs/development.md#单元测试)。
+
 `default_pipeline.yaml` builds the complete committed manifest for `next` pushes
 and same-repository PRs targeting `next`. It uses the PR head SHA, builds only
 missing fingerprints, and still notifies when every image is reused. Open fork
