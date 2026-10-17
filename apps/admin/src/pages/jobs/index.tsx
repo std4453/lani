@@ -33,8 +33,8 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Alert, Typography } from 'antd';
-import { useMemo, useRef, useState } from 'react';
+import { Button, message, Space, Typography } from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
 import { useSize } from 'ahooks';
@@ -293,6 +293,27 @@ export default function JobsPage() {
   const actionRef = useRef<ActionType>();
   const [rows, setRows] = useState<ListTasksFieldsFragment[]>([]);
   const [changed, setChanged] = useState(false);
+  const [messageApi, messageContextHolder] = message.useMessage();
+  useEffect(() => {
+    if (!changed) return;
+    const close = messageApi.info({
+      key: 'task-list-update',
+      duration: 0,
+      content: (
+        <Space>
+          任务列表有更新
+          <Button
+            type="link"
+            size="small"
+            onClick={() => void actionRef.current?.reload()}
+          >
+            刷新
+          </Button>
+        </Space>
+      ),
+    });
+    return () => close();
+  }, [changed, messageApi]);
   const requestSequence = useRef(0);
   const baseline = useRef({
     offset: 0,
@@ -332,20 +353,7 @@ export default function JobsPage() {
   return (
     <div ref={tableRef} style={{ minWidth: 0 }}>
       <PageTitle title="下载/导入任务" />
-      {changed && (
-        <Alert
-          type="info"
-          message={
-            <Typography.Link
-              onClick={() => {
-                void actionRef.current?.reload();
-              }}
-            >
-              任务列表有变化，点击更新
-            </Typography.Link>
-          }
-        />
-      )}
+      {messageContextHolder}
       <MainTable<ListTasksFieldsFragment>
         columns={columns}
         rowKey="id"
