@@ -65,3 +65,48 @@ describe('Nyaa synchronization', () => {
     expect(axios.get).toHaveBeenCalledTimes(3);
   });
 });
+
+it('returns a background run immediately and shares its ID until completion', async () => {
+  const { service } = setup();
+  let complete: (count: number) => void = () => undefined;
+  jest.spyOn(service, 'syncNyaaHistory').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  const started = service.startHistorySync();
+  expect(started.running).toBe(true);
+  expect(service.startHistorySync().id).toBe(started.id);
+  expect(service.syncNyaaHistory).toHaveBeenCalledTimes(1);
+  complete(7);
+  await Promise.resolve();
+  expect(service.getHistorySync()).toEqual({
+    ...started,
+    running: false,
+    added: 7,
+  });
+  expect(service.startHistorySync().id).not.toBe(started.id);
+  complete(0);
+  await Promise.resolve();
+});
+
+it('captures background rejection and exposes failure without an unhandled promise', async () => {
+  const { service } = setup();
+  expect(service.getHistorySync()).toEqual({
+    id: '',
+    running: false,
+    added: 0,
+    error: null,
+  });
+  jest
+    .spyOn(service, 'syncNyaaHistory')
+    .mockRejectedValue(new Error('upstream failure'));
+  const started = service.startHistorySync();
+  await Promise.resolve();
+  expect(service.getHistorySync()).toEqual({
+    ...started,
+    running: false,
+    error: expect.stringContaining('同步失败'),
+  });
+});

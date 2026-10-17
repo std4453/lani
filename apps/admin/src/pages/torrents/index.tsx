@@ -9,7 +9,6 @@ import {
   BigIntFilter,
   ListTorrentsDocument,
   SyncMikanHistoryDocument,
-  SyncNyaaHistoryDocument,
   TorrentChannel,
   TorrentFieldsFragment,
   TorrentFilter,
@@ -28,7 +27,15 @@ import useMobile from '@/utils/useMobile';
 import { HistoryOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { message, Space, Tag, TagProps, Tooltip, Typography } from 'antd';
+import {
+  Button,
+  message,
+  Space,
+  Tag,
+  TagProps,
+  Tooltip,
+  Typography,
+} from 'antd';
 import { useTheme } from '@/theme';
 import { tagColors } from '@/theme/tagColors';
 import md5 from 'md5';
@@ -39,8 +46,10 @@ import {
   useRef,
   useState,
   useLayoutEffect,
+  useEffect,
 } from 'react';
 import styles from './index.module.less';
+import { syncNyaaHistory } from './history';
 import { handleError } from '@/utils/error';
 
 function chooseColor(text: string) {
@@ -279,7 +288,9 @@ function useColumns() {
               >
                 下载种子
               </Typography.Link>
-              <Typography.Link
+              <Button
+                type="link"
+                className={styles.copyButton}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(r.torrentLink);
@@ -290,7 +301,7 @@ function useColumns() {
                 }}
               >
                 复制链接
-              </Typography.Link>
+              </Button>
             </Space>
           ),
           width: 176,
@@ -426,6 +437,8 @@ export async function queryTorrents(
 
 export default withAntdSearch(function Torrents() {
   const baseColumns = useColumns();
+  const historyAbort = useRef<AbortController>();
+  useEffect(() => () => historyAbort.current?.abort(), []);
   const container = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<readonly TorrentTableRow[]>([]);
   const [widths, setWidths] = useState<number[]>([]);
@@ -522,16 +535,17 @@ export default withAntdSearch(function Torrents() {
             <AsyncButton
               type="primary"
               onClick={async () => {
+                const controller = new AbortController();
+                historyAbort.current = controller;
                 const hide = message.loading('同步中，请稍候……', 0);
                 try {
                   const results = await Promise.allSettled([
                     client
                       .mutate({ mutation: SyncMikanHistoryDocument })
                       .then(({ data }) => data?.syncMikanHistory ?? 0),
-                    client
-                      .mutate({ mutation: SyncNyaaHistoryDocument })
-                      .then(({ data }) => data?.syncNyaaHistory ?? 0),
+                    syncNyaaHistory(client, controller.signal),
                   ]);
+                  if (controller.signal.aborted) return;
                   const names = ['蜜柑', 'Nyaa'];
                   results.forEach((result, index) => {
                     if (result.status === 'fulfilled') {

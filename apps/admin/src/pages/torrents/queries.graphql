@@ -46,6 +46,21 @@ mutation SyncMikanHistory {
   syncMikanHistory
 }
 
+fragment nyaaHistorySyncFields on NyaaHistorySync {
+  id
+  running
+  added
+  error
+}
+
 mutation SyncNyaaHistory {
-  syncNyaaHistory
+  syncNyaaHistory {
+    ...nyaaHistorySyncFields
+  }
+}
+
+query NyaaHistorySyncStatus {
+  nyaaHistorySync {
+    ...nyaaHistorySyncFields
+  }
 }

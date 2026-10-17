@@ -1,5 +1,6 @@
-import { Int, Mutation, Resolver } from '@nestjs/graphql';
+import { Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { NyaaSyncService } from './index.service';
+import { NyaaHistorySync } from './index.model';
 
 @Resolver()
 export class NyaaSyncResolver {
@@ -10,8 +11,13 @@ export class NyaaSyncResolver {
     return this.service.syncNyaa();
   }
 
-  @Mutation(() => Int)
+  @Mutation(() => NyaaHistorySync)
   syncNyaaHistory() {
-    return this.service.syncNyaaHistory();
+    return this.service.startHistorySync();
+  }
+
+  @Query(() => NyaaHistorySync)
+  nyaaHistorySync() {
+    return this.service.getHistorySync();
   }
 }
