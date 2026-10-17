@@ -2,6 +2,10 @@ const query = jest.fn();
 let table: {
   request: (params: object, sort: object, filter: object) => Promise<unknown>;
   dataSource: { id: number }[];
+  actionRef: { current: { reload: () => Promise<unknown> } };
+  columns: {
+    render?: (_: unknown, row: { id: number }) => React.ReactNode;
+  }[];
 };
 let poll: { refetch: () => Promise<unknown> };
 jest.mock('@apollo/client', () => ({
@@ -12,14 +16,25 @@ jest.mock('@/components/MainTable', () => ({
   __esModule: true,
   default: (props: typeof table) => {
     table = props;
-    return null;
+    return props.dataSource.length
+      ? props.columns[props.columns.length - 1].render?.(
+          null,
+          props.dataSource[0],
+        )
+      : null;
   },
 }));
 jest.mock('@/components/MainTable/index.module.less', () => ({}));
 jest.mock('@/components/Layout', () => ({ Hamburger: () => null }));
-jest.mock('@/components/TaskDetailsDialog', () => ({
-  useTaskDetailsDialog: () => [null, null, jest.fn()],
-}));
+jest.mock('@/components/TaskDetailsDialog', () => {
+  const { createUseDialog } = jest.requireActual('@/utils/useDialog');
+  return {
+    useTaskDetailsDialog: createUseDialog(
+      ({ visible, reject }: { visible: boolean; reject: () => void }) =>
+        visible ? <button onClick={reject}>关闭任务详情</button> : null,
+    ),
+  };
+});
 jest.mock('@/components/TaskWorkflow', () => ({}));
 jest.mock('@/constants/download-status', () => ({}));
 jest.mock('@/constants/link', () => ({}));
@@ -35,7 +50,7 @@ jest.mock('umi', () => ({ Link: () => null }));
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { act } from 'react-dom/test-utils';
+import { act, Simulate } from 'react-dom/test-utils';
 import JobsPage from './index';
 import { TaskType } from '@/generated/types';
 import { taskStateFilter } from './filters';
@@ -95,13 +110,178 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
     expect(query.mock.calls[1][0].variables.filter).toEqual(
       query.mock.calls[2][0].variables.filter,
     );
-    expect(container.textContent).not.toContain('任务列表有变化');
+    expect(document.body.textContent).not.toContain('任务列表有更新');
   } finally {
     act(() => {
       ReactDOM.unmountComponentAtNode(container);
     });
   }
 });
+
+it('更新提示浮在表格外且持续显示，刷新失败可重试，成功或离开页面后清理', async () => {
+  jest.useFakeTimers();
+  query.mockReset();
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const result = (id: number) => ({
+    data: {
+      allTasks: {
+        edges: [{ node: { id, version: 1 } }],
+        totalCount: 1,
+      },
+    },
+  });
+  const notices = () => document.querySelectorAll('.ant-message-notice');
+  const settle = async () => {
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+  };
+  act(() => {
+    ReactDOM.render(<JobsPage />, container);
+  });
+  try {
+    query.mockResolvedValue(result(1));
+    await act(async () => {
+      await table.request({ current: 1 }, {}, {});
+    });
+    expect(notices()).toHaveLength(0);
+
+    query.mockResolvedValue(result(2));
+    await act(async () => {
+      await poll.refetch();
+    });
+    await settle();
+    expect(notices()).toHaveLength(1);
+    expect(document.body.textContent).toContain('任务列表有更新');
+    expect(container.textContent).not.toContain('任务列表有更新');
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+      await poll.refetch();
+    });
+    expect(notices()).toHaveLength(1);
+    expect(table.dataSource.map((row) => row.id)).toEqual([1]);
+
+    const reload = jest.fn(() => table.request({ current: 1 }, {}, {}));
+    table.actionRef.current = { reload };
+    query.mockResolvedValue({ data: { allTasks: null } });
+    await act(async () => {
+      (
+        document.querySelector('.ant-message button') as HTMLButtonElement
+      ).click();
+    });
+    await settle();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(notices()).toHaveLength(1);
+    expect(table.dataSource.map((row) => row.id)).toEqual([1]);
+
+    query.mockResolvedValue(result(2));
+    await act(async () => {
+      (
+        document.querySelector('.ant-message button') as HTMLButtonElement
+      ).click();
+    });
+    await settle();
+    expect(reload).toHaveBeenCalledTimes(2);
+    expect(notices()).toHaveLength(0);
+    expect(table.dataSource.map((row) => row.id)).toEqual([2]);
+
+    query.mockResolvedValue(result(3));
+    await act(async () => {
+      await poll.refetch();
+    });
+    await settle();
+    expect(notices()).toHaveLength(1);
+    act(() => {
+      ReactDOM.unmountComponentAtNode(container);
+    });
+    await settle();
+    expect(notices()).toHaveLength(0);
+  } finally {
+    act(() => {
+      ReactDOM.unmountComponentAtNode(container);
+    });
+    container.remove();
+    jest.useRealTimers();
+  }
+});
+
+it.each([false, true])(
+  '任务弹窗隐藏更新提示，关闭后按最新签名恢复（打开前已有更新：%s）',
+  async (changedBeforeOpen) => {
+    jest.useFakeTimers();
+    query.mockReset();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const result = (id: number) => ({
+      data: {
+        allTasks: { edges: [{ node: { id, version: 1 } }], totalCount: 1 },
+      },
+    });
+    const notices = () => document.querySelectorAll('.ant-message-notice');
+    const settle = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+    };
+    const open = async () => {
+      act(() => {
+        Simulate.click(container.querySelector('a')!);
+      });
+      await settle();
+    };
+    const close = async () => {
+      await act(async () => {
+        container.querySelector('button')!.click();
+      });
+      await settle();
+    };
+    act(() => {
+      ReactDOM.render(<JobsPage />, container);
+    });
+    try {
+      query.mockResolvedValue(result(1));
+      await act(async () => {
+        await table.request({ current: 1 }, {}, {});
+      });
+      if (changedBeforeOpen) {
+        query.mockResolvedValue(result(2));
+        await act(async () => {
+          await poll.refetch();
+        });
+        await settle();
+        expect(notices()).toHaveLength(1);
+      }
+
+      await open();
+      expect(container.textContent).toContain('关闭任务详情');
+      expect(notices()).toHaveLength(0);
+      query.mockResolvedValue(result(2));
+      await act(async () => {
+        await poll.refetch();
+      });
+      await settle();
+      expect(notices()).toHaveLength(0);
+      await close();
+      expect(notices()).toHaveLength(1);
+
+      await open();
+      expect(notices()).toHaveLength(0);
+      query.mockResolvedValue(result(1));
+      await act(async () => {
+        await poll.refetch();
+      });
+      await close();
+      expect(notices()).toHaveLength(0);
+    } finally {
+      act(() => {
+        ReactDOM.unmountComponentAtNode(container);
+      });
+      container.remove();
+      jest.useRealTimers();
+    }
+  },
+);
 
 import { applyTaskStates } from './index';
 it('新增、删除和过滤条件变化不会改变当前页成员或顺序', () => {
