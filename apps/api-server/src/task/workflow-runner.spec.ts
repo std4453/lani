@@ -43,6 +43,9 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
       now,
     ),
     input: {
+      type: 'DOWNLOAD',
+      sourcePath: null,
+      batchEntries: null,
       id: 1,
       episodeId: 1,
       torrentLink: 'magnet:test',

@@ -1,12 +1,13 @@
+import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { claimEpisodePublication } from './publication';
 import { jellyfinNumber } from '@/utils/episode-number';
 import { PlayerRefreshService } from './refresh/player-refresh.service';
 import { PrismaService } from '@/common/prisma.service';
-import { AsyncAtom, AtomContext, TaskInput } from '@/task/atom';
+import { AtomContext, TaskInput } from '@/task/atom';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class RefreshPlayerAtom extends AsyncAtom {
+export class RefreshPlayerAtom extends BatchableEpisodeAtom {
   readonly wants = [['writeMetadata']] as const;
   constructor(
     private prisma: PrismaService,
@@ -14,7 +15,11 @@ export class RefreshPlayerAtom extends AsyncAtom {
   ) {
     super();
   }
-  async run(id: number, { episodeId }: TaskInput, context: AtomContext) {
+  protected async runEpisode(
+    id: number,
+    { episodeId }: TaskInput,
+    context: AtomContext,
+  ) {
     await claimEpisodePublication(id, context, true);
     if (!episodeId) throw new Error('剧集已被删除');
     const episode = await this.prisma.episode.findUnique({

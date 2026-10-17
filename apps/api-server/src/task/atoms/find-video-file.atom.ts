@@ -1,18 +1,22 @@
-import { AsyncAtom, TaskInput } from '@/task/atom';
+import { BatchableEpisodeAtom } from '../batchable-episode-atom';
+import { TaskInput } from '@/task/atom';
 import { IDownloadClient } from '@/download-client/IDownloadClient';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
 import { Injectable } from '@nestjs/common';
 import path from 'path';
 
 @Injectable()
-export class FindVideoFileAtom extends AsyncAtom {
+export class FindVideoFileAtom extends BatchableEpisodeAtom {
   readonly wants = [['submitDownload'], ['download']] as const;
 
   constructor(private client: IDownloadClient) {
     super();
   }
 
-  async run(_id: number, { qbtTorrentHash, downloadPath }: TaskInput) {
+  protected async runEpisode(
+    _id: number,
+    { qbtTorrentHash, downloadPath }: TaskInput,
+  ) {
     if (!qbtTorrentHash || !downloadPath) {
       throw new Error('submitDownload or download step not finished');
     }

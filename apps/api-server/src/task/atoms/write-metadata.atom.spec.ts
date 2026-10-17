@@ -25,6 +25,9 @@ it.each(['cancel', 'partial-write', 'rename', 'cleanup'])(
     const original = '<episodedetails><title>原文件</title></episodedetails>';
     await fs.writeFile(nfoPath, original);
     const input: TaskInput = {
+      type: 'DOWNLOAD' as const,
+      sourcePath: null,
+      batchEntries: null,
       id: 1,
       episodeId: 2,
       torrentLink: null,

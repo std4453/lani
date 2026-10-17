@@ -155,7 +155,9 @@ it.each(['pending', 'running', 'succeeded'] as const)(
     flow.steps[0].status = status;
     render(flow);
     const step = container.querySelector('[data-step-id="publish"]')!;
-    expect(step.textContent).toContain('完成');
+    expect(step.querySelector('.ant-steps-item-title')?.textContent).toBe(
+      status === 'running' ? '下载完成取消任务' : '下载完成',
+    );
     expect(step.querySelector('button[aria-expanded]')).toBeNull();
     expect(step.querySelector('[id="task-1-step-step:publish"]')).toBeNull();
     expect(step.querySelector('[aria-label="down"]')).toBeNull();

@@ -76,6 +76,7 @@ it('下载和导入共用原子，将视频写入记录的目录', async () => {
     expect(target).toBe(
       path.join(root, 'A／B', 'Season 1', 'Episode - S01E01.mkv'),
     );
+    if (!target) throw new Error('导入未返回目标路径');
     expect(await fs.readFile(target, 'utf8')).toBe('video');
   } finally {
     await fs.rm(root, { recursive: true, force: true });

@@ -1,12 +1,8 @@
-import { BatchImportAtom } from '@/task/batch-import-atom';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
 import { TaskService } from '@/task/index.service';
 import { TaskStore } from '@/task/task-store';
-import {
-  claimEpisodePublication,
-  completeEpisodePublication,
-} from '@/task/atoms/publication';
+import { claimEpisodePublication } from '@/task/atoms/publication';
 import { PublishEpisodeAtom } from '@/task/atoms/publish-episode.atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/common/prisma.service';
@@ -20,7 +16,7 @@ import {
   requestCancellation,
 } from '@lani/workflow';
 import { WorkflowRunner } from '@/task/workflow-runner';
-import { Atoms } from '@/task/atom';
+import { Atoms, AtomContext, TaskInput } from '@/task/atom';
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -460,6 +456,60 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       ).rejects.toThrow('其他任务正在发布或已发布');
     },
   );
+  it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT])(
+    '%s 发布检查点提交失败时，回滚 atom 写入的剧集关联',
+    async (type) => {
+      const task = await service.create(
+        prisma,
+        type,
+        [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+        type === TaskType.BATCH_IMPORT
+          ? {
+              batchEntries: [
+                {
+                  id: 'entry-a',
+                  episodeId,
+                  sourcePath: '/a.mkv',
+                  jellyfinEpisodeId: 'rollback',
+                },
+              ],
+            }
+          : { episodeId, jellyfinEpisodeId: 'rollback' },
+        [episodeId],
+      );
+      const context = await contextFor(task.id);
+      const transaction = context.transaction.bind(context);
+      context.transaction = (operation) =>
+        transaction((state) =>
+          operation({
+            ...state,
+            updateCheckpoint: async (update) => {
+              await state.updateCheckpoint(update);
+              throw new Error('checkpoint failed');
+            },
+            saveCheckpoint: async (checkpoint, output) => {
+              await state.saveCheckpoint(checkpoint, output);
+              throw new Error('checkpoint failed');
+            },
+          }),
+        );
+      const emitter = new EventEmitter2();
+      const emit = jest.spyOn(emitter, 'emit');
+      const atom = new PublishEpisodeAtom(prisma as PrismaService, emitter);
+      await expect(atom.run(task.id, task, context)).rejects.toThrow(
+        'checkpoint failed',
+      );
+      expect(
+        (await prisma.episode.findUnique({ where: { id: episodeId } }))
+          ?.jellyfinEpisodeId,
+      ).toBeNull();
+      const saved = await store.read(task.id);
+      expect(saved.version).toBe(0);
+      expect(currentStep(saved.workflow).checkpoint).toEqual({});
+      expect(context.checkpoint).toEqual({});
+      expect(emit).not.toHaveBeenCalled();
+    },
+  );
   it('批量导入并发检查点和产物在真实事务中合并，发布归属跨类型互斥', async () => {
     const otherEpisode = await prisma.episode.create({
       data: { seasonId, index: 2 },
@@ -476,27 +526,30 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       },
       [episodeId, otherEpisode.id],
     );
-    const run = jest.fn(async (id, input, context) => {
-      await claimEpisodePublication(id, context);
-      await context.saveCheckpoint(
-        {},
-        {
-          filePath: input.sourcePath,
-          nfoPath: `${input.sourcePath}.nfo`,
-          jellyfinEpisodeId: `jf-${input.episodeId}`,
-        },
-      );
-      await completeEpisodePublication(id, context);
-      return {};
-    });
+    class PreparedPublishAtom extends PublishEpisodeAtom {
+      protected async runEpisode(
+        id: number,
+        input: TaskInput,
+        context: AtomContext,
+      ) {
+        await claimEpisodePublication(id, context);
+        await context.saveCheckpoint(
+          {},
+          {
+            filePath: input.sourcePath,
+            nfoPath: `${input.sourcePath}.nfo`,
+            jellyfinEpisodeId: `jf-${input.episodeId}`,
+          },
+        );
+        return super.runEpisode(id, input, context);
+      }
+    }
     const batchAtoms = {
       ...atoms,
-      publishEpisode: new BatchImportAtom({
-        wants: [],
-        run,
-        recover: run,
-        cancel: jest.fn(),
-      }),
+      publishEpisode: new PreparedPublishAtom(
+        prisma as PrismaService,
+        new EventEmitter2(),
+      ),
     };
     await new WorkflowRunner(store, batchAtoms, jest.fn()).start(task.id);
     const saved = await store.read(task.id);

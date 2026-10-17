@@ -1,14 +1,15 @@
+import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { Injectable } from '@nestjs/common';
-import { AsyncAtom, TaskInput } from '../atom';
+import { TaskInput } from '../atom';
 import { fileIdentity } from './import-file.operation';
 import { mapPath } from '@/utils/path';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
 import config from '@/config';
 
 @Injectable()
-export class FindImportFilesAtom extends AsyncAtom {
+export class FindImportFilesAtom extends BatchableEpisodeAtom {
   readonly wants = [];
-  async run(_id: number, input: TaskInput) {
+  protected async runEpisode(_id: number, input: TaskInput) {
     const source = input.sourcePath;
     if (!source || !VIDEO_FILE_MATCHER.test(source))
       throw new Error('请选择视频文件');

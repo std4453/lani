@@ -7,9 +7,24 @@ import {
   requestCancellation,
   retryWorkflow,
 } from '@lani/workflow';
-import { BatchImportAtom } from './batch-import-atom';
-import { AsyncAtom, Atoms, TaskInput } from './atom';
+import { BatchableEpisodeAtom } from './batchable-episode-atom';
+import { AsyncAtom, AtomContext, Atoms, TaskInput } from './atom';
 import { StoredTask, TaskStorePort, WorkflowRunner } from './workflow-runner';
+class TestEpisodeAtom extends BatchableEpisodeAtom {
+  readonly wants = [];
+  constructor(private implementation: AsyncAtom) {
+    super();
+  }
+  protected runEpisode(id: number, input: TaskInput, context: AtomContext) {
+    return this.implementation.run(id, input, context);
+  }
+  protected recoverEpisode(id: number, input: TaskInput, context: AtomContext) {
+    return this.implementation.recover(id, input, context);
+  }
+  protected cancelEpisode(id: number, input: TaskInput, context: AtomContext) {
+    return this.implementation.cancel(id, input, context);
+  }
+}
 const now = '2026-10-16T00:00:00Z';
 function deferred() {
   let resolve!: () => void;
@@ -30,7 +45,7 @@ function setup(atom: AsyncAtom) {
       },
     ]),
   ) as unknown as Atoms;
-  atoms.findImportFiles = new BatchImportAtom(atom);
+  atoms.findImportFiles = new TestEpisodeAtom(atom);
   let state: StoredTask = {
     id: 1,
     version: 0,
@@ -45,6 +60,7 @@ function setup(atom: AsyncAtom) {
     input: {
       id: 1,
       type: 'BATCH_IMPORT',
+      sourcePath: null,
       episodeId: null,
       torrentLink: null,
       qbtTorrentHash: null,
@@ -178,7 +194,7 @@ it('单集任务直接复用根检查点，不增加条目或 completed 标记',
     recover: jest.fn(async () => ({})),
     cancel: jest.fn(),
   };
-  const wrapper = new BatchImportAtom(atom);
+  const wrapper = new TestEpisodeAtom(atom);
   const input = { id: 1, type: 'IMPORT' } as TaskInput;
   const context = { checkpoint: { publicationClaimed: true } } as never;
   expect(await wrapper.run(1, input, context)).toEqual({

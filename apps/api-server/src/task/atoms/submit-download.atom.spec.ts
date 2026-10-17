@@ -28,6 +28,9 @@ function setup(checkpoint: Checkpoint = {}) {
   };
   const atom = new SubmitDownloadAtom(client as unknown as IDownloadClient);
   const input = {
+    type: 'DOWNLOAD' as const,
+    sourcePath: null,
+    batchEntries: null,
     id: 1,
     episodeId: 1,
     torrentLink: 'magnet:test',

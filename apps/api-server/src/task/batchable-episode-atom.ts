@@ -22,16 +22,23 @@ export function entryCheckpoint(
   return checkpoint.entries?.[entryId] ?? {};
 }
 function entryInput(input: TaskInput, entry: BatchImportEntry): TaskInput {
-  return { ...input, ...entry, id: input.id, batchEntries: undefined };
+  return { ...input, ...entry, id: input.id, batchEntries: null };
 }
 
 /** 逐集原子共享一个步骤；所有在途项收敛后才能推进或报告失败。 */
-export class BatchImportAtom extends AsyncAtom {
-  get wants() {
-    return this.atom.wants;
+export abstract class BatchableEpisodeAtom extends AsyncAtom {
+  protected abstract runEpisode(
+    id: number,
+    input: TaskInput,
+    context: AtomContext,
+  ): Promise<TaskOutput>;
+
+  protected recoverEpisode(id: number, input: TaskInput, context: AtomContext) {
+    return this.runEpisode(id, input, context);
   }
-  constructor(private atom: AsyncAtom) {
-    super();
+
+  protected cancelEpisode(id: number, input: TaskInput, context: AtomContext) {
+    return super.cancel(id, input, context);
   }
 
   private context(parent: AtomContext, entry: BatchImportEntry): AtomContext {
@@ -103,7 +110,8 @@ export class BatchImportAtom extends AsyncAtom {
     input: TaskInput,
     parent: AtomContext,
   ): Promise<TaskOutput> {
-    if (input.type !== 'BATCH_IMPORT') return this.atom.run(id, input, parent);
+    if (input.type !== 'BATCH_IMPORT')
+      return this.runEpisode(id, input, parent);
     const entries = batchImportEntries(input.batchEntries);
     if (!entries.length) throw new Error('批量导入任务没有条目');
     const results = await Promise.allSettled(
@@ -111,7 +119,7 @@ export class BatchImportAtom extends AsyncAtom {
         const context = this.context(parent, entry);
         if (entryCheckpoint(parent.checkpoint, entry.id).completed) return;
         await context.assertActive();
-        const output = await this.atom.recover(
+        const output = await this.recoverEpisode(
           id,
           entryInput(input, entry),
           context,
@@ -144,15 +152,15 @@ export class BatchImportAtom extends AsyncAtom {
   recover(id: number, input: TaskInput, parent: AtomContext) {
     return input.type === 'BATCH_IMPORT'
       ? this.run(id, input, parent)
-      : this.atom.recover(id, input, parent);
+      : this.recoverEpisode(id, input, parent);
   }
 
   async cancel(id: number, input: TaskInput, parent: AtomContext) {
     if (input.type !== 'BATCH_IMPORT')
-      return this.atom.cancel(id, input, parent);
+      return this.cancelEpisode(id, input, parent);
     const results = await Promise.allSettled(
       batchImportEntries(input.batchEntries).map((entry) =>
-        this.atom.cancel(
+        this.cancelEpisode(
           id,
           entryInput(input, entry),
           this.context(parent, entry),

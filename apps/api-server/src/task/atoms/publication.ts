@@ -63,23 +63,12 @@ export async function claimEpisodePublication(
 export async function completeEpisodePublication(
   id: number,
   context: AtomContext,
+  publish: (transaction: AtomTransaction) => Promise<void>,
 ): Promise<'published' | 'already-published'> {
   return context.transaction(async (transaction) => {
-    const { tx, workflow, input, saveCheckpoint } = transaction;
-    if (!input.jellyfinEpisodeId)
-      throw new Error('未获取到剧集对应的 Jellyfin ID');
+    const { workflow, saveCheckpoint } = transaction;
     await checkPublication(id, transaction, true);
-    const episodeId = input.episodeId!;
-    const result = await tx.episode.updateMany({
-      where: { id: episodeId, jellyfinEpisodeId: null },
-      data: { jellyfinEpisodeId: input.jellyfinEpisodeId },
-    });
-    if (!result.count) {
-      const episode = await tx.episode.findUnique({ where: { id: episodeId } });
-      if (!episode) throw new Error('剧集已被删除');
-      if (episode.jellyfinEpisodeId !== input.jellyfinEpisodeId)
-        throw new Error('剧集已关联其他 Jellyfin 条目，无法继续发布');
-    }
+    await publish(transaction);
     if (currentStep(workflow).checkpoint.episodePublished)
       return 'already-published';
     await saveCheckpoint({ publicationClaimed: true, episodePublished: true });

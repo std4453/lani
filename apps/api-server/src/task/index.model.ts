@@ -19,9 +19,6 @@ export class BatchImportEntryState {
 
 @ObjectType()
 export class TaskState {
-  @Field(() => [BatchImportEntryState], { nullable: true }) batchEntries?:
-    | BatchImportEntryState[]
-    | null;
   @Field(() => Int) id: number;
   @Field(() => TaskType) type: TaskType;
   @Field(() => Int) version: number;
@@ -38,6 +35,9 @@ export class TaskState {
   @Field(() => String, { nullable: true }) filePath?: string | null;
   @Field(() => String, { nullable: true }) nfoPath?: string | null;
   @Field(() => String, { nullable: true }) jellyfinEpisodeId?: string | null;
+  @Field(() => [BatchImportEntryState], { nullable: true }) batchEntries?:
+    | BatchImportEntryState[]
+    | null;
   @Field() canRetry: boolean;
   @Field() canCancel: boolean;
 }

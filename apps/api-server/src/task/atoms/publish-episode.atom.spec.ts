@@ -29,6 +29,9 @@ function setup() {
   };
   const input: TaskInput = {
     id: 1,
+    type: 'DOWNLOAD',
+    sourcePath: null,
+    batchEntries: null,
     episodeId: 2,
     torrentLink: null,
     qbtTorrentHash: null,
@@ -66,6 +69,7 @@ function setup() {
       })),
       updateMany: jest.fn(async ({ data }) => {
         Object.assign(workflow, data.workflow);
+        if (data.batchEntries) input.batchEntries = data.batchEntries;
         ++version;
         return { count: 1 };
       }),
@@ -185,8 +189,23 @@ it.each(['IMPORT', 'BATCH_IMPORT'] as const)(
   async (type) => {
     const test = setup();
     test.input.type = type;
+    if (type === 'BATCH_IMPORT') {
+      test.input.batchEntries = [
+        {
+          id: 'entry-a',
+          episodeId: 2,
+          sourcePath: '/a.mkv',
+          jellyfinEpisodeId: 'jellyfin-episode',
+        },
+      ];
+    }
     await test.atom.run(1, test.input, test.context);
-    expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
+    const checkpoint = test.workflow.steps[0].checkpoint;
+    expect(
+      type === 'BATCH_IMPORT'
+        ? checkpoint.entries?.['entry-a'].episodePublished
+        : checkpoint.episodePublished,
+    ).toBe(true);
     expect(test.episode.updateMany).toHaveBeenCalled();
     expect(test.emit).not.toHaveBeenCalled();
   },

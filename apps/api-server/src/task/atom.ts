@@ -4,6 +4,9 @@ import { Prisma, Task } from '@lani/db';
 export type TaskInput = Pick<
   Task,
   | 'id'
+  | 'type'
+  | 'sourcePath'
+  | 'batchEntries'
   | 'episodeId'
   | 'torrentLink'
   | 'qbtTorrentHash'
@@ -13,8 +16,7 @@ export type TaskInput = Pick<
   | 'filePath'
   | 'nfoPath'
   | 'jellyfinEpisodeId'
-> &
-  Partial<Pick<Task, 'type' | 'sourcePath' | 'batchEntries'>>;
+>;
 export type TaskOutput = Partial<
   Pick<
     TaskInput,

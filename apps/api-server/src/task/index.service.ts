@@ -1,4 +1,3 @@
-import { BatchImportAtom } from './batch-import-atom';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -57,12 +56,12 @@ export class TaskService
     this.atoms = {
       submitDownload,
       download,
-      findImportFiles: new BatchImportAtom(findImportFiles),
-      findVideoFile: new BatchImportAtom(findVideoFile),
-      importFile: new BatchImportAtom(importFile),
-      writeMetadata: new BatchImportAtom(writeMetadata),
-      refreshPlayer: new BatchImportAtom(refreshPlayer),
-      publishEpisode: new BatchImportAtom(publishEpisode),
+      findImportFiles,
+      findVideoFile,
+      importFile,
+      writeMetadata,
+      refreshPlayer,
+      publishEpisode,
     };
     const logger = new Logger(TaskService.name);
     this.runner = new WorkflowRunner(store, this.atoms, (error) =>

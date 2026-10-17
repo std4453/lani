@@ -16,7 +16,7 @@ import {
 import { ReactNode, useEffect, useState } from 'react';
 import styles from './index.module.less';
 import Field from './Field';
-import { TASK_TYPE_LABELS } from '@/utils/task-episodes';
+import TaskInfo from './TaskInfo';
 import { atomViews } from './atoms';
 import { parseWorkflow } from '@lani/workflow';
 import { legacyWorkflow } from './legacy-compat';
@@ -150,11 +150,7 @@ export default function TaskWorkflowView({
             id={`task-${task.id}-step-task-info`}
             open={expanded.includes('task-info')}
           >
-            <Field label="创建时间">{formatTime(task.createdAt)}</Field>
-            <Field label="类型">{TASK_TYPE_LABELS[task.type]}</Field>
-            {task.type === 'DOWNLOAD' && (
-              <Field label="种子地址">{task.torrentLink}</Field>
-            )}
+            <TaskInfo task={task} />
           </StepDetails>
         }
       />
@@ -191,12 +187,7 @@ export default function TaskWorkflowView({
             }
             title={
               <Space size={8}>
-                {title(
-                  `step:${item.id}`,
-                  (item.atom === 'publishEpisode' ? '完成' : item.title) +
-                    suffix,
-                  collapsible,
-                )}
+                {title(`step:${item.id}`, item.title + suffix, collapsible)}
                 {failed ? (
                   <Button
                     type="link"

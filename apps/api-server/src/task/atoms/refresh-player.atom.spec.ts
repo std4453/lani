@@ -54,6 +54,9 @@ function setup() {
     }),
   };
   const input = {
+    type: 'DOWNLOAD' as const,
+    sourcePath: null,
+    batchEntries: null,
     id: 1,
     episodeId: 1,
     torrentLink: 'test',
