@@ -1,8 +1,15 @@
 import { defineConfig } from 'umi';
 import { initializeTheme, THEME_STORAGE_KEY } from './src/theme/bootstrap';
+import {
+  createTestRoutingCookies,
+  initializeTestRouting,
+} from './src/utils/test-routing-bootstrap';
 
 export default defineConfig({
   headScripts: [
+    {
+      content: `(${initializeTestRouting.toString()})((${createTestRoutingCookies.toString()})());`,
+    },
     {
       content: `(${initializeTheme.toString()})(${JSON.stringify(
         THEME_STORAGE_KEY,
