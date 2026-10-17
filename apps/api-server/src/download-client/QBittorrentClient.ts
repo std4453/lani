@@ -10,7 +10,7 @@ import { QBittorrentService } from '@/download-client/QBittorrentService';
 import { QBTTorrentState } from '@/download-client/types';
 import { Injectable, Logger } from '@nestjs/common';
 import FormData from 'form-data';
-import parseTorrent from 'parse-torrent';
+import { parseTorrentInput } from './torrent-input';
 import { inspect } from 'util';
 
 // 单次获取或提交流程的最大尝试次数，包含首次请求。
@@ -26,7 +26,9 @@ export class QBittorrentClient implements IDownloadClient {
   ) {}
 
   async getTorrentFiles(hash: string) {
-    const files = await this.qbt.getFiles(hash);
+    const torrent = await this.qbt.getTorrent(hash);
+    if (!torrent) throw new LaniError('种子不存在或被删除');
+    const files = await this.qbt.getFiles(torrent.hash);
     return files.map(({ name, size }) => ({
       path: name,
       size,
@@ -101,12 +103,7 @@ export class QBittorrentClient implements IDownloadClient {
   /** 解析磁力链接或种子文件，在提交前检查 info hash 和文件元数据。 */
   private parseTorrentInput(input: string | Buffer) {
     try {
-      const torrent = parseTorrent(input);
-      const { infoHash } = torrent;
-      if (!infoHash || (Buffer.isBuffer(input) && !torrent.name)) {
-        throw new Error('Missing info hash or torrent file name');
-      }
-      return { ...torrent, infoHash };
+      return parseTorrentInput(input);
     } catch (error) {
       this.logger.error(
         `Torrent input parsing failed: ${
@@ -136,9 +133,8 @@ export class QBittorrentClient implements IDownloadClient {
     for (;;) {
       ++polls;
       try {
-        if (await this.qbt.getTorrent(hash)) {
-          return true;
-        }
+        const torrent = await this.qbt.getTorrent(hash);
+        if (torrent) return torrent;
         lastError = undefined;
       } catch (error) {
         if (!this.isTransientError(error)) {
@@ -166,7 +162,7 @@ export class QBittorrentClient implements IDownloadClient {
       }ms, lastError=${inspect(lastError)}`,
     );
     if (lastError) throw lastError;
-    return false;
+    return undefined;
   }
 
   /**
@@ -179,9 +175,8 @@ export class QBittorrentClient implements IDownloadClient {
     for (let attempt = 0; ; ++attempt) {
       try {
         // 已存在时无需重复提交，相信 hash 不会碰撞。
-        if (await this.qbt.getTorrent(hash)) {
-          return;
-        }
+        const torrent = await this.qbt.getTorrent(hash);
+        if (torrent) return torrent;
       } catch (error) {
         if (attempt >= MAX_ATTEMPTS - 1 || !this.isTransientError(error)) {
           this.logger.error(
@@ -247,7 +242,8 @@ export class QBittorrentClient implements IDownloadClient {
           `qBittorrent returned Fails. for torrent submission: hash=${hash}; checking whether it already exists or is still being added`,
         );
       }
-      if (await this.waitForTorrent(hash)) return;
+      const confirmed = await this.waitForTorrent(hash);
+      if (confirmed) return confirmed;
       if (submissionError) {
         if (attempt < MAX_ATTEMPTS - 1) {
           const delay = 1000 * 2 ** attempt;
@@ -289,33 +285,40 @@ export class QBittorrentClient implements IDownloadClient {
       : await this.fetchTorrent(torrentLink);
     const torrent = this.parseTorrentInput(input);
     return {
-      hash: torrent.infoHash,
-      name: Array.isArray(torrent.name) ? torrent.name[0] : torrent.name,
+      ...torrent,
       input,
     };
   }
 
-  async submitTorrent({ hash, name, input }: PreparedTorrent) {
+  async submitTorrent({ hash, clientHash, name, input }: PreparedTorrent) {
     const params = new FormData();
     if (typeof input === 'string') params.append('urls', input);
     else params.append('torrents', input, { filename: name });
-    await this.addAndConfirm(hash, params);
+    const confirmed = await this.addAndConfirm(clientHash, params);
     this.logger.log(
-      `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed`,
+      `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed as ${
+        confirmed.hash
+      }`,
     );
+    return { hash: confirmed.hash, name: confirmed.name };
   }
 
   async removeTorrent(hash: string) {
     if (!hash) throw new LaniError('无法取消：缺少种子 hash');
+    const torrent = await this.qbt.getTorrent(hash);
+    if (!torrent) return;
     await this.qbt.post(
       '/torrents/delete',
-      new URLSearchParams({ hashes: hash, deleteFiles: 'false' }).toString(),
+      new URLSearchParams({
+        hashes: torrent.hash,
+        deleteFiles: 'false',
+      }).toString(),
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       },
     );
     for (let attempt = 0; attempt < 10; ++attempt) {
-      if (!(await this.qbt.getTorrent(hash))) return;
+      if (!(await this.qbt.resolveTorrents([hash, torrent.hash])).size) return;
       await this.pause(500);
     }
     throw new LaniError('下载器尚未确认移除种子，请重试');
@@ -323,12 +326,10 @@ export class QBittorrentClient implements IDownloadClient {
 
   async lookupTorrents(hashes: string[]) {
     if (!hashes.length) return [];
-    const torrents = await this.qbt.listTorrents({
-      hashes,
-    });
-    return torrents.map((torrent): TorrentInfoWithStatus => {
+    const torrents = await this.qbt.resolveTorrents(hashes);
+    return Array.from(torrents, ([hash, torrent]): TorrentInfoWithStatus => {
       const torrentInfo: TorrentInfo = {
-        hash: torrent.hash,
+        hash,
         name: torrent.name,
       };
       switch (torrent.state as QBTTorrentState) {
@@ -366,11 +367,9 @@ export class QBittorrentClient implements IDownloadClient {
     }[]
   > {
     if (!hashes.length) return [];
-    const torrents = await this.qbt.listTorrents({
-      hashes,
-    });
-    return torrents.map((torrent) => ({
-      hash: torrent.hash,
+    const torrents = await this.qbt.resolveTorrents(hashes);
+    return Array.from(torrents, ([hash, torrent]) => ({
+      hash,
       speed: torrent.completion_on > 0 ? 0 : torrent.dlspeed,
       downloaded: torrent.downloaded,
       total: torrent.size,

@@ -15,14 +15,20 @@ export type TorrentStatus =
 
 export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
 
-export type PreparedTorrent = TorrentInfo & { input: string | Buffer };
+export type PreparedTorrent = TorrentInfo & {
+  /** 提交时的下载器 ID：已知 v2 时取前 40 位，否则使用 v1。 */
+  clientHash: string;
+  input: string | Buffer;
+};
 
 export abstract class IDownloadClient {
   abstract prepareTorrent(torrentLink: string): Promise<PreparedTorrent>;
-  abstract submitTorrent(torrent: PreparedTorrent): Promise<void>;
+  /** 返回下载器确认后的实际 ID，可能与输入的内容 hash 不同。 */
+  abstract submitTorrent(torrent: PreparedTorrent): Promise<TorrentInfo>;
 
   abstract removeTorrent(hash: string): Promise<void>;
 
+  /** 返回值的 hash 保留请求标识，以兼容仍保存 v1 hash 的历史任务。 */
   abstract lookupTorrents(hashes: string[]): Promise<TorrentInfoWithStatus[]>;
 
   abstract getTorrentFiles(hash: string): Promise<

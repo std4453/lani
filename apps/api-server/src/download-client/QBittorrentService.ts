@@ -280,12 +280,33 @@ export class QBittorrentService extends AxiosService {
     return Array.from(obj.torrents);
   }
 
+  /**
+   * 按实际 ID 查询，未命中时通过 infohash_v1 兼容历史任务。
+   * btih 磁力链接取得 hybrid 元数据后的 ID 变化也走同一路径。
+   */
+  async resolveTorrents(hashes: string[]): Promise<Map<string, QBTTorrent>> {
+    if (!hashes.length) return new Map();
+    let torrents = await this.listTorrents({ hashes });
+    if (
+      hashes.some((hash) => !torrents.some((torrent) => torrent.hash === hash))
+    )
+      torrents = await this.listTorrents();
+
+    const byHash = new Map<string, QBTTorrent>();
+    for (const torrent of torrents) {
+      byHash.set(torrent.hash, torrent);
+      if (torrent.infohash_v1) byHash.set(torrent.infohash_v1, torrent);
+    }
+    const result = new Map<string, QBTTorrent>();
+    for (const hash of hashes) {
+      const torrent = byHash.get(hash);
+      if (torrent) result.set(hash, torrent);
+    }
+    return result;
+  }
+
   async getTorrent(hash: string): Promise<QBTTorrent | undefined> {
-    return (
-      await this.listTorrents({
-        hashes: [hash],
-      })
-    )[0];
+    return (await this.resolveTorrents([hash])).get(hash);
   }
 
   async getFiles(hash: string) {

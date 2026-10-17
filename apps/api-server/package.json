@@ -44,7 +44,6 @@
     "class-validator": "~0.13.2",
     "class-transformer": "~0.5.1",
     "cookie": "~0.4.2",
-    "parse-torrent": "~9.1.4",
     "form-data": "~4.0.0",
     "@nestjs/event-emitter": "~1.1.0",
     "qs": "~6.10.3",
@@ -56,7 +55,9 @@
     "joi": "~17.6.0",
     "aws-sdk": "~2.1152.0",
     "@lani/parse-torrent-title": "~1.0.0",
-    "@lani/workflow": "~1.0.0"
+    "@lani/workflow": "~1.0.0",
+    "@ctrl/torrent-file": "4.5.2",
+    "magnet-uri": "~6.2.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -84,11 +85,9 @@
     "@types/cron": "~1.7.3",
     "@lani/cli": "~1.0.0",
     "@types/cookie": "~0.4.1",
-    "@types/parse-torrent": "~5.8.4",
     "openapi-typescript-codegen": "~0.20.1",
     "@types/md5": "~2.3.2",
-    "@types/magnet-uri": "~5.1.3",
-    "@types/parse-torrent-file": "~4.0.3"
+    "@types/magnet-uri": "~5.1.3"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -109,6 +108,16 @@
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/$1",
       "^@lani/workflow$": "<rootDir>/../../../libs/workflow/src/index.ts"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!.*@ctrl[+/]torrent-file)"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": {
+          "allowJs": true
+        }
+      }
     }
   },
   "files": [
