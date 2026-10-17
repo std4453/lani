@@ -9,7 +9,7 @@ function setup(checkpoint: Checkpoint = {}) {
       name: 'video',
       input: 'magnet:test',
     })),
-    submitTorrent: jest.fn(),
+    submitTorrent: jest.fn(async () => ({ hash: 'client-id' })),
     lookupTorrents: jest.fn(),
     removeTorrent: jest.fn(async () => undefined),
   };
@@ -52,12 +52,15 @@ it('先保存 hash 和提交意图，再确认完成', async () => {
       name: 'video',
       phase: 'requested',
     });
+    return { hash: 'client-id' };
   });
   await expect(test.atom.run(1, test.input, test.context)).resolves.toEqual({
-    qbtTorrentHash: 'known',
+    qbtTorrentHash: 'client-id',
     torrentTitle: 'video',
   });
   expect(test.context.checkpoint.submission?.phase).toBe('confirmed');
+  expect(test.context.checkpoint.submission?.hash).toBe('known');
+  expect(test.context.checkpoint.submission?.clientHash).toBe('client-id');
   expect(test.context.saveCheckpoint).toHaveBeenCalledTimes(2);
   expect(test.context.saveCheckpoint).toHaveBeenNthCalledWith(
     1,
@@ -66,6 +69,42 @@ it('先保存 hash 和提交意图，再确认完成', async () => {
     },
     { qbtTorrentHash: 'known', torrentTitle: 'video' },
   );
+});
+it('确认后保存实际 ID，重启重试仍按原内容身份校验', async () => {
+  const test = setup({
+    submission: {
+      hash: 'known',
+      clientHash: 'old-client-id',
+      phase: 'confirmed',
+    },
+  });
+  await test.atom.run(1, test.input, test.context);
+  expect(test.context.saveCheckpoint).toHaveBeenLastCalledWith(
+    {
+      submission: {
+        hash: 'known',
+        clientHash: 'client-id',
+        name: 'video',
+        phase: 'confirmed',
+      },
+    },
+    { qbtTorrentHash: 'client-id', torrentTitle: 'video' },
+  );
+  await test.atom.cancel(1, test.input, test.context);
+  expect(test.client.removeTorrent).toHaveBeenCalledWith('client-id');
+});
+it('兼容仅保存旧 hash 的已确认 checkpoint', async () => {
+  const test = setup({ submission: { hash: 'known', phase: 'confirmed' } });
+  await test.atom.cancel(1, test.input, test.context);
+  expect(test.client.removeTorrent).toHaveBeenCalledWith('known');
+});
+it('内容身份变化时不提交或覆盖已有 checkpoint', async () => {
+  const test = setup({ submission: { hash: 'different', phase: 'requested' } });
+  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
+    'hash 已变化',
+  );
+  expect(test.client.submitTorrent).not.toHaveBeenCalled();
+  expect(test.context.saveCheckpoint).not.toHaveBeenCalled();
 });
 it('未确认提交不可因首次查询缺失而报告取消成功', async () => {
   const test = setup({ submission: { hash: 'known', phase: 'requested' } });

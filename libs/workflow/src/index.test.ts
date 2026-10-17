@@ -17,6 +17,27 @@ const step = (atom: typeof atomTypes[number]) => ({
   atom,
   title: atom,
 });
+it("提交检查点兼容旧 hash 并保留下载器实际 ID", () => {
+  for (const submission of [
+    { hash: "source-hash", phase: "confirmed" as const },
+    {
+      hash: "source-hash",
+      clientHash: "client-id",
+      phase: "confirmed" as const,
+    },
+  ]) {
+    const workflow = buildWorkflowSnapshot(
+      [step("submitDownload")],
+      registry,
+      now
+    );
+    workflow.steps[0].checkpoint.submission = submission;
+    expect(
+      parseWorkflow(JSON.parse(JSON.stringify(workflow))).steps[0].checkpoint
+        .submission
+    ).toEqual(submission);
+  }
+});
 it("不同数量和顺序的流程不依赖固定六步", () => {
   for (const atoms of [
     ["download"],

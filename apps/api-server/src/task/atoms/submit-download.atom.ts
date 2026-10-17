@@ -25,11 +25,20 @@ export class SubmitDownloadAtom extends AsyncAtom {
     );
     await context.assertActive();
     // 请求与确认收敛后才进入取消清理，避免迟到添加覆盖已经完成的清理。
-    await this.client.submitTorrent(torrent);
-    await context.saveCheckpoint({
-      submission: { hash, ...(name ? { name } : {}), phase: 'confirmed' },
-    });
-    return { qbtTorrentHash: hash, torrentTitle: name };
+    const confirmed = await this.client.submitTorrent(torrent);
+    const output = { qbtTorrentHash: confirmed.hash, torrentTitle: name };
+    await context.saveCheckpoint(
+      {
+        submission: {
+          hash,
+          clientHash: confirmed.hash,
+          ...(name ? { name } : {}),
+          phase: 'confirmed',
+        },
+      },
+      output,
+    );
+    return output;
   }
 
   async cancel(_id: number, _input: TaskInput, context: AtomContext) {
@@ -51,6 +60,6 @@ export class SubmitDownloadAtom extends AsyncAtom {
         submission: { ...submission, phase: 'confirmed' },
       });
     }
-    await this.client.removeTorrent(submission.hash);
+    await this.client.removeTorrent(submission.clientHash ?? submission.hash);
   }
 }

@@ -280,12 +280,58 @@ export class QBittorrentService extends AxiosService {
     return Array.from(obj.torrents);
   }
 
+  /**
+   * API 的 hashes 过滤器可能只接受实际 ID，不接受 hybrid 的 v1 或完整 v2。
+   * 先批量查询，未命中时共用一次全量查询；保留请求标识到实际种子的对应关系。
+   */
+  async resolveTorrents(hashes: string[]): Promise<Map<string, QBTTorrent>> {
+    const requested = [...new Set(hashes.filter(Boolean))];
+    if (!requested.length) return new Map();
+    const candidates = [
+      ...new Set(
+        requested.flatMap((hash) => {
+          const normalized = hash.toLowerCase();
+          return /^[a-f\d]{64}$/.test(normalized)
+            ? [normalized, normalized.slice(0, 40)]
+            : [normalized];
+        }),
+      ),
+    ];
+    const match = (torrents: QBTTorrent[]) => {
+      const aliases = new Map<string, QBTTorrent[]>();
+      for (const torrent of torrents) {
+        const keys = [torrent.hash, torrent.infohash_v1, torrent.infohash_v2];
+        if (/^[a-f\d]{64}$/i.test(torrent.infohash_v2 ?? ''))
+          keys.push(torrent.infohash_v2.slice(0, 40));
+        for (const key of new Set(
+          keys.filter(Boolean).map((key) => key.toLowerCase()),
+        )) {
+          if (/^0+$/.test(key)) continue;
+          const matches = aliases.get(key) ?? [];
+          if (!matches.some((item) => item.hash === torrent.hash))
+            matches.push(torrent);
+          aliases.set(key, matches);
+        }
+      }
+      const result = new Map<string, QBTTorrent>();
+      for (const hash of requested) {
+        const matches = aliases.get(hash.toLowerCase()) ?? [];
+        if (matches.length > 1)
+          throw new LaniError(
+            `种子 hash 对应多个下载器条目，无法确定目标（${hash}）`,
+          );
+        if (matches[0]) result.set(hash, matches[0]);
+      }
+      return result;
+    };
+    const result = match(await this.listTorrents({ hashes: candidates }));
+    if (result.size === requested.length) return result;
+    // 全量结果是更新的快照；不保留第一次查询中可能已被移除的条目。
+    return match(await this.listTorrents());
+  }
+
   async getTorrent(hash: string): Promise<QBTTorrent | undefined> {
-    return (
-      await this.listTorrents({
-        hashes: [hash],
-      })
-    )[0];
+    return (await this.resolveTorrents([hash])).get(hash);
   }
 
   async getFiles(hash: string) {
