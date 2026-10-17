@@ -126,3 +126,11 @@ query LocalGatewayRouteProbe {
 结束后依次停止本轮启动的 Gateway、API、Data Server、Admin 和辅助进程，检查端口已释放。若使用了临时调试代码，先停止 watch 进程再恢复代码。检查 `git status --short`，保留用户原有修改。
 
 不要用 `rushx devops` 验证本地改动；该命令可能推送代码并触发真实 CI/CD。
+
+## Nyaa 种子同步
+
+Nyaa 通过 `network.proxy.global` 对应的客户端采集，三类动画 RSS 每 5 分钟更新，分别错开 0、20、40 秒。API 配置可增加 `nyaa: { qps: 0.5 }`；QPS 必须大于 0 且不超过 0.5。RSS 和历史网页请求共用串行队列，失败请求同样计入间隔。
+
+“同步历史种子”同时补齐蜜柑及 Nyaa。Nyaa 按 `1_2`、`1_3`、`1_4` 分类分别读取 30、12、7 页，按每页 75 条及历史发布量估算约覆盖 10 天，不保证精确日期边界。空页提前结束；分类失败后继续其他分类，已成功入库的数据保留，界面分别提示两个站点的结果。重复点击或定时任务重叠复用进行中的同步。
+
+种子仍按 hash 唯一，首次收录的标题、来源及下载链接保持不变，解析使用既有 `parseTorrentTitle`。历史记录的 `displayId` 按原 ID 顺序从 1 补齐，后续由数据库序列生成；并发冲突或删除可能留下编号空洞。迁移为旧种子填入 `MIKAN` 来源，不回填 permalink；新种子直接保存站点返回的详情链接。部署需执行新增 Prisma 迁移并重启 Data Server/Gateway 以加载 schema。

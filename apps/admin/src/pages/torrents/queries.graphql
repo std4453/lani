@@ -1,5 +1,8 @@
 fragment torrentFields on Torrent {
   id
+  displayId
+  channel
+  permalink
   publishDate
   size
   title
@@ -41,4 +44,8 @@ query ListTorrents(
 
 mutation SyncMikanHistory {
   syncMikanHistory
+}
+
+mutation SyncNyaaHistory {
+  syncNyaaHistory
 }

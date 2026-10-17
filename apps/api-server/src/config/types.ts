@@ -175,6 +175,7 @@ const featuresConfig = opt(
 
 export const rootConfig = root({
   network: networkConfig,
+  nyaa: opt(obj({ qps: opt(num(), 0.5) }), { qps: 0.5 }),
   postgresUrl: str(),
   s3: s3Config,
   downloadClient: downloadClientConfig,
