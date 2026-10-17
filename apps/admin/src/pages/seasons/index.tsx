@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import { EpisodeType } from '@/generated/types';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import { TableTitle } from '@/components/Layout';
@@ -776,6 +777,7 @@ export default withAntdSearch(function MetadataPage() {
 
   return (
     <SeasonsStatusContext.Provider value={seasonsStatus}>
+      <PageTitle title="元数据" />
       <MainTable<RowType>
         columns={columns}
         rowKey="id"

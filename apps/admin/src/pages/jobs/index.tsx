@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import TaskStatus from '@/components/TaskStatus';
 import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
 import {
@@ -287,6 +288,7 @@ export default function JobsPage() {
 
   return (
     <>
+      <PageTitle title="下载任务" />
       {changed && (
         <Alert
           type="info"

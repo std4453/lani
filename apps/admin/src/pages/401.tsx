@@ -1,3 +1,4 @@
+import PageTitle from '@/components/PageTitle';
 import image401 from '@/assets/undraw_login_re_4vu2.svg';
 import { Button, Typography } from 'antd';
 import { login, selectAuth } from '@/store/auth';
@@ -17,6 +18,7 @@ export default function Page401() {
         justifyContent: 'center',
       }}
     >
+      <PageTitle title="请登录" />
       <img src={image401} width={400} alt="请登录" />
       {error && <Typography.Paragraph>{error}</Typography.Paragraph>}
       <Button type="primary" onClick={() => void dispatch(login)}>

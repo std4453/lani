@@ -168,6 +168,9 @@ export default function Layout(props: any) {
   return (
     <ProLayout
       {...props}
+      // 由各页面设置标签页标题，避免覆盖动态标题和登录状态标题。
+      title={false}
+      pageTitleRender={false}
       navTheme={theme}
       headerRender={false}
       collapsedButtonRender={false}

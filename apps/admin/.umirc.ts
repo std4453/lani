@@ -49,7 +49,6 @@ export default defineConfig({
           path: '/season/:id',
           exact: true,
           component: '@/pages/season',
-          title: '季度详情',
           wrappers: ['@/wrappers/auth'],
         },
         {
@@ -96,5 +95,6 @@ export default defineConfig({
   ignoreMomentLocale: true,
   esbuild: {},
   antd: {},
-  title: 'Lani管理后台',
+  // 由 PageTitle 统一管理，避免路由切换时覆盖页面标题。
+  title: false,
 });
