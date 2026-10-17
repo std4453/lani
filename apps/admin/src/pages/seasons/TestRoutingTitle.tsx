@@ -1,29 +1,10 @@
 import { Form, Input, message, Modal, Typography } from 'antd';
 import { ReactNode, useRef, useState } from 'react';
+import { createTestRoutingCookies } from '@/utils/test-routing-bootstrap';
 
 // 仅供测试：提供手动切换路由的调试入口，不作为正式产品功能或权限控制。
-const FRONTEND_COOKIE = 'lani_frontend';
-const BACKEND_COOKIE = 'lani_backend';
+const cookies = createTestRoutingCookies();
 const CLICK_INTERVAL_MS = 1000;
-
-function readCookie(name: string): string {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(';')
-      .map((cookie) => cookie.trim())
-      .find((cookie) => cookie.startsWith(prefix))
-      ?.slice(prefix.length) ?? ''
-  );
-}
-
-function writeCookie(name: string, value: string): void {
-  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-  // 留空删除；否则使用当前域名的会话 cookie，页面和 API 共用根路径。
-  document.cookie = `${name}=${value}; Path=/; SameSite=Lax${secure}${
-    value ? '' : '; Max-Age=0'
-  }`;
-}
 
 export default function TestRoutingTitle({
   children,
@@ -61,8 +42,8 @@ export default function TestRoutingTitle({
           clicks.current = { count: 0, last: 0 };
           form.resetFields();
           form.setFieldsValue({
-            frontend: readCookie(FRONTEND_COOKIE),
-            backend: readCookie(BACKEND_COOKIE),
+            frontend: cookies.read('frontend'),
+            backend: cookies.read('backend'),
           });
           setVisible(true);
         }}
@@ -84,11 +65,11 @@ export default function TestRoutingTitle({
           layout="vertical"
           onFinish={({ frontend, backend }) => {
             try {
-              writeCookie(FRONTEND_COOKIE, frontend);
-              writeCookie(BACKEND_COOKIE, backend);
+              cookies.write('frontend', frontend);
+              cookies.write('backend', backend);
               if (
-                readCookie(FRONTEND_COOKIE) !== frontend ||
-                readCookie(BACKEND_COOKIE) !== backend
+                cookies.read('frontend') !== frontend ||
+                cookies.read('backend') !== backend
               ) {
                 void message.error('Cookie 保存失败，请检查浏览器 Cookie 设置');
                 return;
@@ -105,7 +86,7 @@ export default function TestRoutingTitle({
             normalize={(value: string) => value.trim()}
             rules={[
               {
-                pattern: /^(?:online|offline|pr-[1-9]\d*)?$/,
+                pattern: cookies.patterns.frontend,
                 message: '请输入 online、offline 或 pr-编号，也可留空',
               },
             ]}
@@ -118,7 +99,7 @@ export default function TestRoutingTitle({
             normalize={(value: string) => value.trim()}
             rules={[
               {
-                pattern: /^(?:online|offline)?$/,
+                pattern: cookies.patterns.backend,
                 message: '请输入 online 或 offline，也可留空',
               },
             ]}

@@ -1,6 +1,7 @@
 import { AppDispatch, AppGetState, RootState } from '@/store';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { authRequest, loginURL, Profile, Session } from '@/utils/auth-session';
+import { notifyTestRouting } from '@/utils/test-routing-notice';
 
 export interface AuthState {
   authorized: boolean;
@@ -56,6 +57,7 @@ async function loadSession(dispatch: AppDispatch, initial: boolean) {
   dispatch(authSlice.actions.loginStarted());
   try {
     const session: Session = await authRequest('session');
+    notifyTestRouting(session.testRoutingEnabled);
     dispatch(sessionLoaded(session));
     const params = new URLSearchParams(window.location.search);
     if (session.authenticated) {
