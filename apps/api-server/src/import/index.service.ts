@@ -1,3 +1,4 @@
+import { createEpisodeTask } from '@/task/create-episode-task';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma.service';
 import { TaskService } from '@/task/index.service';
@@ -53,7 +54,8 @@ export class ImportService {
         throw new LaniError('部分剧集不存在');
       if (new Set(episodes.map((e) => e.seasonId)).size !== 1)
         throw new LaniError('批量导入必须属于同一季度');
-      const task = await this.tasks.create(
+      const task = await createEpisodeTask(
+        this.tasks,
         tx,
         type,
         importDefinition,

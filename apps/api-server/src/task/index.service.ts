@@ -31,7 +31,7 @@ import { legacyTaskFields } from './legacy-compat';
 
 export type TaskParams = Omit<
   Prisma.TaskUncheckedCreateInput,
-  'id' | 'type' | 'legacyStage' | 'workflow' | 'episodes'
+  'id' | 'type' | 'legacyStage' | 'workflow'
 >;
 
 @Injectable()
@@ -73,7 +73,6 @@ export class TaskService
     type: TaskType,
     definition: StepDefinition[],
     params: TaskParams,
-    episodeIds: number[] = [],
   ) {
     const workflow = buildWorkflowSnapshot(
       definition,
@@ -83,7 +82,6 @@ export class TaskService
     return tx.task.create({
       data: {
         ...params,
-        episodes: { create: episodeIds.map((episodeId) => ({ episodeId })) },
         type,
         ...legacyTaskFields(workflow),
         workflow: JSON.parse(JSON.stringify(workflow)),

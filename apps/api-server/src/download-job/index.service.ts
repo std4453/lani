@@ -1,3 +1,4 @@
+import { createEpisodeTask } from '@/task/create-episode-task';
 import { lockEpisode } from '@/task/atoms/publication';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
@@ -36,7 +37,8 @@ export class DownloadJobService {
           throw new LaniError('该剧集的任务正在取消，请稍后重试');
         return existing.id;
       }
-      const task = await this.tasks.create(
+      const task = await createEpisodeTask(
+        this.tasks,
         tx,
         TaskType.DOWNLOAD,
         downloadDefinition,

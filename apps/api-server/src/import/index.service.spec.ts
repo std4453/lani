@@ -10,6 +10,7 @@ jest.mock('@/config', () => ({
 }));
 function setup() {
   const tx = {
+    taskEpisode: { createMany: jest.fn(async () => ({ count: 1 })) },
     episode: {
       findMany: jest.fn(async ({ where }) =>
         where.id.in.map((id: number) => ({ id, seasonId: 1 })),
@@ -56,8 +57,13 @@ it('事务提交后后台运行，返回任务 ID 并保存确认顺序和路径
         { id: expect.any(String), episodeId: 1, sourcePath: '/source/01.mkv' },
       ],
     },
-    [2, 1],
   );
+  expect(tx.taskEpisode.createMany).toHaveBeenCalledWith({
+    data: [
+      { taskId: 42, episodeId: 2 },
+      { taskId: 42, episodeId: 1 },
+    ],
+  });
   expect(tasks.start).toHaveBeenCalledWith(42);
 });
 it('单集导入复用任务流程', async () => {
@@ -68,7 +74,6 @@ it('单集导入复用任务流程', async () => {
     TaskType.IMPORT,
     importDefinition,
     { episodeId: 1, sourcePath: '/source/01.mkv' },
-    [1],
   );
 });
 it.each([
@@ -110,5 +115,16 @@ it.each([true, false])('拒绝跨季度或已删除剧集 %s', async (crossSeaso
       { episodeId: 2, importPath: '/b' },
     ]),
   ).rejects.toThrow(crossSeason ? '同一季度' : '不存在');
+  expect(tasks.start).not.toHaveBeenCalled();
+});
+
+it('关联创建失败时不启动后台任务', async () => {
+  const { service, tasks, tx } = setup();
+  tx.taskEpisode.createMany.mockRejectedValueOnce(
+    new Error('association failed'),
+  );
+  await expect(service.importSingle(1, '/source/01.mkv')).rejects.toThrow(
+    'association failed',
+  );
   expect(tasks.start).not.toHaveBeenCalled();
 });

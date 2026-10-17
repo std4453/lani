@@ -1,3 +1,4 @@
+import { createEpisodeTask } from '@/task/create-episode-task';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
 import { TaskService } from '@/task/index.service';
@@ -150,6 +151,26 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       await prisma.jellyfinFolder.delete({ where: { id: folderId } });
     await prisma.$disconnect();
   });
+  it.each([TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT])(
+    '%s 关联创建失败时任务和已写入关联一起回滚',
+    async (type) => {
+      const before = await prisma.task.count();
+      await expect(
+        prisma.$transaction((tx) =>
+          createEpisodeTask(
+            service,
+            tx,
+            type,
+            [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+            { episodeId },
+            [episodeId, -1],
+          ),
+        ),
+      ).rejects.toMatchObject({ code: 'P2003' });
+      expect(await prisma.task.count()).toBe(before);
+      expect(await prisma.taskEpisode.count({ where: { episodeId } })).toBe(0);
+    },
+  );
   it('原子事务回滚同时撤销业务写入和检查点，内存只在提交后更新', async () => {
     const task = await createImportTask();
     const context = await contextFor(task.id);
@@ -459,23 +480,26 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
   it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT])(
     '%s 发布检查点提交失败时，回滚 atom 写入的剧集关联',
     async (type) => {
-      const task = await service.create(
-        prisma,
-        type,
-        [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
-        type === TaskType.BATCH_IMPORT
-          ? {
-              batchEntries: [
-                {
-                  id: 'entry-a',
-                  episodeId,
-                  sourcePath: '/a.mkv',
-                  jellyfinEpisodeId: 'rollback',
-                },
-              ],
-            }
-          : { episodeId, jellyfinEpisodeId: 'rollback' },
-        [episodeId],
+      const task = await prisma.$transaction((tx) =>
+        createEpisodeTask(
+          service,
+          tx,
+          type,
+          [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+          type === TaskType.BATCH_IMPORT
+            ? {
+                batchEntries: [
+                  {
+                    id: 'entry-a',
+                    episodeId,
+                    sourcePath: '/a.mkv',
+                    jellyfinEpisodeId: 'rollback',
+                  },
+                ],
+              }
+            : { episodeId, jellyfinEpisodeId: 'rollback' },
+          [episodeId],
+        ),
       );
       const context = await contextFor(task.id);
       const transaction = context.transaction.bind(context);
@@ -514,17 +538,20 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const otherEpisode = await prisma.episode.create({
       data: { seasonId, index: 2 },
     });
-    const task = await service.create(
-      prisma,
-      TaskType.BATCH_IMPORT,
-      [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
-      {
-        batchEntries: [
-          { id: 'a', episodeId, sourcePath: '/a.mkv' },
-          { id: 'b', episodeId: otherEpisode.id, sourcePath: '/b.mkv' },
-        ],
-      },
-      [episodeId, otherEpisode.id],
+    const task = await prisma.$transaction((tx) =>
+      createEpisodeTask(
+        service,
+        tx,
+        TaskType.BATCH_IMPORT,
+        [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+        {
+          batchEntries: [
+            { id: 'a', episodeId, sourcePath: '/a.mkv' },
+            { id: 'b', episodeId: otherEpisode.id, sourcePath: '/b.mkv' },
+          ],
+        },
+        [episodeId, otherEpisode.id],
+      ),
     );
     class PreparedPublishAtom extends PublishEpisodeAtom {
       protected async runEpisode(
