@@ -6,7 +6,11 @@
 
   :global(.ant-tooltip-inner) {
     padding: 0;
-    overflow: hidden;
+    max-height: ~'min(480px, calc(100vh - 48px))';
+    max-height: ~'min(480px, calc(100dvh - 48px))';
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 
     > div {
       padding: 6px 8px;
