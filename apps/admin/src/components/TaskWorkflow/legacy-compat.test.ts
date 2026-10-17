@@ -12,6 +12,12 @@ it('旧任务成功步骤均可展开，不伪造任何时间或取消权限', (
   const view = legacyWorkflow(legacy(LegacyTaskStage.Available));
   expect(view.steps.every((step) => step.status === 'succeeded')).toBe(true);
   expect(view.status).toBe('succeeded');
+  expect(view.currentStepId).toBe('publish');
+  expect(view.steps[view.steps.length - 1]).toMatchObject({
+    id: 'publish',
+    title: '完成',
+    status: 'succeeded',
+  });
   expect(view.finishedAt).toBeUndefined();
   expect(view.error).toBeUndefined();
 });
@@ -30,6 +36,11 @@ it.each([
       (step) => step.id === view.currentStepId,
     );
     expect(view.status).toBe('cancelled');
+    expect(view.steps[view.steps.length - 1]).toMatchObject({
+      id: 'publish',
+      title: '完成',
+      status: 'cancelled',
+    });
     expect(view.cancellation?.stepId).toBe(view.currentStepId);
     expect(
       view.steps
@@ -53,7 +64,13 @@ it('旧任务缺失的失败时间保持为空，不使用创建时间替代', (
     'pending',
     'pending',
     'pending',
+    'pending',
   ]);
+  expect(view.steps[view.steps.length - 1]).toMatchObject({
+    id: 'publish',
+    title: '完成',
+    status: 'pending',
+  });
 });
 
 it.each([LegacyTaskStage.Renaming, LegacyTaskStage.Unavailable])(

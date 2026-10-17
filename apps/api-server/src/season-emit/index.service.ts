@@ -1,3 +1,5 @@
+import { batchImportEntries } from '@lani/workflow';
+import { Prisma } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -13,7 +15,6 @@ import {
 } from '@/utils/idempotency';
 import { mapPath } from '@/utils/path';
 import { Injectable, Logger } from '@nestjs/common';
-import { TaskType } from '@lani/db';
 import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
@@ -179,8 +180,8 @@ export class SeasonEmitService {
 
     // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
     const jobs = await this.prisma.task.findMany({
-      where: { type: TaskType.DOWNLOAD, episode: { seasonId: season.id } },
-      select: { id: true, filePath: true, nfoPath: true },
+      where: { episodes: { some: { episode: { seasonId: season.id } } } },
+      select: { id: true },
     });
     const movePath = (value: string | null) => {
       if (!value) return value;
@@ -192,17 +193,30 @@ export class SeasonEmitService {
         ? path.join(newPath, relative)
         : value;
     };
-    await this.prisma.$transaction(
-      jobs.map((job) =>
-        this.prisma.task.update({
-          where: { id: job.id },
+    for (const { id } of jobs) {
+      await this.prisma.$transaction(async (tx) => {
+        // 与 TaskStore 使用同一行锁；在锁内合并最新产物，并使旧快照的 CAS 失效。
+        await tx.$queryRaw`SELECT id FROM download_jobs WHERE id=${id} FOR UPDATE`;
+        const job = await tx.task.findUnique({ where: { id } });
+        if (!job) return;
+        await tx.task.update({
+          where: { id },
           data: {
             filePath: movePath(job.filePath),
             nfoPath: movePath(job.nfoPath),
+            batchEntries:
+              job.batchEntries == null
+                ? Prisma.DbNull
+                : batchImportEntries(job.batchEntries).map((entry) => ({
+                    ...entry,
+                    filePath: movePath(entry.filePath ?? null),
+                    nfoPath: movePath(entry.nfoPath ?? null),
+                  })),
+            version: { increment: 1 },
           },
-        }),
-      ),
-    );
+        });
+      });
+    }
     return { oldPath, newPath };
   }
 

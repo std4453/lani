@@ -1,5 +1,6 @@
 fragment taskStatusFields on Task {
   id
+  type
   legacyStage
   isFailed
   isCancelled

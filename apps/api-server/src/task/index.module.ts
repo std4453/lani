@@ -1,3 +1,4 @@
+import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { Module } from '@nestjs/common';
 import { CommonModule } from '@/common/index.module';
 import { DownloadClientModule } from '@/download-client/DownloadClientModule';
@@ -20,6 +21,7 @@ import { PlayerRefreshService } from './atoms/refresh/player-refresh.service';
     SubmitDownloadAtom,
     DownloadAtom,
     FindVideoFileAtom,
+    FindImportFilesAtom,
     ImportFileAtom,
     WriteMetadataAtom,
     RefreshPlayerAtom,

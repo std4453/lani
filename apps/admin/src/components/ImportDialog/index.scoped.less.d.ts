@@ -3,14 +3,22 @@
 interface CssExports {
   'actions': string;
   'breadcrumbContainer': string;
+  'confirmActions': string;
+  'deleteImport': string;
   'directory': string;
+  'filename': string;
   'header': string;
   'import': string;
-  'importAlert': string;
+  'importFooter': string;
   'importList': string;
   'importModal': string;
+  'importPath': string;
   'importSelect': string;
+  'importTarget': string;
   'modal': string;
+  'offsetControl': string;
+  'offsetLabel': string;
+  'option': string;
   'row': string;
   'search': string;
   'selected': string;

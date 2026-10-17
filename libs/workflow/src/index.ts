@@ -10,6 +10,8 @@ import { parseWorkflow } from "./schema";
 export {
   AtomType,
   Checkpoint,
+  AtomCheckpoint,
+  EntryCheckpoint,
   atomTypes,
   FileIdentity,
   FileCheckpoint,
@@ -105,3 +107,5 @@ export function retryWorkflow(workflow: Workflow, now: string): Workflow {
   step.startedAt = now;
   return next;
 }
+
+export * from "./atoms/batch-import";

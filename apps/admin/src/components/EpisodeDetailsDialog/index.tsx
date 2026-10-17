@@ -1,3 +1,7 @@
+import TaskDialog, {
+  TaskDialogHeader,
+  TaskDialogTabs,
+} from '@/components/TaskDialog';
 import TaskStatus from '@/components/TaskStatus';
 import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
@@ -6,10 +10,10 @@ import { useTaskStates } from '@/utils/useTaskStates';
 import { formatNumbering } from '@/utils/episode';
 import { GetEpisodeByIdDocument, GetTaskByIdDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useQuery } from '@apollo/client';
-import { Alert, Modal, Skeleton, Tabs, Typography } from 'antd';
+import { Alert, Skeleton, Tabs, Typography } from 'antd';
 import { useState, useEffect } from 'react';
 
 export default function EpisodeDetailsDialog({
@@ -17,13 +21,12 @@ export default function EpisodeDetailsDialog({
   visible,
   input,
 }: DialogProps<{ episodeId?: number; taskId?: number }>) {
-  const available = useForegroundOnline();
   const episodeQuery = useQuery(GetEpisodeByIdDocument, {
-    skip: !input?.episodeId || !visible || !available,
+    skip: !input?.episodeId || !visible,
     variables: { episodeByIdId: input?.episodeId ?? 0 },
   });
   const taskQuery = useQuery(GetTaskByIdDocument, {
-    skip: !!input?.episodeId || !input?.taskId || !visible || !available,
+    skip: !!input?.episodeId || !input?.taskId || !visible,
     variables: { id: input?.taskId ?? 0 },
   });
   const query = input?.episodeId ? episodeQuery : taskQuery;
@@ -58,11 +61,13 @@ export default function EpisodeDetailsDialog({
   const selectedTask = activeTask ?? (tasks[0] ? `${tasks[0].id}` : undefined);
 
   return (
-    <Modal
-      className={styles.dialog}
+    <TaskDialog
       visible={visible}
       onCancel={reject}
       footer={false}
+      running={tasks.some((task) =>
+        ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
+      )}
       title={
         episode
           ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
@@ -85,21 +90,19 @@ export default function EpisodeDetailsDialog({
         />
       ) : (
         <>
-          <div className={styles.header}>
+          <TaskDialogHeader>
             {episode ? (
               <EpisodeHeader episode={episode} />
             ) : (
               <Alert type="info" message="关联剧集不存在" />
             )}
-          </div>
+          </TaskDialogHeader>
           {tasks.length > 0 ? (
-            <Tabs
-              className={styles.taskTabs}
-              tabBarGutter={16}
+            <TaskDialogTabs
               activeKey={selectedTask}
               onChange={setActiveTask}
               tabBarExtraContent={{
-                left: <div style={{ marginRight: 16 }}>下载任务</div>,
+                left: <div style={{ marginRight: 16 }}>任务</div>,
                 right: (
                   <Typography.Text type="secondary">自动刷新中</Typography.Text>
                 ),
@@ -122,13 +125,13 @@ export default function EpisodeDetailsDialog({
                   />
                 </Tabs.TabPane>
               ))}
-            </Tabs>
+            </TaskDialogTabs>
           ) : (
-            '无下载任务'
+            <div className={styles.empty}>无任务</div>
           )}
         </>
       )}
-    </Modal>
+    </TaskDialog>
   );
 }
 export const useEpisodeDetailsDialog = createUseDialog(EpisodeDetailsDialog);

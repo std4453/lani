@@ -46,7 +46,14 @@ export function useTaskStates(
       client.cache.writeFragment({
         id,
         fragment: LiveTaskFragmentDoc,
-        data: { ...state, workflow, __typename: 'Task' },
+        data: {
+          ...state,
+          workflow,
+          batchEntries:
+            state.batchEntries?.map(({ __typename, ...entry }) => entry) ??
+            null,
+          __typename: 'Task',
+        },
       });
     }
   }, [query.data, client]);

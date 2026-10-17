@@ -7,6 +7,17 @@ registerEnumType(LegacyTaskStage, { name: 'LegacyTaskStage' });
 registerEnumType(TaskType, { name: 'TaskType' });
 
 @ObjectType()
+export class BatchImportEntryState {
+  @Field() id: string;
+  @Field(() => Int) episodeId: number;
+  @Field() sourcePath: string;
+  @Field(() => String, { nullable: true }) importPath?: string | null;
+  @Field(() => String, { nullable: true }) filePath?: string | null;
+  @Field(() => String, { nullable: true }) nfoPath?: string | null;
+  @Field(() => String, { nullable: true }) jellyfinEpisodeId?: string | null;
+}
+
+@ObjectType()
 export class TaskState {
   @Field(() => Int) id: number;
   @Field(() => TaskType) type: TaskType;
@@ -24,6 +35,9 @@ export class TaskState {
   @Field(() => String, { nullable: true }) filePath?: string | null;
   @Field(() => String, { nullable: true }) nfoPath?: string | null;
   @Field(() => String, { nullable: true }) jellyfinEpisodeId?: string | null;
+  @Field(() => [BatchImportEntryState], { nullable: true }) batchEntries?:
+    | BatchImportEntryState[]
+    | null;
   @Field() canRetry: boolean;
   @Field() canCancel: boolean;
 }

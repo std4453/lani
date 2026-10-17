@@ -6,12 +6,7 @@ import { WorkflowRunner } from '@/task/workflow-runner';
 import { Atoms } from '@/task/atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PublishEpisodeAtom } from './publish-episode.atom';
-import { claimEpisodePublication } from './publication';
 
-jest.mock('./publication', () => ({
-  claimEpisodePublication: jest.fn(),
-  lockEpisode: jest.fn(),
-}));
 jest.mock('@/config', () => ({ __esModule: true, default: {} }));
 
 function setup() {
@@ -34,6 +29,9 @@ function setup() {
   };
   const input: TaskInput = {
     id: 1,
+    type: 'DOWNLOAD',
+    sourcePath: null,
+    batchEntries: null,
     episodeId: 2,
     torrentLink: null,
     qbtTorrentHash: null,
@@ -54,19 +52,24 @@ function setup() {
     findUnique: jest.fn(async () => ({
       id: 2,
       jellyfinEpisodeId: association,
+      taskEpisodes: [],
     })),
   };
   let version = 0;
   const tx = {
-    $queryRaw: jest.fn(async () => []),
+    $queryRaw: jest.fn(async (_query: TemplateStringsArray) => []),
     task: {
       findUnique: jest.fn(async () => ({
         ...input,
+        episodes: [
+          { ...input, id: 1, position: 0, taskId: 1, sourcePath: null },
+        ],
         version,
         workflow: parseWorkflow(workflow),
       })),
       updateMany: jest.fn(async ({ data }) => {
         Object.assign(workflow, data.workflow);
+        if (data.batchEntries) input.batchEntries = data.batchEntries;
         ++version;
         return { count: 1 };
       }),
@@ -121,7 +124,7 @@ it('关联提交后尚未收尾时恢复，只通知首次发布', async () => {
   expect(test.emit).toHaveBeenCalledTimes(1);
   expect(test.workflow.steps[0].checkpoint.episodePublished).toBe(true);
   expect(test.tx.task.updateMany).toHaveBeenCalledTimes(1);
-  expect(claimEpisodePublication).toHaveBeenCalledWith(1, test.context, true);
+  expect(test.tx.$queryRaw).toHaveBeenCalled();
 });
 
 it('已有相同关联但尚未发布时仍通知一次，恢复不重复通知', async () => {
@@ -169,14 +172,41 @@ it('不覆盖其他 Jellyfin 关联', async () => {
   expect(test.emit).not.toHaveBeenCalled();
 });
 
-it('发布区段冲突时不进入关联事务', async () => {
+it('发布区段冲突时同一事务内拒绝关联更新', async () => {
   const test = setup();
-  jest
-    .mocked(claimEpisodePublication)
-    .mockRejectedValueOnce(new Error('其他任务已发布'));
-  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
-    '其他任务已发布',
+  test.tx.$queryRaw.mockImplementation(async (query) =>
+    query.join('').includes('SELECT t.id') ? ([{ id: 99 }] as never) : [],
   );
-  expect(test.tx.$queryRaw).not.toHaveBeenCalled();
+  await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
+    '其他任务正在发布或已发布',
+  );
+  expect(test.episode.updateMany).not.toHaveBeenCalled();
   expect(test.emit).not.toHaveBeenCalled();
 });
+
+it.each(['IMPORT', 'BATCH_IMPORT'] as const)(
+  '%s 发布关联但不发送下载发布事件',
+  async (type) => {
+    const test = setup();
+    test.input.type = type;
+    if (type === 'BATCH_IMPORT') {
+      test.input.batchEntries = [
+        {
+          id: 'entry-a',
+          episodeId: 2,
+          sourcePath: '/a.mkv',
+          jellyfinEpisodeId: 'jellyfin-episode',
+        },
+      ];
+    }
+    await test.atom.run(1, test.input, test.context);
+    const checkpoint = test.workflow.steps[0].checkpoint;
+    expect(
+      type === 'BATCH_IMPORT'
+        ? checkpoint.entries?.['entry-a'].episodePublished
+        : checkpoint.episodePublished,
+    ).toBe(true);
+    expect(test.episode.updateMany).toHaveBeenCalled();
+    expect(test.emit).not.toHaveBeenCalled();
+  },
+);

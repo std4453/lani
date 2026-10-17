@@ -149,7 +149,7 @@ export class LarkBot
     );
   }
 
-  private getDownloadJobState(job: Task) {
+  private getTaskState(job: Task) {
     if (job.isCancelled) return '已取消';
     if (job.workflow && parseWorkflow(job.workflow).status === 'cancelling')
       return '取消中';
@@ -199,7 +199,7 @@ export class LarkBot
                 episode.airTime,
               ).format(DateFormat.DateTime)}${
                 episode.tasks.length > 0
-                  ? `，下载状态：${this.getDownloadJobState(episode.tasks[0])}`
+                  ? `，任务状态：${this.getTaskState(episode.tasks[0])}`
                   : ''
               })`,
             },

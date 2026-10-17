@@ -5,6 +5,7 @@ const atomColors: Record<AtomType, string> = {
   submitDownload: 'blue',
   download: 'blue',
   findVideoFile: 'purple',
+  findImportFiles: 'purple',
   importFile: 'purple',
   writeMetadata: 'purple',
   refreshPlayer: 'cyan',

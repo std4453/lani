@@ -149,6 +149,7 @@ function SeasonStatusTag({
       <DownloadStatusTag
         status={episodeStatus.status}
         taskId={episodeStatus.taskId}
+        taskType={episodeStatus.taskType}
         openTaskDetails={openTaskDetails}
       />
     </div>

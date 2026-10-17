@@ -1,8 +1,9 @@
+import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { claimEpisodePublication } from './publication';
 import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import { DateFormat } from '@/constants/date-format';
-import { AsyncAtom, TaskInput, AtomContext } from '@/task/atom';
+import { TaskInput, AtomContext } from '@/task/atom';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
@@ -11,7 +12,7 @@ import path from 'path';
 import xml2js from 'xml2js';
 
 @Injectable()
-export class WriteMetadataAtom extends AsyncAtom {
+export class WriteMetadataAtom extends BatchableEpisodeAtom {
   readonly wants = [['importFile']] as const;
 
   constructor(private prisma: PrismaService) {
@@ -21,7 +22,7 @@ export class WriteMetadataAtom extends AsyncAtom {
   private readonly builder = new xml2js.Builder();
   private readonly parser = new xml2js.Parser();
 
-  async run(
+  protected async runEpisode(
     id: number,
     { episodeId, filePath }: TaskInput,
     context: AtomContext,
@@ -77,7 +78,7 @@ export class WriteMetadataAtom extends AsyncAtom {
     );
     const nfoContent = this.builder.buildObject(xmlObj);
     await context.assertActive();
-    const temporary = `${nfoPath}.lani-${id}.tmp`;
+    const temporary = `${nfoPath}.lani-${id}-${context.entryId ?? 0}.tmp`;
     try {
       await fs.writeFile(temporary, nfoContent, 'utf-8');
       await context.assertActive();

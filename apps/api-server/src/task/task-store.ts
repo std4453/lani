@@ -14,7 +14,9 @@ export class TaskStore implements TaskStorePort {
     id: number,
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<StoredTask> {
-    const task = await tx.task.findUnique({ where: { id } });
+    const task = await tx.task.findUnique({
+      where: { id },
+    });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许启动');
     return {

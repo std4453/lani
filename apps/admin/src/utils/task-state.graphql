@@ -1,6 +1,7 @@
 fragment LiveTask on Task {
   id
   type
+  batchEntries
   version
   workflow
   legacyStage

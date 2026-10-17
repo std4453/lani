@@ -13,9 +13,10 @@ import {
   ReloadOutlined,
   StopOutlined,
 } from '@ant-design/icons';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import styles from './index.module.less';
 import Field from './Field';
+import TaskInfo from './TaskInfo';
 import { atomViews } from './atoms';
 import { parseWorkflow } from '@lani/workflow';
 import { legacyWorkflow } from './legacy-compat';
@@ -96,10 +97,22 @@ export default function TaskWorkflowView({
     ? `step:${workflow.currentStepId}`
     : 'task-info';
   const [expanded, setExpanded] = useState<string[]>([defaultExpanded]);
+  const previous = useRef({ taskId: task.id, defaultExpanded });
   const [busy, setBusy] = useState(false);
   const client = useApolloClient();
   useEffect(() => {
-    setExpanded([defaultExpanded]);
+    const last = previous.current;
+    previous.current = { taskId: task.id, defaultExpanded };
+    if (last.taskId !== task.id) {
+      setExpanded([defaultExpanded]);
+    } else if (last.defaultExpanded !== defaultExpanded) {
+      setExpanded((ids) => [
+        ...ids.filter(
+          (id) => id !== last.defaultExpanded && id !== defaultExpanded,
+        ),
+        defaultExpanded,
+      ]);
+    }
   }, [task.id, defaultExpanded]);
   const act = async (cancel: boolean) => {
     setBusy(true);
@@ -149,8 +162,7 @@ export default function TaskWorkflowView({
             id={`task-${task.id}-step-task-info`}
             open={expanded.includes('task-info')}
           >
-            <Field label="创建时间">{formatTime(task.createdAt)}</Field>
-            <Field label="种子地址">{task.torrentLink}</Field>
+            <TaskInfo task={task} />
           </StepDetails>
         }
       />
@@ -209,7 +221,7 @@ export default function TaskWorkflowView({
                     title={
                       <>
                         <div>确认取消任务？</div>
-                        <div>取消后需重新发起下载，已下载的文件会保留</div>
+                        <div>取消后需重新发起任务，媒体文件会保留</div>
                       </>
                     }
                     okText="取消任务"

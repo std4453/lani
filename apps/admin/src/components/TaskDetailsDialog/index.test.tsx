@@ -1,15 +1,17 @@
+let mockAvailable = true;
 jest.mock('@/utils/useTaskStates', () => ({
   useTaskStates: () => ({ refetch: jest.fn() }),
 }));
 jest.mock('@/utils/useApolloPoll', () => ({
   useApolloPoll: jest.fn(),
-  useForegroundOnline: () => true,
+  useForegroundOnline: () => mockAvailable,
 }));
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { MockedProvider } from '@apollo/client/testing';
 import TaskDetailsDialog from './index';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import {
   LegacyTaskStage,
   GetTaskByIdDocument,
@@ -32,6 +34,7 @@ const task: TaskDetailsFieldsFragment = {
   __typename: 'Task',
   id: 42,
   type: TaskType.Download,
+  taskEpisodesByTaskId: { nodes: [] },
   episodeId: 7,
   createdAt: '2026-10-14T12:00:00Z',
   downloadPath: null,
@@ -56,6 +59,8 @@ const task: TaskDetailsFieldsFragment = {
 };
 let container: HTMLDivElement;
 beforeEach(() => {
+  mockAvailable = true;
+  jest.mocked(useApolloPoll).mockClear();
   container = document.createElement('div');
   document.body.appendChild(container);
 });
@@ -123,15 +128,15 @@ it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列�
   const modal = document.querySelector('.ant-modal');
   expect(modal).not.toBeNull();
   expect(modal?.querySelector('.ant-skeleton')).not.toBeNull();
-  expect(modal?.querySelector('.ant-modal-title')?.textContent).toBe(
-    '剧集详情',
-  );
+  expect(
+    modal?.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toBe('剧集详情');
   await settle(150);
   expect(document.querySelector('.ant-modal')).toBe(modal);
   expect(modal?.querySelector('.ant-skeleton')).toBeNull();
-  expect(document.querySelector('.ant-modal-title')?.textContent).toContain(
-    '异步剧集标题',
-  );
+  expect(
+    document.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toContain('异步剧集标题');
   expect(document.querySelector('.ant-modal-body')?.textContent).toContain(
     '加载后的说明',
   );
@@ -139,9 +144,9 @@ it('任务弹窗立即显示骨架，并在同一弹窗加载剧集、任务列�
     '#42',
   );
   expect(document.querySelectorAll('.ant-tabs-tab')).toHaveLength(2);
-  expect(document.querySelector('.ant-modal-title')?.textContent).toBe(
-    '#3 - 异步剧集标题',
-  );
+  expect(
+    document.querySelector('.ant-modal-title [role="heading"]')?.textContent,
+  ).toBe('#3 - 异步剧集标题');
   expect(document.querySelector('.ant-modal-body')?.textContent).not.toContain(
     '任务类型',
   );
@@ -229,3 +234,64 @@ it('切换任务立即清除旧内容，不存在的任务显示空结果', asyn
   );
   expect(document.querySelector('.ant-steps')).toBeNull();
 });
+
+it.each([
+  [TaskType.Download, 'running'],
+  [TaskType.Download, 'succeeded'],
+  [TaskType.BatchImport, 'running'],
+  [TaskType.BatchImport, 'succeeded'],
+] as const)(
+  '%s %s 任务切换浏览器标签页并刷新后保留手动展开',
+  async (type, status) => {
+    const flow = buildWorkflowSnapshot(
+      [
+        { id: 'custom', atom: 'submitDownload', title: '自定义提交' },
+        { id: 'end', atom: 'publishEpisode', title: '完成' },
+      ],
+      registry,
+      '2026-10-14T12:00:00Z',
+    );
+    flow.steps[0].status = 'succeeded';
+    flow.steps[1].status = status;
+    flow.status = status;
+    flow.currentStepId = 'end';
+    const result = { ...task, type, workflow: flow, episodeByEpisodeId: null };
+    const mocks = [0, 1].map((version) => ({
+      request: { query: GetTaskByIdDocument, variables: { id: 42 } },
+      result: { data: { taskById: { ...result, version } } },
+    }));
+    const render = () =>
+      act(() => {
+        ReactDOM.render(
+          <MockedProvider mocks={mocks}>
+            <TaskDetailsDialog
+              input={{ taskId: 42, taskType: type }}
+              visible
+              reject={jest.fn()}
+              resolve={jest.fn()}
+            />
+          </MockedProvider>,
+          container,
+        );
+      });
+    render();
+    await settle();
+    const toggle = [
+      ...document.querySelectorAll<HTMLButtonElement>('button[aria-expanded]'),
+    ].find((button) => button.textContent === '自定义提交')!;
+    act(() => toggle.click());
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    mockAvailable = false;
+    render();
+    await settle();
+    expect(document.body.contains(toggle)).toBe(true);
+    mockAvailable = true;
+    render();
+    const calls = jest.mocked(useApolloPoll).mock.calls;
+    await act(async () => {
+      await calls[calls.length - 1][0].refetch?.();
+    });
+    expect(document.body.contains(toggle)).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  },
+);

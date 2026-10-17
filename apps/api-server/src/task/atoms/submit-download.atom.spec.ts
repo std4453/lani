@@ -21,12 +21,16 @@ function setup(checkpoint: Checkpoint = {}) {
     assertActive: jest.fn(async () => undefined),
     wait: jest.fn(async () => undefined),
     transaction: jest.fn(),
+    updateCheckpoint: jest.fn(),
     saveCheckpoint: jest.fn(async (value) => {
       Object.assign(checkpoint, value);
     }),
   };
   const atom = new SubmitDownloadAtom(client as unknown as IDownloadClient);
   const input = {
+    type: 'DOWNLOAD' as const,
+    sourcePath: null,
+    batchEntries: null,
     id: 1,
     episodeId: 1,
     torrentLink: 'magnet:test',

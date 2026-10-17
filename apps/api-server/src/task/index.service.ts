@@ -1,3 +1,4 @@
+import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
 import { FindVideoFileAtom } from './atoms/find-video-file.atom';
@@ -28,10 +29,10 @@ import { TaskStore } from './task-store';
 import { Atoms } from './atom';
 import { legacyTaskFields } from './legacy-compat';
 
-export interface TaskParams {
-  episodeId?: number;
-  torrentLink?: string;
-}
+export type TaskParams = Omit<
+  Prisma.TaskUncheckedCreateInput,
+  'id' | 'type' | 'legacyStage' | 'workflow'
+>;
 
 @Injectable()
 @Resolver()
@@ -50,10 +51,12 @@ export class TaskService
     writeMetadata: WriteMetadataAtom,
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
+    findImportFiles: FindImportFilesAtom,
   ) {
     this.atoms = {
       submitDownload,
       download,
+      findImportFiles,
       findVideoFile,
       importFile,
       writeMetadata,

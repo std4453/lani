@@ -1,0 +1,35 @@
+.summary {
+  :global(.ant-descriptions-item-container) {
+    display: flex;
+    align-items: baseline;
+  }
+  :global(.ant-descriptions-item-label) {
+    flex: none;
+    white-space: nowrap;
+  }
+  :global(.ant-descriptions-item-content) {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+}
+.tableScroll {
+  min-height: 0;
+  overflow: auto;
+  :global(.ant-table-thead) {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  :global(.ant-table.ant-table-small) :global(.ant-table-cell) {
+    padding-right: 24px;
+    padding-left: 24px;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+  :global(.ant-table-tbody) > tr:last-child > :global(.ant-table-cell) {
+    border-bottom: 0;
+  }
+}

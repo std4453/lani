@@ -1,3 +1,4 @@
+import { createEpisodeTask } from '@/task/create-episode-task';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
 import { TaskService } from '@/task/index.service';
@@ -6,16 +7,17 @@ import { claimEpisodePublication } from '@/task/atoms/publication';
 import { PublishEpisodeAtom } from '@/task/atoms/publish-episode.atom';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/common/prisma.service';
-import { LegacyTaskStage, PrismaClient, TaskType } from '@lani/db';
+import { LegacyTaskStage, PrismaClient, TaskType, Prisma } from '@lani/db';
 import {
   atomTypes,
+  batchImportEntries,
   buildWorkflowSnapshot,
   currentStep,
   parseWorkflow,
   requestCancellation,
 } from '@lani/workflow';
 import { WorkflowRunner } from '@/task/workflow-runner';
-import { Atoms } from '@/task/atom';
+import { Atoms, AtomContext, TaskInput } from '@/task/atom';
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -37,6 +39,19 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
   let seasonId: number;
   let folderId: number;
   let atoms: Atoms;
+  const createTask = async ({
+    data,
+  }: {
+    data: Prisma.TaskUncheckedCreateInput;
+  }) =>
+    prisma.task.create({
+      data: {
+        ...data,
+        episodes: data.episodeId
+          ? { create: { episodeId: data.episodeId } }
+          : undefined,
+      },
+    });
   const contextFor = async (id: number) => {
     const task = await store.read(id);
     return new WorkflowRunner(store, atoms, jest.fn())['context'](
@@ -52,7 +67,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     );
     workflow.currentStepId = 'import';
     currentStep(workflow).status = 'running';
-    return prisma.task.create({
+    return createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.IMPORTING,
@@ -114,13 +129,16 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms.writeMetadata as never,
       atoms.refreshPlayer as never,
       atoms.publishEpisode as never,
+      atoms.findImportFiles as never,
     );
     downloads = new DownloadJobService(prisma as PrismaService, service);
   });
   afterEach(async () => {
     await service?.onApplicationShutdown();
     if (episodeId) {
-      await prisma.task.deleteMany({ where: { episodeId } });
+      await prisma.task.deleteMany({
+        where: { episodes: { some: { episodeId } } },
+      });
       await prisma.episode.update({
         where: { id: episodeId },
         data: { jellyfinEpisodeId: null },
@@ -133,6 +151,26 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       await prisma.jellyfinFolder.delete({ where: { id: folderId } });
     await prisma.$disconnect();
   });
+  it.each([TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT])(
+    '%s 关联创建失败时任务和已写入关联一起回滚',
+    async (type) => {
+      const before = await prisma.task.count();
+      await expect(
+        prisma.$transaction((tx) =>
+          createEpisodeTask(
+            service,
+            tx,
+            type,
+            [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+            { episodeId },
+            [episodeId, -1],
+          ),
+        ),
+      ).rejects.toMatchObject({ code: 'P2003' });
+      expect(await prisma.task.count()).toBe(before);
+      expect(await prisma.taskEpisode.count({ where: { episodeId } })).toBe(0);
+    },
+  );
   it('原子事务回滚同时撤销业务写入和检查点，内存只在提交后更新', async () => {
     const task = await createImportTask();
     const context = await contextFor(task.id);
@@ -197,7 +235,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     ).toHaveLength(1);
   });
   it('旧任务启动后失败、不补写流程，重试直接报错且不启动 atom', async () => {
-    const old = await prisma.task.create({
+    const old = await createTask({
       data: { episodeId, legacyStage: LegacyTaskStage.DOWNLOADING },
     });
     await service.onApplicationBootstrap();
@@ -241,7 +279,9 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       downloads.downloadTorrentForEpisode(episodeId, 'magnet:two'),
     ]);
     expect(ids[0]).toBe(ids[1]);
-    expect(await prisma.task.count({ where: { episodeId } })).toBe(1);
+    expect(
+      await prisma.task.count({ where: { episodes: { some: { episodeId } } } }),
+    ).toBe(1);
   });
   it('取消尚未完成时拒绝复用任务，不静默丢弃新的种子请求', async () => {
     const start = jest.spyOn(service, 'start').mockResolvedValue();
@@ -257,7 +297,9 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     await expect(
       downloads.downloadTorrentForEpisode(episodeId, 'magnet:two'),
     ).rejects.toThrow('该剧集的任务正在取消，请稍后重试');
-    expect(await prisma.task.count({ where: { episodeId } })).toBe(1);
+    expect(
+      await prisma.task.count({ where: { episodes: { some: { episodeId } } } }),
+    ).toBe(1);
     expect(start).not.toHaveBeenCalled();
   });
   it('状态提交 CAS 拒绝旧版本，取消获胜后不能写入迟到产物', async () => {
@@ -266,7 +308,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms,
       new Date().toISOString(),
     );
-    const job = await prisma.task.create({
+    const job = await createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.DOWNLOADING,
@@ -283,10 +325,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
         jellyfinEpisodeId: 'late',
       }),
     ).toBe(false);
-    expect(
-      (await prisma.task.findUnique({ where: { id: job.id } }))
-        ?.jellyfinEpisodeId,
-    ).toBeNull();
+    expect((await store.read(job.id)).input.jellyfinEpisodeId).toBeNull();
   });
   it('同集另一任务占用发布区段时 fail-fast', async () => {
     const flow = buildWorkflowSnapshot(
@@ -296,14 +335,14 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     );
     flow.currentStepId = 'import';
     currentStep(flow).checkpoint.publicationClaimed = true;
-    const first = await prisma.task.create({
+    const first = await createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.IMPORTING,
         workflow: JSON.parse(JSON.stringify(flow)),
       },
     });
-    const second = await prisma.task.create({
+    const second = await createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.IMPORTING,
@@ -320,7 +359,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     ).toBe(0);
   });
   it('其他任务已经发布后，旧失败任务不能重新进入发布区段', async () => {
-    await prisma.task.create({
+    await createTask({
       data: { episodeId, legacyStage: LegacyTaskStage.AVAILABLE },
     });
     const flow = buildWorkflowSnapshot(
@@ -329,7 +368,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       new Date().toISOString(),
     );
     flow.currentStepId = 'import';
-    const retry = await prisma.task.create({
+    const retry = await createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.IMPORTING,
@@ -347,7 +386,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms,
       new Date().toISOString(),
     );
-    const task = await prisma.task.create({
+    const task = await createTask({
       data: {
         episodeId,
         legacyStage: LegacyTaskStage.PLAYER_WAITING,
@@ -365,7 +404,9 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     expect(results.filter(Boolean)).toHaveLength(1);
     const saved = await prisma.task.findUnique({ where: { id: task.id } });
     expect(saved?.version).toBe(1);
-    expect(saved?.jellyfinEpisodeId).toBe(results[0] ? 'winner' : 'loser');
+    expect((await store.read(task.id)).input.jellyfinEpisodeId).toBe(
+      results[0] ? 'winner' : 'loser',
+    );
     await expect(service.cancelTask(task.id)).rejects.toThrow('任务已完成');
   });
   it.each(['failed', 'cancelled'] as const)(
@@ -380,7 +421,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       currentStep(flow).status = 'running';
       currentStep(flow).attempt = 1;
       // A 仅识别到 Jellyfin 条目，尚未关联即失败。
-      await prisma.task.create({
+      await createTask({
         data: {
           episodeId,
           legacyStage: LegacyTaskStage.PLAYER_WAITING,
@@ -394,7 +435,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           ),
         },
       });
-      const publisher = await prisma.task.create({
+      const publisher = await createTask({
         data: {
           episodeId,
           legacyStage: LegacyTaskStage.PLAYER_WAITING,
@@ -424,7 +465,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       terminal.finishedAt = new Date().toISOString();
       expect(await store.commit(saved, terminal)).toBe(true);
       flow.currentStepId = 'import';
-      const retry = await prisma.task.create({
+      const retry = await createTask({
         data: {
           episodeId,
           legacyStage: LegacyTaskStage.IMPORTING,
@@ -434,6 +475,209 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       await expect(
         claimEpisodePublication(retry.id, await contextFor(retry.id)),
       ).rejects.toThrow('其他任务正在发布或已发布');
+    },
+  );
+  it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT])(
+    '%s 发布检查点提交失败时，回滚 atom 写入的剧集关联',
+    async (type) => {
+      const task = await prisma.$transaction((tx) =>
+        createEpisodeTask(
+          service,
+          tx,
+          type,
+          [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+          type === TaskType.BATCH_IMPORT
+            ? {
+                batchEntries: [
+                  {
+                    id: 'entry-a',
+                    episodeId,
+                    sourcePath: '/a.mkv',
+                    jellyfinEpisodeId: 'rollback',
+                  },
+                ],
+              }
+            : { episodeId, jellyfinEpisodeId: 'rollback' },
+          [episodeId],
+        ),
+      );
+      const context = await contextFor(task.id);
+      const transaction = context.transaction.bind(context);
+      context.transaction = (operation) =>
+        transaction((state) =>
+          operation({
+            ...state,
+            updateCheckpoint: async (update) => {
+              await state.updateCheckpoint(update);
+              throw new Error('checkpoint failed');
+            },
+            saveCheckpoint: async (checkpoint, output) => {
+              await state.saveCheckpoint(checkpoint, output);
+              throw new Error('checkpoint failed');
+            },
+          }),
+        );
+      const emitter = new EventEmitter2();
+      const emit = jest.spyOn(emitter, 'emit');
+      const atom = new PublishEpisodeAtom(prisma as PrismaService, emitter);
+      await expect(atom.run(task.id, task, context)).rejects.toThrow(
+        'checkpoint failed',
+      );
+      expect(
+        (await prisma.episode.findUnique({ where: { id: episodeId } }))
+          ?.jellyfinEpisodeId,
+      ).toBeNull();
+      const saved = await store.read(task.id);
+      expect(saved.version).toBe(0);
+      expect(currentStep(saved.workflow).checkpoint).toEqual({});
+      expect(context.checkpoint).toEqual({});
+      expect(emit).not.toHaveBeenCalled();
+    },
+  );
+  it('批量导入并发检查点和产物在真实事务中合并，发布归属跨类型互斥', async () => {
+    const otherEpisode = await prisma.episode.create({
+      data: { seasonId, index: 2 },
+    });
+    const task = await prisma.$transaction((tx) =>
+      createEpisodeTask(
+        service,
+        tx,
+        TaskType.BATCH_IMPORT,
+        [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+        {
+          batchEntries: [
+            { id: 'a', episodeId, sourcePath: '/a.mkv' },
+            { id: 'b', episodeId: otherEpisode.id, sourcePath: '/b.mkv' },
+          ],
+        },
+        [episodeId, otherEpisode.id],
+      ),
+    );
+    class PreparedPublishAtom extends PublishEpisodeAtom {
+      protected async runEpisode(
+        id: number,
+        input: TaskInput,
+        context: AtomContext,
+      ) {
+        await claimEpisodePublication(id, context);
+        await context.saveCheckpoint(
+          {},
+          {
+            filePath: input.sourcePath,
+            nfoPath: `${input.sourcePath}.nfo`,
+            jellyfinEpisodeId: `jf-${input.episodeId}`,
+          },
+        );
+        return super.runEpisode(id, input, context);
+      }
+    }
+    const batchAtoms = {
+      ...atoms,
+      publishEpisode: new PreparedPublishAtom(
+        prisma as PrismaService,
+        new EventEmitter2(),
+      ),
+    };
+    await new WorkflowRunner(store, batchAtoms, jest.fn()).start(task.id);
+    const saved = await store.read(task.id);
+    expect(saved.workflow.status).toBe('succeeded');
+    expect((await service.getTaskStates([task.id]))[0]).toMatchObject({
+      type: TaskType.BATCH_IMPORT,
+      version: saved.version,
+      batchEntries: expect.arrayContaining([
+        expect.objectContaining({ filePath: '/a.mkv' }),
+        expect.objectContaining({ filePath: '/b.mkv' }),
+      ]),
+    });
+    expect(
+      batchImportEntries(saved.input.batchEntries).map((e) => e.filePath),
+    ).toEqual(['/a.mkv', '/b.mkv']);
+    for (const entry of batchImportEntries(saved.input.batchEntries))
+      expect(currentStep(saved.workflow).checkpoint.entries![entry.id]).toEqual(
+        { publicationClaimed: true, episodePublished: true, completed: true },
+      );
+    // 即使整个批量任务后来失败，已发布单集仍受保护。
+    const failed = parseWorkflow(saved.workflow);
+    failed.status = 'failed';
+    await store.commit(saved, failed);
+    const download = await createImportTask();
+    await expect(
+      claimEpisodePublication(download.id, await contextFor(download.id)),
+    ).rejects.toThrow('其他任务正在发布或已发布');
+    await prisma.episode.delete({ where: { id: otherEpisode.id } });
+    expect(
+      batchImportEntries((await store.read(task.id)).input.batchEntries)[1],
+    ).toMatchObject({
+      episodeId: otherEpisode.id,
+      filePath: '/b.mkv',
+    });
+  });
+  it.each(
+    [TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT].flatMap(
+      (type) =>
+        ['running', 'failed', 'cancelled'].flatMap((status) =>
+          (type !== TaskType.DOWNLOAD && status !== 'running'
+            ? [false, true]
+            : [false]
+          ).map((hasMedia) => ({ type, status, hasMedia })),
+        ),
+    ),
+  )(
+    '$type / $status / media=$hasMedia 自动下载排除',
+    async ({ type, status, hasMedia }) => {
+      await prisma.season.update({
+        where: { id: seasonId },
+        data: { jellyfinId: 'auto-exclusion' },
+      });
+      await prisma.episode.update({
+        where: { id: episodeId },
+        data: { airTime: new Date('2020-01-01') },
+      });
+      const title = `auto-exclusion-${episodeId}-${type} - 01`;
+      const source = await prisma.downloadSource.create({
+        data: { seasonId, pattern: title, offset: 0 },
+      });
+      const torrent = await prisma.torrent.create({
+        data: {
+          title,
+          hash: title,
+          torrentLink: 'magnet:test',
+          size: BigInt(1),
+          publishDate: new Date(),
+          index: 1,
+          organizationParts: [],
+          seasonTitleAliases: [],
+        },
+      });
+      try {
+        expect(await downloads.findTorrentsToDownload()).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ episode_id: episodeId }),
+          ]),
+        );
+        await createTask({
+          data: {
+            type,
+            episodeId,
+            legacyStage: LegacyTaskStage.IMPORTING,
+            isFailed: status === 'failed',
+            isCancelled: status === 'cancelled',
+          },
+        });
+        if (hasMedia)
+          await prisma.episode.update({
+            where: { id: episodeId },
+            data: { jellyfinEpisodeId: 'published' },
+          });
+        expect(
+          (await downloads.findTorrentsToDownload()).some(
+            (row) => row.episode_id === episodeId,
+          ),
+        ).toBe(type !== TaskType.DOWNLOAD && status !== 'running' && !hasMedia);
+      } finally {
+        await prisma.downloadSource.delete({ where: { id: source.id } });
+        await prisma.torrent.delete({ where: { id: torrent.id } });
+      }
     },
   );
 });

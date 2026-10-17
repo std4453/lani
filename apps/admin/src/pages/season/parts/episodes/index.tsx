@@ -77,6 +77,7 @@ function EpisodeStatusTag({
       <DownloadStatusTag
         status={mergedEpisode.taskStatus}
         taskId={mergedEpisode.taskId}
+        taskType={mergedEpisode.taskType}
         openTaskDetails={openTaskDetails}
       />
     </div>
@@ -338,7 +339,7 @@ function useColumns({
   );
 }
 
-function useEpisodeStatus(episodes: Episode[]) {
+export function useEpisodeStatus(episodes: Episode[]) {
   const episodeIds = useMemo(
     () => episodes.map((episode) => episode.id),
     [episodes],
@@ -370,10 +371,11 @@ function useEpisodeStatus(episodes: Episode[]) {
     }
     const episodesStatusMap: Record<number, EpisodeStatusFields> = {};
     for (const item of episodesStatus) {
-      const { status, taskId } = calcEpisodeStatus(item);
+      const { status, taskId, taskType } = calcEpisodeStatus(item);
       episodesStatusMap[item.id] = {
         taskStatus: status,
         taskId,
+        taskType,
       };
     }
     return episodesStatusMap;

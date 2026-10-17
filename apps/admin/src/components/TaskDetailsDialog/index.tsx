@@ -1,3 +1,4 @@
+import BatchImportDetailsDialog from '@/components/BatchImportDetailsDialog';
 import EpisodeDetailsDialog from '@/components/EpisodeDetailsDialog';
 import { TaskType } from '@/generated/types';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
@@ -7,6 +8,9 @@ export default function TaskDetailsDialog(
   props: DialogProps<{ taskId: number; taskType: TaskType }>,
 ) {
   switch (props.input?.taskType) {
+    case TaskType.BatchImport:
+      return <BatchImportDetailsDialog {...props} />;
+    case TaskType.Import:
     case TaskType.Download:
       return (
         <EpisodeDetailsDialog

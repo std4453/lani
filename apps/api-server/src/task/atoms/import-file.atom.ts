@@ -1,3 +1,4 @@
+import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { claimEpisodePublication } from './publication';
 import {
   getSeasonDirectory,
@@ -6,20 +7,20 @@ import {
 import { jellyfinNumber } from '@/utils/episode-number';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { AsyncAtom, AtomContext, TaskInput } from '@/task/atom';
+import { AtomContext, TaskInput } from '@/task/atom';
 import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import { importFile } from './import-file.operation';
 import path from 'path';
 
 @Injectable()
-export class ImportFileAtom extends AsyncAtom {
-  readonly wants = [['findVideoFile']] as const;
+export class ImportFileAtom extends BatchableEpisodeAtom {
+  readonly wants = [['findVideoFile', 'findImportFiles']] as const;
   constructor(private prisma: PrismaService) {
     super();
   }
 
-  async run(
+  protected async runEpisode(
     id: number,
     { episodeId, importPath }: TaskInput,
     context: AtomContext,
@@ -61,7 +62,7 @@ export class ImportFileAtom extends AsyncAtom {
         .padStart(2, '0')}${path.extname(importPath)}`,
     );
     const importedFile = await importFile(
-      id,
+      context.entryId === undefined ? id : `${id}-${context.entryId}`,
       sourcePath,
       targetPath,
       config.lani.moveStrategy,

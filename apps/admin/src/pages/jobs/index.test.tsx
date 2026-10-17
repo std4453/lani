@@ -56,7 +56,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       second = table.request(
         { current: 2, pageSize: 10 },
         {},
-        { lifecycle: ['failed'], type: [TaskType.Download] },
+        { lifecycle: ['failed'], type: [TaskType.BatchImport] },
       );
     });
     const result = (id: number) => ({
@@ -89,7 +89,7 @@ it('翻页和筛选请求逆序完成时，行数据与列表签名基准只采�
       first: 10,
       filter: {
         ...taskStateFilter(['failed']),
-        type: { in: [TaskType.Download] },
+        type: { in: [TaskType.BatchImport] },
       },
     });
     expect(query.mock.calls[1][0].variables.filter).toEqual(
@@ -124,4 +124,43 @@ it('迟到的旧版本响应不能覆盖当前页状态', () => {
     { id: 1, version: 2, isCancelled: false },
   ] as never);
   expect(result[0]).toBe(rows[0]);
+});
+
+it('无筛选及清除筛选后的签名轮询省略空 filter，避免接口返回 400', async () => {
+  query.mockReset();
+  query.mockImplementation(async ({ variables }) => {
+    if (variables.filter && !Object.keys(variables.filter).length)
+      throw new Error('Empty filter rejected');
+    return { data: { allTasks: { edges: [], totalCount: 0 } } };
+  });
+  const container = document.createElement('div');
+  act(() => {
+    ReactDOM.render(<JobsPage />, container);
+  });
+  try {
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[0][0].variables).not.toHaveProperty('filter');
+    await act(async () => {
+      await table.request({ current: 1 }, {}, { type: [TaskType.Import] });
+    });
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[2][0].variables.filter).toEqual({
+      type: { in: [TaskType.Import] },
+    });
+    await act(async () => {
+      await table.request({ current: 1 }, {}, { type: [], lifecycle: [] });
+    });
+    await act(async () => {
+      await poll.refetch();
+    });
+    expect(query.mock.calls[4][0].variables).not.toHaveProperty('filter');
+  } finally {
+    act(() => {
+      ReactDOM.unmountComponentAtNode(container);
+    });
+  }
 });

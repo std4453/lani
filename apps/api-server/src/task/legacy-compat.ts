@@ -5,6 +5,7 @@ import { AtomType, Workflow, currentStep } from '@lani/workflow';
 const stages: Record<AtomType, LegacyTaskStage> = {
   submitDownload: LegacyTaskStage.DOWNLOAD_SUBMITTING,
   download: LegacyTaskStage.DOWNLOADING,
+  findImportFiles: LegacyTaskStage.DOWNLOAD_COMPLETED,
   findVideoFile: LegacyTaskStage.DOWNLOAD_COMPLETED,
   importFile: LegacyTaskStage.IMPORTING,
   writeMetadata: LegacyTaskStage.WRITING_METADATA,

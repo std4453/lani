@@ -1,5 +1,23 @@
 fragment taskDetailsFields on Task {
+  taskEpisodesByTaskId(orderBy: EPISODE_ID_ASC) {
+    nodes {
+      episodeId
+      episodeByEpisodeId {
+        id
+        title
+        numbering
+        seasonBySeasonId {
+          id
+          title
+          jellyfinId
+        }
+      }
+    }
+  }
+
   type
+  batchEntries
+  sourcePath
   episodeId
   createdAt
   downloadPath
@@ -24,6 +42,15 @@ query GetTaskStates($taskIds: [Int!]!) {
   getTaskStates(taskIds: $taskIds) {
     id
     type
+    batchEntries {
+      id
+      episodeId
+      sourcePath
+      importPath
+      filePath
+      nfoPath
+      jellyfinEpisodeId
+    }
     version
     workflow
     legacyStage

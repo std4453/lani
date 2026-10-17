@@ -25,6 +25,9 @@ it.each(['cancel', 'partial-write', 'rename', 'cleanup'])(
     const original = '<episodedetails><title>原文件</title></episodedetails>';
     await fs.writeFile(nfoPath, original);
     const input: TaskInput = {
+      type: 'DOWNLOAD' as const,
+      sourcePath: null,
+      batchEntries: null,
       id: 1,
       episodeId: 2,
       torrentLink: null,
@@ -42,6 +45,7 @@ it.each(['cancel', 'partial-write', 'rename', 'cleanup'])(
       checkpoint: {},
       assertActive: jest.fn(async () => undefined),
       transaction: jest.fn(),
+      updateCheckpoint: jest.fn(),
       saveCheckpoint: jest.fn(),
       wait: jest.fn(),
       waitFor: async (operation) => operation,

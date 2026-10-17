@@ -36,7 +36,7 @@ export function sameFile(
 }
 /** 先持久化暂存文件身份，再无覆盖地发布；源文件只在发布完成后移除。 */
 export async function importFile(
-  id: number,
+  id: number | string,
   source: string,
   target: string,
   strategy: string,

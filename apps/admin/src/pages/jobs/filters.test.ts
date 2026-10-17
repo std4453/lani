@@ -8,6 +8,7 @@ it('显示状态合并执行与取消，并将同一筛选转换为后端流程�
     submitDownload: { wants: [] },
     download: { wants: [] },
     findVideoFile: { wants: [] },
+    findImportFiles: { wants: [] },
     importFile: { wants: [] },
     writeMetadata: { wants: [] },
     refreshPlayer: { wants: [] },

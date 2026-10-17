@@ -7,5 +7,5 @@ export const downloadDefinition: StepDefinition[] = [
   { id: 'import', atom: 'importFile', title: '导入文件' },
   { id: 'metadata', atom: 'writeMetadata', title: '写入元数据' },
   { id: 'player', atom: 'refreshPlayer', title: '刷新 Jellyfin' },
-  { id: 'publish', atom: 'publishEpisode', title: '下载完成' },
+  { id: 'publish', atom: 'publishEpisode', title: '完成' },
 ];

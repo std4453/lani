@@ -1,3 +1,4 @@
+import { taskEpisodeOutput } from '@/task/task-input';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { BilibiliBangumiCCService } from '@/bilibili-bangumi-cc/index.service';
 import { BilibiliProxyRegion } from '@/bilibili-bangumi-cc/types';
@@ -22,19 +23,20 @@ export class BilibiliBangumiCCResolver {
       index,
       jellyfinEpisodeId,
       season: { bilibiliThmId, title },
-      tasks: [job],
+      taskEpisodes: [job],
     } = await this.prisma.episode.findUnique({
       where: {
         id: episodeId,
       },
       include: {
         season: true,
-        tasks: {
+        taskEpisodes: {
+          include: { task: true },
           where: {
-            legacyStage: LegacyTaskStage.AVAILABLE,
+            task: { legacyStage: LegacyTaskStage.AVAILABLE },
           },
           orderBy: {
-            createdAt: 'desc',
+            taskId: 'desc',
           },
           take: 1,
         },
@@ -55,7 +57,7 @@ export class BilibiliBangumiCCResolver {
       throw new ConflictException('no finished job found');
     }
     // TODO: 下载完成后记录filePath
-    const { filePath } = job;
+    const filePath = taskEpisodeOutput(job.task, episodeId)?.filePath;
     if (!filePath) {
       throw new ConflictException('last job does not have filePath');
     }

@@ -1,4 +1,5 @@
 import PageTitle from '@/components/PageTitle';
+import { TASK_TYPE_LABELS, taskEpisodesLabel } from '@/utils/task-episodes';
 import TaskStatus from '@/components/TaskStatus';
 import { WorkflowStepTag } from '@/components/TaskWorkflow/StepTag';
 import {
@@ -36,11 +37,31 @@ import { Alert, Typography } from 'antd';
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
+import { useSize } from 'ahooks';
+
+// 固定内容宽度之外留 16px 余量，另计 middle 表格左右各 8px 的 padding。
+const fixedWidths = {
+  id: 48 + 16 + 16,
+  createdAt: 152 + 16 + 16,
+  type: 56 + 16 + 16,
+  step: 108 + 16 + 16,
+  status: 70 + 16 + 16,
+  jellyfin: 64 + 16 + 16,
+  actions: 28 + 16 + 16,
+};
+const fixedWidth = Object.values(fixedWidths).reduce(
+  (sum, width) => sum + width,
+  0,
+);
+// 剩余空间按 3:2 分配，横向滚动保证剧集至少 240px、失败原因至少 160px。
+const minimumTableWidth = fixedWidth + 240 + 160;
 
 function useColumns({
   openTaskDetails,
+  tableWidth,
 }: {
   openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
+  tableWidth: number;
 }) {
   return useMemo(
     (): ProColumns<ListTasksFieldsFragment>[] => [
@@ -48,14 +69,19 @@ function useColumns({
         title: 'ID',
         dataIndex: 'id',
         align: 'center',
-        width: 96,
+        width: fixedWidths.id,
         className: tableStyles.compactCell,
       },
       {
         title: '剧集',
         key: 'episode',
+        width: (tableWidth - fixedWidth) * 0.6,
         render: (_, r) => {
-          const episode = r.episodeByEpisodeId;
+          const episode =
+            r.episodeByEpisodeId ??
+            r.taskEpisodesByTaskId?.nodes.find(
+              (entry) => entry?.episodeByEpisodeId,
+            )?.episodeByEpisodeId;
           if (!episode) {
             return '-';
           }
@@ -64,9 +90,12 @@ function useColumns({
             return '-';
           }
           return (
-            <div>
+            <div className={styles.episode}>
               <Link to={`/season/${season.id}`}>{season.title}</Link>
-              &nbsp;/&nbsp;#{formatNumbering(episode.numbering)}
+              &nbsp;/&nbsp;
+              {r.type === TaskType.BatchImport
+                ? taskEpisodesLabel(r)
+                : `#${formatNumbering(episode.numbering)}`}
             </div>
           );
         },
@@ -75,7 +104,14 @@ function useColumns({
         title: '创建于',
         dataIndex: 'createdAt',
         valueType: 'dateTime',
-        width: 220,
+        width: fixedWidths.createdAt,
+      },
+      {
+        title: '类型',
+        dataIndex: 'type',
+        filters: true,
+        valueEnum: TASK_TYPE_LABELS,
+        width: fixedWidths.type,
       },
       {
         title: '步骤',
@@ -94,20 +130,20 @@ function useColumns({
             />
           );
         },
-        width: 128,
+        width: fixedWidths.step,
       },
       {
         title: '状态',
         key: 'lifecycle',
         render: (_, row) => <TaskStatus task={row} variant="badge" />,
         valueEnum: TASK_STATES,
-        width: 120,
+        width: fixedWidths.status,
         filters: true,
       },
       {
         title: '失败原因',
         dataIndex: 'failedReason',
-        width: 240,
+        width: (tableWidth - fixedWidth) * 0.4,
         render: (_, row) =>
           row.failedReason ? (
             <Typography.Text
@@ -131,7 +167,7 @@ function useColumns({
       {
         title: 'Jellyfin',
         dataIndex: 'jellyfinEpisodeId',
-        width: 120,
+        width: fixedWidths.jellyfin,
         render: (_, r) =>
           r.jellyfinEpisodeId ? (
             <Typography.Link
@@ -157,12 +193,12 @@ function useColumns({
             详情
           </Typography.Link>,
         ],
-        width: 60,
+        width: fixedWidths.actions,
         className: tableStyles.compactCell,
         fixed: 'right',
       },
     ],
-    [openTaskDetails],
+    [openTaskDetails, tableWidth],
   );
 }
 
@@ -214,7 +250,7 @@ async function queryTasks(
       total: result.totalCount,
     };
   } catch (error) {
-    handleError(error, '下载任务获取失败');
+    handleError(error, '任务获取失败');
     return {
       success: false,
     };
@@ -248,7 +284,12 @@ export function applyTaskStates(
 export default function JobsPage() {
   const client = useApolloClient();
   const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
-  const columns = useColumns({ openTaskDetails });
+  const tableRef = useRef<HTMLDivElement>(null);
+  const tableSize = useSize(tableRef);
+  const columns = useColumns({
+    openTaskDetails,
+    tableWidth: Math.max(minimumTableWidth, tableSize?.width ?? 0),
+  });
   const actionRef = useRef<ActionType>();
   const [rows, setRows] = useState<ListTasksFieldsFragment[]>([]);
   const [changed, setChanged] = useState(false);
@@ -271,7 +312,9 @@ export default function JobsPage() {
         variables: {
           offset: snapshot.offset,
           first: snapshot.first,
-          filter: snapshot.filter,
+          ...(Object.keys(snapshot.filter).length
+            ? { filter: snapshot.filter }
+            : {}),
         },
         fetchPolicy: 'network-only',
       });
@@ -287,8 +330,8 @@ export default function JobsPage() {
   });
 
   return (
-    <>
-      <PageTitle title="下载任务" />
+    <div ref={tableRef} style={{ minWidth: 0 }}>
+      <PageTitle title="下载/导入任务" />
       {changed && (
         <Alert
           type="info"
@@ -344,17 +387,17 @@ export default function JobsPage() {
         headerTitle={
           <>
             <Hamburger inTable />
-            下载任务
+            下载/导入任务
           </>
         }
         actionRef={actionRef}
         search={false}
         defaultSize="middle"
         scroll={{
-          x: 1276,
+          x: minimumTableWidth,
         }}
       />
       {taskDetailsDialog}
-    </>
+    </div>
   );
 }

@@ -41,7 +41,8 @@ model Episode {
   jellyfinEpisodeId     String?       @map("jellyfin_episode_id")
   lastMissingNotifyTime DateTime?     @map("last_missing_notify_time") @db.Timestamptz(6)
   season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  tasks          Task[] @relation("download_jobsToepisodes")
+  singleTasks           Task[] @relation("download_jobsToepisodes")
+  taskEpisodes          TaskEpisode[]
 
   @@unique([seasonId, index])
   @@unique([seasonId, episodeType, episodeNumber])
@@ -159,6 +160,8 @@ model Torrent {
 
 enum TaskType {
   DOWNLOAD
+  IMPORT
+  BATCH_IMPORT
 
   @@map("task_type")
 }
@@ -168,6 +171,10 @@ model Task {
   type			TaskType		@default(DOWNLOAD)
 
   // 入参
+  episodes TaskEpisode[]
+  sourcePath String? @map("source_path")
+  // 批量导入的有序输入及逐项产物，内部条目 ID 在创建后保持不变。
+  batchEntries Json? @map("batch_entries")
   episodeId		Int?			@map("episode_id")
   episode		Episode?		@relation("download_jobsToepisodes", fields: [episodeId], references: [id], onDelete: SetNull)
   torrentLink		String?			@map("torrent_link")
@@ -210,6 +217,18 @@ model Task {
 
   @@index([episodeId])
   @@map("download_jobs")
+}
+
+// 仅供任务与剧集的关联查询，不保存执行状态或产物。
+model TaskEpisode {
+  taskId    Int     @map("task_id")
+  episodeId Int     @map("episode_id")
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, episodeId])
+  @@index([episodeId])
+  @@map("task_episodes")
 }
 
 model JellyfinFolder {

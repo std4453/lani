@@ -1,6 +1,7 @@
 import { Prisma } from '@lani/db';
 import {
   AtomContext,
+  CheckpointUpdate,
   ExecutionStopped,
   TaskInput,
   TaskOutput,
@@ -36,7 +37,7 @@ export interface TaskStorePort {
 }
 export class WorkflowRunner {
   private running = new Map<number, Promise<void>>();
-  private wake = new Map<number, () => void>();
+  private wake = new Map<number, Set<() => void>>();
   private stopping = false;
   private restart = new Set<number>();
   constructor(
@@ -46,7 +47,7 @@ export class WorkflowRunner {
   ) {}
 
   start(id: number): Promise<void> {
-    this.wake.get(id)?.();
+    this.wake.get(id)?.forEach((wake) => wake());
     const existing = this.running.get(id);
     if (existing) {
       this.restart.add(id);
@@ -65,7 +66,7 @@ export class WorkflowRunner {
   }
   async stop() {
     this.stopping = true;
-    for (const wake of this.wake.values()) wake();
+    for (const waiters of this.wake.values()) waiters.forEach((wake) => wake());
     await Promise.all(this.running.values());
   }
   async transition(id: number, change: (workflow: Workflow) => Workflow) {
@@ -116,7 +117,9 @@ export class WorkflowRunner {
         let wake: () => void;
         const signal = new Promise<typeof interrupted>((resolve) => {
           wake = () => resolve(interrupted);
-          this.wake.set(task.id, wake);
+          const waiters = this.wake.get(task.id) ?? new Set();
+          waiters.add(wake);
+          this.wake.set(task.id, waiters);
         });
         try {
           await assertActive();
@@ -127,26 +130,42 @@ export class WorkflowRunner {
             return result.value;
           }
         } finally {
-          if (this.wake.get(task.id) === wake!) this.wake.delete(task.id);
+          this.wake.get(task.id)?.delete(wake!);
+          if (!this.wake.get(task.id)?.size) this.wake.delete(task.id);
         }
       }
     };
-    const saveCheckpoint = async (
-      patch: Checkpoint,
-      output?: TaskOutput,
+    const updateCheckpoint = async (
+      update: CheckpointUpdate,
       tx?: Prisma.TransactionClient,
     ) => {
       for (;;) {
         const latest = await read(tx);
         const next = parseWorkflow(latest.workflow);
         const step = next.steps.find((s) => s.id === stepId)!;
-        step.checkpoint = { ...step.checkpoint, ...patch };
-        if (await this.store.commit(latest, next, output, tx)) {
+        const change = update({
+          checkpoint: step.checkpoint,
+          input: latest.input,
+        });
+        step.checkpoint = change.checkpoint;
+        if (await this.store.commit(latest, next, change.output, tx)) {
           if (!tx) checkpoint = step.checkpoint;
           return;
         }
       }
     };
+    const saveCheckpoint = (
+      patch: Checkpoint,
+      output?: TaskOutput,
+      tx?: Prisma.TransactionClient,
+    ) =>
+      updateCheckpoint(
+        ({ checkpoint }) => ({
+          checkpoint: { ...checkpoint, ...patch },
+          output,
+        }),
+        tx,
+      );
     return {
       stepId,
       attempt,
@@ -162,6 +181,7 @@ export class WorkflowRunner {
             tx,
             workflow: latest.workflow,
             input: latest.input,
+            updateCheckpoint: (update) => updateCheckpoint(update, tx),
             saveCheckpoint: (patch, output) =>
               saveCheckpoint(patch, output, tx),
           });
@@ -177,6 +197,7 @@ export class WorkflowRunner {
         return committed.value;
       },
       saveCheckpoint,
+      updateCheckpoint,
       waitFor,
       wait: async (milliseconds) => {
         let timer: ReturnType<typeof setTimeout> | undefined;
