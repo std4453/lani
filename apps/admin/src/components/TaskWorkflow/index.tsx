@@ -13,7 +13,7 @@ import {
   ReloadOutlined,
   StopOutlined,
 } from '@ant-design/icons';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import styles from './index.module.less';
 import Field from './Field';
 import TaskInfo from './TaskInfo';
@@ -97,10 +97,22 @@ export default function TaskWorkflowView({
     ? `step:${workflow.currentStepId}`
     : 'task-info';
   const [expanded, setExpanded] = useState<string[]>([defaultExpanded]);
+  const previous = useRef({ taskId: task.id, defaultExpanded });
   const [busy, setBusy] = useState(false);
   const client = useApolloClient();
   useEffect(() => {
-    setExpanded([defaultExpanded]);
+    const last = previous.current;
+    previous.current = { taskId: task.id, defaultExpanded };
+    if (last.taskId !== task.id) {
+      setExpanded([defaultExpanded]);
+    } else if (last.defaultExpanded !== defaultExpanded) {
+      setExpanded((ids) => [
+        ...ids.filter(
+          (id) => id !== last.defaultExpanded && id !== defaultExpanded,
+        ),
+        defaultExpanded,
+      ]);
+    }
   }, [task.id, defaultExpanded]);
   const act = async (cancel: boolean) => {
     setBusy(true);

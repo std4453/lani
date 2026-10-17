@@ -5,7 +5,7 @@ import TaskDialog, {
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { GetTaskByIdDocument } from '@/generated/types';
 import { DialogProps } from '@/utils/useDialog';
-import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useTaskStates } from '@/utils/useTaskStates';
 import { commonDirectory, taskImportEntries } from '@/utils/task-episodes';
 import { formatNumbering } from '@/utils/episode';
@@ -22,10 +22,9 @@ export default function BatchImportDetailsDialog({
 }: DialogProps<{ taskId: number }>) {
   const [tab, setTab] = useState('workflow');
   useEffect(() => setTab('workflow'), [input?.taskId, visible]);
-  const available = useForegroundOnline();
   const query = useQuery(GetTaskByIdDocument, {
     variables: { id: input?.taskId ?? 0 },
-    skip: !visible || !available || !input?.taskId,
+    skip: !visible || !input?.taskId,
   });
   useApolloPoll({
     refetch: query.refetch,

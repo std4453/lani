@@ -1,3 +1,25 @@
+@import (reference) '~antd/es/style/themes/default.less';
+
+.pathsTooltip {
+  width: 480px;
+  max-width: calc(100vw - 24px);
+
+  :global(.ant-tooltip-inner) {
+    padding: 0;
+    overflow: hidden;
+
+    > div {
+      padding: 6px 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+
+      &:nth-child(2n - 1) {
+        background-color: fade(@white, 3%);
+      }
+    }
+  }
+}
+
 .field {
   overflow-wrap: anywhere;
 }

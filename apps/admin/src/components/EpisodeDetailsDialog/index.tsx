@@ -10,7 +10,7 @@ import { useTaskStates } from '@/utils/useTaskStates';
 import { formatNumbering } from '@/utils/episode';
 import { GetEpisodeByIdDocument, GetTaskByIdDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
+import { useApolloPoll } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import { useQuery } from '@apollo/client';
 import { Alert, Skeleton, Tabs, Typography } from 'antd';
@@ -21,13 +21,12 @@ export default function EpisodeDetailsDialog({
   visible,
   input,
 }: DialogProps<{ episodeId?: number; taskId?: number }>) {
-  const available = useForegroundOnline();
   const episodeQuery = useQuery(GetEpisodeByIdDocument, {
-    skip: !input?.episodeId || !visible || !available,
+    skip: !input?.episodeId || !visible,
     variables: { episodeByIdId: input?.episodeId ?? 0 },
   });
   const taskQuery = useQuery(GetTaskByIdDocument, {
-    skip: !!input?.episodeId || !input?.taskId || !visible || !available,
+    skip: !!input?.episodeId || !input?.taskId || !visible,
     variables: { id: input?.taskId ?? 0 },
   });
   const query = input?.episodeId ? episodeQuery : taskQuery;

@@ -6,6 +6,7 @@ import { AtomType } from '@lani/workflow';
 import { TaskDetailsFieldsFragment as Task } from '@/generated/types';
 import Field from './Field';
 import DownloadProgress from './DownloadProgress';
+import styles from './index.module.less';
 function Paths({
   task,
   field,
@@ -24,11 +25,10 @@ function Paths({
   return (
     <Field label={label}>
       <Tooltip
-        title={
-          <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {text}
-          </div>
-        }
+        overlayClassName={styles.pathsTooltip}
+        title={paths.map((path, index) => (
+          <div key={index}>{path}</div>
+        ))}
       >
         <Typography.Text copyable={text ? { text } : false}>
           {paths.length} 个文件

@@ -307,3 +307,50 @@ it.each([true, false])(
     expect(JSON.stringify(task)).toBe(original);
   },
 );
+
+it('进入下一步骤只折叠上一步，保留其他手动展开项，完成后刷新也保留', () => {
+  const flow = buildWorkflowSnapshot(
+    [
+      { id: 'first', atom: 'submitDownload', title: '第一步' },
+      { id: 'second', atom: 'writeMetadata', title: '第二步' },
+      { id: 'third', atom: 'importFile', title: '第三步' },
+    ],
+    registry,
+    '2026-10-14T12:00:00Z',
+  );
+  flow.steps[0].status = 'succeeded';
+  flow.steps[1].status = 'running';
+  flow.currentStepId = 'second';
+  render(flow);
+  const toggle = (text: string) =>
+    [
+      ...container.querySelectorAll<HTMLButtonElement>('button[aria-expanded]'),
+    ].find((button) => button.textContent === text)!;
+  act(() => {
+    toggle('第一步').click();
+    toggle('任务信息').click();
+  });
+  flow.steps[1].status = 'succeeded';
+  flow.steps[2].status = 'running';
+  flow.currentStepId = 'third';
+  render(flow);
+  expect(toggle('第一步').getAttribute('aria-expanded')).toBe('true');
+  expect(toggle('任务信息').getAttribute('aria-expanded')).toBe('true');
+  expect(toggle('第二步').getAttribute('aria-expanded')).toBe('false');
+  expect(
+    container.querySelector('[data-step-id="third"] button[aria-expanded]'),
+  ).toBeNull();
+  act(() => toggle('第二步').click());
+  flow.steps[2].status = 'succeeded';
+  flow.status = 'succeeded';
+  render(flow);
+  render(JSON.parse(JSON.stringify(flow)));
+  expect(toggle('第一步').getAttribute('aria-expanded')).toBe('true');
+  expect(toggle('第二步').getAttribute('aria-expanded')).toBe('true');
+  act(() => {
+    ReactDOM.unmountComponentAtNode(container);
+  });
+  render(flow);
+  expect(toggle('第一步').getAttribute('aria-expanded')).toBe('false');
+  expect(toggle('第二步').getAttribute('aria-expanded')).toBe('false');
+});
