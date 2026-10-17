@@ -9,6 +9,7 @@ import {
 } from '@/constants/task-status';
 import { taskStateFilter } from './filters';
 import styles from './index.module.less';
+import TaskListUpdateToast from './TaskListUpdateToast';
 import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { parseWorkflow, currentStep } from '@lani/workflow';
@@ -33,8 +34,8 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Button, message, Space, Typography } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Typography } from 'antd';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
 import { useSize } from 'ahooks';
@@ -294,28 +295,6 @@ export default function JobsPage() {
   const actionRef = useRef<ActionType>();
   const [rows, setRows] = useState<ListTasksFieldsFragment[]>([]);
   const [changed, setChanged] = useState(false);
-  const [messageApi, messageContextHolder] = message.useMessage();
-  useEffect(() => {
-    if (!changed || taskDetailsVisible) return;
-    const key = 'task-list-update';
-    const close = messageApi.info({
-      key,
-      duration: 0,
-      content: (
-        <Space>
-          任务列表有更新
-          <Button
-            type="link"
-            size="small"
-            onClick={() => void actionRef.current?.reload()}
-          >
-            刷新
-          </Button>
-        </Space>
-      ),
-    });
-    return () => close();
-  }, [changed, messageApi, taskDetailsVisible]);
   const requestSequence = useRef(0);
   const baseline = useRef({
     offset: 0,
@@ -355,7 +334,11 @@ export default function JobsPage() {
   return (
     <div ref={tableRef} style={{ minWidth: 0 }}>
       <PageTitle title="下载/导入任务" />
-      {messageContextHolder}
+      <TaskListUpdateToast
+        visible={changed && !taskDetailsVisible}
+        belowBackdrop={taskDetailsVisible}
+        onRefresh={() => void actionRef.current?.reload()}
+      />
       <MainTable<ListTasksFieldsFragment>
         columns={columns}
         rowKey="id"

@@ -12,3 +12,14 @@
   width: 100%;
   max-width: 100%;
 }
+
+// 列表提示独立成层，退场时降到 Modal 的默认遮罩（1000）之下。
+.updateToast {
+  &.belowBackdrop {
+    z-index: 999;
+  }
+
+  &.closing :global(.ant-message-notice-content) {
+    pointer-events: none;
+  }
+}
