@@ -124,11 +124,10 @@ export function createUseDialog<Input, Output>(
     ReactNode,
     (input: Input) => Promise<Output>,
     (input: Input) => Promise<DialogOpenNoThrowResult<Output>>,
-    boolean,
   ] => {
     const { open, openNoThrow, ...props } = useDialog<Input, Output>();
     const dialog = <Component {...props} />;
-    return [dialog, open, openNoThrow, props.visible];
+    return [dialog, open, openNoThrow];
   };
 }
 

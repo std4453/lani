@@ -9,7 +9,6 @@ import {
 } from '@/constants/task-status';
 import { taskStateFilter } from './filters';
 import styles from './index.module.less';
-import TaskListUpdateToast from './TaskListUpdateToast';
 import { useTaskStates } from '@/utils/useTaskStates';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { parseWorkflow, currentStep } from '@lani/workflow';
@@ -34,7 +33,7 @@ import {
 import { extractNode } from '@/utils/graphql';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import { Typography } from 'antd';
+import { Alert, Button, Typography } from 'antd';
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'umi';
 import { handleError } from '@/utils/error';
@@ -284,8 +283,7 @@ export function applyTaskStates(
 
 export default function JobsPage() {
   const client = useApolloClient();
-  const [taskDetailsDialog, , openTaskDetails, taskDetailsVisible] =
-    useTaskDetailsDialog();
+  const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
   const tableRef = useRef<HTMLDivElement>(null);
   const tableSize = useSize(tableRef);
   const columns = useColumns({
@@ -334,11 +332,23 @@ export default function JobsPage() {
   return (
     <div ref={tableRef} style={{ minWidth: 0 }}>
       <PageTitle title="下载/导入任务" />
-      <TaskListUpdateToast
-        visible={changed}
-        modalOpen={taskDetailsVisible}
-        onRefresh={() => void actionRef.current?.reload()}
-      />
+      {changed && (
+        <Alert
+          className={styles.updateToast}
+          type="info"
+          showIcon
+          message="任务列表有更新"
+          action={
+            <Button
+              type="link"
+              size="small"
+              onClick={() => void actionRef.current?.reload()}
+            >
+              刷新
+            </Button>
+          }
+        />
+      )}
       <MainTable<ListTasksFieldsFragment>
         columns={columns}
         rowKey="id"
