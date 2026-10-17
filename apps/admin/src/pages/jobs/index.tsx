@@ -335,8 +335,8 @@ export default function JobsPage() {
     <div ref={tableRef} style={{ minWidth: 0 }}>
       <PageTitle title="下载/导入任务" />
       <TaskListUpdateToast
-        visible={changed && !taskDetailsVisible}
-        belowBackdrop={taskDetailsVisible}
+        visible={changed}
+        modalOpen={taskDetailsVisible}
         onRefresh={() => void actionRef.current?.reload()}
       />
       <MainTable<ListTasksFieldsFragment>

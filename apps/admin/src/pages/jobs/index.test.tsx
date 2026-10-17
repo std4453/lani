@@ -207,7 +207,7 @@ it('更新提示浮在表格外且持续显示，刷新失败可重试，成功�
 });
 
 it.each([false, true])(
-  '任务弹窗隐藏更新提示，关闭后按最新签名恢复（打开前已有更新：%s）',
+  '任务弹窗保持更新提示挂载，关闭后仍按最新签名显示（打开前已有更新：%s）',
   async (changedBeforeOpen) => {
     jest.useFakeTimers();
     query.mockReset();
@@ -255,18 +255,24 @@ it.each([false, true])(
 
       await open();
       expect(container.textContent).toContain('关闭任务详情');
-      expect(notices()).toHaveLength(0);
+      expect(notices()).toHaveLength(changedBeforeOpen ? 1 : 0);
       query.mockResolvedValue(result(2));
       await act(async () => {
         await poll.refetch();
       });
       await settle();
-      expect(notices()).toHaveLength(0);
+      expect(notices()).toHaveLength(1);
+      const toast = notices()[0];
+      expect(toast.className).not.toContain('leave');
+      expect(toast.querySelector('button')!.disabled).toBe(true);
       await close();
       expect(notices()).toHaveLength(1);
+      expect(notices()[0]).toBe(toast);
+      expect(toast.querySelector('button')!.disabled).toBe(false);
 
       await open();
-      expect(notices()).toHaveLength(0);
+      expect(notices()).toHaveLength(1);
+      expect(notices()[0]).toBe(toast);
       query.mockResolvedValue(result(1));
       await act(async () => {
         await poll.refetch();

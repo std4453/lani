@@ -13,11 +13,9 @@
   max-width: 100%;
 }
 
-// 列表提示独立成层，退场时降到 Modal 的默认遮罩（1000）之下。
+// 列表提示始终低于 Modal 默认遮罩（1000），弹窗开关时不触发退场。
 .updateToast {
-  &.belowBackdrop {
-    z-index: 999;
-  }
+  z-index: 999;
 
   &.closing :global(.ant-message-notice-content) {
     pointer-events: none;

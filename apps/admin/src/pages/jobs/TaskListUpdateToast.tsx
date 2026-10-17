@@ -8,11 +8,11 @@ import styles from './index.module.less';
 
 export default function TaskListUpdateToast({
   visible,
-  belowBackdrop,
+  modalOpen,
   onRefresh,
 }: {
   visible: boolean;
-  belowBackdrop: boolean;
+  modalOpen: boolean;
   onRefresh: () => void;
 }) {
   const [rendered, setRendered] = useState(visible);
@@ -78,11 +78,10 @@ export default function TaskListUpdateToast({
       ref={containerRef}
       style={{ top }}
       className={clsx('ant-message', styles.updateToast, {
-        [styles.belowBackdrop]: belowBackdrop,
         [styles.closing]: !visible,
       })}
       role="status"
-      aria-hidden={!visible}
+      aria-hidden={!visible || modalOpen}
     >
       <div
         className={clsx('ant-message-notice', {
@@ -99,7 +98,7 @@ export default function TaskListUpdateToast({
                 <Button
                   type="link"
                   size="small"
-                  disabled={!visible}
+                  disabled={!visible || modalOpen}
                   onClick={onRefresh}
                 >
                   刷新

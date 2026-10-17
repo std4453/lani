@@ -13,7 +13,7 @@ it('列表提示在独立容器中退场，不关闭其他消息，隐藏期间�
       ReactDOM.render(
         <TaskListUpdateToast
           visible={visible}
-          belowBackdrop={!visible}
+          modalOpen={false}
           onRefresh={refresh}
         />,
         container,
