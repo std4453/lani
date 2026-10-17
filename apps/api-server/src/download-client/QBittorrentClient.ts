@@ -327,7 +327,7 @@ export class QBittorrentClient implements IDownloadClient {
   async lookupTorrents(hashes: string[]) {
     if (!hashes.length) return [];
     const torrents = await this.qbt.resolveTorrents(hashes);
-    return [...torrents].map(([hash, torrent]): TorrentInfoWithStatus => {
+    return Array.from(torrents, ([hash, torrent]): TorrentInfoWithStatus => {
       const torrentInfo: TorrentInfo = {
         hash,
         name: torrent.name,
@@ -368,7 +368,7 @@ export class QBittorrentClient implements IDownloadClient {
   > {
     if (!hashes.length) return [];
     const torrents = await this.qbt.resolveTorrents(hashes);
-    return [...torrents].map(([hash, torrent]) => ({
+    return Array.from(torrents, ([hash, torrent]) => ({
       hash,
       speed: torrent.completion_on > 0 ? 0 : torrent.dlspeed,
       downloaded: torrent.downloaded,
