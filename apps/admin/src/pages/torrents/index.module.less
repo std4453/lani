@@ -1,8 +1,16 @@
 .title {
-  white-space: nowrap;
+  display: inline-block;
+  max-width: 480px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 767px) {
+    max-width: 280px;
+  }
 }
 
 .tag {
+  max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -26,7 +34,8 @@
 
 .tagContainer {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  max-width: 240px;
   margin-top: -3px;
   margin-bottom: -3px;
 }

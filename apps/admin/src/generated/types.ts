@@ -12,29 +12,13 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  /** A floating point number that requires more precision than IEEE 754 binary 64 */
   BigFloat: any;
-  /** BigInt */
   BigInt: any;
-  /** A location in a connection that can be used for resuming pagination. */
   Cursor: any;
-  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: string;
-  /**
-   * A point in time as described by the [ISO
-   * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
-   */
   Datetime: any;
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: any;
-  /** 版本化的任务流程快照；协议由 @lani/workflow 定义。 */
   Workflow: Workflow;
-  _Any: any;
-  /**
-   * Used to represent a set of fields. Grammatically, a field set is a
-   * selection set minus the braces.
-   */
-  _FieldSet: any;
 };
 
 export type AdminConfig = {
@@ -1963,7 +1947,6 @@ export type MetadataSourceFilter = {
   notIn?: InputMaybe<Array<MetadataSource>>;
 };
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type Mutation = {
   __typename?: 'Mutation';
   cancelTask: Scalars['ID'];
@@ -2033,202 +2016,169 @@ export type Mutation = {
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationCancelTaskArgs = {
   taskId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationCreateImageArgs = {
   input: CreateImageInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationCreateSeasonArgs = {
   input: CreateSeasonInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDeleteImageArgs = {
   input: DeleteImageInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDeleteImageByIdArgs = {
   input: DeleteImageByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDeleteImageBySourceUrlArgs = {
   input: DeleteImageBySourceUrlInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDeleteSeasonByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDownloadBilibiliCcArgs = {
   episodeId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationDownloadTorrentForEpisodeArgs = {
   episodeId: Scalars['Int'];
   torrentLink: Scalars['String'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationImportMultipleArgs = {
   entries: Array<ImportMultipleEntry>;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationImportSingleArgs = {
   episodeId: Scalars['Int'];
   importPath: Scalars['String'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationMockEpisodePublishArgs = {
   episodeId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationRetryTaskArgs = {
   taskId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationSaveSeasonArgs = {
   id: Scalars['Int'];
   patch: SaveSeasonPatch;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationSetJellyfinFolderDefaultArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationSyncEpisodeDataArgs = {
   seasonId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationSyncJellyfinSeriesIdArgs = {
   seasonId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationSyncMetadataArgs = {
   seasonId: Scalars['Int'];
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateEpisodeArgs = {
   input: UpdateEpisodeInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateEpisodeByIdArgs = {
   input: UpdateEpisodeByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateEpisodeBySeasonIdAndBangumiEpisodeIdArgs = {
   input: UpdateEpisodeBySeasonIdAndBangumiEpisodeIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberArgs = {
   input: UpdateEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateEpisodeBySeasonIdAndIndexArgs = {
   input: UpdateEpisodeBySeasonIdAndIndexInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateImageArgs = {
   input: UpdateImageInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateImageByIdArgs = {
   input: UpdateImageByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateImageBySourceUrlArgs = {
   input: UpdateImageBySourceUrlInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateJellyfinFolderArgs = {
   input: UpdateJellyfinFolderInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateJellyfinFolderByIdArgs = {
   input: UpdateJellyfinFolderByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateJellyfinFolderByJellyfinIdArgs = {
   input: UpdateJellyfinFolderByJellyfinIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateSeasonArgs = {
   input: UpdateSeasonInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateSeasonByIdArgs = {
   input: UpdateSeasonByIdInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationUpdateSeasonByTitleArgs = {
   input: UpdateSeasonByTitleInput;
 };
 
 
-/** The root mutation type which contains root level fields which mutate data. */
 export type MutationWriteMetadataArgs = {
   seasonId: Scalars['Int'];
 };
@@ -2260,21 +2210,8 @@ export type PartialSeason = {
   info?: Maybe<SeasonInfo>;
 };
 
-/** The root query type which gives access points into the data universe. */
 export type Query = {
   __typename?: 'Query';
-  /**
-   * Fetches a list of entities using their representations; used for Apollo
-   * Federation.
-   * @deprecated Only Apollo Federation should use this
-   */
-  _entities: Array<Maybe<_Entity>>;
-  /**
-   * Entrypoint for Apollo Federation to determine more information about
-   * this service.
-   * @deprecated Only Apollo Federation should use this
-   */
-  _service: _Service;
   /** Reads and enables pagination through a set of `DownloadSource`. */
   allDownloadSources?: Maybe<DownloadSourcesConnection>;
   /** Reads and enables pagination through a set of `Episode`. */
@@ -2335,13 +2272,6 @@ export type Query = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
-export type Query_EntitiesArgs = {
-  representations: Array<Scalars['_Any']>;
-};
-
-
-/** The root query type which gives access points into the data universe. */
 export type QueryAllDownloadSourcesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2354,7 +2284,6 @@ export type QueryAllDownloadSourcesArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllEpisodesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2367,7 +2296,6 @@ export type QueryAllEpisodesArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllImagesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2380,7 +2308,6 @@ export type QueryAllImagesArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllJellyfinFoldersArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2393,7 +2320,6 @@ export type QueryAllJellyfinFoldersArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllSeasonsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2406,7 +2332,6 @@ export type QueryAllSeasonsArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllTaskEpisodesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2419,7 +2344,6 @@ export type QueryAllTaskEpisodesArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllTasksArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2432,7 +2356,6 @@ export type QueryAllTasksArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryAllTorrentsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2445,45 +2368,38 @@ export type QueryAllTorrentsArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryDownloadSourceArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryDownloadSourceByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryDownloadSourceBySeasonIdAndPatternArgs = {
   pattern: Scalars['String'];
   seasonId: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryEpisodeArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryEpisodeByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryEpisodeBySeasonIdAndBangumiEpisodeIdArgs = {
   bangumiEpisodeId: Scalars['Int'];
   seasonId: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberArgs = {
   episodeNumber: Scalars['BigFloat'];
   episodeType: EpisodeType;
@@ -2491,21 +2407,18 @@ export type QueryEpisodeBySeasonIdAndEpisodeTypeAndEpisodeNumberArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryEpisodeBySeasonIdAndIndexArgs = {
   index: Scalars['Int'];
   seasonId: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryFetchBangumiSeasonArgs = {
   bangumiId: Scalars['Int'];
   request: FetchPartialSeasonRequest;
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryFetchSkyhookSeasonArgs = {
   request: FetchPartialSeasonRequest;
   seasonId: Scalars['Int'];
@@ -2513,123 +2426,103 @@ export type QueryFetchSkyhookSeasonArgs = {
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryGetDownloadProgressArgs = {
   taskIds: Array<Scalars['Int']>;
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryGetTaskStatesArgs = {
   taskIds: Array<Scalars['Int']>;
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryImageArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryImageByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryImageBySourceUrlArgs = {
   sourceUrl: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryJellyfinFolderArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryJellyfinFolderByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryJellyfinFolderByJellyfinIdArgs = {
   jellyfinId: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryListFilesArgs = {
   path: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QuerySearchBangumiArgs = {
   keywords: Scalars['String'];
   useNewBangumiSearchApi?: InputMaybe<Scalars['Boolean']>;
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QuerySeasonArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QuerySeasonByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QuerySeasonByTitleArgs = {
   title: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTaskArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTaskByIdArgs = {
   id: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTaskEpisodeArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTaskEpisodeByTaskIdAndEpisodeIdArgs = {
   episodeId: Scalars['Int'];
   taskId: Scalars['Int'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTorrentArgs = {
   nodeId: Scalars['ID'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTorrentByHashArgs = {
   hash: Scalars['String'];
 };
 
 
-/** The root query type which gives access points into the data universe. */
 export type QueryTorrentByIdArgs = {
   id: Scalars['Int'];
 };
@@ -4654,21 +4547,6 @@ export type UpdateSeasonPayload = {
 /** The output of our update `Season` mutation. */
 export type UpdateSeasonPayloadSeasonEdgeArgs = {
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
-};
-
-/** A union of all federated types (those that use the @key directive). */
-export type _Entity = DownloadSource | Episode | Image | JellyfinFolder | Season | Task | TaskEpisode | Torrent;
-
-/** Describes our federated service. */
-export type _Service = {
-  __typename?: '_Service';
-  /**
-   * The GraphQL Schema Language definiton of our endpoint including the
-   * Apollo Federation directives (but not their definitions or the special
-   * Apollo Federation fields).
-   * @deprecated Only Apollo Federation should use this
-   */
-  sdl?: Maybe<Scalars['String']>;
 };
 
 export type GetEpisodeByIdQueryVariables = Exact<{
