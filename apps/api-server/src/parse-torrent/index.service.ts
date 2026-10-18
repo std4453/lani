@@ -7,13 +7,14 @@ import {
   TorrentSourceType,
 } from '@lani/db';
 import parseTorrentTitle, {
+  parseTorrentNames,
   parseSubtitleInfo,
 } from '@lani/parse-torrent-title';
 import { Injectable, Logger } from '@nestjs/common';
 import { isDeepStrictEqual } from 'util';
 
 // 持久化结果的版本包含解析器输出与本适配层的映射规则。
-const TORRENT_PARSE_VERSION = 1;
+const TORRENT_PARSE_VERSION = 2;
 
 class InvalidEpisodeNumberError extends Error {}
 
@@ -94,10 +95,21 @@ export class ParseTorrentService {
 
   private titleToFields(title: string) {
     const result = parseTorrentTitle(title);
+    const fallbackNames = result ? undefined : parseTorrentNames(title);
     const number = result?.episodeInfo.index;
     const parsedFields = {
       parseResult: JSON.parse(
-        JSON.stringify(result ?? { subtitleInfo: parseSubtitleInfo(title) }),
+        JSON.stringify(
+          result ?? {
+            ...(fallbackNames?.title.aliases.length
+              ? { title: fallbackNames.title }
+              : {}),
+            ...(fallbackNames?.organization
+              ? { organization: fallbackNames.organization }
+              : {}),
+            subtitleInfo: parseSubtitleInfo(title),
+          },
+        ),
       ),
       parseVersion: TORRENT_PARSE_VERSION,
       parsedAt: new Date(),
@@ -115,10 +127,12 @@ export class ParseTorrentService {
         index: null,
         indexFrom: null,
         indexTo: null,
-        organizationRaw: null,
-        organizationParts: [],
-        seasonTitleRaw: null,
-        seasonTitleAliases: [],
+        organizationRaw: fallbackNames?.organization?.raw ?? null,
+        organizationParts: fallbackNames?.organization?.parts ?? [],
+        seasonTitleRaw: fallbackNames?.title.aliases.length
+          ? fallbackNames.title.raw
+          : null,
+        seasonTitleAliases: fallbackNames?.title.aliases ?? [],
         sourceType: null,
         sourcePlatform: null,
         formatResolution: null,

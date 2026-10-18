@@ -1,3 +1,5 @@
+import { parseTorrentNames } from "@/parseTorrentNames";
+import { parseTorrentOrganization } from "@/parseTorrentOrganization";
 import escapeStringRegexp from "@/escapeStringRegexp";
 import matchEpisode from "@/matchEpisode";
 import matchSpecialEpisode from "@/matchSpecialEpisode";
@@ -823,6 +825,18 @@ export default function parseTorrentTitle(
 
   const [beforeIndex, index, afterIndex] = indexResult;
   const title = matchTitle(beforeIndex, options);
+  // 名称提取不参与剧集或字幕匹配，保留旧字段的原始判定路径。
+  // 显式自定义的标题分隔规则仍由原选项负责。
+  if (
+    !inputOptions?.separatorPairs &&
+    !inputOptions?.titleSeparatorChars &&
+    !inputOptions?.titleNonEnglishRegex
+  ) {
+    const names = parseTorrentNames(input, {
+      episode: { index: index.index, length: index.length },
+    });
+    title.content.aliases = names.title.aliases;
+  }
   positionalItems.push(
     {
       index: title.index,
@@ -858,6 +872,12 @@ export default function parseTorrentTitle(
     ...result.subtitle,
     ...toLegacySubtitle(result.subtitleInfo),
   };
+
+  // 制作组单独判定，不改变前面用于标题、剧集和字幕判断的分段。
+  // 显式自定义包装或联合分隔规则时，保留调用方指定的旧行为。
+  if (!inputOptions?.separatorPairs && !inputOptions?.organizationSeparators) {
+    result.organization = parseTorrentOrganization(input);
+  }
 
   return result;
 }

@@ -5,6 +5,9 @@ import parseTorrentTitle, {
   EpisodeInfo,
   Index,
   ParseTorrentTitleResult,
+  SubtitleInfo,
+  parseSubtitleInfo,
+  parseTorrentNames,
 } from '@lani/parse-torrent-title';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
@@ -20,10 +23,17 @@ jest.mock('@lani/parse-torrent-title', () => ({
   __esModule: true,
   default: jest.fn(),
   parseSubtitleInfo: jest.fn(),
+  parseTorrentNames: jest.fn(),
 }));
 
 const mockedParseTorrentTitle = parseTorrentTitle as jest.MockedFunction<
   typeof parseTorrentTitle
+>;
+const mockedParseTorrentNames = parseTorrentNames as jest.MockedFunction<
+  typeof parseTorrentNames
+>;
+const mockedParseSubtitleInfo = parseSubtitleInfo as jest.MockedFunction<
+  typeof parseSubtitleInfo
 >;
 
 function parsedTitle(
@@ -172,7 +182,7 @@ describe('new recognition persistence', () => {
     };
     mockedParseTorrentTitle.mockReturnValue(result);
     expect(service.titleToCreateInput(result.raw)).toMatchObject({
-      parseVersion: 1,
+      parseVersion: 2,
       episodeType: 'EPISODE',
       episodeNumber: '12.5',
       parseResult: {
@@ -198,7 +208,7 @@ describe('new recognition persistence', () => {
   it('marks failed recognition and clears old matching identities', () => {
     mockedParseTorrentTitle.mockReturnValue(undefined);
     expect(service.titleToUpdateInput('no episode')).toMatchObject({
-      parseVersion: 1,
+      parseVersion: 2,
       parseResult: {},
       episodeType: null,
       episodeNumber: null,
@@ -214,6 +224,149 @@ describe('new recognition persistence', () => {
     expect(() => service.titleToCreateInput('12.1234')).toThrow(
       'Invalid episode number',
     );
+  });
+});
+
+describe('无编号作品标题识别持久化', () => {
+  const service = new ParseTorrentService({} as PrismaService);
+  const subtitleInfo: SubtitleInfo = {
+    languages: ['zh-Hans', 'ja'],
+    multi: true,
+    delivery: ['external', 'muxed'],
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('电影没有集数时也保存识别出的标题和制作组', () => {
+    const raw =
+      '[Film Group] 剧场版：银河铁道之夜 / Night on the Galactic Railroad';
+    mockedParseTorrentTitle.mockReturnValue(undefined);
+    mockedParseTorrentNames.mockReturnValue({
+      title: {
+        raw: '剧场版：银河铁道之夜 / Night on the Galactic Railroad',
+        aliases: ['剧场版：银河铁道之夜', 'Night on the Galactic Railroad'],
+      },
+      organization: { raw: 'Film Group', parts: ['Film Group'] },
+    });
+    mockedParseSubtitleInfo.mockReturnValue(subtitleInfo);
+
+    expect(service.titleToCreateInput(raw)).toMatchObject({
+      parseVersion: 2,
+      episodeType: null,
+      episodeNumber: null,
+      index: null,
+      organizationRaw: 'Film Group',
+      organizationParts: ['Film Group'],
+      seasonTitleRaw: '剧场版：银河铁道之夜 / Night on the Galactic Railroad',
+      seasonTitleAliases: [
+        '剧场版：银河铁道之夜',
+        'Night on the Galactic Railroad',
+      ],
+      sourceType: null,
+      sourcePlatform: null,
+      formatResolution: null,
+      formatVideoEncoding: null,
+      subtitleHasCHS: false,
+      subtitleHasCHT: false,
+      subtitleHasJP: false,
+      subtitleType: null,
+      parseResult: {
+        title: {
+          raw: '剧场版：银河铁道之夜 / Night on the Galactic Railroad',
+          aliases: ['剧场版：银河铁道之夜', 'Night on the Galactic Railroad'],
+        },
+        organization: { raw: 'Film Group', parts: ['Film Group'] },
+        subtitleInfo,
+      },
+    });
+    expect(mockedParseTorrentNames).toHaveBeenCalledWith(raw);
+    expect(mockedParseSubtitleInfo).toHaveBeenCalledWith(raw);
+  });
+
+  it('没有制作组时只保存标题和原有字幕信息', () => {
+    const raw = '银河铁道之夜 / Night on the Galactic Railroad';
+    mockedParseTorrentTitle.mockReturnValue(undefined);
+    mockedParseTorrentNames.mockReturnValue({
+      title: {
+        raw: '银河铁道之夜 / Night on the Galactic Railroad',
+        aliases: ['银河铁道之夜', 'Night on the Galactic Railroad'],
+      },
+    });
+    mockedParseSubtitleInfo.mockReturnValue(subtitleInfo);
+
+    const input = service.titleToUpdateInput(raw);
+    expect(input).toMatchObject({
+      organizationRaw: null,
+      organizationParts: [],
+      seasonTitleRaw: '银河铁道之夜 / Night on the Galactic Railroad',
+      seasonTitleAliases: ['银河铁道之夜', 'Night on the Galactic Railroad'],
+      parseResult: {
+        title: {
+          raw: '银河铁道之夜 / Night on the Galactic Railroad',
+          aliases: ['银河铁道之夜', 'Night on the Galactic Railroad'],
+        },
+        subtitleInfo,
+      },
+    });
+    expect(input?.organizationRaw).toBeNull();
+  });
+
+  it('标题解析成功时不调用电影回退解析并保留原有字幕与剧集结果', () => {
+    const raw = '[Group] Series 12 [1080p]';
+    const result = parsedTitle(12);
+    result.subtitleInfo = subtitleInfo;
+    mockedParseTorrentTitle.mockReturnValue(result);
+
+    expect(service.titleToCreateInput(raw)).toMatchObject({
+      parseVersion: 2,
+      episodeType: 'EPISODE',
+      episodeNumber: '12',
+      organizationRaw: 'Group',
+      seasonTitleRaw: 'Series',
+      seasonTitleAliases: ['Series', 'シリーズ'],
+      formatResolution: '1080',
+      formatVideoEncoding: 'HEVC',
+      subtitleHasCHS: true,
+      subtitleType: '外挂',
+      parseResult: {
+        episodeInfo: { type: 'episode', index: 12 },
+        subtitleInfo,
+      },
+    });
+    expect(mockedParseTorrentNames).not.toHaveBeenCalled();
+  });
+
+  it('电影解析没有名称时清空标题列，仍保留旧字幕检测结果', () => {
+    const raw = 'unrecognized media';
+    mockedParseTorrentTitle.mockReturnValue(undefined);
+    mockedParseTorrentNames.mockReturnValue({
+      title: { raw: '', aliases: [] },
+    });
+    mockedParseSubtitleInfo.mockReturnValue(subtitleInfo);
+
+    expect(service.titleToUpdateInput(raw)).toMatchObject({
+      parseVersion: 2,
+      episodeType: null,
+      episodeNumber: null,
+      organizationRaw: null,
+      organizationParts: [],
+      seasonTitleRaw: null,
+      seasonTitleAliases: [],
+      sourceType: null,
+      sourcePlatform: null,
+      formatResolution: null,
+      formatVideoEncoding: null,
+      formatAudioEncoding: null,
+      formatColorDepth: null,
+      formatContainer: null,
+      subtitleHasCHS: false,
+      subtitleHasCHT: false,
+      subtitleHasJP: false,
+      subtitleType: null,
+      parseResult: { subtitleInfo },
+    });
   });
 });
 

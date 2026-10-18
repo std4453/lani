@@ -2,6 +2,27 @@
 
 `parseTorrentTitle` 用于解析种子标题，并保留原有的 `subtitle` 字段以兼容旧调用方。`parseSubtitleInfo` 也可独立调用，包括处理没有剧集编号的电影标题。
 
+`parseTorrentOrganization` 独立识别资源发布者、字幕组和压制组，不要求存在集号。`organization.parts` 保存原文署名的完整集合，联合发布拆成多个组，同一组的中英括注保留一个复合名称；分类、平台与合成等职责说明不会成为独立组。识别同时使用通用发布结构与有限的已知发布者词典。无可识别署名时返回 `undefined`。
+
+默认主解析器和独立名称路径共用制作组识别结果。制作组判定不参与原有标题、剧集或字幕分段；`positionalItems` 继续表示历史分段的位置。显式提供 `organizationSeparators` 或 `separatorPairs` 时，主解析器保留自定义制作组规则。单处署名的 `raw` 保留该署名块原文；多处不连续署名以 `&` 连接，不能将其解释为包含中间作品名的连续原文区间。
+
+制作组随机测试的格式、未知名称生成方法及门槛见 [格式目录](./ORGANIZATION_FORMATS.md)。真实语料验收不允许特殊标题例外。
+
+`parseTorrentNames` 独立提取作品名称和可识别的制作组，不要求存在剧集编号：
+
+```ts
+import { parseTorrentNames } from "@lani/parse-torrent-title";
+
+parseTorrentNames("[Release Subs] 蓝色行星 / Blue Planet [Movie][1080p]");
+// title.aliases: ["蓝色行星", "Blue Planet"]
+```
+
+名称识别根据括号、明确的别名分隔符、剧集位置和非标题标签划分片段，不查询作品名单。只有空格连接的混合语言名称保留整体，例如 `BLUE PLANET 蓝色行星 / Blue Planet` 返回两个名称；不会额外拆出“蓝色行星”。同语言词间下划线、标题内副标题与括注尽量保留，技术参数、字幕标签、招聘说明等被过滤。重复别名去重；无法识别出名称时返回空数组。这些规则仍是启发式判断，特殊书名标点和“检索用”系列词存在歧义。
+
+默认 `parseTorrentTitle` 使用同一名称识别机制生成 `title.aliases`，保留原有的 `title.raw` 和位置字段用于原文定位；这些字段不承诺覆盖后来发现的尾部别名。显式提供 `separatorPairs`、`titleSeparatorChars` 或 `titleNonEnglishRegex` 时继续采用对应的自定义标题规则。独立 `parseTorrentNames` 的 `title.raw` 是识别出的名称以 `/` 连接后的展示文本，不是连续原文范围。
+
+名称识别不会改变剧集和字幕的判断路径。主解析器仍可能因缺少编号返回 `undefined`；API 持久化适配层此时回退到 `parseTorrentNames` 保存名称，同时维持原先的剧集、来源、格式和旧字幕列处理方式。持久化解析版本为 2；已有记录需经过重解析才会更新。
+
 `subtitleInfo` 返回标题中明确标注的字幕信息：
 
 - `languages` 使用 BCP 47 语言标签，包含标题中已识别的语言，例如 `zh-Hans`、`zh-Hant`、`ja` 或 `en`。
