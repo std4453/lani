@@ -742,7 +742,6 @@ function trimTechnicalTail(text: string): string {
         /((?:\bS\d+|\b\d+(?:st|nd|rd|th)\s+Season|\bSeason\s*\d+))\s+Part\s+\d+\s*[&+]\s*\d+$/i,
         "$1"
       )
-      .replace(/(\s+S\d+)\s+PART\s+[IVX]+$/i, "$1")
       .replace(/\s+(?:Episodes?|EP)\s*\d+(?:\s*[-–]\s*\d+)?\s*[-–]?$/i, "")
       .replace(
         /[._ ]+(?:19|20)\d{2}[._ ]+(?:REMASTERED|CUSTOM)(?:[._ ]+(?:REMASTERED|CUSTOM))*$/i,
@@ -1919,7 +1918,25 @@ export function parseTorrentNames(
         (wideRange && cjk.test(blocks[index + 1]?.text ?? "")))
     );
   });
-  const localEpisode = [subEpisode, captionEpisode]
+  // 超长季号只在完整 S…E… 字段后紧接技术包装时划分名称，不推断其编号含义。
+  const longSeasonEpisode = blocks
+    .map((block, index): Segment | undefined => {
+      const following = blocks[index + 1];
+      if (
+        block.wrapper ||
+        !following?.wrapper ||
+        !metadata(following.text) ||
+        !technical.test(following.text)
+      )
+        return undefined;
+      const code = /\bS\d{5,}E\d{1,4}(?:v\d+)?(?=\s*$)/i.exec(block.text);
+      if (!code || !/\p{L}/u.test(block.text.slice(0, code.index)))
+        return undefined;
+      const start = block.start + code.index;
+      return { text: code[0], start, end: start + code[0].length };
+    })
+    .find((block) => block !== undefined);
+  const localEpisode = [subEpisode, captionEpisode, longSeasonEpisode]
     .filter((block): block is Segment => Boolean(block))
     .sort((a, b) => a.start - b.start)[0];
   const episodeStart =

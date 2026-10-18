@@ -49,7 +49,7 @@ describe("Nyaa 第三轮发行参数与版本边界", () => {
     ],
     [
       "[Demo] First Tale S04 PART I MULTi 1080p WEBRip AAC (Dai Ichi Monogatari, VF, VOSTFR)",
-      ["First Tale S04", "Dai Ichi Monogatari"],
+      ["First Tale S04 PART I", "Dai Ichi Monogatari"],
     ],
     ["[DVDISO] A-7 (2006) [R2JP] | A-七", ["A-7 (2006)", "A-七"]],
     [
