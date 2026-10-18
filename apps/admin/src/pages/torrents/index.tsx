@@ -24,7 +24,11 @@ import {
   withAntdSearch,
 } from '@/utils/search';
 import useMobile from '@/utils/useMobile';
-import { HistoryOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import {
+  ExportOutlined,
+  HistoryOutlined,
+  QuestionCircleOutlined,
+} from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
 import {
@@ -101,8 +105,23 @@ function useColumns() {
           dataIndex: 'title',
           copyable: true,
           render: (_, r) => (
-            <Typography.Text className={styles.title} copyable>
+            <Typography.Text
+              className={styles.title}
+              copyable={{ text: r.title }}
+            >
               {r.title}
+              {r.permalink && (
+                <Button
+                  type="link"
+                  className={styles.permalinkButton}
+                  icon={<ExportOutlined />}
+                  href={r.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="打开种子详情"
+                  title="打开种子详情"
+                />
+              )}
             </Typography.Text>
           ),
         },
