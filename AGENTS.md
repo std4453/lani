@@ -66,7 +66,7 @@ TypeScript 使用两个空格缩进。格式化以文件所在目录向上找到
 
 提交主题和 PR 标题遵循 Conventional Commits：`<type>[(<scope>)][!]: <description>`。类型使用小写 `feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`style`、`chore` 或 `revert`；单包改动优先以包目录名作为 scope。不兼容变更使用 `!` 或 `BREAKING CHANGE:` 并说明迁移方式；自动生成的 merge commit 信息除外。
 
-普通工作分支使用 `<type>/<description>`，Codex 本地工作分支可使用 `codex/<type>-<description>`，但推送前必须重命名为 `<type>/<description>`。description 使用小写英文字母、数字及单个连字符组成的 kebab-case。长期分支及其他已有分支无需重命名。除任务明确指定外，从最新的 `origin/next` 创建分支，PR 目标为 `next`。
+工作分支使用 `<type>/<description>`。description 使用小写英文字母、数字及单个连字符组成的 kebab-case。长期分支及已有分支无需重命名。除任务明确指定外，从最新的 `origin/next` 创建分支，PR 目标为 `next`。
 
 提交前检查分支名、提交主题和 `git diff --cached`，确保只包含任务相关文件且没有隐私信息。PR 说明影响的包、验证命令及结果、配置或 Prisma 迁移；UI 变更附截图。
 

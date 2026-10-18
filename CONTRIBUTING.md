@@ -1,6 +1,6 @@
 # 提交与分支指南
 
-本指南适用于本仓库新建的工作分支、提交和 PR。现有历史提交无需重写；已有 `codex/` 分支继续推送前也需重命名。
+本指南适用于本仓库新建的工作分支、提交和 PR。现有历史提交及分支无需为此重写或重命名。
 
 ## 提交规范
 
@@ -59,7 +59,7 @@ BREAKING CHANGE: 删除旧版下载接口，调用方需迁移到新版接口。
 
 ## 分支命名
 
-推送的工作分支使用 `<type>/<description>`；Codex 本地工作分支可使用 `codex/<type>-<description>`，推送前必须重命名为 `<type>/<description>`。
+工作分支使用 `<type>/<description>`。
 
 - `type` 使用上表中的类型，反映分支的主要目的。
 - `description` 使用小写英文字母、数字和单个连字符组成的 kebab-case；以字母或数字开头、结尾，不使用空格、下划线、中文或额外的 `/`。
@@ -81,8 +81,6 @@ docs/commit-branch-guide
 ```bash
 git fetch origin
 git switch -c docs/commit-branch-guide origin/next
-# 已有 Codex 本地工作分支推送前先重命名
-# git branch -m docs/commit-branch-guide
 ```
 
 ## PR 与提交前检查
@@ -101,7 +99,7 @@ git switch -c docs/commit-branch-guide origin/next
 
 执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 和 `common/git-hooks/pre-push` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
 
-pre-push 检查本次推送的所有引用；源分支或目标分支以 `codex/` 开头时阻断推送，输出「分支名需要遵循 Conventional Commit，禁止使用 `codex/` 作为分支名」。该检查允许删除远端旧分支，不限制同名前缀的标签，也不会因为当前检出的分支而误拦截其他分支的推送。使用自定义 hooks 时，应在现有 pre-push 中调用 `sh common/git-hooks/pre-push "$@"` 并传递原始标准输入和退出状态；多个检查需要读取输入时，应先保存输入再分别传入。回归测试命令：`node --test common/scripts/tests/pre-push.test.ts`。
+pre-push 检查本次推送的所有引用；源分支或目标分支以 `codex/` 开头时阻断推送，输出「分支名需要遵循 Conventional Commit，禁止使用 `codex/` 作为分支名」。该检查允许删除远端旧分支，不限制同名前缀的标签，也不会因为当前检出的分支而误拦截其他分支的推送。使用自定义 hooks 时，应在现有 pre-push 中调用 `sh common/git-hooks/pre-push "$@"` 并传递原始标准输入和退出状态；多个检查需要读取输入时，应先保存输入再分别传入。
 
 Rush 安装依赖时会配置仓库 hooks；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
 
