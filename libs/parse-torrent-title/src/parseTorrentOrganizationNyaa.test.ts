@@ -4,6 +4,44 @@ const groups = (input: string) => parseTorrentOrganization(input)?.parts;
 
 describe("Nyaa 制作组：署名与字幕属性边界", () => {
   it.each([
+    "虚构航海 [Bluray 1080p AVC Ita-Jap - DTS-HD MA 5.1 - Ita subs]",
+    "[Blu-ray 1080p AVC Ita subs] 虚构航海 - 03",
+    "虚构航海 (1080p x264 - Ita subs)",
+    "虚构航海 (1080p x264 - Italian subtitles)",
+    "虚构航海 (1080p x264 - Spa dubs)",
+    "虚构航海 (1080p x264 - Fra dubbed)",
+  ])("语言词后接字幕或配音职责属于属性：%s", (input) => {
+    expect(groups(input)).toBeUndefined();
+  });
+
+  it.each([
+    [
+      "[snk] 虚构航海 - S03E11 (CR WEB-DL Majin 1080p x264 AAC 2.0)",
+      ["snk", "Majin"],
+    ],
+    ["虚构航海 (WEB-DL MAJIN 720p AV1 AAC)", ["MAJIN"]],
+    ["[4K世界]虚构航海.2160p.HEVC.DTS-HD.MA.2.0-4KSJ", ["4K世界", "4KSJ"]],
+    ["虚构航海.2160p.HEVC.DTS-HD.MA.5.1-Nova", ["Nova"]],
+    ["虚构航海.1080p.AVC.DTS-HD.MA-Nova", ["Nova"]],
+    ["虚构航海.2160p.HEVC.DTS-HD.MA.7.1ch-Nova", ["Nova"]],
+    ["虚构航海.2160p.HEVC.DTS-HD.HRA.2.0-Céleste", ["Céleste"]],
+    ["虚构航海.2160p.HEVC.DTS.HD.MA.2.0-Nova", ["Nova"]],
+    ["虚构航海 2160p HEVC DTS-HD MA 2.0-Nova", ["Nova"]],
+  ])("技术块内部署名与完整DTS音轨：%s", (input, expected) => {
+    expect(groups(input as string)).toEqual(expected);
+  });
+
+  it.each([
+    "虚构航海 [Majin] [03]",
+    "虚构航海 (CR WEB-DL MajinExtended 1080p x264 AAC)",
+    "虚构航海 (CR WEB-DL UnknownBrand 1080p x264 AAC)",
+    "[4K未知品牌] 虚构航海 [03]",
+    "虚构航海.2160p.HEVC.DTS-HD.MA.2.0",
+  ])("局部身份词典不扩展到普通别名或任意4K词：%s", (input) => {
+    expect(groups(input)).toBeUndefined();
+  });
+
+  it.each([
     ["虚构航海 1080p BluRay DTS x265-10bit-HDS", ["HDS"]],
     ["虚构航海 1080p HEVC-12bit-NovaTeam", ["NovaTeam"]],
     ["虚构航海 1080p AV1-8bit-Céleste", ["Céleste"]],

@@ -2,6 +2,7 @@ import { Organization } from "./types";
 
 // 发布者词典只记录独立身份及同组复合写法，不记录作品名或作品与发布者的关联。
 const knownNames = [
+  "4K世界",
   "Chyrka",
   "yolerejiju",
   "Earth",
@@ -314,6 +315,8 @@ const knownEntries = knownNames
   .map((name) => ({ name, lower: name.toLowerCase() }))
   .sort((left, right) => right.name.length - left.name.length);
 const known = new Set(knownEntries.map(({ lower }) => lower));
+// 这些短署名仅在技术组合块中识别，避免把同词作品别名认作发布者。
+const technicalEntries = [...knownEntries, { name: "Majin", lower: "majin" }];
 // 已核实为不同制作身份的连字符联合署名；其他连字符仍属于原名。
 const knownHyphenJoints = new Set(["aprm-diogo4d", "amf-snf", "bakesubs-yna"]);
 const nameSuffix =
@@ -327,7 +330,7 @@ const languageList =
   /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard\s+|soft\s+)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
 // 别名和技术说明常以字幕属性结尾；这些描述不能因末尾的 Sub(s) 成为身份。
 const subtitleDescription =
-  /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:english|japanese|spanish|french|german|italian|portuguese|russian|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
+  /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:eng?|english|jpn?|japanese|spa|spanish|fre|fra|french|ger|german|ita|italian|por|portuguese|rus|russian|ara|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
 const versionLabel = /^(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版$/i;
 
 function isVersionCombination(text: string): boolean {
@@ -402,7 +405,7 @@ function isMetadata(text: string): boolean {
       text
     ) ||
     /^(?:\d{3,4}[pi+]?|\d{3,4}[x×]\d{3,4}|[248]K)(?:\b|_|$)/i.test(text) ||
-    /^(?:WEB(?:[-_. ]?(?:DL|RIP))?|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AVC|[HX][ ._-]?26[45]|AAC|FLAC|OPUS|AC3|EAC3|DDP|MKV|MP4|10[- ]?bit|8[- ]?bit|CHS|CHT|GB|BIG5|简|簡|繁|日语|日語|粤语|粵語|国语|國語|中[文日]|多国|多國|英语|英語|ENG(?:SUB)?|内[封嵌挂掛]|外[挂掛]|Baha|Bilibili|B-Global|B-THM|ViuTV|TVB|ABEMA|AMZN|Netflix|IQIYI|CR|NF|AT-X)(?:[-+]|_|\s|$)/i.test(
+    /^(?:WEB(?:[-_. ]?(?:DL|RIP))?|BLU[-_. ]?RAY|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AVC|[HX][ ._-]?26[45]|AAC|FLAC|OPUS|AC3|EAC3|DDP|MKV|MP4|10[- ]?bit|8[- ]?bit|CHS|CHT|GB|BIG5|简|簡|繁|日语|日語|粤语|粵語|国语|國語|中[文日]|多国|多國|英语|英語|ENG(?:SUB)?|内[封嵌挂掛]|外[挂掛]|Baha|Bilibili|B-Global|B-THM|ViuTV|TVB|ABEMA|AMZN|Netflix|IQIYI|CR|NF|AT-X)(?:[-+]|_|\s|$)/i.test(
       text
     )
   );
@@ -443,7 +446,7 @@ function strongName(text: string): boolean {
     (!languageList.test(text) &&
       !subtitleDescription.test(text) &&
       nameSuffix.test(text.replace(/\s*[（(][^）)]*[）)]$/, "")) &&
-      !/^(?:\d{3,4}(?:[pi]|(?=\s|_|$))|[248]K|WEB(?:[-_. ]?(?:DL|RIP))?|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AV1|AVC|AAC|FLAC|OPUS|PCM|[HX][ ._-]?26[45])(?:\b|_|\s|$)/i.test(
+      !/^(?:\d{3,4}(?:[pi]|(?=\s|_|$))|[248]K|WEB(?:[-_. ]?(?:DL|RIP))?|BLU[-_. ]?RAY|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AV1|AVC|AAC|FLAC|OPUS|PCM|[HX][ ._-]?26[45])(?:\b|_|\s|$)/i.test(
         text
       ))
   );
@@ -538,18 +541,24 @@ export function parseTorrentOrganization(
     if (before && !isMetadata(before) && !/^[（(][^）)]*[）)]$/.test(before))
       hasTitle = true;
     const blockLower = block.text.toLowerCase();
-    const tailCredit = knownEntries.find(
-      ({ name, lower }) =>
-        blockLower.endsWith(lower) &&
-        /\s/.test(block.text.charAt(block.text.length - name.length - 1)) &&
-        isMetadata(block.text.slice(0, block.text.length - name.length).trim())
-    )?.name;
-    if (tailCredit) {
-      const start = block.end - tailCredit.length;
+    const technicalCredit = technicalEntries.find(({ name, lower }) => {
+      const offset = blockLower.indexOf(lower);
+      return (
+        offset > 0 &&
+        /\s/.test(block.text.charAt(offset - 1)) &&
+        (offset + name.length === block.text.length ||
+          /\s/.test(block.text.charAt(offset + name.length))) &&
+        isMetadata(block.text.slice(0, offset).trim()) &&
+        isMetadata(block.text.slice(offset + name.length).trim())
+      );
+    });
+    if (technicalCredit) {
+      const start = block.start + blockLower.indexOf(technicalCredit.lower);
+      const end = start + technicalCredit.name.length;
       selected.push({
         start,
-        end: block.end,
-        parts: [input.slice(start, block.end)],
+        end,
+        parts: [input.slice(start, end)],
       });
       cursor = block.close;
       continue;
@@ -635,24 +644,24 @@ export function parseTorrentOrganization(
   }
   // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
   const scenes = input.matchAll(
-    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:-HD)?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?(?:[- ._]+(?:8|10|12)[- ]?bits?)?\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/giu
+    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:[- ._]HD)?(?:[. _-](?:MA|HRA))?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?(?:ch)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?(?:[- ._]+(?:8|10|12)[- ]?bits?)?\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/giu
   );
   for (const scene of scenes) {
-    // 编码后的语言列表若继续接音轨编码，属于音轨说明，不是发布署名。
+    // 编码后的语言列表若继续接音轨编码或字幕职责，属于语言属性。
     const languageAudio =
       /^(?:ita|italian|fra|fre|french|spa|spanish|eng?|english|jpn?|japanese|ger|german|rus|russian|por|portuguese)$/i.test(
         scene[1]
       ) &&
-      /^(?:[\s._-]+(?:ita|italian|fra|fre|french|spa|spanish|eng?|english|jpn?|japanese|ger|german|rus|russian|por|portuguese))*[\s._-]+(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS)(?:\b|\d)/i.test(
+      /^(?:[\s._-]+(?:ita|italian|fra|fre|french|spa|spanish|eng?|english|jpn?|japanese|ger|german|rus|russian|por|portuguese))*[\s._-]+(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS|subs?|subtitles?|dubs?|dubbed)(?:\b|\d)/i.test(
         input.slice(scene.index! + scene[0].length)
       );
     if (
       !languageAudio &&
       (!isMetadata(scene[1]) || strongName(scene[1])) &&
-      !/^(?:NOGRP|NoGroup|HD(?:[.-]MA)?|MA|HRA|HI|LC|HE|AC-?3|E-?AC-?3|AAC|FLAC|OPUS|PCM|AV1|AVC|HEVC|Subs?|\d+(?:\.\d+)*(?:ch)?|\d+bits?|yuv\d+(?:p\d+)?|HDR\d*|SDR)$/i.test(
+      !/^(?:NOGRP|NoGroup|(?:HD(?:[.-](?:MA|HRA))?|MA|HRA)(?:[._-]?\d(?:\.\d)?(?:ch)?)?|HI|LC|HE|AC-?3|E-?AC-?3|AAC|FLAC|OPUS|PCM|AV1|AVC|HEVC|Subs?|\d+(?:\.\d+)*(?:ch)?|\d+bits?|yuv\d+(?:p\d+)?|HDR\d*|SDR)$/i.test(
         scene[1]
       ) &&
-      !/^(?:yuv\d+(?:p\d*)?|(?:\d+)?bits?|trellis\d+|HDMA(?:\d(?:\.\d)?ch)?)(?:[._-](?:AAC|FLAC|OPUS|PCM|AVC|HEVC))*$/i.test(
+      !/^(?:yuv\d+(?:p\d*)?|(?:\d+)?bits?|trellis\d+|HDMA(?:\d(?:\.\d)?(?:ch)?)?)(?:[._-](?:AAC|FLAC|OPUS|PCM|AVC|HEVC))*$/i.test(
         scene[1]
       )
     ) {
