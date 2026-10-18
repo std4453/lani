@@ -5,7 +5,7 @@ const integratedAliases = (input: string) =>
   (parseTorrentTitle(input) ?? parseTorrentNames(input)).title.aliases;
 
 describe("字幕附件与预告发行说明", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "Aurora Studio v6.2.0 (x64) Lifetime Edition Portable",
       ["Aurora Studio v6.2.0", "x64", "Lifetime Edition Portable"],
@@ -46,12 +46,9 @@ describe("字幕附件与预告发行说明", () => {
       "[Publisher] Galactic Audio Drama 2 - Azure Mine Arc - 03 [1080p]",
       ["Galactic Audio Drama 2 - Azure Mine Arc"],
     ],
-  ] as Array<[string, string[]]>)(
-    "完整作品词与独立子项目的安全边界：%s",
-    (input, expected) => {
-      expect(integratedAliases(input)).toEqual(expected);
-    }
-  );
+  ])("完整作品词与独立子项目的安全边界：%s", (input, expected) => {
+    expect(integratedAliases(input)).toEqual(expected);
+  });
 });
 
 test.each([
@@ -69,7 +66,7 @@ test.each([
   expect(aliases(`[Demo] ${title} - 03 [1080p]`)).toEqual([title]);
 });
 
-test.each([
+test.each<[string, string[]]>([
   // 历史标题中的符号与版本后发行信息
   [
     "[Example-Subs] First Tale / ダイイチ剧场版:│▌ / Dai Ichi:|| [BDRip 1080p]",
@@ -222,12 +219,9 @@ test.each([
     "[Publisher] First Tale BDRemux Another Name - 03 [1080p]",
     ["First Tale BDRemux Another Name"],
   ],
-] as Array<[string, string[]]>)(
-  "保留作品正文与名称标点: %s",
-  (input, expected) => {
-    expect(aliases(input)).toEqual(expected);
-  }
-);
+])("保留作品正文与名称标点: %s", (input, expected) => {
+  expect(aliases(input)).toEqual(expected);
+});
 
 describe("中文集号前保留副标题闭合横线", () => {
   test.each([

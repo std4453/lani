@@ -3,7 +3,7 @@ import { parseTorrentNames } from "@/parseTorrentNames";
 const aliases = (input: string) => parseTorrentNames(input).title.aliases;
 
 describe("Nyaa 发行结构的名称边界", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Demo] First Tale S01E03 1080p CR WEB-DL AAC H.264 | Dai Ichi Monogatari",
       ["First Tale", "Dai Ichi Monogatari"],
@@ -158,7 +158,7 @@ describe("Nyaa 发行结构的名称边界", () => {
       "First.Tale.Movie.2017.MULTI.1080p.BDRip.x264-Example-Raws VOSTFR First Tale 星の物語",
       ["First.Tale", "First Tale 星の物語"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 

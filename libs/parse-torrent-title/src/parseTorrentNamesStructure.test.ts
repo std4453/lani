@@ -1,7 +1,7 @@
 import { parseTorrentNames } from "@/parseTorrentNames";
 
 describe("作品名称上层结构的通用边界", () => {
-  test.each([
+  test.each<[string, string, string[]]>([
     [
       "标题后的 BBcode 说明不作为名称",
       "[Release Subs] 蓝色行星 / Blue Planet - 03 [1080p][img]https://example.test/poster.jpg[/img][b][size=3]这是一段发布说明[/size][/b]",
@@ -82,13 +82,13 @@ describe("作品名称上层结构的通用边界", () => {
       "[Release Subs][蓝色行星][03][1080p][某某工作室]",
       ["蓝色行星"],
     ],
-  ] as Array<[string, string, string[]]>)("%s", (_name, input, expected) => {
+  ])("%s", (_name, input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
   });
 });
 
 describe("尾部附带媒体与独立标题块", () => {
-  test.each([
+  test.each<[string, string, string[]]>([
     [
       "尾部别名括号中只剥除字幕元信息",
       "[Release Subs] 蓝色行星 S01E01 [1080p] (Blue Planet, Multi-Subs)",
@@ -114,7 +114,7 @@ describe("尾部附带媒体与独立标题块", () => {
       "[Group]剧场版_蓝色行星_0[-1][1080p]",
       ["剧场版_蓝色行星_0"],
     ],
-  ] as Array<[string, string, string[]]>)("%s", (_name, input, expected) => {
+  ])("%s", (_name, input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
   });
 });

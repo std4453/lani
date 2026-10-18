@@ -4,7 +4,7 @@ const integratedAliases = (input: string) =>
   (parseTorrentTitle(input) ?? parseTorrentNames(input)).title.aliases;
 
 describe("字幕附件与预告发行说明", () => {
-  test.each([
+  test.each<[string, string[]]>([
     ["[Publisher]_First_Tale_178.ass", ["First_Tale"]],
     ["[Publisher] First Tale - 03 English subtitles", ["First Tale"]],
     ["[Publisher] First Tale - 03 eng subtitle", ["First Tale"]],
@@ -114,7 +114,7 @@ describe("字幕附件与预告发行说明", () => {
       "[Publisher] First Tale - Season 1 S01 (BD 1080p) | FIRST OVA",
       ["First Tale - Season 1 S01", "FIRST OVA"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(integratedAliases(input)).toEqual(expected);
   });
   test.each([

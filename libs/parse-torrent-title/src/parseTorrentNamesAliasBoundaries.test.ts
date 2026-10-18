@@ -3,7 +3,7 @@ import { parseTorrentNames } from "@/parseTorrentNames";
 const aliases = (input: string) => parseTorrentNames(input).title.aliases;
 
 describe("别名分隔与作品标点", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[字幕组][【支持的【星星】的孩子】_追星的孩子_Star Child][01][1080p]",
       ["【支持的【星星】的孩子】_追星的孩子", "Star Child"],
@@ -69,12 +69,12 @@ describe("别名分隔与作品标点", () => {
       ["蓝色行星 – Another Sky", "Blue Planet – Another Sky"],
     ],
   ])("%s", (input, expected) => {
-    expect(aliases(input as string)).toEqual(expected);
+    expect(aliases(input)).toEqual(expected);
   });
 });
 
 describe("不同语言名称的共享副题", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Release Subs] 蓝色行星 - DAWN FALL / Blue Planet - Dawn Fall [03][1080p]",
       ["蓝色行星 - DAWN FALL", "Blue Planet - Dawn Fall"],
@@ -84,6 +84,6 @@ describe("不同语言名称的共享副题", () => {
       ["Blue Planet", "蓝色行星 - Third World"],
     ],
   ])("%s", (input, expected) => {
-    expect(aliases(input as string)).toEqual(expected);
+    expect(aliases(input)).toEqual(expected);
   });
 });

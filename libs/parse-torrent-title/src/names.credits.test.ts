@@ -7,15 +7,12 @@ const integratedAliases = (input: string) =>
   (parseTorrentTitle(input) ?? parseTorrentNames(input)).title.aliases;
 
 describe("字幕附件与预告发行说明", () => {
-  test.each([
+  test.each<[string, string[]]>([
     ["[Publisher] Fork Dawn - 03 [1080p] #Fork", ["Fork Dawn"]],
     ["[Fork] Dawn of Fork - 03 [1080p]", ["Dawn of Fork"]],
-  ] as Array<[string, string[]]>)(
-    "署名与标题同形时按实际位置保留：%s",
-    (input, expected) => {
-      expect(integratedAliases(input)).toEqual(expected);
-    }
-  );
+  ])("署名与标题同形时按实际位置保留：%s", (input, expected) => {
+    expect(integratedAliases(input)).toEqual(expected);
+  });
 });
 
 describe("同名署名、版本后续名称与明确发行尾缀", () => {

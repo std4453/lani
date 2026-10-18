@@ -15,7 +15,7 @@ describe("Nyaa 制作署名：配音属性、已核实联合与音轨尾签", ()
   ])("完整配音或字幕交付属性不作为发布者：%s", (input) => {
     expect(groups(input)).toBeUndefined();
   });
-  it.each([
+  it.each<[string, string[]]>([
     ["[Publisher] [台配] First Tale - 01", ["Publisher"]],
     ["[Publisher] First Tale [Dual-Subs]", ["Publisher"]],
     ["[台配字幕组] First Tale - 01", ["台配字幕组"]],
@@ -35,7 +35,7 @@ describe("Nyaa 制作署名：配音属性、已核实联合与音轨尾签", ()
     ["[Publisher] First Tale [1080p ATMOS-Nova.24]", ["Publisher", "Nova.24"]],
     ["First Tale 1080p x264-Ita", ["Ita"]],
   ])("保留明确原文身份与品牌标点：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each([
     "Dual-Subs-Team",

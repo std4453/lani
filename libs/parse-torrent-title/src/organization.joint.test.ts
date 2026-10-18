@@ -50,7 +50,7 @@ describe("Nyaa 制作组：字幕说明和后置联合署名", () => {
 });
 
 describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
-  it.each([
+  it.each<[string, string[]]>([
     ["[Inka-Orphan] Fictional Voyage (1966) (BD FHD)", ["Inka", "Orphan"]],
     [
       "[Publisher] 虚构航海 Subs+Fonts for 7³ACG & ktnbytes [BD].zip",
@@ -82,7 +82,7 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
       ["Publisher"],
     ],
   ])("独立身份按证据拆分，其余复合署名保留完整：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each([
     "Fictional Voyage (2026) [Nova-Flux].mkv",
@@ -112,7 +112,7 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
 });
 
 describe("Nyaa 制作署名：联合横线、音轨边界与已核实署名", () => {
-  it.each([
+  it.each<[string, string[]]>([
     [
       "[Naruto-Kun.Hu - UraharaShop] First Tale - 46 [1080p].mkv",
       ["Naruto-Kun.Hu", "UraharaShop"],
@@ -135,12 +135,12 @@ describe("Nyaa 制作署名：联合横线、音轨边界与已核实署名", ()
     ["（shiteater）Another Fictional Film - 01", ["shiteater"]],
     ["First Tale - 04 [HawaiianTV]", ["HawaiianTV"]],
   ])("保留原文身份及内部标点：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 });
 
 describe("制作组识别：联合署名和技术词边界", () => {
-  it.each([
+  it.each<[string, string[]]>([
     [
       "[奶²&LoliHouse] 剧场版虚构航海 / Fictional Voyage the Movie [1080p]",
       ["奶²", "LoliHouse"],
@@ -166,7 +166,7 @@ describe("制作组识别：联合署名和技术词边界", () => {
     ["[TV版&轻微版&加强版][陌生星舟][虚构航海][03]", ["陌生星舟"]],
     ["[ViuTV粤语][陌生星舟][虚构航海][03]", ["陌生星舟"]],
   ])("保留全部可识别身份：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it("相邻搬运署名和源发布组的raw只保留两个发布片段", () => {
     expect(

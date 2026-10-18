@@ -20,7 +20,7 @@ describe("Nyaa 制作署名：配音属性、已核实联合与音轨尾签", ()
 });
 
 describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", () => {
-  it.each([
+  it.each<[string, string[]]>([
     ["[edited-GJM] Morning Story - 02.ass", ["GJM"]],
     ["[Edited-HorribleSubs] Morning Story - 02.ass", ["HorribleSubs"]],
     ["[PATCH FOR CHIKI] Morning Story - 02", ["CHIKI"]],
@@ -49,7 +49,7 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
     ["DB-Style Morning Story Subs 02 - 03", ["DB-Style"]],
     ["[Publisher] TFS Morning Story Collection", ["Publisher", "TFS"]],
   ])("来源和行为职责分别处理：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each(["re-timed for", "retimed for", "retimed to", "timed to"])(
     "适配目标作用域在完整技术块终止：%s",
@@ -69,7 +69,7 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
       ).toEqual(["Publisher", "Nova Team"]);
     }
   );
-  it.each([
+  it.each<[string, string[]]>([
     ["Morning Story - 02 #Fork", ["Fork"]],
     ["Morning Story_karaoke by Nova.avi.torrent", ["Nova"]],
     ["Morning Story karaoke by Delta.mkv", ["Delta"]],
@@ -83,7 +83,7 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
       ["Publisher", "Takena Nagao"],
     ],
   ])("具名演出、卡拉OK与文档尾签保留：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it("职责处理后raw仍来自原始署名范围", () => {
     expect(
@@ -152,7 +152,7 @@ describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补�
   ])("适配目标不作为字幕包的制作方：%s", (input) => {
     expect(groups(input)).toEqual(["Publisher"]);
   });
-  it.each([
+  it.each<[string, string[]]>([
     ["First Tale Subs by ReinForce [BD].zip", ["ReinForce"]],
     [
       "[Publisher] First Tale Subtitles by ReinForce [BD].zip",
@@ -186,7 +186,7 @@ describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补�
     ["[BATCH-Team] First Tale - 01", ["BATCH-Team"]],
     ["[NOVA-17451] First Tale - 01", ["NOVA-17451"]],
   ])("明确制作或原字幕提供身份仍保留：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it("适配目标过滤不会丢掉当前发布者或独立视频署名", () => {
     expect(
@@ -228,7 +228,7 @@ describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补�
   ])("技术包装之后的独立制作署名不被适配范围吞掉：%s", (input) => {
     expect(groups(input)).toEqual(["Publisher", "LoliHouse"]);
   });
-  it.each([
+  it.each<[string, string[]]>([
     ["[Publisher] First Tale Subs by Nova [BD].zip", ["Publisher", "Nova"]],
     [
       "[Publisher] First Tale Subs by Nova Subs [BD].zip",
@@ -253,7 +253,7 @@ describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补�
       ["Publisher", "Nova"],
     ],
   ])("明示字幕署名可保留单独未知身份：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each([
     "[Publisher] First Tale by Nova",
@@ -320,7 +320,7 @@ describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补�
 });
 
 describe("制作组识别：显式字幕来源与发布署名", () => {
-  it.each([
+  it.each<[string, string[]]>([
     [
       "星舟字幕组★虚构航海★01-13★外挂繁体中文(采用千夏+樱都+自制字幕)",
       ["星舟字幕组", "千夏", "樱都"],
@@ -350,7 +350,7 @@ describe("制作组识别：显式字幕来源与发布署名", () => {
     ["小鱼儿呼唤爱-虚构航海03-1080P-简体内嵌", ["小鱼儿呼唤爱"]],
     ["[星舟字幕组] 虚构航海 [03] [1080p]", ["星舟字幕组"]],
   ])("完整提取署名：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it("多处署名raw不包含中间作品与技术信息", () => {
     expect(

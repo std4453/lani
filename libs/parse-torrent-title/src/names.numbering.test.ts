@@ -38,7 +38,7 @@ describe("Nyaa 数字与版本边界", () => {
 });
 
 describe("名称边界", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Publisher] Aurora S03 PART I MULTi 1080p CR WEBRiP AAC 2.0 (Hoshi no Monogatari, VF, VOSTFR)",
       ["Aurora S03 PART I", "Hoshi no Monogatari"],
@@ -66,7 +66,7 @@ describe("名称边界", () => {
       "[Publisher] Archive - S789012E12 [Golden Curse]",
       ["Archive - S789012E12 [Golden Curse]"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
     const integrated = parseTorrentTitle(input);
     if (integrated) expect(integrated.title.aliases).toEqual(expected);
@@ -83,7 +83,7 @@ describe("名称边界", () => {
 });
 
 describe("Nyaa 通用发行结构", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Demo] First Tale S04 E13 (178) [1080p AAC2.0] (Dai Ichi Monogatari).mkv",
       ["First Tale S04", "Dai Ichi Monogatari"],
@@ -156,7 +156,7 @@ describe("Nyaa 通用发行结构", () => {
       "First Great Tale : Tale Ultimate Survivor - (Season 01-02) [BD 1080p]",
       ["First Great Tale", "Tale Ultimate Survivor"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
   test("紧贴编号包装的下划线按分隔符清理", () => {
@@ -211,7 +211,7 @@ describe("Nyaa 收录列表和单季限定", () => {
 });
 
 describe("名称结构通用回归", () => {
-  test.each([
+  test.each<[string, string, string[]]>([
     [
       "重复语种的多语剧情块不作为作品",
       "[Release Subs][蓝色行星/Blue Planet/ブループラネット][805][失踪的星星/消えた星][后篇][1080p][HEVC]",
@@ -292,7 +292,7 @@ describe("名称结构通用回归", () => {
       "[Release Subs]蓝色行星(台) / Blue Planet [1080p][HEVC]",
       ["蓝色行星", "Blue Planet"],
     ],
-  ] as Array<[string, string, string[]]>)("%s", (_name, input, expected) => {
+  ])("%s", (_name, input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
     const withoutLegacyEpisode =
       /12 逃离|1128-11129|OST 原声|Example-Raws|TV Special|行星\(台\)/.test(
@@ -325,7 +325,7 @@ describe("inline特别篇与后续集号分别处理", () => {
 });
 
 describe("名称结构通用回归", () => {
-  test.each([
+  test.each<[string, string, string[]]>([
     ["零补齐集号后接裸技术参数", "蓝色行星 084 4K HEVC", ["蓝色行星"]],
     ["作品数字不按裸集号删除", "海洋 86 4K HEVC", ["海洋 86"]],
     [
@@ -399,7 +399,7 @@ describe("名称结构通用回归", () => {
       "[Example Subs]蓝色行星 完结篇 第1章 [BDRip][1080p]（代发）",
       ["蓝色行星 完结篇 第1章"],
     ],
-  ] as Array<[string, string, string[]]>)("%s", (_name, input, expected) => {
+  ])("%s", (_name, input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
   });
 });

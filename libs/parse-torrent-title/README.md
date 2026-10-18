@@ -25,6 +25,8 @@ Nyaa 等发行格式支持技术参数后的 `|` 别名、带语言说明的括�
 
 默认 `parseTorrentTitle` 使用同一名称识别机制生成 `title.aliases`，保留原有的 `title.raw` 和位置字段用于原文定位；这些字段不承诺覆盖后来发现的尾部别名。显式提供 `separatorPairs`、`titleSeparatorChars` 或 `titleNonEnglishRegex` 时继续采用对应的自定义标题规则。独立 `parseTorrentNames` 的 `title.raw` 是识别出的名称以 `/` 连接后的展示文本，不是连续原文范围。
 
+`title.raw` 非空不代表识别出了有效作品名。默认路径在别名为空时不回填旧分段内容，以免将 `1080p` 等已过滤的技术参数当作标题。只有 `Movie` 等元信息同形词的名称仍可能漏识别，这是启发式规则的已知局限；不能通过统一回退原文来消除这种歧义。
+
 名称识别不会改变剧集和字幕的判断路径。主解析器仍可能因缺少编号返回 `undefined`；API 持久化适配层此时回退到 `parseTorrentNames` 保存名称，同时维持原先的剧集、来源、格式和旧字幕列处理方式。持久化解析版本为 2；已有记录需经过重解析才会更新。
 
 `subtitleInfo` 返回标题中明确标注的字幕信息：

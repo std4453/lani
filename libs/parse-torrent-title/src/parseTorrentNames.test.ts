@@ -4,7 +4,18 @@ import parseTorrentTitle from "@/parseTorrentTitle";
 const aliases = (input: string) => parseTorrentNames(input).title.aliases;
 
 describe("独立的作品名称识别", () => {
-  test.each([
+  test.each<[string, string[]]>([
+    ["1080p", []],
+    ["Movie Adventure", ["Movie Adventure"]],
+  ])("主路径保留原文定位但不回填已过滤的名称：%s", (title, expected) => {
+    const input = `[Release Subs] ${title} - 01 [1080p]`;
+    const result = parseTorrentTitle(input);
+    expect(result?.title).toEqual({ raw: title, aliases: expected });
+    expect(result?.episodeInfo).toEqual({ type: "episode", index: 1 });
+    expect(aliases(input)).toEqual(expected);
+  });
+
+  test.each<[string, string[]]>([
     ["[Release Subs] Blue Planet - 01_x264_1080p", ["Blue Planet"]],
     ["[Release Subs] 蓝色行星 08 BD [1080p]", ["蓝色行星"]],
     [
@@ -216,12 +227,12 @@ describe("独立的作品名称识别", () => {
     ["OVA 蓝色行星.1998.DVD720P.日语中字", ["蓝色行星"]],
     ["[1080p][HEVC][AAC]", []],
     ["[蓝色行星][Blue Planet][Movie][1080p]", ["蓝色行星", "Blue Planet"]],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 
   describe("发布包装与名称本体的边界", () => {
-    test.each([
+    test.each<[string, string, string[]]>([
       [
         "独立中文季数块绑定前名",
         "[Release Subs][蓝色行星][第二季][12][1080p]",
@@ -298,7 +309,7 @@ describe("独立的作品名称识别", () => {
         "[剧场版][蓝色行星][蓝色行星 Blue Planet][1080p]",
         ["蓝色行星", "蓝色行星 Blue Planet"],
       ],
-    ] as Array<[string, string, string[]]>)("%s", (_name, input, expected) => {
+    ])("%s", (_name, input, expected) => {
       expect(aliases(input)).toEqual(expected);
     });
   });

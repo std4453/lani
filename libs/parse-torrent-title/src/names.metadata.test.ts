@@ -181,7 +181,7 @@ describe("Nyaa 完整发行说明", () => {
       "First Tale",
     ]);
   });
-  test.each([
+  test.each<[string, string[]]>([
     ["[Publisher] First Tale Dual Audio BD Remux", ["First Tale"]],
     ["[Publisher] First Tale - ONA [1080p NF WEB-DL AAC]", ["First Tale"]],
     ["[Publisher] First Tale Seasons 1-5 BD_1080p FLAC", ["First Tale"]],
@@ -190,7 +190,7 @@ describe("Nyaa 完整发行说明", () => {
     ["[Publisher] New Stream (2025) [1080p]", ["New Stream (2025)"]],
     ["[Publisher] First Tale for You - 03 [1080p]", ["First Tale for You"]],
     ["[台配字幕组] First Tale - 03 [1080p]", ["First Tale"]],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 });
@@ -284,7 +284,7 @@ describe("Nyaa 名称与交付说明边界", () => {
       "First Tale",
     ]);
   });
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Demo] Blue Planet - OP/ED Collection Video Backup [2026.10.01]",
       ["Blue Planet"],
@@ -299,12 +299,9 @@ describe("Nyaa 名称与交付说明边界", () => {
     ],
     ["[Demo] 蓝色星球 - Blue Planet CM [1080p]", ["蓝色星球", "Blue Planet"]],
     ["[Demo] Title A - Title B CM [1080p]", ["Title A - Title B"]],
-  ] as Array<[string, string[]]>)(
-    "备份说明或CM类型词不吞掉明确名称：%s",
-    (input, expected) => {
-      expect(aliases(input)).toEqual(expected);
-    }
-  );
+  ])("备份说明或CM类型词不吞掉明确名称：%s", (input, expected) => {
+    expect(aliases(input)).toEqual(expected);
+  });
 });
 
 describe("Nyaa 发行标签与名称标点", () => {
@@ -325,7 +322,7 @@ describe("Nyaa 发行标签与名称标点", () => {
       "First Tale",
     ]);
   });
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Example-Subs] First Tale S01E03 (Dai Ichi no Chikara, Korean Premiere)",
       ["First Tale", "Dai Ichi no Chikara"],
@@ -400,7 +397,7 @@ describe("Nyaa 发行标签与名称标点", () => {
       "[Example-Subs] Fictional Animation Study Group - 1988 Animation Theatre (Betamax)",
       ["1988 Animation Theatre"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 });
@@ -436,7 +433,7 @@ describe("Nyaa 完整发行字段", () => {
       "First Tale",
     ]);
   });
-  test.each([
+  test.each<[string, string[]]>([
     ["[Publisher] First Tale - 16 HD [DE4D1F85].mp4", ["First Tale"]],
     ["[Publisher] First Tale - 20 FHD [DE4D1F85].mp4", ["First Tale"]],
     ["[Publisher] HD Adventures - 03 [1080p]", ["HD Adventures"]],
@@ -459,7 +456,7 @@ describe("Nyaa 完整发行字段", () => {
       "[Publisher] First Tale Subs+Fonts for Example-Raws [BD].zip",
       ["First Tale"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 });

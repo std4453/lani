@@ -4,7 +4,7 @@ const aliases = (input: string) => parseTorrentNames(input).title.aliases;
 const integratedAliases = (input: string) =>
   (parseTorrentTitle(input) ?? parseTorrentNames(input)).title.aliases;
 
-test.each([
+test.each<[string, string[]]>([
   // 括注列表与跨语种边界
   [
     "[字幕组] Star Child_星之子(星空的孩子,ほしのこ) [02][1080p]",
@@ -390,11 +390,11 @@ test.each([
     ["First Tale", "First no Story, Return"],
   ],
 ])("完整别名集合: %s", (input, expected) => {
-  expect(aliases(input as string)).toEqual(expected);
+  expect(aliases(input)).toEqual(expected);
 });
 
 describe("括注绑定遵守独立名称边界", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Publisher] First Tale / (And Another Story) - 03 [1080p]",
       ["First Tale", "And Another Story"],
@@ -424,7 +424,7 @@ describe("括注绑定遵守独立名称边界", () => {
       "[Publisher] First Tale 1.0 (1.11) You Are / Another Tale - 03 [1080p]",
       ["First Tale 1.0 (1.11) You Are", "Another Tale"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
   test.each([
@@ -496,7 +496,7 @@ describe("Nyaa 显式另名边界", () => {
   ])("既有篇章、版本和后续正文保护优先于另名：%s", (name, expected) => {
     expect(aliases(`[Publisher] ${name} - 03 [1080p]`)).toEqual([expected]);
   });
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Publisher] First Tale - [A New Dawn] / Another Tale - 03 [1080p]",
       ["First Tale", "A New Dawn", "Another Tale"],
@@ -539,7 +539,7 @@ describe("Nyaa 显式另名边界", () => {
       ["FIRST 1.11", "2.22", "3.333", "3.0+1.11"],
     ],
     ["[Publisher] First Tale / 01 / 02 [BDRip]", ["First Tale"]],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
 });

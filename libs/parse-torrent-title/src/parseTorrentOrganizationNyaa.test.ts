@@ -14,7 +14,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     expect(groups(input)).toBeUndefined();
   });
 
-  it.each([
+  it.each<[string, string[]]>([
     [
       "[snk] 虚构航海 - S03E11 (CR WEB-DL Majin 1080p x264 AAC 2.0)",
       ["snk", "Majin"],
@@ -28,7 +28,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     ["虚构航海.2160p.HEVC.DTS.HD.MA.2.0-Nova", ["Nova"]],
     ["虚构航海 2160p HEVC DTS-HD MA 2.0-Nova", ["Nova"]],
   ])("技术块内部署名与完整DTS音轨：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
   it.each([
@@ -41,14 +41,14 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     expect(groups(input)).toBeUndefined();
   });
 
-  it.each([
+  it.each<[string, string[]]>([
     ["虚构航海 1080p BluRay DTS x265-10bit-HDS", ["HDS"]],
     ["虚构航海 1080p HEVC-12bit-NovaTeam", ["NovaTeam"]],
     ["虚构航海 1080p AV1-8bit-Céleste", ["Céleste"]],
     ["虚构航海 1080p AAC-手抄组", ["手抄组"]],
     ["虚构航海 1080p x264-Ita", ["Ita"]],
   ])("技术链后提取真实署名：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
   it.each([
@@ -60,7 +60,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     expect(groups(input)).toBeUndefined();
   });
 
-  it.each([
+  it.each<[string, string[]]>([
     ["虚构航海 - WEBDL - VOSTFR - x264 AAC - UwU (Ajout OAV)", ["UwU"]],
     ["虚构航海 VOSTFR 1080p WEB AV1 AAC -Báleygr", ["Báleygr"]],
     ["虚构航海 VOSTFR 1080p WEB x265 AAC - Céleste", ["Céleste"]],
@@ -73,7 +73,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     ["虚构航海 24 SUB - Earth (854x480 YouTube).mkv", ["Earth"]],
     ["虚构航海 - Earth [1080p][AAC].mkv", ["Earth"]],
   ])("兼容空白、重音字母及尾部联合署名：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
   it.each([
@@ -87,7 +87,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     expect(groups(input)).toEqual(["Nebula7"]);
   });
 
-  it.each([
+  it.each<[string, string[]]>([
     ["[aprm-Diogo4D][Blu-ray][1080p] 虚构航海 - 03", ["aprm", "Diogo4D"]],
     ["[AMF-SnF] 虚构航海 - 03 [1234ABCD]", ["AMF", "SnF"]],
     ["[BakeSubs-YnA] 虚构航海 - 03 [1080p]", ["BakeSubs", "YnA"]],
@@ -99,10 +99,10 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     ["[Unknown-Raws] 虚构航海 - 03", ["Unknown-Raws"]],
     ["[AMF-Unknown] 虚构航海 - 03", ["AMF-Unknown"]],
   ])("已核实联合署名按身份拆分且保留其他连字符：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
-  it.each([
+  it.each<[string, string[]]>([
     [
       "虚构航海.1080p.x264-Nova-Raws (Fictional Voyage, Multi-Subs)",
       ["Nova-Raws"],
@@ -130,7 +130,7 @@ describe("Nyaa 制作组：署名与字幕属性边界", () => {
     ["虚构航海 (1080p x265 AAC Multi) - Ryūjin 竜神", ["Ryūjin 竜神"]],
     ["虚构航海 1080p BD Remux English Sub - D00oo00M", ["D00oo00M"]],
   ])("保留完整发布者身份：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
   it.each([

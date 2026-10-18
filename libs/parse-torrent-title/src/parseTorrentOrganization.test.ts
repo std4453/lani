@@ -3,7 +3,7 @@ import { parseTorrentOrganization } from "./parseTorrentOrganization";
 const groups = (input: string) => parseTorrentOrganization(input)?.parts;
 
 describe("独立制作组识别", () => {
-  it.each([
+  it.each<[string, string[]]>([
     ["[星舟字幕组] 虚构航海 / Fictional Voyage - 01 [1080p]", ["星舟字幕组"]],
     [
       "[BT下载][ZeroTV][Release Subs][虚构航海][03][1080p]",
@@ -48,7 +48,7 @@ describe("独立制作组识别", () => {
     ["[星舟搬运组] 虚构航海 1080p AAC-ZeroTV 0.54GB", ["星舟搬运组", "ZeroTV"]],
     ["[星舟搬运组] 虚构航海 1080p AAC-ZeroTV.mkv", ["星舟搬运组", "ZeroTV"]],
   ])("提取 %s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 
   it.each([

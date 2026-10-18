@@ -34,7 +34,7 @@ describe("组合收录标签与发行参数", () => {
   });
 });
 
-test.each([
+test.each<[string, string[]]>([
   // Nyaa 数字与版本边界
   [
     "[Publisher] 第一物語 (魔力解放版) / First Tale - 03 [1080p]",
@@ -333,7 +333,7 @@ test.each([
     "[Publisher] First Tale (S2+OVA) / 第二物語 - 03 [1080p]",
     ["First Tale (S2)", "第二物語"],
   ],
-] as Array<[string, string[]]>)("季号版本与收录边界: %s", (input, expected) => {
+])("季号版本与收录边界: %s", (input, expected) => {
   expect(aliases(input)).toEqual(expected);
 });
 
@@ -352,7 +352,7 @@ describe("字幕附件与预告发行说明", () => {
 });
 
 describe("Nyaa 发行参数与版本边界", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Demo] First Tale - S01E01 (星の物語; Hoshi no Monogatari.) [MW.WEB-DL 1080p AVC AAC]",
       ["First Tale", "星の物語", "Hoshi no Monogatari."],
@@ -422,7 +422,7 @@ describe("Nyaa 发行参数与版本边界", () => {
       "First Tale | Dai Ichi Monogatari BD (Bluray 1080p, dual audio) [Example-Raws / Trial-Subs]",
       ["First Tale", "Dai Ichi Monogatari"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });
   test("年份范围包装边界的下划线仍按分隔清理", () => {
@@ -472,7 +472,7 @@ describe("编号电视版本不得跨过分隔或署名", () => {
 });
 
 describe("发行年份只在明确收录清单边界删除", () => {
-  test.each([
+  test.each<[string, string[]]>([
     [
       "[Release Subs]蓝色行星 / Blue Planet 2023 | 01-04 [1080p]",
       ["蓝色行星", "Blue Planet"],
@@ -485,7 +485,7 @@ describe("发行年份只在明确收录清单边界删除", () => {
       "[Release Subs]蓝色行星 2023年版 / Blue Planet - 03 [1080p]",
       ["蓝色行星 2023年版", "Blue Planet"],
     ],
-  ] as Array<[string, string[]]>)("%s", (input, expected) => {
+  ])("%s", (input, expected) => {
     expect(parseTorrentNames(input).title.aliases).toEqual(expected);
     expect(parseTorrentTitle(input)?.title?.aliases).toEqual(expected);
   });

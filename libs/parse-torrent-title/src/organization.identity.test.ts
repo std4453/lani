@@ -26,7 +26,7 @@ describe("Nyaa 制作署名：配音属性、已核实联合与音轨尾签", ()
 });
 
 describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", () => {
-  it.each([
+  it.each<[string, string[]]>([
     ["[sheline][sage]_Morning_Story_-_02_[BD][720p].mp4", ["sheline", "sage"]],
     [
       "[AstralDzastr][ASW] Morning Story - 02 [1080p].ass",
@@ -49,7 +49,7 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
     ["[SUBS][Zero-Raws] Morning Story - 02 (DVD).zip", ["Zero-Raws"]],
     ["[Publisher] Morning Story [Hi10p][WEBSTEAM][SUB]", ["Publisher"]],
   ])("文件名分隔和连续已知署名不依赖作品：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each([
     "Nova Subs [Orbit at Dawn] - 03 [1080p]",
@@ -87,7 +87,7 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
   });
 });
 
-it.each([
+it.each<[string, string[]]>([
   // Nyaa 制作组：字幕说明和后置联合署名
   ["[SweetSub] 虚构航海 - 03", ["SweetSub"]],
   ["[Inka-Subs] 虚构航海 - 03", ["Inka-Subs"]],
@@ -138,11 +138,11 @@ it.each([
     ["New Galactic Guild"],
   ],
 ])("保留完整制作身份: %s", (input, expected) => {
-  expect(groups(input as string)).toEqual(expected);
+  expect(groups(input)).toEqual(expected);
 });
 
 describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", () => {
-  it.each([
+  it.each<[string, string[]]>([
     ["Fictional Voyage - S01 [DVD 480p HEVC AAC] [ThanksBB]", ["ThanksBB"]],
     ["虚构航海 - 03 [SCV]", ["SCV"]],
     ["Fictional Voyage TV 01-04 [Asuka♥Shinji]", ["Asuka♥Shinji"]],
@@ -169,7 +169,7 @@ describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", ()
       ["Publisher", "Elm University Animation Study Group"],
     ],
   ])("提取原文明示的身份并保留内部标点：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
   it.each([
     "Earth Maiden Fictional Voyage - 01 [1080p]",
@@ -194,14 +194,14 @@ describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", ()
   ])("无独立署名证据时不从标题和说明猜测身份：%s", (input) => {
     expect(groups(input)).toBeUndefined();
   });
-  it.each([
+  it.each<[string, string[]]>([
     ["Earth - 虚构航海 [03]", ["Earth"]],
     ["Doki [虚构航海][03]", ["Doki"]],
     ["[Doki] 虚构航海 [03]", ["Doki"]],
     ["NovaSub 虚构航海 - 03", ["NovaSub"]],
     ["虚构航海 - Earth [1080p][AAC].mkv", ["Earth"]],
   ])("明确分隔及组名词仍可使用裸署名：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
+    expect(groups(input)).toEqual(expected);
   });
 });
 
