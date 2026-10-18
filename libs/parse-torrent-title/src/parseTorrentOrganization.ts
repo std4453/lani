@@ -327,7 +327,11 @@ const role =
 const roleOnly =
   /^(?:(?:个人|個人|自)?(?:音[频頻]|视频|視頻|二次)?(?:[压壓]制|合成|封装|封裝|校[对對]|翻[译譯]|搬[运運])|自[压壓]|[转轉][载載]|整理搬运|整理搬運|自购自翻自压|[转轉](?:[运運发發])?|(?:个人|個人)[汉漢]化|自[购購]|自制(?:字幕)?|个人制作合集|個人製作合集)$/;
 const languageList =
-  /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard\s+|soft\s+)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
+  /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard[-_ ]?|soft[-_ ]?)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
+const languageWord =
+  /^(?:CN|HK|TW|JP|EN|ENG|CHS|CHT|eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|日语|日語|英语|英語|简体|簡體|繁体|繁體)$/i;
+const deliveryAttribute =
+  /^(?:(?:U[-_]?NEXT|NETFLIX|AMZN|AMAZON|CR|BILI(?:BILI)?|BAHA|HIDIVE|ADN|ABEMA|DSNP|DISNEY(?:PLUS)?|HULU|WETV|IQIYI)[-_ .]?(?:DL|RIP|SUBS?|DUBS?)|(?:HEVC|AVC|VVC|AV1|[XH]26[45])\d*(?:[-._](?:\d+)?bits?)?|(?:TV|OVA|OAD|SP|EP)\d+(?:[-~]\d+)?|TV|MOVIE|REMASTERED|UNCENSORED|CENSORED|HARDSUB|SOFTSUB|DUBBED|SUBBED|ORIGINAL|COMPLETE|BATCH|AUDIO|VIDEO|SUBS?|OP\d*|ED\d*|NCOP|NCED|MENU|PV|CM|SCANS?|CDS?)$/i;
 // 别名和技术说明常以字幕属性结尾；这些描述不能因末尾的 Sub(s) 成为身份。
 const subtitleDescription =
   /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:eng?|english|jpn?|japanese|spa|spanish|fre|fra|french|ger|german|ita|italian|por|portuguese|rus|russian|ara|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
@@ -388,6 +392,9 @@ function isMetadata(text: string): boolean {
       (/[,，;；]/.test(text) ||
         /^(?:multi[-_ ]?|[MD]-|hard\s+|soft\s+)/i.test(text))) ||
     /^(?:RAW|DVDISO|\d+DVDISO|[0-9A-F]{8})$/i.test(text) ||
+    /^(?:(?:fixed|corrected|repaired)[-_ ](?:audio|video|subs?|subtitles?)|(?:audio|video|subs?|subtitles?)[-_ ](?:fix|fixed|corrected|repaired))$/i.test(
+      text
+    ) ||
     /^(?:BT|磁力|种子|種子|迅雷)[\s_-]?(?:下载|下載)(?:$|[\s:：])/i.test(
       text
     ) ||
@@ -605,7 +612,41 @@ export function parseTorrentOrganization(
       !block.round && !hasTitle && !selected.length && followingTitle;
     const unambiguousStrong =
       strong && (!requiresLeadingContext || followingTitle);
-    if (parts.length && (labelled || unambiguousStrong || structural)) {
+    // 发行信息之后的末尾方括号允许紧凑拉丁署名；中文身份仍需词典或组名后缀。
+    const trailingJoint =
+      !block.round &&
+      hasTitle &&
+      parts.length > 1 &&
+      /[&＆+]/.test(block.text) &&
+      block.text.split(joint).length === parts.length &&
+      parts.every(
+        (part) =>
+          /^[\p{Script=Latin}\p{N}][\p{Script=Latin}\p{M}\p{N}._-]*$/u.test(
+            part
+          ) &&
+          !languageWord.test(part) &&
+          !deliveryAttribute.test(part)
+      ) &&
+      (/(?:\b(?:S\d+|EP?\s*\d+|\d{3,4}p|HEVC|AVC|AAC|WEB[- .]?DL|BDRIP)\b|\s-\s*\d+\b)/i.test(
+        input.slice(0, block.open)
+      ) ||
+        blocks
+          .slice(0, index)
+          .some((previous) =>
+            /^(?:\d{1,3}(?:[-~]\d{1,3})?|S\d+E\d+|EP?\s*\d+)$/i.test(
+              previous.text
+            )
+          )) &&
+      blocks
+        .slice(index + 1)
+        .every((following) => isMetadata(following.text)) &&
+      /^\s*(?:\.(?:mkv|mp4|avi|torrent))*\s*$/i.test(
+        input.slice(block.close).replace(bracket, "")
+      );
+    if (
+      parts.length &&
+      (labelled || unambiguousStrong || structural || trailingJoint)
+    ) {
       selected.push({ start: block.start, end: block.end, parts });
     } else if (!isMetadata(block.text)) {
       hasTitle = true;
@@ -634,7 +675,11 @@ export function parseTorrentOrganization(
     !/\s[-–]|\b(?:S\d+|E(?:P)?\d+|\d{3,4}p|AAC|FLAC|WEB|HEVC|AVC)\b/i.test(
       prefix
     ) &&
-    !/\b\d+\s+subs?$/i.test(prefix)
+    !/\b\d+\s+subs?$/i.test(prefix) &&
+    !(
+      /\s+subs?$/i.test(prefix) &&
+      /^\s+only\b/i.test(leading.slice(prefix.length))
+    )
   ) {
     const parts = partsOf(prefix);
     if (parts.length && parts.every(strongName)) {

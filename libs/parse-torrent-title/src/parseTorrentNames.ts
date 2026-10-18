@@ -100,12 +100,18 @@ function metadata(text: string): boolean {
   )
     return true;
   if (
-    /^(?:(?:总|總)第\d+|KA|Prerelease|Remastered|Hulu|MW|VideoNow|retimed|Dublado|Unofficial Batch|Tri[ -]?Audio|Hi(?:8|10|12)p|HQ|Encore broadcast|TRUEFRENCH|Ajout OAV|Final Season|eng[.]?\s*sub[.]?|U-NEXT|Digital Remaster(?:ed)?|Blu-ray|DVD\d+|IDN|YouTube|TMS|Indosiar|UBC|JEI TV|Déclic Images|Film|Triple Audio|Fixed Audio|Corrected Names|DCP(?:\s+\d{3,4}p)?)$/i.test(
+    /^(?:(?:总|總)第\d+(?:[~～–-]\d+)?|Censored(?: Version)?|CUSTOM|더빙|Audio[_ ]Fixed|HDR\s*(?:8|10|12)bits|KA|Prerelease|Remastered|Hulu|MW|VideoNow|retimed|Dublado|Unofficial Batch|Tri[ -]?Audio|Hi(?:8|10|12)p|HQ|Encore broadcast|TRUEFRENCH|Ajout OAV|Final Season|eng[.]?\s*sub[.]?|U-NEXT|Digital Remaster(?:ed)?|Blu-ray|DVD\d+|IDN|YouTube|TMS|Indosiar|UBC|JEI TV|Déclic Images|Film|Triple Audio|Fixed Audio|Corrected Names|DCP(?:\s+\d{3,4}p)?)$/i.test(
       value
     )
   )
     return true;
-  if (/^\d{2,4}p\s+PVD\s+RAW\s+PCM$/i.test(value)) return true;
+  if (
+    /^\d{2,4}p\s+PVD\s+RAW\s+PCM$/i.test(value) ||
+    /^\d+[／/](?:NC)?(?:OP|ED|OPED)(?:[_-]\d+)?$/i.test(value) ||
+    /^MULTi[-_]FRENCH(?:[／/]VOSTFR)?$/i.test(value) ||
+    /^\d+\s+à\s+\d+$/i.test(value)
+  )
+    return true;
   if (/(?<!\|)[|｜](?!\|)/.test(value)) return false;
   // 周更、整季收录、语言音轨以及平台说明只在完整标签中识别。
   if (
@@ -520,6 +526,17 @@ function trimTechnicalTail(text: string): string {
   }
   return (
     text
+      .replace(/^REPACK(?:\d+)?\s+/i, "")
+      .replace(/\s+(?:[-–]\s*)?CUSTOM$/i, "")
+      .replace(/\s+subs?\s+only$/i, "")
+      .replace(/\s*[-–]\s*第番外[话話集]\s*[-–]?$/, "")
+      .replace(/合集\s*全[（(][^)）]+[)）]$/, "")
+      .replace(/_OVAs$/i, "")
+      .replace(/(\bS\d+)\s+cour\s*\d+\s+hq$/i, "$1")
+      .replace(
+        /(\s+S\d+)\s*[+＆&]\s*(?:OVAs?|OADs?|SP)(?:\s*[+＆&]\s*(?:OVAs?|OADs?|SP))*\s*$/i,
+        "$1"
+      )
       .replace(/\s*[(（](?:Japanese|English|German)\s+ver[.]?[)）]\s*$/i, "")
       .replace(
         /(?:[._\s]+)(?:SUBFRENCH|TRUEFRENCH|VOSTFR|MULTi|REPACK\d*|UNCENSORED)(?=$|[._\s]).*$/i,
@@ -594,8 +611,8 @@ function trimTechnicalTail(text: string): string {
       .replace(/\s+\d+\s+SUB\s+-\s+.*$/i, "")
       .replace(/\s+[中英日俄国國粤粵韩韓法德意西葡]+(?:文|语|語)?配音\s*$/, "")
       .replace(/\s+Complete$/i, "")
-      .replace(/\s+CM$/i, "")
       .replace(/\s+-Part\s*\d+-$/i, "")
+      .replace(/\s+CM$/i, "")
       .replace(/(?:_[-]_?|\s+-\s+)(?:Menu|Scans|OP[+]ED)$/i, "")
       .replace(/\s+[+]\s+Specials\s*&?\s*$/i, "")
       .replace(/\s+Vol[.]?\s*\d+\s*&\s*$/i, "")
@@ -830,6 +847,13 @@ function splitBracketAliasList(text: string): string[] {
     }
     return names;
   }
+  if (
+    !/[／/|｜;；]/.test(text) &&
+    parts.length > 1 &&
+    parts.every((part) => /\p{L}/u.test(part)) &&
+    new Set(parts.map(language)).size > 1
+  )
+    return parts;
   if (
     parts.length === 2 &&
     /^[\p{Script=Han}\d]+$/u.test(parts[0]) &&
@@ -1146,6 +1170,9 @@ export function parseTorrentNames(
     input =
       backupDescription[1] +
       " ".repeat(input.length - backupDescription[1].length);
+  input = input.replace(/合集\s*全[（(][^)）]+[)）](?=\s*[／/|｜])/g, (scope) =>
+    " ".repeat(scope.length)
+  );
   let blocks = segments(input);
   let organization: Organization | undefined = quotedRelease
     ? {
@@ -1256,6 +1283,20 @@ export function parseTorrentNames(
       }
     }
   }
+  const versionYearRanges = blocks.filter((block, index) => {
+    const previous = blocks[index - 1];
+    return (
+      (block.wrapper === "(" || block.wrapper === "（") &&
+      /^(?:19|20)\d{2}[-–](?:19|20)\d{2}$/.test(block.text) &&
+      previous &&
+      !previous.wrapper &&
+      /\p{L}/u.test(previous.text) &&
+      !/_\s*$/.test(previous.text) &&
+      !/\b(?:Specials|Extras|Collection)\b|[+＆&]|\bSeasons?\s*\d+\s*[-~–]\s*\d+|\bS\d+\s*[-~–]\s*S?\d+|\b(?:Complete|Full|Entire)\s+(?:Series|Seasons?)\b/i.test(
+        previous.text
+      )
+    );
+  });
   const origin =
     organization && input.includes(organization.raw)
       ? input.indexOf(organization.raw) + organization.raw.length + 1
@@ -1327,6 +1368,9 @@ export function parseTorrentNames(
       blocks.find((block) => !metadata(block.text))?.text.trimStart() ?? ""
     ) && /^-?\d/.test(input.slice(detectedStart));
   const dubiousNumber =
+    versionYearRanges.some(
+      (block) => detectedStart >= block.start && detectedStart < block.end
+    ) ||
     titleNumber ||
     (/^\d{3,4}\s+[A-Za-z]/.test(input.slice(detectedStart)) &&
       !technical.test(input.slice(detectedEnd)));
@@ -1378,6 +1422,11 @@ export function parseTorrentNames(
     let text = block.text;
     const trailingNames: string[] = [];
     if (!text || block === coverageBlock) continue;
+    if (versionYearRanges.includes(block) && aliases.length) {
+      const gap = input.slice(0, block.start).match(/\s*$/)?.[0] ?? "";
+      aliases[aliases.length - 1] += gap + block.wrapper + text + block.closer;
+      continue;
+    }
     if (block.wrapper && /^Seasons?\s+\d+\s*[-&+~]\s*\d+$/i.test(text))
       continue;
     if (
@@ -1545,10 +1594,17 @@ export function parseTorrentNames(
     }
     if (
       block.wrapper &&
+      isAliasSeasonQualifier(text) &&
+      /^\s*[|｜]\s*$/.test(blocks[blocks.indexOf(block) - 1]?.text ?? "")
+    )
+      continue;
+    if (
+      block.wrapper &&
       /^(?:S\d+|Season\s*\d+(?:\s+pt[.]?\s*\d+)?|\d+(?:st|nd|rd|th)\s+Season|第[一二三四五六七八九十\d]+[季期])$/i.test(
         text
       ) &&
       aliases.length &&
+      !/^\s*[|｜]\s*$/.test(blocks[blocks.indexOf(block) - 1]?.text ?? "") &&
       (!afterEpisode ||
         /[|｜]/.test(
           input.slice(
@@ -1881,7 +1937,24 @@ export function parseTorrentNames(
         block.text
       )
     )
-      text = text.replace(/\s+\d{2}(?:\.\d)?$/, "");
+      text = text.replace(/\s+(\d{2,4})(?:\.\d)?$/, (ending, number) => {
+        const prefix = text.slice(0, -ending.length);
+        // 构建号与版本号属于产品名称，三四位集数还需明确的视频技术块作证。
+        if (
+          /^(?:19|20)\d{2}$/.test(number) ||
+          /\b(?:Build|Version|Ver[.]?|Revision|Rev[.]?|Release)\s*#?\s*$|(?:版本(?:号|號)?|构建(?:号|號)?)\s*$/i.test(
+            prefix
+          ) ||
+          (number.length >= 3 &&
+            !(
+              followingBlock?.wrapper &&
+              metadata(followingBlock.text) &&
+              technical.test(followingBlock.text)
+            ))
+        )
+          return ending;
+        return "";
+      });
     if (block.wrapper && episodeStart === input.length)
       text = text.replace(
         /^([\p{Script=Han}][^A-Za-z/]+?)\s+\d{2,4}(?:&\d{2,4})?\s+[\p{Script=Han}].*$/u,
@@ -1897,7 +1970,7 @@ export function parseTorrentNames(
         text = text.replace(/\s+\d{2,3}\s*$/, "");
     }
     if (
-      /^(?:S\d+|第[一二三四五六七八九十\d]+[季期]|\d+(?:st|nd|rd|th)\s+Season)$/i.test(
+      /^(?:[-–]\s*)?(?:S\d+|Season\s*\d+|第[一二三四五六七八九十\d]+[季期]|\d+(?:st|nd|rd|th)\s+Season)$/i.test(
         text.trim()
       ) &&
       aliases.length
@@ -2006,13 +2079,21 @@ export function parseTorrentNames(
     originalBlocks.find(
       (block, index) =>
         block.wrapper &&
-        block.text.trim() === detectedOrganization.raw.trim() &&
+        (block.text.trim() === detectedOrganization.raw.trim() ||
+          block.text
+            .trim()
+            .split(/\s*(?:[&＆+×／/]| x )\s*/)
+            .every((name) => groups.includes(name))) &&
         hasTechnicalGap(originalBlocks, index)
     );
   const restoreMediaQualifier =
     repeatedMediaQualifier &&
     aliases
-      .filter((name) => !groups.includes(name))
+      .filter(
+        (name) =>
+          !groups.includes(name) &&
+          name !== trailingOrganizationBlock?.text.trim()
+      )
       .every((name) => {
         const base = name.replace(/\s*[(（](?:19|20)\d{2}[)）]$/, "");
         return originalInput.includes(base + " " + repeatedMediaQualifier);
@@ -2022,6 +2103,7 @@ export function parseTorrentNames(
     ...new Set(
       aliases
         .map((name) => {
+          if (name === trailingOrganizationBlock?.text.trim()) return "";
           if (restoreMediaQualifier) {
             const version = name.match(/^(.*?)(\s*[(（](?:19|20)\d{2}[)）])$/);
             const base = version ? version[1] : name;
