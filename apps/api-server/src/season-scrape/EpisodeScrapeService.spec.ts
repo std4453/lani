@@ -7,6 +7,9 @@ jest.mock('@/season-scrape/bangumi/index.service', () => ({
 jest.mock('@/season-scrape/skyhook/index.service', () => ({
   SkyhookSeasonService: class {},
 }));
+jest.mock('./bangumi-data/BangumiDataService', () => ({
+  BangumiDataService: class {},
+}));
 function setup(existing: any[], episodes: any[]) {
   const prisma = {
     episode: {
@@ -18,20 +21,24 @@ function setup(existing: any[], episodes: any[]) {
     season: { update: jest.fn() },
     $transaction: jest.fn().mockResolvedValue([]),
   };
+  const bangumiData = { getSchedule: jest.fn().mockResolvedValue(undefined) };
   const service = new EpisodeScrapeService(
-    {} as any,
+    { fetch: async () => ({ episodes }) } as any,
     { fetch: async () => ({ episodes }) } as any,
     prisma as any,
+    bangumiData as any,
   );
   return {
     prisma,
-    sync: () =>
+    bangumiData,
+    sync: (overrides: Record<string, unknown> = {}) =>
       service.syncEpisodeData({
         id: 1,
         episodesSource: 'BGM_CN',
         bangumiId: '1',
         airTime: '23:00',
         downloadOffsetHours: 0,
+        ...overrides,
       } as any),
   };
 }
@@ -102,6 +109,99 @@ it('keeps missing local chapters', async () => {
   );
   await sync();
   expect(prisma.episode.deleteMany).not.toHaveBeenCalled();
+});
+
+it.each(['BGM_CN', 'SKYHOOK'])(
+  '%s 同步复用同一份作品级时分，并在跨日合成后应用下载偏移',
+  async (episodesSource) => {
+    const { prisma, sync, bangumiData } = setup(
+      [],
+      [
+        { episodeNumber: '1', title: 'one', airDate: '20261002' },
+        { episodeNumber: '2', title: 'two', airDate: '20261009' },
+      ],
+    );
+    bangumiData.getSchedule.mockResolvedValue({
+      begin: '2026-10-02T16:23:00Z',
+      broadcastAt: '2026-10-02T16:23:00Z',
+    });
+    await sync({
+      episodesSource,
+      tvdbId: 1,
+      tvdbSeason: 1,
+      airTime: '',
+      downloadOffsetHours: -2,
+    });
+    expect(bangumiData.getSchedule).toHaveBeenCalledTimes(1);
+    expect(bangumiData.getSchedule).toHaveBeenCalledWith('1');
+    const rows = prisma.episode.create.mock.calls.map(([{ data }]) => data);
+    expect(
+      rows.map((row) => [
+        row.rawAirTime.toISOString(),
+        row.airTime.toISOString(),
+      ]),
+    ).toEqual([
+      ['2026-10-02T16:23:00.000Z', '2026-10-02T18:23:00.000Z'],
+      ['2026-10-09T16:23:00.000Z', '2026-10-09T18:23:00.000Z'],
+    ]);
+    expect(rows[0]).not.toHaveProperty('broadcastAt');
+  },
+);
+
+it('没有命中时回退 UTC+8 23:00，正下载偏移仍提前执行', async () => {
+  const { prisma, sync } = setup(
+    [],
+    [
+      { episodeNumber: '1', title: 'one', airDate: '20261002' },
+      { episodeNumber: '2', title: 'two' },
+    ],
+  );
+  await sync({ airTime: '', downloadOffsetHours: 2 });
+  expect(prisma.episode.create.mock.calls[0][0].data).toMatchObject({
+    rawAirTime: new Date('2026-10-02T15:00:00Z'),
+    airTime: new Date('2026-10-02T13:00:00Z'),
+  });
+  expect(prisma.episode.create.mock.calls[1][0].data).toMatchObject({
+    rawAirTime: null,
+    airTime: null,
+  });
+});
+
+it('没有 Bangumi 对照的 Skyhook 同步使用默认时间，不查索引', async () => {
+  const { prisma, sync, bangumiData } = setup(
+    [],
+    [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
+  );
+  await sync({
+    episodesSource: 'SKYHOOK',
+    bangumiId: null,
+    tvdbId: 1,
+    tvdbSeason: 1,
+    airTime: '',
+  });
+  expect(bangumiData.getSchedule).not.toHaveBeenCalled();
+  expect(prisma.episode.create.mock.calls[0][0].data.rawAirTime).toEqual(
+    new Date('2026-10-02T15:00:00Z'),
+  );
+});
+
+it('明确设置的季度时分优先于作品级时间，手工剧集不参与同步', async () => {
+  const { prisma, sync, bangumiData } = setup(
+    [],
+    [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
+  );
+  bangumiData.getSchedule.mockResolvedValue({
+    begin: '2026-10-02T16:23:00Z',
+    broadcastAt: '2026-10-02T16:23:00Z',
+  });
+  await sync({ airTime: '21:30' });
+  expect(prisma.episode.create.mock.calls[0][0].data.rawAirTime).toEqual(
+    new Date('2026-10-02T13:30:00Z'),
+  );
+  jest.clearAllMocks();
+  await expect(sync({ episodesSource: 'MANUAL' })).resolves.toBe(false);
+  expect(prisma.episode.create).not.toHaveBeenCalled();
+  expect(bangumiData.getSchedule).not.toHaveBeenCalled();
 });
 it('跳过编号已占用且来源身份不同的剧集', async () => {
   const { prisma, sync } = setup(
