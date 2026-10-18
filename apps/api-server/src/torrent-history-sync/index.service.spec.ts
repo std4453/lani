@@ -57,15 +57,28 @@ it.each(['mikan', 'nyaa'] as const)(
   },
 );
 
-it('rejects unknown and stale IDs, including after a restart', async () => {
+it('keeps recent completed results while rejecting unknown IDs and IDs lost on restart', async () => {
   const { service, complete } = setup();
   expect(() => service.status('unknown')).toThrow('重新同步');
   const id = service.start();
   complete();
   await flush();
   service.start();
-  expect(() => service.status(id)).toThrow('重新同步');
+  expect(service.status(id)).toEqual({ running: false, error: null });
   expect(() => setup().service.status(id)).toThrow('重新同步');
   complete();
   await flush();
+});
+
+it('bounds retained results to the ten most recent jobs', async () => {
+  const { service, complete } = setup();
+  const ids: string[] = [];
+  for (let i = 0; i < 11; i++) {
+    ids.push(service.start());
+    complete();
+    await flush();
+  }
+  expect(() => service.status(ids[0])).toThrow('重新同步');
+  for (const id of ids.slice(1))
+    expect(service.status(id)).toEqual({ running: false, error: null });
 });

@@ -8,6 +8,7 @@ import { TorrentHistorySync } from './index.model';
 export class TorrentHistorySyncService {
   private readonly logger = new Logger(TorrentHistorySyncService.name);
   private job?: TorrentHistorySync & { id: string };
+  private readonly jobs = new Map<string, TorrentHistorySync>();
 
   constructor(private mikan: MikanSyncService, private nyaa: NyaaSyncService) {}
 
@@ -19,6 +20,9 @@ export class TorrentHistorySyncService {
       error: null as string | null,
     };
     this.job = job;
+    this.jobs.set(job.id, job);
+    // 保留最近十次结果，避免新任务覆盖尚未被页面读到的完成状态。
+    if (this.jobs.size > 10) this.jobs.delete(this.jobs.keys().next().value);
     void this.sync().then(
       () => {
         job.running = false;
@@ -33,10 +37,11 @@ export class TorrentHistorySyncService {
   }
 
   status(id: string): TorrentHistorySync {
-    if (!this.job || this.job.id !== id) {
+    const job = this.jobs.get(id);
+    if (!job) {
       throw new Error('同步任务不存在或服务已重启，请重新同步');
     }
-    return { running: this.job.running, error: this.job.error };
+    return { running: job.running, error: job.error };
   }
 
   private async sync() {
