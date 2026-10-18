@@ -22,7 +22,7 @@ function parseClock(value: string): number | undefined {
   if (!match) return undefined;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (minutes > 59) return undefined;
+  if (hours > 48 || minutes > 59) return undefined;
   return hours * 60 + minutes;
 }
 

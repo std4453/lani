@@ -53,6 +53,8 @@ describe('resolveEpisodeClock', () => {
     ['24:30', 1470],
     ['25:23', 1523],
     ['26:00', 1560],
+    ['48:00', 2880],
+    ['48:59', 2939],
   ] as const)(
     'keeps valid manual clock %s ahead of schedule',
     (airTime, expected) => {
@@ -72,11 +74,18 @@ describe('resolveEpisodeClock', () => {
     });
   });
 
-  it('uses schedule time converted to fixed UTC+8 when manual time is invalid', () => {
-    expect(
-      resolveEpisodeClock('25:60', [episode('20260105')], schedule()),
-    ).toEqual({ minutes: 23 * 60 + 30, dayOffset: 0 });
-  });
+  it.each(['25:60', '49:00', '99:00'])(
+    'uses schedule or fallback time when manual clock %s is invalid',
+    (airTime) => {
+      expect(
+        resolveEpisodeClock(airTime, [episode('20260105')], schedule()),
+      ).toEqual({ minutes: 23 * 60 + 30, dayOffset: 0 });
+      expect(resolveEpisodeClock(airTime, [])).toEqual({
+        minutes: 23 * 60,
+        dayOffset: 0,
+      });
+    },
+  );
 
   it('does not add another day when schedule begin already uses the civil date', () => {
     const resolved = resolveEpisodeClock(
