@@ -4,6 +4,52 @@ const groups = (input: string) => parseTorrentOrganization(input)?.parts;
 
 describe("Nyaa 制作组：署名与字幕属性边界", () => {
   it.each([
+    ["虚构航海 1080p BluRay DTS x265-10bit-HDS", ["HDS"]],
+    ["虚构航海 1080p HEVC-12bit-NovaTeam", ["NovaTeam"]],
+    ["虚构航海 1080p AV1-8bit-Céleste", ["Céleste"]],
+    ["虚构航海 1080p AAC-手抄组", ["手抄组"]],
+    ["虚构航海 1080p x264-Ita", ["Ita"]],
+  ])("技术链后提取真实署名：%s", (input, expected) => {
+    expect(groups(input as string)).toEqual(expected);
+  });
+
+  it.each([
+    "虚构航海 (1971 - x264 - Ita AC3)",
+    "虚构航海 (1971 - 1080p x264 - Ita Fra Spa AC3)",
+    "虚构航海 (1080p AV1 - Italian French Spanish AAC2.0)",
+    "虚构航海 (1080p HEVC-10bit-FLAC)",
+  ])("编码后的语言列表与音轨不作为署名：%s", (input) => {
+    expect(groups(input)).toBeUndefined();
+  });
+
+  it.each([
+    ["虚构航海 - WEBDL - VOSTFR - x264 AAC - UwU (Ajout OAV)", ["UwU"]],
+    ["虚构航海 VOSTFR 1080p WEB AV1 AAC -Báleygr", ["Báleygr"]],
+    ["虚构航海 VOSTFR 1080p WEB x265 AAC - Céleste", ["Céleste"]],
+    ["虚构航海 WEB x265 AAC - Café", ["Café"]],
+    [
+      "虚构航海 BD (Bluray 1080p, dual audio) [Chyrka / yolerejiju]",
+      ["Chyrka", "yolerejiju"],
+    ],
+    ["虚构航海 [Nova字幕组 / OrionTeam]", ["Nova字幕组", "OrionTeam"]],
+    ["虚构航海 24 SUB - Earth (854x480 YouTube).mkv", ["Earth"]],
+    ["虚构航海 - Earth [1080p][AAC].mkv", ["Earth"]],
+  ])("兼容空白、重音字母及尾部联合署名：%s", (input, expected) => {
+    expect(groups(input as string)).toEqual(expected);
+  });
+
+  it.each([
+    "[Nebula7] 虚构航海 (Fictional Voyage, Japanese Sub)",
+    "[Nebula7] 虚构航海 (Fictional Voyage, Arabic Sub)",
+    "[Nebula7] 虚构航海 [Fictional Voyage / Another Alias]",
+    "[Nebula7] 虚构航海 WEB x265 AAC - 简体内嵌",
+    "[Nebula7] 虚构航海 WEB x265 AAC - CHS",
+    "[Nebula7] 虚构航海 WEB x265 AAC - 無字幕",
+  ])("不把新增署名语法用于语言和别名：%s", (input) => {
+    expect(groups(input)).toEqual(["Nebula7"]);
+  });
+
+  it.each([
     ["[aprm-Diogo4D][Blu-ray][1080p] 虚构航海 - 03", ["aprm", "Diogo4D"]],
     ["[AMF-SnF] 虚构航海 - 03 [1234ABCD]", ["AMF", "SnF"]],
     ["[BakeSubs-YnA] 虚构航海 - 03 [1080p]", ["BakeSubs", "YnA"]],

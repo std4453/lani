@@ -2,6 +2,9 @@ import { Organization } from "./types";
 
 // 发布者词典只记录独立身份及同组复合写法，不记录作品名或作品与发布者的关联。
 const knownNames = [
+  "Chyrka",
+  "yolerejiju",
+  "Earth",
   "aprm",
   "Diogo4D",
   "AMF",
@@ -324,7 +327,7 @@ const languageList =
   /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard\s+|soft\s+)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
 // 别名和技术说明常以字幕属性结尾；这些描述不能因末尾的 Sub(s) 成为身份。
 const subtitleDescription =
-  /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:english|spanish|french|german|italian|portuguese|russian)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
+  /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:english|japanese|spanish|french|german|italian|portuguese|russian|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
 const versionLabel = /^(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版$/i;
 
 function isVersionCombination(text: string): boolean {
@@ -461,6 +464,9 @@ function partsOf(text: string): string[] {
     text = text.replace(subtitleSource, "").replace(/字幕$/, "").trim();
   if (isVersionCombination(text)) return [];
   if (known.has(text.trim().toLowerCase())) return [text.trim()];
+  // 斜杠也用于作品别名；只有两边都明确为制作身份时才拆联合署名。
+  const slashParts = text.replace(explicitLabel, "").split(/\s*[/／]\s*/);
+  if (slashParts.length > 1 && slashParts.every(strongName)) return slashParts;
   // 末尾的加号可能属于品牌；只有两侧都有身份时才是联合分隔符。
   const trailingDecoration = text.match(/\++$/)?.[0] || "";
   const fragments = text
@@ -629,10 +635,20 @@ export function parseTorrentOrganization(
   }
   // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
   const scenes = input.matchAll(
-    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:-HD)?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?\s*-([A-Za-z0-9][A-Za-z0-9._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/gi
+    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:-HD)?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?(?:[- ._]+(?:8|10|12)[- ]?bits?)?\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/giu
   );
   for (const scene of scenes) {
+    // 编码后的语言列表若继续接音轨编码，属于音轨说明，不是发布署名。
+    const languageAudio =
+      /^(?:ita|italian|fra|fre|french|spa|spanish|eng?|english|jpn?|japanese|ger|german|rus|russian|por|portuguese)$/i.test(
+        scene[1]
+      ) &&
+      /^(?:[\s._-]+(?:ita|italian|fra|fre|french|spa|spanish|eng?|english|jpn?|japanese|ger|german|rus|russian|por|portuguese))*[\s._-]+(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS)(?:\b|\d)/i.test(
+        input.slice(scene.index! + scene[0].length)
+      );
     if (
+      !languageAudio &&
+      (!isMetadata(scene[1]) || strongName(scene[1])) &&
       !/^(?:NOGRP|NoGroup|HD(?:[.-]MA)?|MA|HRA|HI|LC|HE|AC-?3|E-?AC-?3|AAC|FLAC|OPUS|PCM|AV1|AVC|HEVC|Subs?|\d+(?:\.\d+)*(?:ch)?|\d+bits?|yuv\d+(?:p\d+)?|HDR\d*|SDR)$/i.test(
         scene[1]
       ) &&
@@ -645,14 +661,22 @@ export function parseTorrentOrganization(
     }
   }
   // 按已核实身份匹配有分隔的裸尾签，不把它与某个作品绑定。
-  const tail = input.trimEnd();
+  let tail = input.trimEnd().replace(/\.(?:mkv|mp4|avi|torrent)$/i, "");
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    if (block.close === tail.length && isMetadata(block.text))
+      tail = tail.slice(0, block.open).trimEnd();
+  }
+  const shortenedTail = tail.length !== input.trimEnd().length;
   const tailLower = tail.toLowerCase();
   const trailingCredit = knownEntries.find(
     ({ name, lower }) =>
       name !== "推しの子" &&
       (name.length >= 4 || /[A-Za-z]/.test(name)) &&
       tailLower.endsWith(lower) &&
-      /[.\s]$/.test(tail.slice(0, tail.length - name.length))
+      /[.\s]$/.test(tail.slice(0, tail.length - name.length)) &&
+      (!shortenedTail ||
+        /[-–]\s*$/.test(tail.slice(0, tail.length - name.length)))
   )?.name;
   if (trailingCredit) {
     const start = tail.length - trailingCredit.length;
