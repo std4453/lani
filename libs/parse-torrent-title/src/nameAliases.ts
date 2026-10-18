@@ -127,7 +127,8 @@ export function trimTechnicalTail(text: string): string {
         ""
       )
       .replace(/\s+(?:高清重制版|高清重製版|HDリセット版)\s*$/i, "")
-      .replace(/\s*[:：]?\s+HD Remastered(?: Edition)?\s*$/i, "")
+      // 空白段仅从起点匹配；冒号与后续空白分开，避免失败时反复分配同一段空白。
+      .replace(/(?<!\s)(?:\s*[:：])?\s+HD Remastered(?: Edition)?\s*$/i, "")
       .replace(/\s+\d{1,3}\s+ts档\s*$/i, "")
       // 配音版本可夹在名称和独立季数之间，删去标签时仍保留原来的季数。
       .replace(

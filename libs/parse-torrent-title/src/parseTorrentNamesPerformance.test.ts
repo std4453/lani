@@ -9,8 +9,22 @@ import {
 import { tmpdir } from "os";
 import { join } from "path";
 import ts from "typescript";
+import { trimTechnicalTail } from "@/nameAliases";
 
-it("长字幕同形正文和长空白署名不会触发高耗时回溯或误删", () => {
+test.each([
+  ["Title HD Remastered", "Title"],
+  ["Title: HD Remastered", "Title"],
+  ["Title  ：\tHD Remastered Edition  ", "Title"],
+  ["Title\n HD Remastered", "Title"],
+  ["Title\u3000：\u3000HD Remastered", "Title"],
+  ["TitleHD Remastered", "TitleHD Remastered"],
+  ["Title:HD Remastered", "Title:HD Remastered"],
+  ["Title HD Remastered Adventure", "Title HD Remastered Adventure"],
+])("重制后缀只移除完整说明：%s", (input, expected) => {
+  expect(trimTechnicalTail(input)).toBe(expected);
+});
+
+it("长字幕同形正文、标题空白和署名不会触发高耗时回溯或误删", () => {
   const directory = mkdtempSync(join(tmpdir(), "torrent-names-performance-"));
   try {
     // 子进程设置硬超时，回归时不会阻塞整个 Jest 进程；直接编译当前源码。
@@ -34,14 +48,19 @@ it("长字幕同形正文和长空白署名不会触发高耗时回溯或误删"
         `
       const { parseTorrentNames } = require('./parseTorrentNames');
       const { parseTorrentOrganization } = require('./parseTorrentOrganization');
+      const parseTorrentTitle = require('./parseTorrentTitle').default;
       const name = JSON.parse(require('fs').readFileSync(0, 'utf8'));
       const padding = ' '.repeat(8192);
       const author = parseTorrentOrganization('[Publisher] First Tale Subs by ' + padding + 'NoDestination');
       const empty = parseTorrentOrganization('[Publisher] First Tale Subs by ' + padding + '[BD].zip');
+      const spacedName = 'Title' + ' '.repeat(2048) + '!';
+      const spacedInput = '[Publisher] ' + spacedName + ' - 01 [1080p]';
       console.log(JSON.stringify({
         aliases: parseTorrentNames('[Publisher] ' + name + ' - 01 [1080p]').title.aliases,
         author: author?.parts,
         empty: empty?.parts,
+        spacedNames: parseTorrentNames(spacedInput).title.aliases,
+        spacedTitle: parseTorrentTitle(spacedInput)?.title.aliases,
       }));
     `,
       ],
@@ -58,6 +77,8 @@ it("长字幕同形正文和长空白署名不会触发高耗时回溯或误删"
       aliases: [name],
       author: ["Publisher", "NoDestination"],
       empty: ["Publisher"],
+      spacedNames: ["Title" + " ".repeat(2048) + "!"],
+      spacedTitle: ["Title" + " ".repeat(2048) + "!"],
     });
   } finally {
     rmSync(directory, { recursive: true, force: true });
