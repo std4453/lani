@@ -59,7 +59,7 @@ BREAKING CHANGE: 删除旧版下载接口，调用方需迁移到新版接口。
 
 ## 分支命名
 
-普通工作分支使用 `<type>/<description>`；Codex 创建的工作分支使用 `codex/<type>-<description>`。
+工作分支使用 `<type>/<description>`。
 
 - `type` 使用上表中的类型，反映分支的主要目的。
 - `description` 使用小写英文字母、数字和单个连字符组成的 kebab-case；以字母或数字开头、结尾，不使用空格、下划线、中文或额外的 `/`。
@@ -72,8 +72,6 @@ BREAKING CHANGE: 删除旧版下载接口，调用方需迁移到新版接口。
 feat/admin-season-filter
 fix/api-download-path
 docs/commit-branch-guide
-codex/docs-commit-branch-guide
-codex/fix-db-download-source
 ```
 
 `feature/foo`（类型不在表中）、`fix/Download_Path`（大小写及下划线）、`codex/update`（缺少类型）不符合本仓库约定。
@@ -83,7 +81,6 @@ codex/fix-db-download-source
 ```bash
 git fetch origin
 git switch -c docs/commit-branch-guide origin/next
-# Codex 工作分支改用 codex/docs-commit-branch-guide
 ```
 
 ## PR 与提交前检查
@@ -100,7 +97,9 @@ git switch -c docs/commit-branch-guide origin/next
 
 ## 构建 manifest 与提交 hook
 
-执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
+执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 和 `common/git-hooks/pre-push` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
+
+pre-push 检查本次推送的所有引用；源分支或目标分支以 `codex/` 开头时阻断推送，输出「分支名需要遵循 Conventional Commit，禁止使用 `codex/` 作为分支名」。该检查允许删除远端旧分支，不限制同名前缀的标签，也不会因为当前检出的分支而误拦截其他分支的推送。使用自定义 hooks 时，应在现有 pre-push 中调用 `sh common/git-hooks/pre-push "$@"` 并传递原始标准输入和退出状态；多个检查需要读取输入时，应先保存输入再分别传入。
 
 Rush 安装依赖时会配置仓库 hooks；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
 
@@ -120,4 +119,4 @@ fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、
 
 不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。所需镜像全部可用后会通知部署，包括全部复用的情况；实际部署范围由目标 manifest 与环境成功基线决定。
 
-其余提交规范通过自查和 PR 审查执行，不新增 commitlint 或分支命名检查。
+除上述 `codex/` 推送检查外，其余提交及分支规范通过自查和 PR 审查执行，不新增 commitlint。

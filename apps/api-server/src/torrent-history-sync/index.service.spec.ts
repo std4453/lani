@@ -1,0 +1,136 @@
+jest.mock('@/mikan-sync/index.service', () => ({ MikanSyncService: class {} }));
+jest.mock('@/nyaa-sync/index.service', () => ({ NyaaSyncService: class {} }));
+import { TorrentHistorySyncService } from './index.service';
+
+function setup() {
+  let complete: (count: number) => void = () => undefined;
+  const mikan = { syncMikanHistory: jest.fn().mockResolvedValue(3) };
+  const nyaa = {
+    syncNyaaHistory: jest.fn().mockImplementation(
+      (onAdded: (added: number) => void) =>
+        new Promise((resolve) => {
+          complete = (count) => {
+            onAdded(count);
+            resolve(count);
+          };
+        }),
+    ),
+  };
+  const service = new TorrentHistorySyncService(mikan as any, nyaa as any);
+  return { service, mikan, nyaa, complete: () => complete(7) };
+}
+async function flush() {
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+}
+
+it('returns an ID immediately, starts both sources once and completes only after both finish', async () => {
+  const { service, mikan, nyaa, complete } = setup();
+  const id = service.start();
+  expect(id).toMatch(/^[0-9a-f-]{36}$/);
+  expect(service.start()).toBe(id);
+  expect(mikan.syncMikanHistory).toHaveBeenCalledTimes(1);
+  expect(nyaa.syncNyaaHistory).toHaveBeenCalledTimes(1);
+  await flush();
+  expect(service.status(id)).toEqual({ running: true, added: 3, error: null });
+  complete();
+  await flush();
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 10,
+    error: null,
+  });
+  expect(service.start()).not.toBe(id);
+  complete();
+  await flush();
+});
+
+it.each(['mikan', 'nyaa'] as const)(
+  'reports %s failure after both sources settle and permits retry',
+  async (source) => {
+    const { service, mikan, nyaa, complete } = setup();
+    const failed =
+      source === 'mikan' ? mikan.syncMikanHistory : nyaa.syncNyaaHistory;
+    failed.mockRejectedValueOnce(new Error('upstream failed'));
+    const id = service.start();
+    complete();
+    await flush();
+    expect(service.status(id)).toEqual({
+      running: false,
+      added: source === 'mikan' ? 7 : 3,
+      error: expect.stringContaining('已入库的种子保留'),
+    });
+    expect(service.start()).not.toBe(id);
+    complete();
+    await flush();
+  },
+);
+
+it('keeps recent completed results while rejecting unknown IDs and IDs lost on restart', async () => {
+  const { service, complete } = setup();
+  expect(() => service.status('unknown')).toThrow('重新同步');
+  const id = service.start();
+  complete();
+  await flush();
+  service.start();
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 10,
+    error: null,
+  });
+  expect(() => setup().service.status(id)).toThrow('重新同步');
+  complete();
+  await flush();
+});
+
+it('bounds retained results to the ten most recent jobs', async () => {
+  const { service, complete } = setup();
+  const ids: string[] = [];
+  for (let i = 0; i < 11; i++) {
+    ids.push(service.start());
+    complete();
+    await flush();
+  }
+  expect(() => service.status(ids[0])).toThrow('重新同步');
+  for (const id of ids.slice(1))
+    expect(service.status(id)).toEqual({
+      running: false,
+      added: 10,
+      error: null,
+    });
+});
+
+it('reports zero when both sources add no torrents', async () => {
+  const { service, mikan, nyaa } = setup();
+  mikan.syncMikanHistory.mockResolvedValue(0);
+  nyaa.syncNyaaHistory.mockResolvedValue(0);
+  const id = service.start();
+  await flush();
+  expect(service.status(id)).toEqual({ running: false, added: 0, error: null });
+});
+
+it('reports committed pages while running and retains partial progress on failure', async () => {
+  const { service, nyaa } = setup();
+  let report: (added: number) => void;
+  let fail: (error: Error) => void;
+  nyaa.syncNyaaHistory.mockImplementationOnce((onAdded) => {
+    report = onAdded;
+    return new Promise((_, reject) => {
+      fail = reject;
+    });
+  });
+  const id = service.start();
+  await flush();
+  expect(service.status(id)).toEqual({ running: true, added: 3, error: null });
+  report!(2);
+  expect(service.status(id)).toEqual({ running: true, added: 5, error: null });
+  report!(0);
+  report!(4);
+  expect(service.status(id)).toEqual({ running: true, added: 9, error: null });
+  fail!(new Error('later page failed'));
+  await flush();
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 9,
+    error: expect.any(String),
+  });
+});

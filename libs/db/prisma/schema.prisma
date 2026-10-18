@@ -118,7 +118,17 @@ model Season {
   @@unique([jellyfinFolderId, directory])
 }
 
+enum TorrentChannel {
+  MIKAN
+  NYAA
+
+  @@map("torrent_channel")
+}
+
 model Torrent {
+  displayId         Int          @unique @default(autoincrement()) @map("display_id")
+  channel           TorrentChannel @default(MIKAN)
+  permalink         String?
   id                Int          @id(map: "mikan_items_pkey") @default(autoincrement())
   title             String
   torrentLink       String       @map("torrent_link")

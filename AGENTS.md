@@ -42,7 +42,7 @@
 - `cd libs/parse-torrent-title && rushx test`：运行解析器 Jest 测试。
 - `cd apps/api-server && rushx test`：运行 API Jest 测试；`No tests found` 不是测试通过。
 
-`rush install` 自动安装 `common/git-hooks/pre-commit`；自定义 hook 或 worktree 的接入方式见 CONTRIBUTING.md。先暂存源码再提交，hook 按暂存区生成并暂存 `build-manifest.json`；不要手工编辑 fingerprint。需要补生成时运行 `node common/scripts/build-fingerprints.cjs generate --staged`。跳过 hook 或 rebase 后检查 manifest CI。`next` 使用 squash/rebase 合入，不改写已发布历史。
+`rush install` 自动安装 `common/git-hooks/pre-commit` 和 `common/git-hooks/pre-push`；自定义 hook 或 worktree 的接入方式见 CONTRIBUTING.md。pre-push 拦截以 `codex/` 开头的源分支或目标分支，允许删除远端旧分支。先暂存源码再提交，pre-commit 按暂存区生成并暂存 `build-manifest.json`；不要手工编辑 fingerprint。需要补生成时运行 `node common/scripts/build-fingerprints.cjs generate --staged`。跳过 hook 或 rebase 后检查 manifest CI。`next` 使用 squash/rebase 合入，不改写已发布历史。
 
 修改依赖后执行 `rush update`，同步 `common/config/rush/pnpm-lock.yaml`。行为变更应增加 `*.test.ts` 或 `*.spec.ts` 回归测试并覆盖失败路径。按变更范围验证；仅文档变更检查链接、命令和差异即可。
 
@@ -66,7 +66,7 @@ TypeScript 使用两个空格缩进。格式化以文件所在目录向上找到
 
 提交主题和 PR 标题遵循 Conventional Commits：`<type>[(<scope>)][!]: <description>`。类型使用小写 `feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`style`、`chore` 或 `revert`；单包改动优先以包目录名作为 scope。不兼容变更使用 `!` 或 `BREAKING CHANGE:` 并说明迁移方式；自动生成的 merge commit 信息除外。
 
-普通工作分支使用 `<type>/<description>`，Codex 工作分支使用 `codex/<type>-<description>`。description 使用小写英文字母、数字及单个连字符组成的 kebab-case。长期分支及已有分支无需重命名。除任务明确指定外，从最新的 `origin/next` 创建分支，PR 目标为 `next`。
+工作分支使用 `<type>/<description>`。description 使用小写英文字母、数字及单个连字符组成的 kebab-case。长期分支及已有分支无需重命名。除任务明确指定外，从最新的 `origin/next` 创建分支，PR 目标为 `next`。
 
 提交前检查分支名、提交主题和 `git diff --cached`，确保只包含任务相关文件且没有隐私信息。PR 说明影响的包、验证命令及结果、配置或 Prisma 迁移；UI 变更附截图。
 
