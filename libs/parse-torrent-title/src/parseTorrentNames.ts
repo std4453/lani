@@ -90,6 +90,14 @@ function metadata(text: string): boolean {
   const value = text.trim();
   // 完整发行标签或由来源代号引导的技术块不参与名称识别。
   if (
+    /^(?:BATCH Complete Season|PARTIAL BATCH|HDR|BD FHD|Multi Dual Audio|CH|Hardsubs?)$/i.test(
+      value
+    ) ||
+    /^SEASON(?:19|20)\d{2}\s+年度TV合集$/i.test(value) ||
+    /^(?:\d{1,4}\s+)?FHD$/i.test(value)
+  )
+    return true;
+  if (
     /^(?:Sub[_ -]Esp(?:[-_ ]XviD)?|Mini[-_ ]Batch|Complete(?: Batch)?|OAVs?|Betamax|VHS|Original Broadcast|BD[-_ ]?(?:ISO|RMSTR)|VERSION[_ ]LIGHT|preliminary version|Esp-La|Korean Premiere|Clip|Post[- ]\d+ Extra)$/i.test(
       value
     ) ||
@@ -507,11 +515,17 @@ function metadata(text: string): boolean {
 function trimTechnicalTail(text: string): string {
   const pipeParts = text.split(/(?<!\|)[|｜](?!\|)/);
   if (pipeParts.length > 1) return pipeParts.map(trimTechnicalTail).join(" | ");
+  // 点号连接的年份只有紧接明确的发行技术字段时才是发行年。
+  text = text.replace(/[.]Movie[.](?:19|20)\d{2}(?=[.]MULTi\b)/i, "");
+  text = text.replace(
+    /[.](?:19|20)\d{2}(?=[.](?:MULTi\b|Hybrid[.](?:[A-Z]{2}-)?DVDRip\b))/i,
+    ""
+  );
   // 官方制作 label 只有紧邻外层引用包装时才视作前缀，正文同形词仍保留。
   text = text.replace(/^\s*Animatica(?=[「『])/i, "");
   // 技术参数可没有外括号；只在独立词边界处截断，避免伤及标题内部数字。
   const boundary =
-    /(?:\s+|[._★])(?=(?:\d{3,4}\s*[xX×]\s*\d{3,4}|(?:480|576|720|1080|2160)[pP]|[248]K(?=$|[ ._-]+(?:HEVC|AVC|x26[45]|HDR|SDR|BD|WEB|BluRay)\b)|(?:8|10|12)[ -]?bit\b|(?:WEB(?=[- ](?:\d{3,4}p\b|x26[45]\b|HEVC\b|AVC\b))|WEB[ ._-]?(?:DL|RIP)|Blu[ ._-]?Ray|BD|BDRIP|UHDBDRIP|DVDRIP|HEVC|AVC|x26[45])(?=$|[\W_])))/i;
+    /(?:\s+|[._★])(?=(?:\d{3,4}\s*[xX×]\s*\d{3,4}|(?:480|576|720|1080|2160)[pP]|[248]K(?=$|[ ._-]+(?:HEVC|AVC|x26[45]|HDR|SDR|BD|WEB|BluRay)\b)|(?:8|10|12)[ -]?bit\b|(?:WEB(?=[- ](?:\d{3,4}p\b|x26[45]\b|HEVC\b|AVC\b))|WEB[ ._-]?(?:DL|RIP)|Blu[ ._-]?Ray|Hybrid(?=[. _-]+[A-Z]{2}[-_]DVDRIP)|BD|BDRIP|UHDBDRIP|(?:[A-Z]{2}[-_])?DVDRIP|HEVC|AVC|x26[45])(?=$|[\W_])))/i;
   // 非标准分辨率（如手误1090P）须由整段已知字幕/编码参数佐证。
   const parameterTail =
     /(?:\s+|[._])(?:(?:GB|BIG5|CHS|CHT)[ _-]+)?\d{3,4}P(?=$|[\s._-])/i.exec(
@@ -583,6 +597,7 @@ function trimTechnicalTail(text: string): string {
       .replace(/\s+超[后後][宫宮]版\s*$/, "")
       .replace(/\s+(?:[日英中台泰越国國粤粵韩韓]+配版|普通[话話]版)\s*$/, "")
       .replace(/全集(?:无水印|無水印)(?:高清)?(?:迅雷)?下[载載]\s*$/, "")
+      .replace(/\s+Seasons?\s+S\d+(?:\s*[+]\s*S\d+)+\s*$/i, "")
       .replace(/\s+S\d+\s*>\s*S\d+\s*$/i, "")
       .replace(
         /(?:[.](?:19|20)\d{2}(?:[-–](?:19|20)\d{2})?)?[._\s]+(?:-\s*)?S\d+(?:\s*[-~～–+]\s*S?\d+)+(?:[._\s]*(?:FIN|END|全集|合集))?\s*$/i,
@@ -832,7 +847,7 @@ function splitAliases(input: string): string[] {
 }
 
 function isAliasSeasonQualifier(text: string): boolean {
-  return /^(?:Season\s*\d+|\d+(?:st|nd|rd|th)\s+Season|S\d+|第[一二三四五六七八九十百\d]+[季期])$/i.test(
+  return /^(?:Season\s*\d+|\d+(?:st|nd|rd|th)\s+Season|S\d+|Partie\s*\d+|第[一二三四五六七八九十百\d]+[季期])$/i.test(
     text.trim()
   );
 }
@@ -863,10 +878,17 @@ function splitBracketAliasList(text: string): string[] {
       if (!part || metadata(part)) continue;
       const previous = names[names.length - 1];
       const leadingMetadata = metadata(parts[0]);
+      const repeatsPrefix =
+        previous &&
+        previous.trim().split(/\s+/).slice(0, 2).join(" ").toLowerCase() ===
+          part.trim().split(/\s+/).slice(0, 2).join(" ").toLowerCase();
       // 罗马字中的助词和接续词，以及后续单个谓语，表示同一句作品名称。
       if (
         previous &&
-        (/\b(?:wa|ga|wo|ni|nanoni|nara|kedo|node|mou|doumo)$/i.test(previous) ||
+        !repeatsPrefix &&
+        (/\b(?:wa|ga|wo|ni|to|nanoni|nara|kedo|node|mou|doumo)$/i.test(
+          previous
+        ) ||
           (/\bkara$/i.test(previous) &&
             /\b(?:no|wa|ga|wo|ni|de|to|na|desu)\b/i.test(part)) ||
           /^(?:la|le|les|un|une|du|de)\s/.test(part) ||
@@ -876,7 +898,10 @@ function splitBracketAliasList(text: string): string[] {
             !/\b(?:Season|S\d+|[IVX]+)\s*$/i.test(previous) &&
             previous.trim().split(/\s+/)[0].toLowerCase() !==
               part.trim().split(/\s+/)[0].toLowerCase()) ||
-          ((!leadingMetadata ||
+          (((!leadingMetadata &&
+            !/['’]|\b(?:the|my|your|our|at|with|of|is|are|he|she|his|her)\b/i.test(
+              previous
+            )) ||
             parts.filter((piece) => piece === previous).length > 1) &&
             /\b(?:no|wa|ga|wo|ni|de|to)\b/i.test(part)) ||
           (!previous.includes(",") &&
@@ -1108,15 +1133,19 @@ function splitWithoutSlash(text: string): string[] {
       filmParts[filmParts.length - 1],
     ].flatMap(splitAliases);
   const dash = text.match(/^(.+?)\s+[-–]\s+(.+)$/);
+  const dashRightLanguage =
+    dash && kana.test(dash[2]) && /^\s*[A-Za-z]/.test(dash[2])
+      ? "latin"
+      : language(dash?.[2] ?? "");
   if (
     dash &&
     !/^(?:特别|特別)[篇编編]$/.test(dash[2].trim()) &&
     !isAliasSeasonQualifier(dash[2]) &&
-    ((language(dash[1]) !== language(dash[2]) &&
+    ((language(dash[1]) !== dashRightLanguage &&
       !/[A-Za-z]{2,}\s*$/.test(dash[1])) ||
       (!/^[A-Z\d]{1,4}$/.test(dash[1].trim()) &&
         language(dash[1]) === "latin" &&
-        language(dash[2]) !== "latin") ||
+        dashRightLanguage !== "latin") ||
       (/^\d{3,4}\s+[A-Za-z]/.test(dash[2]) &&
         !/^\d{4}\s+(?:Spring|Summer|Fall|Autumn|Winter)$/i.test(dash[2]))) &&
     !/\s-\s*$/.test(dash[2])
@@ -1261,8 +1290,14 @@ export function parseTorrentNames(
       firstEpisode &&
       /^\d{3,4}(?:-\d{3,4})?$/.test(blocks[first + 1]?.text ?? "") &&
       !blocks[first + 2]?.wrapper &&
-      /\p{L}.+\s+\d{1,3}\s*$/u.test(blocks[first + 2]?.text ?? "");
+      /\p{L}.+\s+\d{1,3}(?:\s+Extended)?\s*$/iu.test(
+        blocks[first + 2]?.text ?? ""
+      );
     const firstSpecial = /^[\[【](?:OVA|OAD|SP)[\]】]/i.test(after);
+    const leadingVersionTitle =
+      /^(?:导演|導演)剪[辑輯]版[(（](?:上|下)[)）]$/.test(
+        blocks[first + 1]?.text.trim() ?? ""
+      );
     const remainingNames = blocks
       .slice(first + 1)
       .filter(
@@ -1306,6 +1341,7 @@ export function parseTorrentNames(
       (groupWord.test(block.text) ||
         ((!firstEpisode || leadingCoverage) &&
           !firstSpecial &&
+          !leadingVersionTitle &&
           !blocks
             .slice(0, first)
             .some((piece) => /^\d{6}[-~]\d{6}$/.test(piece.text)) &&
@@ -1394,15 +1430,18 @@ export function parseTorrentNames(
       : ordinary;
   // 前置归档编号不代替后面正文中的本地集号，仅用于划分名称。
   const coverageBlock = blocks.find(
-    (block) =>
+    (block, index) =>
       (block.wrapper === "[" || block.wrapper === "【") &&
       /^\d{3,4}(?:-\d{3,4})?$/.test(block.text) &&
-      block.start <=
+      ((block.start <=
         (options.episode?.index ??
           (marker ? marker.start + origin : input.length)) &&
-      block.end >=
-        (options.episode?.index ??
-          (marker ? marker.start + origin : input.length))
+        block.end >=
+          (options.episode?.index ??
+            (marker ? marker.start + origin : input.length))) ||
+        (!options.episode &&
+          !marker &&
+          blocks.slice(0, index).every((piece) => metadata(piece.text))))
   );
   const coverageFollowing =
     coverageBlock && blocks[blocks.indexOf(coverageBlock) + 1];
@@ -1410,14 +1449,32 @@ export function parseTorrentNames(
     coverageFollowing && !coverageFollowing.wrapper
       ? matchEpisode(input.slice(coverageFollowing.start))
       : undefined;
+  const coverageLocalNumber =
+    coverageFollowing &&
+    !coverageFollowing.wrapper &&
+    metadata(blocks[blocks.indexOf(coverageFollowing) + 1]?.text ?? "")
+      ? coverageFollowing.text.match(
+          /^\s*\p{L}.+?\s+(\d{1,3})(?:\s+Extended)?\s*$/iu
+        )
+      : undefined;
+  const coverageLocalStart =
+    coverageLocalNumber && coverageFollowing
+      ? coverageFollowing.start +
+        coverageLocalNumber.index! +
+        coverageLocalNumber[0].lastIndexOf(coverageLocalNumber[1])
+      : undefined;
   // 数字后紧接作品名称词语而没有技术后缀时，可能是数字开头的别名。
   const detectedStart = namedSpecialEpisode
     ? specialStart + input.slice(specialStart, specialEnd).indexOf("-")
+    : coverageLocalStart !== undefined
+    ? coverageLocalStart
     : followingEpisode && coverageFollowing
     ? followingEpisode.start + coverageFollowing.start
     : options.episode?.index ?? (marker ? marker.start + origin : input.length);
   const detectedEnd = namedSpecialEpisode
     ? specialEnd
+    : coverageLocalStart !== undefined && coverageLocalNumber
+    ? coverageLocalStart + coverageLocalNumber[1].length
     : followingEpisode && coverageFollowing
     ? followingEpisode.end + coverageFollowing.start
     : options.episode
@@ -1600,6 +1657,23 @@ export function parseTorrentNames(
     if (soundtrackWork) text = soundtrackWork[1];
     if (block.wrapper && /^(?:-\d+|Episodes?\s*)$/i.test(text.trim())) continue;
     const afterEpisode = block.start >= episodeEnd && episodeEnd < input.length;
+    if (
+      block.wrapper &&
+      /^Fixed$/i.test(text.trim()) &&
+      aliases.length &&
+      (afterEpisode || hasTechnicalGap(blocks, blocks.indexOf(block)))
+    )
+      continue;
+    if (
+      block.wrapper &&
+      /^(?:导演|導演)剪[辑輯]版[(（](?:上|下)[)）]$/.test(text.trim()) &&
+      aliases.length &&
+      !hasTechnicalGap(blocks, blocks.indexOf(block))
+    ) {
+      const gap = input.slice(0, block.start).match(/\s*$/)?.[0] ?? "";
+      aliases[aliases.length - 1] += gap + block.wrapper + text + block.closer;
+      continue;
+    }
     // 俄语名称字段中的编号电视版本保留原文，只绑定紧邻的前名。
     if (
       (block.wrapper === "[" || block.wrapper === "【") &&
@@ -1700,7 +1774,7 @@ export function parseTorrentNames(
       continue;
     if (
       block.wrapper &&
-      /^(?:S\d+|Season\s*\d+(?:\s+pt[.]?\s*\d+)?|\d+(?:st|nd|rd|th)\s+Season|第[一二三四五六七八九十\d]+[季期])$/i.test(
+      /^(?:S\d+|Season\s*\d+(?:\s+pt[.]?\s*\d+)?|Partie\s*\d+|\d+(?:st|nd|rd|th)\s+Season|第[一二三四五六七八九十\d]+[季期])$/i.test(
         text
       ) &&
       aliases.length &&
@@ -1744,6 +1818,10 @@ export function parseTorrentNames(
     }
     if (
       (!afterEpisode ||
+        (/^(?:19|20)\d{2}$/.test(text) &&
+          /(?<=\d)\s*[-~～]\s*\d/.test(input.slice(episodeStart, episodeEnd)) &&
+          /^\s*$/.test(input.slice(episodeEnd, block.start)) &&
+          !hasTechnicalGap(blocks, blocks.indexOf(block))) ||
         /[|｜]/.test(blocks[blocks.indexOf(block) - 1]?.text ?? "")) &&
       !/\(Movie\)\s*$/i.test(input.slice(0, block.start)) &&
       (block.wrapper === "(" || block.wrapper === "（") &&
@@ -2036,7 +2114,9 @@ export function parseTorrentNames(
           metadata(followingBlock.text) &&
           technical.test(followingBlock.text)))
     ) {
-      const episodeCaption = text.match(/^(.+?)\s+\d{2,3}\s+[-–]\s+(.+)$/);
+      const episodeCaption = trimTechnicalTail(text).match(
+        /^(.+?)\s+\d{2,3}\s+[-–]\s+(.+)$/
+      );
       if (
         episodeCaption &&
         !/\b(?:Movie|Film|Season|Part|Vol[.]?)\s*$/i.test(episodeCaption[1])
@@ -2044,6 +2124,14 @@ export function parseTorrentNames(
         text = episodeCaption[1];
     }
     text = trimTechnicalTail(text);
+    if (
+      !block.wrapper &&
+      episodeStart === input.length &&
+      followingBlock?.wrapper &&
+      metadata(followingBlock.text) &&
+      !/^(?:19|20)\d{2}(?:[-–](?:19|20)\d{2})?$/.test(followingBlock.text)
+    )
+      text = text.replace(/\s+(?:The\s+)?Complete Series$/i, "");
     if (!block.wrapper && /^\s*\d+(?:\s*[,，]\s*\d+)*\s*$/.test(text)) continue;
     if (!block.wrapper) {
       const year = text.match(/\s+((?:19|20)\d{2})$/)?.[1];
@@ -2072,6 +2160,7 @@ export function parseTorrentNames(
         // 构建号与版本号属于产品名称，三四位集数还需明确的视频技术块作证。
         if (
           /^(?:19|20)\d{2}$/.test(number) ||
+          /\s+[-–]\s+(?:The|A|An)\s+\p{L}.+\s+\p{L}/iu.test(prefix) ||
           /\b(?:Build|Version|Ver[.]?|Revision|Rev[.]?|Release)\s*#?\s*$|(?:版本(?:号|號)?|构建(?:号|號)?)\s*$/i.test(
             prefix
           ) ||
@@ -2100,7 +2189,7 @@ export function parseTorrentNames(
         text = text.replace(/\s+\d{2,3}\s*$/, "");
     }
     if (
-      /^(?:[-–]\s*)?(?:S\d+|Season\s*\d+|第[一二三四五六七八九十\d]+[季期]|\d+(?:st|nd|rd|th)\s+Season)$/i.test(
+      /^(?:[-–]\s*)?(?:S\d+|Season\s*\d+|Partie\s*\d+|第[一二三四五六七八九十\d]+[季期]|\d+(?:st|nd|rd|th)\s+Season)$/i.test(
         text.trim()
       ) &&
       aliases.length
@@ -2109,6 +2198,11 @@ export function parseTorrentNames(
         (block.text.match(/^\s*/)?.[0] ?? "") + text.trim();
       continue;
     }
+    if (
+      /^\s*Seasons?\s*$/i.test(text) &&
+      /\bS\d+\s*[+]\s*S\d+\b/i.test(block.text)
+    )
+      continue;
     if (!text || metadata(text)) continue;
     if (
       (block.wrapper === "(" || block.wrapper === "（") &&
@@ -2154,10 +2248,14 @@ export function parseTorrentNames(
         !metadata(following.text) &&
         !/^\s*[／/\\-]/.test(following.text)
       ) {
-        const suffix = input.slice(
-          following.start,
-          Math.min(following.end, episodeStart)
-        );
+        const suffix = input
+          .slice(following.start, Math.min(following.end, episodeStart))
+          .replace(
+            following.end > episodeStart && episodeStart < input.length
+              ? /\s+[-–]\s*$/
+              : /(?!)/,
+            ""
+          );
         const combined = aliases.pop()! + suffix.trimEnd();
         aliases.push(...splitAliases(combined));
         following.text = "";

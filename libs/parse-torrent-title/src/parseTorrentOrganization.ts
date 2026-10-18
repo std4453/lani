@@ -14,6 +14,9 @@ const knownNames = [
   "Asuka♥Shinji",
   "ARR-JE-XenoCrypt",
   "Lord Karasuma",
+  "Inka",
+  "Orphan",
+  "Blu-Flash",
   "AMF",
   "SnF",
   "BakeSubs",
@@ -329,6 +332,7 @@ const knownHyphenJoints = new Set([
   "amf-snf",
   "bakesubs-yna",
   "diogo4d-nf93",
+  "inka-orphan",
 ]);
 const nameSuffix =
   /(?:字幕[组組社]|[汉漢]化[组組]|[发發]布[组組]|搬[运運][组組]|制作[组組]|工作室|压制部|手抄部|后援会|後援會|摆烂组|擺爛組|机翻组|機翻組|字幕屋|字幕團|字幕团|字幕站|字幕坊|[\w\p{Script=Han} -](?:subs?|raws?|studio|team|production|fansub)|制作)$/iu;
@@ -349,6 +353,11 @@ const deliveryAttribute =
 const subtitleDescription =
   /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:eng?|english|jpn?|japanese|spa|spanish|fre|fra|french|ger|german|ita|italian|por|portuguese|rus|russian|ara|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
 const versionLabel = /^(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版$/i;
+const compactCredit =
+  /^[\p{Script=Latin}\p{N}][\p{Script=Latin}\p{M}\p{N}._'’\-]*$/u;
+// 只匹配完整的编码、声道与位深字段，不按编码前缀排除含数字的品牌。
+const technicalCompound =
+  /^(?:(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:[._-]?HD)?(?:[._-]?(?:MA|HRA))?)(?:[._-]?[1-9](?:\.[01])?(?:ch)?)?(?:[._-]?(?:8|16|24|32)[._-]?bits?)?|(?:HEVC|AVC|VVC|AV1|[XH][._-]?26[45])(?:[._-]?(?:8|10|12|16)[._-]?bits?)?)$/i;
 
 function isVersionCombination(text: string): boolean {
   const parts = text.split(joint).map((part) => part.trim());
@@ -483,6 +492,17 @@ function plausibleName(text: string): boolean {
     (!isMetadata(text) || strongName(text)) &&
     !/[\/／|｜:：<>\[\]【】]/.test(text) &&
     !/\b(?:S\d{1,2}E\d+|EP\d+|season\s+\d+|episode\s+\d+)\b/i.test(text)
+  );
+}
+
+function compactIdentity(text: string): boolean {
+  return (
+    compactCredit.test(text) &&
+    !isMetadata(text) &&
+    !languageWord.test(text) &&
+    !deliveryAttribute.test(text) &&
+    !technicalCompound.test(text) &&
+    !/^(?:DTS(?:HD)?|HD|MA|HRA|DualAudio|MultiAudio)$/i.test(text)
   );
 }
 
@@ -640,17 +660,25 @@ export function parseTorrentOrganization(
     const unambiguousStrong =
       strong && (!requiresLeadingContext || followingTitle);
     // 发行信息之后的末尾方括号允许紧凑拉丁署名；中文身份仍需词典或组名后缀。
+    const hyphenParts = block.text.split("-");
+    // 已知大写短署名可帮助辨认复合尾签；连字符本身不足以断定成员独立。
+    const anchoredCompound =
+      parts.length === 1 &&
+      hyphenParts.length > 1 &&
+      hyphenParts.some(
+        (part) => /^[A-Z0-9]{2,}$/.test(part) && known.has(part.toLowerCase())
+      ) &&
+      hyphenParts.every(compactIdentity);
     const trailingJoint =
       !block.round &&
       hasTitle &&
-      parts.length > 1 &&
-      /[&＆+]/.test(block.text) &&
-      block.text.split(joint).length === parts.length &&
+      (anchoredCompound ||
+        (parts.length > 1 &&
+          /[&＆+]/.test(block.text) &&
+          block.text.split(joint).length === parts.length)) &&
       parts.every(
         (part) =>
-          /^[\p{Script=Latin}\p{N}][\p{Script=Latin}\p{M}\p{N}._-]*$/u.test(
-            part
-          ) &&
+          compactCredit.test(part) &&
           !languageWord.test(part) &&
           !deliveryAttribute.test(part)
       ) &&
@@ -730,14 +758,24 @@ export function parseTorrentOrganization(
       parts: [productionCredit[1]],
     });
   }
-  // 字幕、字体补包明确说明适配来源时，只提取原文中的已知制作身份。
+  // 补包来源可带未知联合成员，但需有明确制作身份提供上下文。
   const subtitleCredits = input.matchAll(
     /\b(?:subs?|subtitles?)(?:\s*\+\s*fonts?)?\s+for\s+([^\[\]【】()]+?)(?=\s*[\[【(]|\.(?:zip|7z|rar|torrent)$|$)/gi
   );
   for (const credit of subtitleCredits) {
     const name = credit[1].trim();
-    const parts = partsOf(name);
-    if (parts.length && parts.every(strongName)) {
+    const parts = partsOf(name).filter((part) => !technicalCompound.test(part));
+    const jointSources =
+      parts.length > 1 &&
+      name.split(joint).length === parts.length &&
+      parts.some(strongName) &&
+      parts.every(
+        (part) =>
+          (strongName(part) || compactIdentity(part)) &&
+          !languageWord.test(part) &&
+          !deliveryAttribute.test(part)
+      );
+    if (parts.length && (parts.every(strongName) || jointSources)) {
       const start = credit.index! + credit[0].lastIndexOf(credit[1]);
       selected.push({ start, end: start + name.length, parts });
     }
