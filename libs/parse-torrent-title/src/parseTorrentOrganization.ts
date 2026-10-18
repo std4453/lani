@@ -2,6 +2,23 @@ import { Organization } from "./types";
 
 // 发布者词典只记录独立身份及同组复合写法，不记录作品名或作品与发布者的关联。
 const knownNames = [
+  "aprm",
+  "Diogo4D",
+  "AMF",
+  "SnF",
+  "BakeSubs",
+  "YnA",
+  "One Pace",
+  "SubsPlus+",
+  "ToonsHub",
+  "Kingmenu",
+  "S1PH3R",
+  "Trix",
+  "Doki",
+  "ARR",
+  "JG666",
+  "Ryūjin 竜神",
+  "D00oo00M",
   "ANi",
   "霜庭云花Sub",
   "绿茶字幕组",
@@ -294,6 +311,8 @@ const knownEntries = knownNames
   .map((name) => ({ name, lower: name.toLowerCase() }))
   .sort((left, right) => right.name.length - left.name.length);
 const known = new Set(knownEntries.map(({ lower }) => lower));
+// 已核实为不同制作身份的连字符联合署名；其他连字符仍属于原名。
+const knownHyphenJoints = new Set(["aprm-diogo4d", "amf-snf", "bakesubs-yna"]);
 const nameSuffix =
   /(?:字幕[组組社]|[汉漢]化[组組]|[发發]布[组組]|搬[运運][组組]|制作[组組]|工作室|压制部|手抄部|后援会|後援會|摆烂组|擺爛組|机翻组|機翻組|字幕屋|字幕團|字幕团|字幕站|字幕坊|[\w\p{Script=Han} -](?:subs?|raws?|studio|team|production|fansub)|制作)$/iu;
 const joint = /\s*(?:[&＆×+、\\]|\s[xX]\s|feat\.)\s*/i;
@@ -302,7 +321,10 @@ const role =
 const roleOnly =
   /^(?:(?:个人|個人|自)?(?:音[频頻]|视频|視頻|二次)?(?:[压壓]制|合成|封装|封裝|校[对對]|翻[译譯]|搬[运運])|自[压壓]|[转轉][载載]|整理搬运|整理搬運|自购自翻自压|[转轉](?:[运運发發])?|(?:个人|個人)[汉漢]化|自[购購]|自制(?:字幕)?|个人制作合集|個人製作合集)$/;
 const languageList =
-  /^(?:multi[-_ ]?subs?|(?:eng?|ger|german|jpn?|rus|fre|fra|spa|chs|cht)[-_ ]?subs?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
+  /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard\s+|soft\s+)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
+// 别名和技术说明常以字幕属性结尾；这些描述不能因末尾的 Sub(s) 成为身份。
+const subtitleDescription =
+  /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:english|spanish|french|german|italian|portuguese|russian)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$/i;
 const versionLabel = /^(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版$/i;
 
 function isVersionCombination(text: string): boolean {
@@ -356,6 +378,10 @@ function isMetadata(text: string): boolean {
     ) ||
     /\bver\.$/i.test(text) ||
     languageList.test(text) ||
+    (subtitleDescription.test(text) &&
+      (/[,，;；]/.test(text) ||
+        /^(?:multi[-_ ]?|[MD]-|hard\s+|soft\s+)/i.test(text))) ||
+    /^(?:RAW|DVDISO|\d+DVDISO|[0-9A-F]{8})$/i.test(text) ||
     /^(?:BT|磁力|种子|種子|迅雷)[\s_-]?(?:下载|下載)(?:$|[\s:：])/i.test(
       text
     ) ||
@@ -412,8 +438,9 @@ function strongName(text: string): boolean {
     (/^[^\s@\[\]【】]+@[A-Za-z0-9][A-Za-z0-9._-]*$/.test(text) &&
       !/^\d{3,4}[pi]?@\d+(?:\.\d+)?fps$/i.test(text)) ||
     (!languageList.test(text) &&
+      !subtitleDescription.test(text) &&
       nameSuffix.test(text.replace(/\s*[（(][^）)]*[）)]$/, "")) &&
-      !/^(?:WEB(?:[-_. ]?(?:DL|RIP))?|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AVC|AAC|FLAC|OPUS|[HX][ ._-]?26[45])(?:\b|_|\s|$)/i.test(
+      !/^(?:\d{3,4}(?:[pi]|(?=\s|_|$))|[248]K|WEB(?:[-_. ]?(?:DL|RIP))?|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AV1|AVC|AAC|FLAC|OPUS|PCM|[HX][ ._-]?26[45])(?:\b|_|\s|$)/i.test(
         text
       ))
   );
@@ -434,10 +461,19 @@ function partsOf(text: string): string[] {
     text = text.replace(subtitleSource, "").replace(/字幕$/, "").trim();
   if (isVersionCombination(text)) return [];
   if (known.has(text.trim().toLowerCase())) return [text.trim()];
-  const fragments = text.split(joint);
+  // 末尾的加号可能属于品牌；只有两侧都有身份时才是联合分隔符。
+  const trailingDecoration = text.match(/\++$/)?.[0] || "";
+  const fragments = text
+    .slice(0, text.length - trailingDecoration.length)
+    .split(joint);
+  if (trailingDecoration && fragments.length)
+    fragments[fragments.length - 1] += trailingDecoration;
   const roleContext = fragments.some((part) => roleOnly.test(part.trim()));
   return fragments
     .map((part) => cleanPart(part, roleContext))
+    .flatMap((part) =>
+      knownHyphenJoints.has(part.toLowerCase()) ? part.split("-") : [part]
+    )
     .filter((part) => plausibleName(part));
 }
 
@@ -467,10 +503,31 @@ export function parseTorrentOrganization(
   const selected: { start: number; end: number; parts: string[] }[] = [];
   let hasTitle = false;
   let cursor = 0;
+  // 缺失首个左括号时，用紧邻的完整信息块恢复前署名，不跨过作品正文。
+  const incompletePrefix = input.match(/^([^\[\]【】\s]{1,64})\](?=\s*\[)/);
+  const incompleteFollowing = incompletePrefix
+    ? input.slice(incompletePrefix[0].length).replace(bracket, "").trim()
+    : "";
+  if (
+    incompletePrefix &&
+    plausibleName(incompletePrefix[1]) &&
+    ((incompleteFollowing && !isMetadata(incompleteFollowing)) ||
+      blocks.some((block) => !isMetadata(block.text)))
+  ) {
+    selected.push({
+      start: 0,
+      end: incompletePrefix[1].length,
+      parts: [incompletePrefix[1]],
+    });
+    cursor = incompletePrefix[0].length;
+  }
   for (let index = 0; index < blocks.length; index++) {
     const block = blocks[index];
     const before = input
       .slice(cursor, block.open)
+      .replace(/^[^\[【]*[\]】]/, (prefix) =>
+        roleOnly.test(prefix.slice(0, -1).trim()) ? "" : prefix
+      )
       .replace(/[\u200b\ufeff★☆\s&＆×+、]/g, "");
     if (before && !isMetadata(before) && !/^[（(][^）)]*[）)]$/.test(before))
       hasTitle = true;
@@ -515,6 +572,7 @@ export function parseTorrentOrganization(
         followingTitle = true;
         break;
       }
+      if (next && /^(?:19|20)\d{2}$/.test(next.text)) continue;
       if (
         next &&
         /^(?:(?:第)?\d+(?:[-~～–.]\d+)?(?:集|话|話|END|FIN)?|S\d+E\d+|EP?\d+|OVA|OAD|SP)$/i.test(
@@ -560,7 +618,8 @@ export function parseTorrentOrganization(
     prefix &&
     !/\s[-–]|\b(?:S\d+|E(?:P)?\d+|\d{3,4}p|AAC|FLAC|WEB|HEVC|AVC)\b/i.test(
       prefix
-    )
+    ) &&
+    !/\b\d+\s+subs?$/i.test(prefix)
   ) {
     const parts = partsOf(prefix);
     if (parts.length && parts.every(strongName)) {
@@ -568,18 +627,22 @@ export function parseTorrentOrganization(
       selected.unshift({ start, end: start + prefix.length, parts });
     }
   }
-  // Scene 尾签必须紧接明确的编码/音轨技术标记，普通作品副题中的连字符不构成署名证据。
-  const scene = input.match(
-    /(?:^|[\s._\])])(?:AAC(?:\d(?:\.\d)?)?|FLAC|OPUS|AC-?3|E-?AC-?3|DDP?(?:\d(?:\.\d)?)?|DTS(?:-HD)?|AVC|HEVC|[xXhH][ ._-]?26[45])(?:[. _]+(?:MULTi|DUAL))?\s*-([A-Za-z0-9][A-Za-z0-9._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?[\]】)）]*(?:\s+\d+(?:\.\d+)?\s*[KMGT]i?B)?(?:\s*\((?:CUSTOM|PROPER|REPACK|INTERNAL|[^()]{0,40}(?:字幕|语|語|CHS|CHT)[^()]{0,40})\))?$/i
+  // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
+  const scenes = input.matchAll(
+    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:-HD)?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?\s*-([A-Za-z0-9][A-Za-z0-9._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/gi
   );
-  if (
-    scene &&
-    !/^(?:NOGRP|NoGroup|HD|MA|HRA|HI|LC|HE|\d+(?:\.\d+)*|\d+bit|HDR\d*|SDR)$/i.test(
-      scene[1]
-    )
-  ) {
-    const start = input.lastIndexOf(scene[1]);
-    selected.push({ start, end: start + scene[1].length, parts: [scene[1]] });
+  for (const scene of scenes) {
+    if (
+      !/^(?:NOGRP|NoGroup|HD(?:[.-]MA)?|MA|HRA|HI|LC|HE|AC-?3|E-?AC-?3|AAC|FLAC|OPUS|PCM|AV1|AVC|HEVC|Subs?|\d+(?:\.\d+)*(?:ch)?|\d+bits?|yuv\d+(?:p\d+)?|HDR\d*|SDR)$/i.test(
+        scene[1]
+      ) &&
+      !/^(?:yuv\d+(?:p\d*)?|(?:\d+)?bits?|trellis\d+|HDMA(?:\d(?:\.\d)?ch)?)(?:[._-](?:AAC|FLAC|OPUS|PCM|AVC|HEVC))*$/i.test(
+        scene[1]
+      )
+    ) {
+      const start = scene.index! + scene[0].lastIndexOf(scene[1]);
+      selected.push({ start, end: start + scene[1].length, parts: [scene[1]] });
+    }
   }
   // 按已核实身份匹配有分隔的裸尾签，不把它与某个作品绑定。
   const tail = input.trimEnd();
