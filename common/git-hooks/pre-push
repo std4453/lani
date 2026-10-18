@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+# 按实际推送的引用检查，兼容多分支推送和显式 refspec。
+while read -r local_ref local_oid remote_ref remote_oid; do
+  # 允许删除远端旧分支。
+  if [ "$local_ref" = '(delete)' ]; then
+    continue
+  fi
+
+  case "$local_ref" in
+    refs/heads/codex/*) blocked=true ;;
+    *) blocked=false ;;
+  esac
+  case "$remote_ref" in
+    refs/heads/codex/*) blocked=true ;;
+  esac
+
+  if [ "$blocked" = true ]; then
+    printf '%s\n' '分支名需要遵循 Conventional Commit，禁止使用 `codex/` 作为分支名' >&2
+    exit 1
+  fi
+done
+
+exit 0

@@ -44,6 +44,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22.23.2"
+      - name: Test Git hooks
+        run: node --test common/scripts/tests/pre-push.test.ts
       - uses: actions/cache@v4
         with:
           path: common/temp/pnpm-store
