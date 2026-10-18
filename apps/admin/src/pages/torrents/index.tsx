@@ -110,16 +110,16 @@ function useColumns() {
                 {r.title}
               </Typography.Text>
               {r.permalink && (
-                <Button
-                  type="link"
+                <Typography.Link
                   className={styles.permalinkButton}
-                  icon={<ExportOutlined />}
                   href={r.permalink}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="打开种子详情"
                   title="打开种子详情"
-                />
+                >
+                  <ExportOutlined />
+                </Typography.Link>
               )}
             </span>
           ),
