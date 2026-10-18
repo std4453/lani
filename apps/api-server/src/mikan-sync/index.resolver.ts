@@ -11,9 +11,4 @@ export class MikanSyncResolver {
   async syncMikan() {
     return this.mikansyncService.syncMikan();
   }
-
-  @Mutation(() => Int)
-  async syncMikanHistory() {
-    return this.mikansyncService.syncMikanHistory();
-  }
 }

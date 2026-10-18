@@ -1,8 +1,7 @@
-import { PrismaService } from '@/common/prisma.service';
+import { TorrentSyncService } from '@/torrent-sync/index.service';
 import { FetchMikanService } from '@/fetch-mikan/index.service';
-import { ParseTorrentService } from '@/parse-torrent/index.service';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
-import { Prisma } from '@lani/db';
+import { TorrentChannel } from '@lani/db';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
@@ -11,61 +10,9 @@ export class MikanSyncService {
   private readonly logger = new Logger(MikanSyncService.name);
 
   constructor(
-    private prisma: PrismaService,
     private fetchMikanService: FetchMikanService,
-    private parseTorrentService: ParseTorrentService,
+    private torrentSync: TorrentSyncService,
   ) {}
-
-  private async insertNewTorrents(
-    items: Awaited<ReturnType<FetchMikanService['fetchMikanRSSItems']>>,
-  ) {
-    const hashes = new Set<string>();
-    const uniqueItems = items.filter(({ hash }) => {
-      if (hashes.has(hash)) {
-        return false;
-      }
-      hashes.add(hash);
-      return true;
-    });
-    if (uniqueItems.length === 0) {
-      return 0;
-    }
-
-    // 插入前过滤已有 hash，避免重复的 RSS 条目消耗自增 ID
-    const existing = await this.prisma.torrent.findMany({
-      where: { hash: { in: [...hashes] } },
-      select: { hash: true },
-    });
-    const existingHashes = new Set(existing.map(({ hash }) => hash));
-    const newItems = uniqueItems.filter(
-      ({ hash }) => !existingHashes.has(hash),
-    );
-    if (newItems.length === 0) {
-      return 0;
-    }
-
-    const { count } = await this.prisma.torrent.createMany({
-      data: newItems.map(
-        ({
-          hash,
-          publishDate,
-          size,
-          title,
-          torrentLink,
-        }): Prisma.TorrentCreateManyInput => ({
-          title,
-          torrentLink,
-          size,
-          publishDate,
-          hash,
-          ...this.parseTorrentService.titleToCreateInput(title),
-        }),
-      ),
-      // 查重后仍可能有其他同步任务插入相同 hash，由数据库处理并发冲突
-      skipDuplicates: true,
-    });
-    return count;
-  }
 
   @Cron('*/5 * * * *')
   @LaniFilterCron()
@@ -77,7 +24,10 @@ export class MikanSyncService {
     this.logger.log('Syncing mikan...');
     const items = await this.fetchMikanService.fetchMikanRSSItems('Classic');
     this.logger.verbose(`Fetch mikan success, got ${items.length} items`);
-    const count = await this.insertNewTorrents(items);
+    const count = await this.torrentSync.insert(
+      items.map(({ link, ...item }) => ({ ...item, permalink: link })),
+      TorrentChannel.MIKAN,
+    );
     this.logger.log(`Sync mikan success, ${count} items new`);
     return count;
   }
@@ -103,7 +53,10 @@ export class MikanSyncService {
     this.logger.verbose(
       `Fetch all mikan history success, got ${items.length} items`,
     );
-    const count = await this.insertNewTorrents(items);
+    const count = await this.torrentSync.insert(
+      items.map(({ link, ...item }) => ({ ...item, permalink: link })),
+      TorrentChannel.MIKAN,
+    );
     this.logger.log(`Sync mikan history success, ${count} items new`);
     return count;
   }

@@ -1,6 +1,12 @@
 .title {
-  word-break: break-all;
+  display: inline-block;
+  max-width: 480px;
   white-space: normal;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 767px) {
+    max-width: 280px;
+  }
 }
 
 .tag {
@@ -12,7 +18,8 @@
   margin-bottom: 3px;
   cursor: pointer;
 
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, border-color 150ms ease,
+    color 150ms ease;
 
   color: var(--tag-color);
   background-color: var(--tag-bg-color);
@@ -28,6 +35,25 @@
 .tagContainer {
   display: flex;
   flex-wrap: wrap;
+  max-width: 240px;
   margin-top: -3px;
   margin-bottom: -3px;
+}
+
+.root {
+  height: 100%;
+  min-height: 0;
+
+  :global(.ant-table-cell) {
+    white-space: nowrap;
+  }
+}
+
+.copyButton {
+  height: auto;
+  padding: 0;
+}
+
+.permalinkButton {
+  margin-left: 4px;
 }

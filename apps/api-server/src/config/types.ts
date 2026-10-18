@@ -1,3 +1,4 @@
+import { torrentsConfig } from './torrents';
 import {
   obj,
   opt,
@@ -175,6 +176,7 @@ const featuresConfig = opt(
 
 export const rootConfig = root({
   network: networkConfig,
+  torrents: torrentsConfig,
   postgresUrl: str(),
   s3: s3Config,
   downloadClient: downloadClientConfig,

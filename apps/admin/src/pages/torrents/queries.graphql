@@ -1,5 +1,8 @@
 fragment torrentFields on Torrent {
   id
+  displayId
+  channel
+  permalink
   publishDate
   size
   title
@@ -39,6 +42,14 @@ query ListTorrents(
   }
 }
 
-mutation SyncMikanHistory {
-  syncMikanHistory
+mutation SyncTorrentHistory {
+  syncTorrentHistory
+}
+
+query TorrentHistorySyncState($id: String!) {
+  torrentHistorySyncState(id: $id) {
+    running
+    added
+    error
+  }
 }
