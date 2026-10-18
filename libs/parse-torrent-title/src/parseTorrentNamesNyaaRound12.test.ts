@@ -25,6 +25,7 @@ describe("最近十天第十二轮名称边界", () => {
       ["Archive S789012E12 Adventure"],
     ],
     ["[Publisher] Archive XS789012E12 [1080p]", ["Archive XS789012E12"]],
+    ["[Publisher] Archive S12345E12 [HEVC-Team]", ["Archive S12345E12"]],
     [
       "[Publisher] Archive - S789012E12 [Golden Curse]",
       ["Archive - S789012E12 [Golden Curse]"],

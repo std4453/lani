@@ -1918,7 +1918,7 @@ export function parseTorrentNames(
         (wideRange && cjk.test(blocks[index + 1]?.text ?? "")))
     );
   });
-  // 超长季号只在完整 S…E… 字段后紧接技术包装时划分名称，不推断其编号含义。
+  // 超长季号只在完整 S…E… 字段后紧接含清晰度的技术包装时划分名称，不推断其编号含义。
   const longSeasonEpisode = blocks
     .map((block, index): Segment | undefined => {
       const following = blocks[index + 1];
@@ -1926,7 +1926,8 @@ export function parseTorrentNames(
         block.wrapper ||
         !following?.wrapper ||
         !metadata(following.text) ||
-        !technical.test(following.text)
+        !technical.test(following.text) ||
+        !/\b(?:\d{3,4}[pi]|[248]K|\d{3,4}[x×]\d{3,4})\b/i.test(following.text)
       )
         return undefined;
       const code = /\bS\d{5,}E\d{1,4}(?:v\d+)?(?=\s*$)/i.exec(block.text);
