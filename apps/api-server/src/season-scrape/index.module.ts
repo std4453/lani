@@ -7,6 +7,7 @@ import { SeasonScrapeService } from '@/season-scrape/SeasonScrapeService';
 import { SkyhookModule } from '@/season-scrape/skyhook/index.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { BangumiDataService } from './bangumi-data/BangumiDataService';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ConfigModule } from '@nestjs/config';
     ScrapeMetadataResolver,
     EpisodeScrapeService,
     SeasonScrapeService,
+    BangumiDataService,
   ],
 })
 export class SeasonScrapeModule {}

@@ -1,5 +1,10 @@
 import { PrismaService } from '@/common/prisma.service';
-import { DateFormat } from '@/constants/date-format';
+import { BangumiDataService } from './bangumi-data/BangumiDataService';
+import {
+  getEpisodeAirTime,
+  isValidAirTime,
+  resolveEpisodeClock,
+} from './episode-air-time';
 import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
 import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
@@ -15,6 +20,7 @@ export class EpisodeScrapeService {
     private skyhook: SkyhookSeasonService,
     private bangumi: BangumiSeasonService,
     private prisma: PrismaService,
+    private bangumiData: BangumiDataService,
   ) {}
 
   async syncEpisodeData({
@@ -77,6 +83,16 @@ export class EpisodeScrapeService {
       );
     }
 
+    // 每轮同步只取一次缓存快照，避免刷新发生在两集之间时采用不同的时分。
+    const schedule =
+      !isValidAirTime(seasonAirTime) && bangumiId && result.episodes?.length
+        ? await this.bangumiData.getSchedule(bangumiId)
+        : undefined;
+    const clock = resolveEpisodeClock(
+      seasonAirTime,
+      result.episodes ?? [],
+      schedule,
+    );
     const existing = await this.prisma.episode.findMany({
       where: { seasonId },
     });
@@ -125,8 +141,7 @@ export class EpisodeScrapeService {
       }
       const current = identity ?? numbered;
       if (current) matchedIds.add(current.id);
-      const rawAirTime =
-        this.getEpisodeAirTime(seasonAirTime, episode.airDate) ?? null;
+      const rawAirTime = getEpisodeAirTime(clock, episode.airDate);
       const data = {
         episodeType,
         episodeNumber,
@@ -164,20 +179,5 @@ export class EpisodeScrapeService {
       }),
     ]);
     return true;
-  }
-
-  private getEpisodeAirTime(airTime: string, airDate: string | undefined) {
-    if (!airDate) {
-      return undefined;
-    }
-    // 由于bangumi数据里没有播出时间，默认设置为23:00
-    // TODO: 想办法从skyhook拿播出时间
-    const seasonAirTime = airTime || '23:00';
-    const airTimeHours = parseInt(seasonAirTime.substring(0, 2));
-    const airTimeMinutes = parseInt(seasonAirTime.substring(3, 5));
-    const combinedAirTime = dayjs(airDate, DateFormat.NothingDay)
-      .add(airTimeHours, 'h')
-      .add(airTimeMinutes, 'm');
-    return combinedAirTime.toDate();
   }
 }
