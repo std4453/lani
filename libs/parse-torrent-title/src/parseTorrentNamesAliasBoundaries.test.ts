@@ -2,7 +2,7 @@ import { parseTorrentNames } from "@/parseTorrentNames";
 
 const aliases = (input: string) => parseTorrentNames(input).title.aliases;
 
-describe("第七轮别名结构回归", () => {
+describe("别名分隔与作品标点", () => {
   test.each([
     [
       "[字幕组][【支持的【星星】的孩子】_追星的孩子_Star Child][01][1080p]",
