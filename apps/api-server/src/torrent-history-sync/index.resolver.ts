@@ -1,5 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { TorrentHistorySync } from './index.model';
+import { TorrentHistorySyncState } from './index.model';
 import { TorrentHistorySyncService } from './index.service';
 
 @Resolver()
@@ -11,7 +11,7 @@ export class TorrentHistorySyncResolver {
     return this.service.start();
   }
 
-  @Query(() => TorrentHistorySync)
+  @Query(() => TorrentHistorySyncState)
   torrentHistorySyncState(@Args('id') id: string) {
     return this.service.status(id);
   }

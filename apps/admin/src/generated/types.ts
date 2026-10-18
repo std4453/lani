@@ -2268,7 +2268,7 @@ export type Query = {
   torrent?: Maybe<Torrent>;
   torrentByHash?: Maybe<Torrent>;
   torrentById?: Maybe<Torrent>;
-  torrentHistorySyncState: TorrentHistorySync;
+  torrentHistorySyncState: TorrentHistorySyncState;
 };
 
 
@@ -4109,8 +4109,8 @@ export type TorrentFilter = {
   torrentLink?: InputMaybe<StringFilter>;
 };
 
-export type TorrentHistorySync = {
-  __typename?: 'TorrentHistorySync';
+export type TorrentHistorySyncState = {
+  __typename?: 'TorrentHistorySyncState';
   added: Scalars['Int'];
   error?: Maybe<Scalars['String']>;
   running: Scalars['Boolean'];
@@ -4896,7 +4896,7 @@ export type TorrentHistorySyncStateQueryVariables = Exact<{
 }>;
 
 
-export type TorrentHistorySyncStateQuery = { __typename?: 'Query', torrentHistorySyncState: { __typename?: 'TorrentHistorySync', running: boolean, added: number, error?: string | null } };
+export type TorrentHistorySyncStateQuery = { __typename?: 'Query', torrentHistorySyncState: { __typename?: 'TorrentHistorySyncState', running: boolean, added: number, error?: string | null } };
 
 export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 

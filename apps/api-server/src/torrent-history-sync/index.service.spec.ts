@@ -7,9 +7,12 @@ function setup() {
   const mikan = { syncMikanHistory: jest.fn().mockResolvedValue(3) };
   const nyaa = {
     syncNyaaHistory: jest.fn().mockImplementation(
-      () =>
+      (onAdded: (added: number) => void) =>
         new Promise((resolve) => {
-          complete = resolve;
+          complete = (count) => {
+            onAdded(count);
+            resolve(count);
+          };
         }),
     ),
   };
@@ -28,7 +31,7 @@ it('returns an ID immediately, starts both sources once and completes only after
   expect(mikan.syncMikanHistory).toHaveBeenCalledTimes(1);
   expect(nyaa.syncNyaaHistory).toHaveBeenCalledTimes(1);
   await flush();
-  expect(service.status(id)).toEqual({ running: true, added: 0, error: null });
+  expect(service.status(id)).toEqual({ running: true, added: 3, error: null });
   complete();
   await flush();
   expect(service.status(id)).toEqual({
@@ -53,7 +56,7 @@ it.each(['mikan', 'nyaa'] as const)(
     await flush();
     expect(service.status(id)).toEqual({
       running: false,
-      added: 0,
+      added: source === 'mikan' ? 7 : 3,
       error: expect.stringContaining('已入库的种子保留'),
     });
     expect(service.start()).not.toBe(id);
@@ -103,4 +106,31 @@ it('reports zero when both sources add no torrents', async () => {
   const id = service.start();
   await flush();
   expect(service.status(id)).toEqual({ running: false, added: 0, error: null });
+});
+
+it('reports committed pages while running and retains partial progress on failure', async () => {
+  const { service, nyaa } = setup();
+  let report: (added: number) => void;
+  let fail: (error: Error) => void;
+  nyaa.syncNyaaHistory.mockImplementationOnce((onAdded) => {
+    report = onAdded;
+    return new Promise((_, reject) => {
+      fail = reject;
+    });
+  });
+  const id = service.start();
+  await flush();
+  expect(service.status(id)).toEqual({ running: true, added: 3, error: null });
+  report!(2);
+  expect(service.status(id)).toEqual({ running: true, added: 5, error: null });
+  report!(0);
+  report!(4);
+  expect(service.status(id)).toEqual({ running: true, added: 9, error: null });
+  fail!(new Error('later page failed'));
+  await flush();
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 9,
+    error: expect.any(String),
+  });
 });

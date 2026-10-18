@@ -43,9 +43,11 @@ describe('Nyaa synchronization', () => {
   });
   it('fetches fixed history pages sequentially by category and shares an in-flight sync', async () => {
     const { service, axios } = setup();
-    const first = service.syncNyaaHistory();
+    const onAdded = jest.fn();
+    const first = service.syncNyaaHistory(onAdded);
     expect(service.syncNyaaHistory()).toBe(first);
     expect(await first).toBe(49);
+    expect(onAdded.mock.calls).toEqual(Array.from({ length: 49 }, () => [1]));
     const params = axios.get.mock.calls.map(([, options]) => options.params);
     expect(params[0]).toEqual({ c: '1_2', p: 1 });
     expect(params[29]).toEqual({ c: '1_2', p: 30 });
@@ -66,4 +68,21 @@ describe('Nyaa synchronization', () => {
     await service.syncNyaaHistory();
     expect(axios.get).toHaveBeenCalledTimes(3);
   });
+});
+
+it('reports only committed additions before the next page and preserves progress after a later failure', async () => {
+  const { service, axios, torrents } = setup();
+  const onAdded = jest.fn();
+  torrents.insert.mockResolvedValue(0).mockResolvedValueOnce(2);
+  axios.get
+    .mockResolvedValueOnce({ data: 'first' })
+    .mockImplementationOnce(() => {
+      expect(onAdded.mock.calls).toEqual([[2]]);
+      return Promise.reject(new Error('later page failed'));
+    });
+  await expect(service.syncNyaaHistory(onAdded)).rejects.toThrow(
+    '部分分类同步失败',
+  );
+  expect(onAdded.mock.calls.flat().reduce((sum, n) => sum + n, 0)).toBe(2);
+  expect(onAdded).toHaveBeenCalledTimes(20);
 });

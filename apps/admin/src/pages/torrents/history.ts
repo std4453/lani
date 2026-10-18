@@ -22,6 +22,7 @@ function waitForPoll(signal: AbortSignal) {
 export async function syncTorrentHistory(
   client: ApolloClient<object>,
   signal: AbortSignal,
+  onProgress: (added: number) => void,
 ) {
   const context = { fetchOptions: { signal } };
   const { data } = await client.mutate({
@@ -41,5 +42,6 @@ export async function syncTorrentHistory(
     const state = result.torrentHistorySyncState;
     if (state.error) throw new Error(state.error);
     if (!state.running) return state.added;
+    onProgress(state.added);
   }
 }

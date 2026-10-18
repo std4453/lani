@@ -92,15 +92,15 @@ export class NyaaSyncService {
     );
   }
 
-  syncNyaaHistory(): Promise<number> {
+  syncNyaaHistory(onAdded?: (added: number) => void): Promise<number> {
     if (this.history) return this.history;
-    this.history = this.fetchHistory().finally(() => {
+    this.history = this.fetchHistory(onAdded).finally(() => {
       this.history = undefined;
     });
     return this.history;
   }
 
-  private async fetchHistory() {
+  private async fetchHistory(onAdded?: (added: number) => void) {
     const results: PromiseSettledResult<number>[] = [];
     for (const [category, pages] of Object.entries(NYAA_HISTORY_PAGES)) {
       let count = 0;
@@ -111,6 +111,7 @@ export class NyaaSyncService {
           );
           const added = await this.torrents.insert(items, TorrentChannel.NYAA);
           count += added;
+          onAdded?.(added);
           if (!items.length) break;
         }
         this.logger.log(

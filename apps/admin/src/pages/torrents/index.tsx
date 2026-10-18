@@ -493,11 +493,21 @@ export default withAntdSearch(function Torrents() {
               onClick={async () => {
                 const controller = new AbortController();
                 historyAbort.current = controller;
-                const hide = message.loading('同步中，请稍候……', 0);
+                const key = 'torrent-history-sync';
+                const showProgress = (added: number) =>
+                  message.loading({
+                    key,
+                    content: `同步中，已新增 ${added} 条种子`,
+                    duration: 0,
+                  });
+                const hide = showProgress(0);
                 try {
                   const added = await syncTorrentHistory(
                     client,
                     controller.signal,
+                    (added) => {
+                      if (!controller.signal.aborted) void showProgress(added);
+                    },
                   );
                   if (controller.signal.aborted) return;
                   void message.success(`同步成功，新增 ${added} 条种子`);

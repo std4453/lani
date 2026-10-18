@@ -1,7 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
-export class TorrentHistorySync {
+export class TorrentHistorySyncState {
   @Field()
   running: boolean;
 

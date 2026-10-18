@@ -13,13 +13,16 @@ function setup() {
     }),
   };
   const controller = new AbortController();
+  const onProgress = jest.fn();
   return {
     client,
     controller,
+    onProgress,
     run: () =>
       syncTorrentHistory(
         client as unknown as ApolloClient<object>,
         controller.signal,
+        onProgress,
       ),
   };
 }
@@ -89,4 +92,36 @@ it('stops polling when the page is closed', async () => {
   await rejection;
   expect(client.query).not.toHaveBeenCalled();
   expect(jest.getTimerCount()).toBe(0);
+});
+
+it('publishes changing counts while keeping the task pending until completion', async () => {
+  const { client, run, onProgress } = setup();
+  client.query
+    .mockResolvedValueOnce({
+      data: {
+        torrentHistorySyncState: { running: true, added: 2, error: null },
+      },
+    })
+    .mockResolvedValueOnce({
+      data: {
+        torrentHistorySyncState: { running: true, added: 7, error: null },
+      },
+    });
+  let completed = false;
+  const promise = run().then((added) => {
+    completed = true;
+    return added;
+  });
+  await flush();
+  jest.advanceTimersByTime(2000);
+  await flush();
+  expect(onProgress.mock.calls).toEqual([[2]]);
+  expect(completed).toBe(false);
+  jest.advanceTimersByTime(2000);
+  await flush();
+  expect(onProgress.mock.calls).toEqual([[2], [7]]);
+  expect(completed).toBe(false);
+  jest.advanceTimersByTime(2000);
+  await expect(promise).resolves.toBe(10);
+  expect(onProgress).toHaveBeenCalledTimes(2);
 });
