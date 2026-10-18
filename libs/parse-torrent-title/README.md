@@ -21,6 +21,8 @@ parseTorrentNames("[Release Subs] 蓝色行星 / Blue Planet [Movie][1080p]");
 
 Nyaa 等发行格式支持技术参数后的 `|` 别名、带语言说明的括注别名列表、作品名内部方括号和数字连字符。`Weekly`、`Batch` 等完整发行标签会被过滤，同形词出现在标题正文中时保留。Scene 制作组尾签后可以继续出现别名或语言括注；`Multi-Subs` 等字幕属性不会成为独立署名。
 
+多个别名后的季限定只绑定原文中紧邻的前一个名称，例如 `A / B (Season 2)` 返回 `A`、`B (Season 2)`，不会给 `A` 补写季号。原有括号、dash 和名称内部限定保留；技术块后由 `|` 单独分隔的 `Season 2`、`S2` 属于发布说明，不回拼已有名称。单季码后的附赠说明（如 `S1+OVA`）只去掉附赠部分，保留 `S1`；正式季篇中的 `S01 Part1` 不按普通收录说明删除。
+
 默认 `parseTorrentTitle` 使用同一名称识别机制生成 `title.aliases`，保留原有的 `title.raw` 和位置字段用于原文定位；这些字段不承诺覆盖后来发现的尾部别名。显式提供 `separatorPairs`、`titleSeparatorChars` 或 `titleNonEnglishRegex` 时继续采用对应的自定义标题规则。独立 `parseTorrentNames` 的 `title.raw` 是识别出的名称以 `/` 连接后的展示文本，不是连续原文范围。
 
 名称识别不会改变剧集和字幕的判断路径。主解析器仍可能因缺少编号返回 `undefined`；API 持久化适配层此时回退到 `parseTorrentNames` 保存名称，同时维持原先的剧集、来源、格式和旧字幕列处理方式。持久化解析版本为 2；已有记录需经过重解析才会更新。
