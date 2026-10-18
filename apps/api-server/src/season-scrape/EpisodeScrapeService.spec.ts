@@ -185,7 +185,34 @@ it('没有 Bangumi 对照的 Skyhook 同步使用默认时间，不查索引', a
   );
 });
 
-it('明确设置的季度时分优先于作品级时间，手工剧集不参与同步', async () => {
+it.each([
+  ['21:30', '2026-10-02T13:30:00Z'],
+  ['00:00', '2026-10-01T16:00:00Z'],
+  ['24:00', '2026-10-02T16:00:00Z'],
+])(
+  '明确时分 %s 不查询 bangumi-data，手工剧集不参与同步',
+  async (airTime, expected) => {
+    const { prisma, sync, bangumiData } = setup(
+      [],
+      [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
+    );
+    bangumiData.getSchedule.mockResolvedValue({
+      begin: '2026-10-02T16:23:00Z',
+      broadcastAt: '2026-10-02T16:23:00Z',
+    });
+    await sync({ airTime });
+    expect(prisma.episode.create.mock.calls[0][0].data.rawAirTime).toEqual(
+      new Date(expected),
+    );
+    expect(bangumiData.getSchedule).not.toHaveBeenCalled();
+    jest.clearAllMocks();
+    await expect(sync({ episodesSource: 'MANUAL' })).resolves.toBe(false);
+    expect(prisma.episode.create).not.toHaveBeenCalled();
+    expect(bangumiData.getSchedule).not.toHaveBeenCalled();
+  },
+);
+
+it('无效季度时分仍查询 bangumi-data，而不是把非空字符串视为明确时间', async () => {
   const { prisma, sync, bangumiData } = setup(
     [],
     [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
@@ -194,14 +221,11 @@ it('明确设置的季度时分优先于作品级时间，手工剧集不参与�
     begin: '2026-10-02T16:23:00Z',
     broadcastAt: '2026-10-02T16:23:00Z',
   });
-  await sync({ airTime: '21:30' });
+  await sync({ airTime: '21:99' });
+  expect(bangumiData.getSchedule).toHaveBeenCalledTimes(1);
   expect(prisma.episode.create.mock.calls[0][0].data.rawAirTime).toEqual(
-    new Date('2026-10-02T13:30:00Z'),
+    new Date('2026-10-02T16:23:00Z'),
   );
-  jest.clearAllMocks();
-  await expect(sync({ episodesSource: 'MANUAL' })).resolves.toBe(false);
-  expect(prisma.episode.create).not.toHaveBeenCalled();
-  expect(bangumiData.getSchedule).not.toHaveBeenCalled();
 });
 it('跳过编号已占用且来源身份不同的剧集', async () => {
   const { prisma, sync } = setup(

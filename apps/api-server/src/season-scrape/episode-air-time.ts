@@ -26,6 +26,10 @@ function parseClock(value: string): number | undefined {
   return hours * 60 + minutes;
 }
 
+export function isValidAirTime(value: string): boolean {
+  return parseClock(value) !== undefined;
+}
+
 function parseIsoDate(value: string): Date | undefined {
   const match =
     /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(

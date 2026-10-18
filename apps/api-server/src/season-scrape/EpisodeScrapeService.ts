@@ -1,6 +1,10 @@
 import { PrismaService } from '@/common/prisma.service';
 import { BangumiDataService } from './bangumi-data/BangumiDataService';
-import { getEpisodeAirTime, resolveEpisodeClock } from './episode-air-time';
+import {
+  getEpisodeAirTime,
+  isValidAirTime,
+  resolveEpisodeClock,
+} from './episode-air-time';
 import { BangumiSeasonService } from '@/season-scrape/bangumi/index.service';
 import { PartialSeason } from '@/season-scrape/index.model';
 import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
@@ -81,7 +85,7 @@ export class EpisodeScrapeService {
 
     // 每轮同步只取一次缓存快照，避免刷新发生在两集之间时采用不同的时分。
     const schedule =
-      bangumiId && result.episodes?.length
+      !isValidAirTime(seasonAirTime) && bangumiId && result.episodes?.length
         ? await this.bangumiData.getSchedule(bangumiId)
         : undefined;
     const clock = resolveEpisodeClock(
