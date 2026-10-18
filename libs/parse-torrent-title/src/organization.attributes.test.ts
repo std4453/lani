@@ -114,22 +114,30 @@ describe("Nyaa 制作署名：配音属性、已核实联合与音轨尾签", ()
   });
 });
 
-describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", () => {
-  it.each([
-    "[OCR] Morning Story - 02.ass",
-    "[XML chapter files] Morning Story",
-    "Morning Story - 02 (English fansub).ass",
-    "Morning Story (Netflix Subs)",
-    "[Daisuki] Morning Story - 02 Subs",
-    "Seto no Hanayome subs [ENG]",
-    "Morning Story subs [ENG]",
-    "Morning Story - 02 [RippedSubs].ass",
-    "Morning Story - 02 [Subtitle-Ohys_Raws].ass",
-    "Morning Story Multi-Subs + chapters for DCP (Beatrice-Raws)",
-    "[Honorifics] Morning Story - 02.ass",
-  ])("无名职责和交付平台不作为身份：%s", (input) => {
-    expect(groups(input)).toBeUndefined();
-  });
+it.each([
+  // Nyaa 制作署名：旧式文件名、职责来源与联合身份
+  "[OCR] Morning Story - 02.ass",
+  "[XML chapter files] Morning Story",
+  "Morning Story - 02 (English fansub).ass",
+  "Morning Story (Netflix Subs)",
+  "[Daisuki] Morning Story - 02 Subs",
+  "Seto no Hanayome subs [ENG]",
+  "Morning Story subs [ENG]",
+  "Morning Story - 02 [RippedSubs].ass",
+  "Morning Story - 02 [Subtitle-Ohys_Raws].ass",
+  "Morning Story Multi-Subs + chapters for DCP (Beatrice-Raws)",
+  "[Honorifics] Morning Story - 02.ass",
+  // Nyaa 制作身份：字幕来源与适配目标、商品信息和补充署名
+  "[BATCH]First Tale 1-19 English Subbed",
+  "[BDMV][ANZX-17451][First Tale][JP][BD-BOX]",
+  "[BDMV][ANZB-24680][First Tale][JP][BD-BOX]",
+  "First Tale (1999) [UnknownChocolate]",
+  "First Tale - 03 [Unknown Fans]",
+  "First Tale [NOVA-17451][1234ABCD].mkv",
+  "First Tale Subs for ReinForce [BD].zip",
+  "First Tale Subs for [ReinForce] [BD].zip",
+])("制作署名与发布属性边界: %s", (input) => {
+  expect(groups(input)).toBeUndefined();
 });
 
 describe("Nyaa 制作组：字幕说明和后置联合署名", () => {
@@ -202,53 +210,31 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
   });
 });
 
-describe("Nyaa 制作身份：字幕来源与适配目标、商品信息和补充署名", () => {
-  it.each([
-    "[BATCH]First Tale 1-19 English Subbed",
-    "[BDMV][ANZX-17451][First Tale][JP][BD-BOX]",
-    "[BDMV][ANZB-24680][First Tale][JP][BD-BOX]",
-    "First Tale (1999) [UnknownChocolate]",
-    "First Tale - 03 [Unknown Fans]",
-    "First Tale [NOVA-17451][1234ABCD].mkv",
-    "First Tale Subs for ReinForce [BD].zip",
-    "First Tale Subs for [ReinForce] [BD].zip",
-  ])("收录说明、目录编号和未知另名不成为发布者：%s", (input) => {
-    expect(groups(input)).toBeUndefined();
-  });
-});
-
-describe("制作组识别：元信息和多处署名边界", () => {
-  it.each([
-    "[BDMV][虚构航海 / Fictional Voyage]",
-    "虚构航海 [1080P@60FPS][简繁内封]",
-    "[虚构航海][全15集][国语中字][WEB-MKV][2160P]",
-    "[转] 虚构航海 - 03",
-    "[转运] 虚构航海 - 03",
-    "[个人汉化] 虚构航海 - 03",
-    "[TV版&轻微修正版&无修版] 虚构航海 - 03",
-    "[全遮版&修正版&无修版] 虚构航海 - 03",
-    "[完全无修版] 虚构航海 - 03",
-    "[人物幻想全开ver.] 虚构航海 - 03",
-    "虚构航海 [MultiSub][GerSub][EngSub]",
-    "虚构航海 (WebRip AV1 简繁内封)",
-    "虚构航海 - The Paper Sea (CUSTOM)",
-  ])("匿名职责、版本及语言不是身份：%s", (input) => {
-    expect(parseTorrentOrganization(input)).toBeUndefined();
-  });
-});
-
-describe("制作组识别：联合署名和技术词边界", () => {
-  it.each([
-    "[虚构航海][全26集][国英中字][WEB-MKV][2160P]",
-    "[虚构航海][1080p][全集]",
-    "【剩三集完结】虚构航海[03][1080p]",
-    "[自购]《虚构航海 / Fictional Voyage》[01-52][26DVDISO]",
-    "[TV版&轻柔版&超轻柔版] 虚构航海 - EP11",
-    "虚构航海 [CHS-Sub][CHT_Sub][ENG-Subs]",
-    "虚构航海.1080p.WEB-DL.H.264-NOGRP",
-  ])("不把进度、版本、语言和匿名说明当组：%s", (input) => {
-    expect(parseTorrentOrganization(input)).toBeUndefined();
-  });
+it.each([
+  // 制作组识别：元信息和多处署名边界
+  "[BDMV][虚构航海 / Fictional Voyage]",
+  "虚构航海 [1080P@60FPS][简繁内封]",
+  "[虚构航海][全15集][国语中字][WEB-MKV][2160P]",
+  "[转] 虚构航海 - 03",
+  "[转运] 虚构航海 - 03",
+  "[个人汉化] 虚构航海 - 03",
+  "[TV版&轻微修正版&无修版] 虚构航海 - 03",
+  "[全遮版&修正版&无修版] 虚构航海 - 03",
+  "[完全无修版] 虚构航海 - 03",
+  "[人物幻想全开ver.] 虚构航海 - 03",
+  "虚构航海 [MultiSub][GerSub][EngSub]",
+  "虚构航海 (WebRip AV1 简繁内封)",
+  "虚构航海 - The Paper Sea (CUSTOM)",
+  // 制作组识别：联合署名和技术词边界
+  "[虚构航海][全26集][国英中字][WEB-MKV][2160P]",
+  "[虚构航海][1080p][全集]",
+  "【剩三集完结】虚构航海[03][1080p]",
+  "[自购]《虚构航海 / Fictional Voyage》[01-52][26DVDISO]",
+  "[TV版&轻柔版&超轻柔版] 虚构航海 - EP11",
+  "虚构航海 [CHS-Sub][CHT_Sub][ENG-Subs]",
+  "虚构航海.1080p.WEB-DL.H.264-NOGRP",
+])("制作署名与发布属性边界: %s", (input) => {
+  expect(parseTorrentOrganization(input)).toBeUndefined();
 });
 
 describe("制作组识别：显式字幕来源与发布署名", () => {

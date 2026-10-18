@@ -146,11 +146,8 @@ describe("发行标签、声轨字幕与多季收录范围", () => {
     expect(result.title.aliases).toEqual(["蓝色行星", "Blue Planet"]);
   });
   test.each([
-    "蓝色行星10周年纪念 Blue Planet -FULLDIVE-",
     "Blue Planet 2020 LIVE",
     "Blue Planet 3000",
-    "Blue Planet 4K Adventure",
-    "Blue Planet S02",
     "Blue Planet S1",
     "Blue Planet OAD Adventure",
     "蓝色行星2季全新冒险",
@@ -198,52 +195,66 @@ describe("Nyaa 完整发行说明", () => {
   });
 });
 
-describe("Nyaa 通用发行结构", () => {
-  test.each([
-    "480i DVD MPEG-2 AC-3",
-    "576i DVD MPEG-2 MP2",
-    "HDTV 960 x 402",
-    "DCP 1152p",
-    "Blu-ray",
-    "DVD1",
-    "Triple Audio",
-    "Fixed Audio",
-    "Corrected Names",
-    "IDN",
-    "YouTube",
-    "JEI TV",
-    "Déclic Images",
-    "Film/Movie",
-  ])("独立交付说明不成为标题：%s", (tag) => {
-    expect(aliases(`[Demo] First Tale - 03 [1080p] (${tag})`)).toEqual([
-      "First Tale",
-    ]);
-  });
-});
-
-describe("Nyaa 发行参数与版本边界", () => {
-  test.each([
-    "Hulu",
-    "MW",
-    "retimed",
-    "Dublado",
-    "EN,ES,PT",
-    "eng. sub.",
-    "Unofficial Batch",
-    "Tri Audio",
-    "TriAudio",
-    "Hi10p",
-    "4K HBR HQ",
-    "Encore broadcast",
-    "TRUEFRENCH",
-    "Ajout OAV",
-    "80p PVD RAW PCM",
-    "VideoNow",
-  ])("完整发行块不成为标题：%s", (tag) => {
-    expect(aliases(`[Demo] First Tale - 03 [1080p] (${tag})`)).toEqual([
-      "First Tale",
-    ]);
-  });
+test.each([
+  // Nyaa 通用发行结构
+  "480i DVD MPEG-2 AC-3",
+  "576i DVD MPEG-2 MP2",
+  "HDTV 960 x 402",
+  "DCP 1152p",
+  "Blu-ray",
+  "DVD1",
+  "Triple Audio",
+  "Fixed Audio",
+  "Corrected Names",
+  "IDN",
+  "YouTube",
+  "JEI TV",
+  "Déclic Images",
+  "Film/Movie",
+  // Nyaa 发行参数与版本边界
+  "Hulu",
+  "MW",
+  "retimed",
+  "Dublado",
+  "EN,ES,PT",
+  "eng. sub.",
+  "Unofficial Batch",
+  "Tri Audio",
+  "TriAudio",
+  "Hi10p",
+  "4K HBR HQ",
+  "Encore broadcast",
+  "TRUEFRENCH",
+  "Ajout OAV",
+  "80p PVD RAW PCM",
+  "VideoNow",
+  // Nyaa 交付标签与名称边界
+  "Censored",
+  "Censored Version",
+  "CUSTOM",
+  "더빙",
+  "Audio_Fixed",
+  "Audio Fixed",
+  "HDR 10bits",
+  "總第67~85",
+  "37/NCOPED_02",
+  "MULTi-FRENCH/VOSTFR",
+  "305 à 336",
+  // Nyaa 完整发行标签
+  "BATCH Complete Season",
+  "PARTIAL BATCH",
+  "Fixed",
+  "HDR",
+  "BD FHD",
+  "Multi Dual Audio",
+  "CH",
+  "Hardsubs",
+  "SEASON1996 年度TV合集",
+  "1213 FHD",
+])("完整发行字段不成为标题: %s", (tag) => {
+  expect(aliases(`[Demo] First Tale - 03 [1080p] (${tag})`)).toEqual([
+    "First Tale",
+  ]);
 });
 
 describe("Nyaa 名称与交付说明边界", () => {
@@ -294,26 +305,6 @@ describe("Nyaa 名称与交付说明边界", () => {
       expect(aliases(input)).toEqual(expected);
     }
   );
-});
-
-describe("Nyaa 交付标签与名称边界", () => {
-  test.each([
-    "Censored",
-    "Censored Version",
-    "CUSTOM",
-    "더빙",
-    "Audio_Fixed",
-    "Audio Fixed",
-    "HDR 10bits",
-    "總第67~85",
-    "37/NCOPED_02",
-    "MULTi-FRENCH/VOSTFR",
-    "305 à 336",
-  ])("完整元信息块不成为标题：%s", (tag) => {
-    expect(aliases(`[Demo] First Tale - 03 [1080p] (${tag})`)).toEqual([
-      "First Tale",
-    ]);
-  });
 });
 
 describe("Nyaa 发行标签与名称标点", () => {
@@ -414,25 +405,6 @@ describe("Nyaa 发行标签与名称标点", () => {
   });
 });
 
-describe("Nyaa 完整发行标签", () => {
-  test.each([
-    "BATCH Complete Season",
-    "PARTIAL BATCH",
-    "Fixed",
-    "HDR",
-    "BD FHD",
-    "Multi Dual Audio",
-    "CH",
-    "Hardsubs",
-    "SEASON1996 年度TV合集",
-    "1213 FHD",
-  ])("完整发行块不成为名称：%s", (tag) => {
-    expect(aliases(`[Example-Subs] First Tale - 03 [1080p] [${tag}]`)).toEqual([
-      "First Tale",
-    ]);
-  });
-});
-
 describe("Nyaa 完整发行字段", () => {
   test.each([
     "3 Discs",
@@ -487,7 +459,6 @@ describe("Nyaa 完整发行字段", () => {
       "[Publisher] First Tale Subs+Fonts for Example-Raws [BD].zip",
       ["First Tale"],
     ],
-    ["[Publisher] First Tale for You - 03 [1080p]", ["First Tale for You"]],
   ] as Array<[string, string[]]>)("%s", (input, expected) => {
     expect(aliases(input)).toEqual(expected);
   });

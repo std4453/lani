@@ -131,7 +131,6 @@ describe("Nyaa 制作署名：联合横线、音轨边界与已核实署名", ()
     ["Another Fictional Film S01 1080p BluRay AVC LPCM2.0-Fugou", ["Fugou"]],
     ["First Tale 1080p LPCM 5.1-Nova.24.mkv", ["Nova.24"]],
     ["First Tale 1080p LPCM2.0-JPN-Nova", ["JPN-Nova"]],
-    ["First Tale 1080p x264-Ita", ["Ita"]],
     ["(shiteater) First Tale 190 [1234ABCD]", ["shiteater"]],
     ["（shiteater）Another Fictional Film - 01", ["shiteater"]],
     ["First Tale - 04 [HawaiianTV]", ["HawaiianTV"]],

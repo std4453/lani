@@ -87,25 +87,58 @@ describe("Nyaa 制作署名：旧式文件名、职责来源与联合身份", ()
   });
 });
 
-describe("Nyaa 制作组：字幕说明和后置联合署名", () => {
-  it.each([
-    ["[SweetSub] 虚构航海 - 03", ["SweetSub"]],
-    ["[Inka-Subs] 虚构航海 - 03", ["Inka-Subs"]],
-    ["[NovaSub] 虚构航海 - 03", ["NovaSub"]],
-    ["NovaSub only an English title - 03", ["NovaSub"]],
-    ["[HardSubTeam] 虚构航海 - 03", ["HardSubTeam"]],
-    ["[FIXED-AUDIO][Unknown] 虚构航海 - 03", ["Unknown"]],
-    [
-      "[TAKEOVER_RUS.DUB] 虚构航海 S5 ep 01-13 END (1080p+hardsub) [GAR&Esmeralda]",
-      ["TAKEOVER_RUS.DUB", "GAR", "Esmeralda"],
-    ],
-    ["虚构航海 [03] [Nova&Orion]", ["Nova", "Orion"]],
-    ["虚构航海 - 03 [Nova&Orion].mkv", ["Nova", "Orion"]],
-    ["虚构航海 - 03 [Nova+Orion][1080p][AAC]", ["Nova", "Orion"]],
-    ["虚构航海 - 03 [流云字幕组＆暮雨字幕社]", ["流云字幕组", "暮雨字幕社"]],
-  ])("保留品牌和未知联合发布者：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
-  });
+it.each([
+  // Nyaa 制作组：字幕说明和后置联合署名
+  ["[SweetSub] 虚构航海 - 03", ["SweetSub"]],
+  ["[Inka-Subs] 虚构航海 - 03", ["Inka-Subs"]],
+  ["[NovaSub] 虚构航海 - 03", ["NovaSub"]],
+  ["NovaSub only an English title - 03", ["NovaSub"]],
+  ["[HardSubTeam] 虚构航海 - 03", ["HardSubTeam"]],
+  ["[FIXED-AUDIO][Unknown] 虚构航海 - 03", ["Unknown"]],
+  [
+    "[TAKEOVER_RUS.DUB] 虚构航海 S5 ep 01-13 END (1080p+hardsub) [GAR&Esmeralda]",
+    ["TAKEOVER_RUS.DUB", "GAR", "Esmeralda"],
+  ],
+  ["虚构航海 [03] [Nova&Orion]", ["Nova", "Orion"]],
+  ["虚构航海 - 03 [Nova&Orion].mkv", ["Nova", "Orion"]],
+  ["虚构航海 - 03 [Nova+Orion][1080p][AAC]", ["Nova", "Orion"]],
+  ["虚构航海 - 03 [流云字幕组＆暮雨字幕社]", ["流云字幕组", "暮雨字幕社"]],
+  // 制作组识别：元信息和多处署名边界
+  ["[V2][星舟字幕组][虚构航海][03][1080p]", ["星舟字幕组"]],
+  ["[ver.3][陌生星舟][虚构航海][03]", ["陌生星舟"]],
+  ["[网盘资源][Qxz-GM][虚构航海][1080p]", ["Qxz-GM"]],
+  ["[转][陌生星舟][虚构航海][03]", ["陌生星舟"]],
+  ["[TV版&无修版][陌生星舟][虚构航海][03]", ["陌生星舟"]],
+  ["[动漫星桥][虚构航海][03]", ["动漫星桥"]],
+  ["[星舟字幕组十三周年][虚构航海][03]", ["星舟字幕组"]],
+  ["[星舟字幕组20周年纪念][虚构航海][03]", ["星舟字幕组"]],
+  ["[星舟字幕组新年献礼][虚构航海][03]", ["星舟字幕组"]],
+  ["[星舟字幕组新春獻禮][虚构航海][03]", ["星舟字幕组"]],
+  ["[Qxz个人汉化] 虚构航海 - 03", ["Qxz"]],
+  ["[Qxz個人漢化] 虚构航海 - 03", ["Qxz"]],
+  ["[星舟字幕组feat.月湾压制] 虚构航海 - 03", ["星舟字幕组", "月湾压制"]],
+  ["[星舟字幕组 FEAT. Moon-Raws] 虚构航海 - 03", ["星舟字幕组", "Moon-Raws"]],
+  ["[波洛咖啡厅\\PCSUB][虚构航海][03]", ["波洛咖啡厅\\PCSUB"]],
+  ["[星舟字幕组\\月湾汉化组][虚构航海][03]", ["星舟字幕组", "月湾汉化组"]],
+  ["虚构航海 (Amazing Dubbing)", ["Amazing Dubbing"]],
+  ["[动漫萌][4月新番][虚构航海][03]", ["动漫萌"]],
+  [
+    "[幸花压制] 虚构航海 - 03 (WebRip AV1 简繁内封 Aliciä)",
+    ["幸花压制", "Aliciä"],
+  ],
+  ["虚构航海 - 03 [WEB-DL AAC ANi]", ["ANi"]],
+  ["虚构航海[GerSub][collected_by_nerv87]", ["nerv87"]],
+  ["虚构航海 [translated_by_Nova-7]", ["Nova-7"]],
+  ["虚构航海 [Moon@Archive42][BDMV]", ["Moon@Archive42"]],
+  ["虚构航海 WEB x264 AAC -Nova.7-Raws (CUSTOM)", ["Nova.7-Raws"]],
+  ["虚构航海 1080p x264-New-Galaxy.42", ["New-Galaxy.42"]],
+  ["[星舟字幕组] 虚构航海 [MultiSub][GerSub]", ["星舟字幕组"]],
+  [
+    "[New Galactic Guild] 虚构航海 / Fictional Voyage - 03",
+    ["New Galactic Guild"],
+  ],
+])("保留完整制作身份: %s", (input, expected) => {
+  expect(groups(input as string)).toEqual(expected);
 });
 
 describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", () => {
@@ -198,45 +231,5 @@ describe("Nyaa 制作署名：联合横线、音轨边界与已核实署名", ()
   it("已核实普通署名不会扩张为无括号的标题首词", () => {
     expect(groups("Chika First Tale - 01")).toBeUndefined();
     expect(groups("Egao First Tale - 01")).toBeUndefined();
-  });
-});
-
-describe("制作组识别：元信息和多处署名边界", () => {
-  it.each([
-    ["[V2][星舟字幕组][虚构航海][03][1080p]", ["星舟字幕组"]],
-    ["[ver.3][陌生星舟][虚构航海][03]", ["陌生星舟"]],
-    ["[网盘资源][Qxz-GM][虚构航海][1080p]", ["Qxz-GM"]],
-    ["[转][陌生星舟][虚构航海][03]", ["陌生星舟"]],
-    ["[TV版&无修版][陌生星舟][虚构航海][03]", ["陌生星舟"]],
-    ["[动漫星桥][虚构航海][03]", ["动漫星桥"]],
-    ["[星舟字幕组十三周年][虚构航海][03]", ["星舟字幕组"]],
-    ["[星舟字幕组20周年纪念][虚构航海][03]", ["星舟字幕组"]],
-    ["[星舟字幕组新年献礼][虚构航海][03]", ["星舟字幕组"]],
-    ["[星舟字幕组新春獻禮][虚构航海][03]", ["星舟字幕组"]],
-    ["[Qxz个人汉化] 虚构航海 - 03", ["Qxz"]],
-    ["[Qxz個人漢化] 虚构航海 - 03", ["Qxz"]],
-    ["[星舟字幕组feat.月湾压制] 虚构航海 - 03", ["星舟字幕组", "月湾压制"]],
-    ["[星舟字幕组 FEAT. Moon-Raws] 虚构航海 - 03", ["星舟字幕组", "Moon-Raws"]],
-    ["[波洛咖啡厅\\PCSUB][虚构航海][03]", ["波洛咖啡厅\\PCSUB"]],
-    ["[星舟字幕组\\月湾汉化组][虚构航海][03]", ["星舟字幕组", "月湾汉化组"]],
-    ["虚构航海 (Amazing Dubbing)", ["Amazing Dubbing"]],
-    ["[动漫萌][4月新番][虚构航海][03]", ["动漫萌"]],
-    [
-      "[幸花压制] 虚构航海 - 03 (WebRip AV1 简繁内封 Aliciä)",
-      ["幸花压制", "Aliciä"],
-    ],
-    ["虚构航海 - 03 [WEB-DL AAC ANi]", ["ANi"]],
-    ["虚构航海[GerSub][collected_by_nerv87]", ["nerv87"]],
-    ["虚构航海 [translated_by_Nova-7]", ["Nova-7"]],
-    ["虚构航海 [Moon@Archive42][BDMV]", ["Moon@Archive42"]],
-    ["虚构航海 WEB x264 AAC -Nova.7-Raws (CUSTOM)", ["Nova.7-Raws"]],
-    ["虚构航海 1080p x264-New-Galaxy.42", ["New-Galaxy.42"]],
-    ["[星舟字幕组] 虚构航海 [MultiSub][GerSub]", ["星舟字幕组"]],
-    [
-      "[New Galactic Guild] 虚构航海 / Fictional Voyage - 03",
-      ["New Galactic Guild"],
-    ],
-  ])("提取完整身份：%s", (input, expected) => {
-    expect(groups(input as string)).toEqual(expected);
   });
 });
