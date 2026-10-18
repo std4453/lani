@@ -105,11 +105,10 @@ function useColumns() {
           dataIndex: 'title',
           copyable: true,
           render: (_, r) => (
-            <Typography.Text
-              className={styles.title}
-              copyable={{ text: r.title }}
-            >
-              {r.title}
+            <span className={styles.title}>
+              <Typography.Text copyable={{ text: r.title }}>
+                {r.title}
+              </Typography.Text>
               {r.permalink && (
                 <Button
                   type="link"
@@ -122,7 +121,7 @@ function useColumns() {
                   title="打开种子详情"
                 />
               )}
-            </Typography.Text>
+            </span>
           ),
         },
         {
