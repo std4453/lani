@@ -10,7 +10,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import ts from "typescript";
 
-it("长字幕同形正文不会触发指数回溯，也不会被截成元数据", () => {
+it("长字幕同形正文和长空白署名不会触发高耗时回溯或误删", () => {
   const directory = mkdtempSync(join(tmpdir(), "torrent-names-performance-"));
   try {
     // 子进程设置硬超时，回归时不会阻塞整个 Jest 进程；直接编译当前源码。
@@ -33,8 +33,16 @@ it("长字幕同形正文不会触发指数回溯，也不会被截成元数据"
         "-e",
         `
       const { parseTorrentNames } = require('./parseTorrentNames');
+      const { parseTorrentOrganization } = require('./parseTorrentOrganization');
       const name = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-      console.log(JSON.stringify(parseTorrentNames('[Publisher] ' + name + ' - 01 [1080p]').title.aliases));
+      const padding = ' '.repeat(8192);
+      const author = parseTorrentOrganization('[Publisher] First Tale Subs by ' + padding + 'NoDestination');
+      const empty = parseTorrentOrganization('[Publisher] First Tale Subs by ' + padding + '[BD].zip');
+      console.log(JSON.stringify({
+        aliases: parseTorrentNames('[Publisher] ' + name + ' - 01 [1080p]').title.aliases,
+        author: author?.parts,
+        empty: empty?.parts,
+      }));
     `,
       ],
       {
@@ -46,7 +54,11 @@ it("长字幕同形正文不会触发指数回溯，也不会被截成元数据"
     );
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual([name]);
+    expect(JSON.parse(result.stdout)).toEqual({
+      aliases: [name],
+      author: ["Publisher", "NoDestination"],
+      empty: ["Publisher"],
+    });
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

@@ -90,12 +90,17 @@ function metadata(text: string): boolean {
   const value = text.trim();
   // 完整发行标签或由来源代号引导的技术块不参与名称识别。
   if (
-    /^(?:BATCH Complete Season|PARTIAL BATCH|HDR|BD FHD|Multi Dual Audio|CH|Hardsubs?)$/i.test(
+    /^(?:BATCH Complete Season|PARTIAL BATCH|HDR|BD FHD|BD-BOX|ThaiBD|Multi Dual Audio|CH|Hardsubs?)$/i.test(
       value
     ) ||
     /^SEASON(?:19|20)\d{2}\s+年度TV合集$/i.test(value) ||
     /^(?:\d{1,4}\s+)?(?:FHD|HD)$/i.test(value) ||
     /^\d+\s+Discs?$/i.test(value) ||
+    /^rev\d+$/i.test(value) ||
+    /^Volume\s+\d+(?:\s*[-~–]\s*\d+)?$/i.test(value) ||
+    /^(?:VHS|DivX\d*|MP3)(?:[ ._-]+(?:VHS|DivX\d*|MP3))*$/i.test(value) ||
+    /^(?:Dub[+]Sub|Sub[+]Dub)$/i.test(value) ||
+    /^(?:19|20)\d{2},\s*TV,\s*\d+\s+из\s+\d+$/i.test(value) ||
     /^\d{1,4}(?:\s*[-,]\s*\d{1,4}){2,}$/.test(value)
   )
     return true;
@@ -437,7 +442,7 @@ function metadata(text: string): boolean {
   )
     return true;
   if (
-    /^(?:\d{1,2}月(?:新)?番|\d{4}年\d{1,2}月番?|国漫|國漫|日漫|动画|動畫|合集|全集|完结|完結|完|END|FIN|Reseed(?: Fin)?|KoVer|retake|TVrip|TS|Movie|剧场版|劇場版|OVA|OAD|SP|TV|特典(?:映像)?|特别篇|特別篇|先行版|先行版本|无修版|重制版|重製版)(?:[ +/_-](?:OVA|OAD|SP|TV|Fin))*$/i.test(
+    /^(?:\d{1,2}月(?:新)?番|\d{4}年\d{1,2}月番?|国漫|國漫|日漫|动画|動畫|合集|全集|完结|完結|完|END|FIN|Reseed(?: Fin)?|KoVer|retake|TVrip|TS|Movie|剧场版|劇場版|OVA|OAD|SP|TV|特典(?:映像)?|特别篇|特別篇|特别话|特別話|先行版|先行版本|无修版|重制版|重製版)(?:[ +/_-](?:OVA|OAD|SP|TV|Fin))*$/i.test(
       value
     )
   )
@@ -529,8 +534,6 @@ function trimTechnicalTail(text: string): string {
     " "
   );
   text = text.replace(/\s+[IVX]+[-~–][IVX]+(?=\s+Subs?[+]Fonts\s+for\b)/i, "");
-  // 官方制作 label 只有紧邻外层引用包装时才视作前缀，正文同形词仍保留。
-  text = text.replace(/^\s*Animatica(?=[「『])/i, "");
   // 技术参数可没有外括号；只在独立词边界处截断，避免伤及标题内部数字。
   const boundary =
     /(?:\s+|[._★])(?=(?:\d{3,4}\s*[xX×]\s*\d{3,4}|(?:480|576|720|1080|2160)[pP]|[248]K(?=$|[ ._-]+(?:HEVC|AVC|x26[45]|HDR|SDR|BD|WEB|BluRay)\b)|(?:8|10|12)[ -]?bit\b|(?:WEB(?=[- ](?:\d{3,4}p\b|x26[45]\b|HEVC\b|AVC\b))|WEB[ ._-]?(?:DL|RIP)|Blu[ ._-]?Ray|Hybrid(?=[. _-]+[A-Z]{2}[-_]DVDRIP)|BD|BDRIP|UHDBDRIP|UHDRIP|(?:[A-Z]{2}[-_])?DVDRIP|HEVC|AVC|x26[45])(?=$|[\W_])))/i;
@@ -571,8 +574,10 @@ function trimTechnicalTail(text: string): string {
       .replace(/合集\s*全[（(][^)）]+[)）]$/, "")
       .replace(/_OVAs$/i, "")
       .replace(/(\bS\d+)\s+REMASTERED$/i, "$1")
-      .replace(/\s+Subs?[+]Fonts\s+for\s+.+$/i, "")
+      .replace(/\s+Subs?(?:[+]Fonts)?\s+for\s+.+$/i, "")
       .replace(/\s+Latest PV$/i, "")
+      .replace(/[._\s]+BDREMUX\s*$/i, "")
+      .replace(/\s+[-–]\s*\d{1,4}\s+(?:FHD|HD)\s*$/i, "")
       .replace(
         /\s+S\d+\s*>\s*S\d+(?:\s*[+]\s*(?:FILMS?|MOVIES?|OVAs?|SPs?))*$/i,
         ""
@@ -600,14 +605,14 @@ function trimTechnicalTail(text: string): string {
         metadata(original) ? ending : ""
       )
       .replace(/\s+[-–]\s*EX\s*$/i, "")
-      .replace(/[_ ](?:OVA|OAD)\s*$/i, "")
+      .replace(/(?:\s*[+]\s*|[_ ])(?:OVA|OAD)\s*$/i, "")
       .replace(/\s+TV\s+剪[辑輯]版\s*$/i, "")
       .replace(/\s+超[后後][宫宮]版\s*$/, "")
       .replace(/\s+(?:[日英中台泰越国國粤粵韩韓]+配版|普通[话話]版)\s*$/, "")
       .replace(/全集(?:无水印|無水印)(?:高清)?(?:迅雷)?下[载載]\s*$/, "")
       .replace(
-        /\s+(?:TV\s+)?\d{1,4}-\d{1,4}(?:\s*,\s*\d{1,4}(?:-\d{1,4})?)+\s*$/i,
-        ""
+        /\s+(?:[-–]\s*|TV\s+)?\d{1,4}(?:-\d{1,4})?(?:\s*,\s*\d{1,4}(?:-\d{1,4})?)+\s*$/i,
+        (ending) => (/^\s+\d{1,3}(?:,\d{3})+\s*$/.test(ending) ? ending : "")
       )
       .replace(/\s+s\s+\d+\s*[-~–]\s*\d+\s*$/i, "")
       .replace(/\s+(?:NCOP|NCED)(?:\s+(?:NCOP|NCED))*\s*$/i, "")
@@ -806,6 +811,11 @@ function splitAliases(input: string): string[] {
     new Set(semicolonNames.map(language)).size > 1
   )
     return semicolonNames.flatMap(splitAliases);
+  // 双斜杠只有跨中日文与拉丁文字时才划分别名，同文字体系内保留原符号。
+  text = text.replace(
+    /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}][^\p{L}／/]*)[／/]{2,}(?=[^\p{L}／/]*\p{Script=Latin})|(\p{Script=Latin}[^\p{L}／/]*)[／/]{2,}(?=[^\p{L}／/]*[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])/gu,
+    (_separator, cjkPrefix, latinPrefix) => (cjkPrefix ?? latinPrefix) + "/"
+  );
   const firstSlash = text.search(/[／/\\|｜]/);
   if (
     text.includes("_") &&
@@ -815,7 +825,9 @@ function splitAliases(input: string): string[] {
     if (underscoreNames.length > 1)
       return underscoreNames.flatMap(splitAliases);
   }
-  const parts = text.split(/\s*(?:[／/\\]|(?<!\|)\|(?!\|)|｜)\s*/);
+  const parts = text.split(
+    /\s*(?:(?<!\S[／/])[／/](?![／/]\S)|\\|(?<!\|)\|(?!\|)|｜)\s*/
+  );
   const preciseVersion = /^(?:\d+[.]\d{2,}|\d+[.]\d+[+]\d+[.]\d{2,})$/;
   if (
     parts.length >= 3 &&
@@ -825,7 +837,7 @@ function splitAliases(input: string): string[] {
   )
     return parts.map(cleanEdges);
   const spaced = text.split(
-    /\s+(?:[／/\\]|(?<!\|)\|(?!\|)|｜)\s*|(?:[／/\\]|(?<!\|)\|(?!\|)|｜)\s+/
+    /\s+(?:(?<!\S[／/])[／/](?![／/]\S)|\\|(?<!\|)\|(?!\|)|｜)\s*|(?:(?<!\S[／/])[／/](?![／/]\S)|\\|(?<!\|)\|(?!\|)|｜)\s+/
   );
   if (spaced.length > 1) {
     return spaced.flatMap((part) => {
@@ -895,12 +907,28 @@ function splitSemicolonAliases(text: string): string[] {
   );
 }
 
+/** 紧凑写法只有逐个复现前名中的完整词，才能作为可验证的缩写另名。 */
+function isCompactAlias(name: string, compact: string): boolean {
+  const pieces = compact.match(/[A-Z][a-z\d]+/g) ?? [];
+  if (pieces.length < 2 || pieces.join("") !== compact) return false;
+  const words = name.match(/[A-Za-z\d]+/g) ?? [];
+  if (pieces[0] !== words[0]) return false;
+  let previous = -1;
+  return pieces.every((piece) => {
+    const index = words.indexOf(piece, previous + 1);
+    if (index < 0) return false;
+    previous = index;
+    return true;
+  });
+}
+
 function splitBracketAliasList(text: string): string[] {
   if (isInventoryAnnotation(text)) return [text];
   const semicolonNames = splitSemicolonAliases(text);
   if (semicolonNames.length > 1)
     return semicolonNames.map((part) => part.trim());
   const parts = text.split(/[,，]/).map((part) => part.trim());
+  if (parts.length === 2 && isCompactAlias(parts[0], parts[1])) return parts;
   if (parts.length > 1 && parts.some(metadata)) {
     if (parts.every((part) => cjk.test(part) && !/[A-Za-z]/.test(part)))
       return [text];
@@ -917,6 +945,7 @@ function splitBracketAliasList(text: string): string[] {
       if (
         previous &&
         !repeatsPrefix &&
+        !isCompactAlias(previous, part) &&
         (/\b(?:wa|ga|wo|ni|to|nanoni|nara|kedo|node|mou|doumo)$/i.test(
           previous
         ) ||
@@ -1593,7 +1622,13 @@ export function parseTorrentNames(
       aliases[aliases.length - 1] += gap + block.wrapper + text + block.closer;
       continue;
     }
-    if (block.wrapper && /^Seasons?\s+\d+\s*[-&+~]\s*\d+$/i.test(text))
+    if (
+      block.wrapper &&
+      (/^Seasons?\s+\d+\s*[-&+~]\s*\d+$/i.test(text) ||
+        /^(?:Episodes?|Seasons?)\s+\d+(?:\s*[-~–]\s*\d+)?(?:\s*[,，]\s*\d+(?:\s*[-~–]\s*\d+)?)+(?:\s*[+&]\s*(?:Movies?|OVAs?|OADs?|SPs?))*$/i.test(
+          text
+        ))
+    )
       continue;
     if (
       !block.wrapper &&
@@ -1752,6 +1787,29 @@ export function parseTorrentNames(
           gap + block.wrapper + text + block.closer;
       }
       continue;
+    }
+    if (
+      (block.wrapper === "(" || block.wrapper === "（") &&
+      aliases.length &&
+      !hasTechnicalGap(blocks, blocks.indexOf(block))
+    ) {
+      const seasonWithExtras = text
+        .trim()
+        .match(/^(S\d+|Season\s*\d+)(?:\s*[+]\s*(?:OVAs?|OADs?|SPs?))+$/i);
+      if (seasonWithExtras) {
+        const previous = blocks
+          .slice(0, blocks.indexOf(block))
+          .reverse()
+          .find((piece) => piece.text.trim());
+        // 独立收录说明不能跨过别名分隔符或语言等元信息绑定到旧名称。
+        if (
+          !previous ||
+          metadata(previous.text) ||
+          /(?:[／/\\｜│;；]|(?<!\|)\|(?!\|))\s*$/.test(previous.text)
+        )
+          continue;
+        text = seasonWithExtras[1];
+      }
     }
     if (/^\s*[.](?:ts|mkv|mp4|torrent|zip)\s*$/i.test(text)) continue;
     if (

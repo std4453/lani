@@ -24,6 +24,11 @@ const knownNames = [
   "SEV",
   "shiteater",
   "HawaiianTV",
+  "DOMO",
+  "TSHS",
+  "Radioactive Fanboys",
+  "RetroChocolate",
+  "LonelyChaser",
   "AMF",
   "SnF",
   "BakeSubs",
@@ -344,6 +349,7 @@ const knownHyphenJoints = new Set([
   "bakesubs-yna",
   "diogo4d-nf93",
   "inka-orphan",
+  "lonelychaser-inka",
 ]);
 const nameSuffix =
   /(?:字幕[组組社]|[汉漢]化[组組]|[发發]布[组組]|搬[运運][组組]|制作[组組]|工作室|压制部|手抄部|后援会|後援會|摆烂组|擺爛組|机翻组|機翻組|字幕屋|字幕團|字幕团|字幕站|字幕坊|[\w\p{Script=Han} -](?:subs?|raws?|studio|team|production|fansub)|制作)$/iu;
@@ -416,9 +422,10 @@ function isMetadata(text: string): boolean {
       text
     ) ||
     /^(?:ViuTV|TVB|Baha|代理商)(?:粤语|粵語|国语|國語)$/i.test(text) ||
-    /^(?:v(?:er\.?)?\d+(?:\.\d+)*|BDMV|全\d+[集话話]|[网網][盘盤](?:[资資]源)?|(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版|CUSTOM|PROPER|REPACK|INTERNAL)$/i.test(
+    /^(?:v(?:er\.?)?\d+(?:\.\d+)*|BDMV|全\d+[集话話]|[网網][盘盤](?:[资資]源)?|(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版|CUSTOM|PROPER|REPACK|INTERNAL|BATCH)$/i.test(
       text
     ) ||
+    /^(?:ANZX|ANZB)[-_]?\d{4,6}(?:[-~]\d{1,6})?$/i.test(text) ||
     /\bver\.$/i.test(text) ||
     languageList.test(text) ||
     languageDelivery.test(text) ||
@@ -568,6 +575,87 @@ export function parseTorrentOrganization(
       end: match.index + 1 + text.trimEnd().length,
     });
   }
+  // 明示字幕说明按角色字段扫描，避免作者文本和空白正则互相回溯。
+  const subtitleFields: {
+    start: number;
+    end: number;
+    destination: boolean;
+  }[] = [];
+  const subtitleHeaders: {
+    open: number;
+    start: number;
+    role: string;
+  }[] = [];
+  for (const header of input.matchAll(
+    /\b(?:subs?|subtitles?)(?:\s*\+\s*fonts?)?\b/gi
+  )) {
+    const afterHeader = header.index! + header[0].length;
+    const firstRole = input
+      .slice(afterHeader)
+      .match(/^\s+(?:(by|from|for)\b|source\s*[:：])/i);
+    if (!firstRole) continue;
+    subtitleHeaders.push({
+      open: header.index!,
+      start: afterHeader + firstRole[0].length,
+      role: firstRole[1]?.toLowerCase() ?? "source",
+    });
+  }
+  let subtitleBlockIndex = 0;
+  let subtitleClauseEnd = 0;
+  for (let index = 0; index < subtitleHeaders.length; index++) {
+    const { open, start, role } = subtitleHeaders[index];
+    // 同一说明内的Subs可属于作者名，内部只按角色边界拆分字段。
+    if (open < subtitleClauseEnd) continue;
+    let end = input.length;
+    const boundary = input
+      .slice(start, end)
+      .search(
+        /\.(?:zip|7z|rar|srt|ass|mkv|mp4|torrent)(?:\.torrent)?\s*$|[;\n]/i
+      );
+    if (boundary >= 0) end = start + boundary;
+    // 目标自身的名字包装不结束说明，完整技术块则结束其作用域。
+    while (
+      subtitleBlockIndex < blocks.length &&
+      blocks[subtitleBlockIndex].open < start
+    )
+      subtitleBlockIndex++;
+    for (
+      let blockIndex = subtitleBlockIndex;
+      blockIndex < blocks.length;
+      blockIndex++
+    ) {
+      const block = blocks[blockIndex];
+      if (block.open >= end) break;
+      if (isMetadata(block.text)) {
+        end = block.open;
+        break;
+      }
+    }
+    subtitleClauseEnd = end;
+    const roles = [{ start, role }];
+    for (const role of input
+      .slice(start, end)
+      .matchAll(/\s(by|from|for)(?=\s|$)/gi)) {
+      const nextStart = start + role.index!;
+      subtitleFields.push({
+        start: roles[roles.length - 1].start,
+        end: nextStart,
+        destination: roles[roles.length - 1].role === "for",
+      });
+      roles.push({
+        start: nextStart + role[0].length,
+        role: role[1].toLowerCase(),
+      });
+    }
+    subtitleFields.push({
+      start: roles[roles.length - 1].start,
+      end,
+      destination: roles[roles.length - 1].role === "for",
+    });
+  }
+  const subtitleDestinations = subtitleFields.filter(
+    (field) => field.destination
+  );
   const discScene = input.match(
     /\[(?:JPN?|ENG?|CH[ST]|US|USA|EU)\]\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|iso|torrent))?$/iu
   );
@@ -605,6 +693,14 @@ export function parseTorrentOrganization(
       .replace(/[\u200b\ufeff★☆\s&＆×+、]/g, "");
     if (before && !isMetadata(before) && !/^[（(][^）)]*[）)]$/.test(before))
       hasTitle = true;
+    if (
+      subtitleDestinations.some(
+        (target) => block.start >= target.start && block.end <= target.end
+      )
+    ) {
+      cursor = block.close;
+      continue;
+    }
     const blockLower = block.text.toLowerCase();
     const technicalCredit = technicalEntries.find(({ name, lower }) => {
       const offset = blockLower.indexOf(lower);
@@ -750,7 +846,7 @@ export function parseTorrentOrganization(
     !/\b\d+\s+subs?$/i.test(prefix) &&
     !(
       /\s+subs?$/i.test(prefix) &&
-      /^\s+only\b/i.test(leading.slice(prefix.length))
+      /^\s+(?:only|for|by|from|source)\b/i.test(leading.slice(prefix.length))
     )
   ) {
     const parts = partsOf(prefix);
@@ -773,27 +869,32 @@ export function parseTorrentOrganization(
       parts: [productionCredit[1]],
     });
   }
-  // 补包来源可带未知联合成员，但需有明确制作身份提供上下文。
-  const subtitleCredits = input.matchAll(
-    /\b(?:subs?|subtitles?)(?:\s*\+\s*fonts?)?\s+for\s+([^\[\]【】()]+?)(?=\s*[\[【(]|\.(?:zip|7z|rar|torrent)$|$)/gi
-  );
-  for (const credit of subtitleCredits) {
-    const name = credit[1].trim();
+  // by/from/source明确署名允许未知紧凑身份，不依赖已知名单或Sub后缀。
+  for (const field of subtitleFields) {
+    if (field.destination) continue;
+    const raw = input.slice(field.start, field.end);
+    const name = raw.replace(/[\[\]【】()（）「」]/g, "").trim();
     const parts = partsOf(name).filter((part) => !technicalCompound.test(part));
-    const jointSources =
-      parts.length > 1 &&
-      name.split(joint).length === parts.length &&
-      parts.some(strongName) &&
-      parts.every(
-        (part) =>
-          (strongName(part) || compactIdentity(part)) &&
-          !languageWord.test(part) &&
-          !deliveryAttribute.test(part)
-      );
-    if (parts.length && (parts.every(strongName) || jointSources)) {
-      const start = credit.index! + credit[0].lastIndexOf(credit[1]);
-      selected.push({ start, end: start + name.length, parts });
+    if (
+      !parts.length ||
+      !parts.every((part) => strongName(part) || compactIdentity(part))
+    )
+      continue;
+    let start = field.start + raw.length - raw.trimStart().length;
+    let end = field.end - (raw.length - raw.trimEnd().length);
+    // 整个名字的一层包装沿用普通署名块的原文范围。
+    const wrapped = blocks.find(
+      (block) => block.open === start && block.close === end
+    );
+    if (wrapped) {
+      start = wrapped.start;
+      end = wrapped.end;
     }
+    for (let index = selected.length - 1; index >= 0; index--) {
+      if (selected[index].start >= start && selected[index].end <= end)
+        selected.splice(index, 1);
+    }
+    selected.push({ start, end, parts });
   }
   // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
   const scenes = input.matchAll(
@@ -863,6 +964,13 @@ export function parseTorrentOrganization(
       name === "推しの子" ||
       (name.length < 4 && !/[A-Za-z]/.test(name)) ||
       !tailLower.endsWith(lower)
+    )
+      return false;
+    const start = tail.length - name.length;
+    if (
+      subtitleDestinations.some(
+        (target) => start >= target.start && tail.length <= target.end
+      )
     )
       return false;
     const before = tail.slice(0, tail.length - name.length);

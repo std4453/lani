@@ -73,9 +73,9 @@ describe("组合收录标签与发行参数", () => {
     ["蓝色行星 86 GB 1090P 内挂字幕", ["蓝色行星 86"]],
     [
       "Animatica「蓝色行星」 / Blue Planet Part 2 - 03 [1080p]",
-      ["蓝色行星", "Blue Planet Part 2"],
+      ["Animatica「蓝色行星」", "Blue Planet Part 2"],
     ],
-  ])("可靠尾标签和制作前缀：%s", (title, expected) => {
+  ])("可靠尾标签与完整标题前缀：%s", (title, expected) => {
     expect(parseTorrentNames(`[Release Subs] ${title}`).title.aliases).toEqual(
       expected
     );

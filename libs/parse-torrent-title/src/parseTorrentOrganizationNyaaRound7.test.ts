@@ -7,11 +7,11 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
     ["[Inka-Orphan] Fictional Voyage (1966) (BD FHD)", ["Inka", "Orphan"]],
     [
       "[Publisher] 虚构航海 Subs+Fonts for 7³ACG & ktnbytes [BD].zip",
-      ["Publisher", "7³ACG", "ktnbytes"],
+      ["Publisher"],
     ],
     [
       "[Publisher] Fictional Voyage Subtitles for ReinForce & Nova.24 [BD].zip",
-      ["Publisher", "ReinForce", "Nova.24"],
+      ["Publisher"],
     ],
     [
       "Fictional Voyage - 01 [ARR-Nova'sMechaSpot].mkv",
@@ -28,11 +28,11 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
     ["Fictional Voyage - 01 [ARR-AVC10bitTeam].mkv", ["ARR-AVC10bitTeam"]],
     [
       "[Publisher] First Tale Subs+Fonts for ReinForce & AAC2.0Crew [BD].zip",
-      ["Publisher", "ReinForce", "AAC2.0Crew"],
+      ["Publisher"],
     ],
     [
       "[Publisher] First Tale Subs+Fonts for ReinForce & Nova.24 [BD].zip",
-      ["Publisher", "ReinForce", "Nova.24"],
+      ["Publisher"],
     ],
   ])("独立身份按证据拆分，其余复合署名保留完整：%s", (input, expected) => {
     expect(groups(input as string)).toEqual(expected);
@@ -71,12 +71,12 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
     "AAC2.0_24bit",
     "DTSHDMA7.1",
     "H.26410bit",
-  ])("补包技术字段不污染已明确的来源身份：%s", (technical) => {
+  ])("补包适配目标中的技术字段不扩充制作身份：%s", (technical) => {
     expect(
       groups(
         `[Publisher] First Tale Subs+Fonts for ReinForce & ${technical} [BD].zip`
       )
-    ).toEqual(["Publisher", "ReinForce"]);
+    ).toEqual(["Publisher"]);
   });
 
   it.each([
@@ -87,24 +87,24 @@ describe("Nyaa 制作署名：已核实联合身份与补包来源", () => {
     expect(groups(input)).toEqual(["Publisher"]);
   });
 
-  it("补包联合来源的raw保留实际署名而非职责", () => {
+  it("适配目标不写入制作署名raw", () => {
     expect(
       parseTorrentOrganization(
         "[Publisher] Fictional Voyage Subs+Fonts for 7³ACG & ktnbytes [BD].zip"
       )
     ).toEqual({
-      raw: "Publisher & 7³ACG & ktnbytes",
-      parts: ["Publisher", "7³ACG", "ktnbytes"],
+      raw: "Publisher",
+      parts: ["Publisher"],
     });
   });
 
-  it("未知补包来源无需扩充固定发布者词典", () => {
+  it("适配目标即使包含已知组也不扩充当前制作身份", () => {
     for (let index = 0; index < 20; index++) {
       expect(
         groups(
           `Fictional Voyage Subs+Fonts for ReinForce & Nova${index}.Q [BD].zip`
         )
-      ).toEqual(["ReinForce", `Nova${index}.Q`]);
+      ).toBeUndefined();
     }
   });
 });

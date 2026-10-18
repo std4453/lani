@@ -31,14 +31,8 @@ describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", ()
     ["[DVDISO][虚构航海][ENG]-Qyz.7-Team.iso", ["Qyz.7-Team"]],
     ["[Diogo4D-NF93] [WEB][1080p] 虚构航海 - 03", ["Diogo4D", "NF93"]],
     ["[NF93] 虚构航海 - 03", ["NF93"]],
-    [
-      "[Publisher] 虚构航海 Subs+Fonts for ReinForce [BD].zip",
-      ["Publisher", "ReinForce"],
-    ],
-    [
-      "[Publisher] 虚构航海 Subtitles for Nova-Raws [BD].7z",
-      ["Publisher", "Nova-Raws"],
-    ],
+    ["[Publisher] 虚构航海 Subs+Fonts for ReinForce [BD].zip", ["Publisher"]],
+    ["[Publisher] 虚构航海 Subtitles for Nova-Raws [BD].7z", ["Publisher"]],
     [
       "[Publisher] Elm University Animation Study Group - 1988 Fictional Theatre (Betamax)",
       ["Publisher", "Elm University Animation Study Group"],
@@ -95,8 +89,8 @@ describe("Nyaa 制作署名：交付说明、来源贡献与裸前缀边界", ()
         "[Publisher] 虚构航海 Subs+Fonts for ReinForce [BD].zip"
       )
     ).toEqual({
-      raw: "Publisher & ReinForce",
-      parts: ["Publisher", "ReinForce"],
+      raw: "Publisher",
+      parts: ["Publisher"],
     });
   });
 });
