@@ -1,5 +1,49 @@
 # 语料回放校验
 
+## 制作组完整性验收
+
+构建后在本包目录运行：
+
+```sh
+node scripts/check-organization-corpus.cjs baseline.ndjson.gz organization-labels.ndjson organization-report.json
+```
+
+制作组基线每行保存 `{ "id", "title", "parsed", "names" }`：`parsed` 是改动前主解析器的结果或 `null`，`names` 是同一原文的独立 `parseTorrentNames` 结果。所有基线记录均检查主解析器除 `organization` 外的完整结果不变，包含标题、剧集、字幕、来源、格式及位置字段；独立名称路径的 `title` 也必须完全不变。检查三个制作组调用路径的一致性，任何异常或不一致均失败。
+
+标签每行包含相同 ID 类型、精确原文、`status` 和 `expected_groups`。`status` 仅接受 `ready` 或 `pending`；未标组时使用空数组，有组却未提取或联合组漏拆均整条失败。比较完整制作组集合，只归一空白和全角 ASCII，保留拼写与标点；组顺序不影响结果。`pending` 保留在分母并计错。程序拒绝重复 ID、原文不匹配、空组名及重复组名。
+
+制作组验收不支持任何例外名单，额外排除参数和排除字段均被拒绝。整条准确率至少 99%，全库保护字段零差异、零异常才通过。报告保存分母、错误明细、带组／无组／联合组子集成绩、Wilson 95% 区间及输入和代码哈希。标签应先独立盲审并冻结，再与预测比较；开发集成绩不能替代独立样本成绩。
+
+另以 [固定格式目录](./ORGANIZATION_FORMATS.md) 随机生成陌生组名，验证通用结构识别。CI 使用固定 seed，验收再用未用于开发的新 seed；不得为了过线删改困难模板。随机格式测试反映这些模板下的识别能力，不能代替真实语料准确率。
+
+## 标题完整性验收
+
+标题识别改动使用独立的严格验收入口，构建后在本包目录运行：
+
+```sh
+node scripts/check-title-corpus.cjs baseline.ndjson.gz title-labels.ndjson title-report.json
+```
+
+基线包含每条资源的 `{ "id", "title", "parsed" }`，其中 `parsed` 为旧版结果或 `null`。标注可以是基线中的随机样本，每行包含相同的 `id`、精确原文 `title`、`status` 和 `expected_titles`。`status` 使用 `ready`、`pending` 或 `out_of_domain`。标签必须独立根据原文制作，不能把当前解析器输出当作真值；用于开发的样本与最终验收样本应分开，保留抽样种子、标签修订理由及冻结哈希。
+
+验收比较完整别名集合：多提、漏提、截短或夹带非标题内容都算整条错误，只归一化空白和全角 ASCII，不改字词、大小写或标点。仅空格连接的混合语言名称保留整体；明确分隔的别名另列。`pending` 和 `out_of_domain` 保守计作未通过，不从分母删除。程序拒绝重复 ID 和原文不匹配的标注。
+
+经过显式授权和独立审核的特殊标题，可以通过可选的第四个参数提供例外名单。名单保存在仓库外，不能把具体作品名称写进解析或验收代码：
+
+```sh
+node scripts/check-title-corpus.cjs baseline.ndjson.gz title-labels.ndjson title-report.json exclusions.ndjson
+```
+
+名单每行包含 `{ "id", "title", "reason" }`。ID 必须唯一，ID 的值和类型以及原文标题必须与全量基线精确对应，`reason` 必须为非空字符串。名单总量不得超过全量基线的 2%，包括没有命中当前标注样本的条目；超限或任一条目无效均拒绝验收。不传名单时，所有标注样本仍保留在分母中。名单只排除标题语义评分：全部基线记录（包括例外）的原解析成功／失败状态、非标题字段和异常检查始终执行。名单外的 `pending` 和 `out_of_domain` 仍计失败，不能用标签状态代替例外审批。
+
+报告的 `summary.population` 是全库基线数量，`eligiblePopulation` 是扣除全库例外后的数量；`sample` 是原始标注样本数量，`evaluatedSample` 是扣除命中例外后的评分数量。`excludedPopulation` 和 `excludedSample` 分别表示全库例外数量及其样本命中数量，旧字段 `excluded` 与 `excludedSample` 相同，无名单时为 0。正确率和 Wilson 95% 区间使用 `evaluatedSample` 作为分母；评分数量为 0 时正确率和区间均为 `null`，验收失败。`statuses` 统计原始样本的全部状态，便于核对原始样本组成。
+
+报告保存例外文件原始字节的 SHA-256（`summary.exclusionsHash`，无名单时为 `null`），并在 `exclusions` 中保留名单的 ID、精确标题和审核理由，以便追踪和复现。
+
+生产路径使用主解析器的标题，主解析器失败时使用独立的 `parseTorrentNames`。所有基线记录都检查原有成功／失败状态及 `index`、`episodeInfo`、`subtitle`、`subtitleInfo`、`source`、`format` 的严格不变性。任何差异或异常，或标注样本的整条正确率低于 98%，都会让命令失败。报告包含失败明细、代码与输入哈希、样本正确率及 Wilson 95% 区间；抽样成绩不等于逐条验证了全库语义正确性。
+
+## 剧集及其他字段的变更审核
+
 构建此包后，使用三个本地 NDJSON 文件运行回放校验：
 
 ```sh

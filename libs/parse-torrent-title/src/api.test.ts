@@ -47,7 +47,8 @@ describe("public parser API compatibility", () => {
     const result = parseTorrentTitle(
       "【个人压制】[1997][剑风传奇][01][BDRip 1080p]"
     );
-    expect(result?.organization?.raw).toBe("个人压制");
+    expect(result?.organization).toBeUndefined();
+    expect(result?.episodeInfo).toEqual({ type: "episode", index: 1 });
   });
 
   test("keeps legacy language flags without guessing in structured metadata", () => {

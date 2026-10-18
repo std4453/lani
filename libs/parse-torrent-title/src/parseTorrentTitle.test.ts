@@ -17,7 +17,7 @@ describe("test parseTorrentTitle with title", () => {
         },
         title: {
           raw: "女忍者椿的心事 Kunoichi Tsubaki no Mune no Uchi",
-          aliases: ["女忍者椿的心事", "Kunoichi Tsubaki no Mune no Uchi"],
+          aliases: ["女忍者椿的心事 Kunoichi Tsubaki no Mune no Uchi"],
         },
         index: 12,
         source: {},
@@ -213,8 +213,7 @@ describe("test parseTorrentTitle with title", () => {
         title: {
           raw: "异世界魔王与召唤少女的奴隶魔术Ω Isekai_Maou_to_Shoukan_Shoujo_no_Dorei_Majutsu",
           aliases: [
-            "异世界魔王与召唤少女的奴隶魔术Ω",
-            "Isekai_Maou_to_Shoukan_Shoujo_no_Dorei_Majutsu",
+            "异世界魔王与召唤少女的奴隶魔术Ω Isekai_Maou_to_Shoukan_Shoujo_no_Dorei_Majutsu",
           ],
         },
         index: {
@@ -265,7 +264,7 @@ describe("test parseTorrentTitle with title", () => {
         },
         title: {
           raw: "传颂之物 二人白皇 Utawarerumono-Futari no Hakuoro-",
-          aliases: ["传颂之物 二人白皇", "Utawarerumono-Futari no Hakuoro-"],
+          aliases: ["传颂之物 二人白皇 Utawarerumono-Futari no Hakuoro-"],
         },
         index: {
           from: 1,
@@ -313,7 +312,7 @@ describe("test parseTorrentTitle with title", () => {
         },
         title: {
           raw: "联盟空军航空魔法音乐队_光辉魔女",
-          aliases: ["联盟空军航空魔法音乐队", "光辉魔女"],
+          aliases: ["联盟空军航空魔法音乐队_光辉魔女"],
         },
         index: 1,
         source: {

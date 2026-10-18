@@ -2,6 +2,33 @@
 
 `parseTorrentTitle` 用于解析种子标题，并保留原有的 `subtitle` 字段以兼容旧调用方。`parseSubtitleInfo` 也可独立调用，包括处理没有剧集编号的电影标题。
 
+`parseTorrentOrganization` 独立识别资源发布者、字幕组和压制组，不要求存在集号。`organization.parts` 保存原文署名的完整集合，联合发布拆成多个组，同一组的中英括注保留一个复合名称；分类、平台与合成等职责说明不会成为独立组。识别同时使用通用发布结构与有限的已知发布者词典。无可识别署名时返回 `undefined`。
+
+默认主解析器和独立名称路径共用制作组识别结果。已确认的尾部署名会从名称别名中移除，但不改变原有剧集、字幕及位置分段；`positionalItems` 继续表示历史分段的位置。显式提供 `organizationSeparators` 或 `separatorPairs` 时，主解析器保留自定义制作组规则。单处署名的 `raw` 保留该署名块原文；多处不连续署名以 `&` 连接，不能将其解释为包含中间作品名的连续原文区间。
+
+制作组随机测试的格式、未知名称生成方法及门槛见 [格式目录](./ORGANIZATION_FORMATS.md)。真实语料验收不允许特殊标题例外。
+
+`parseTorrentNames` 独立提取作品名称和可识别的制作组，不要求存在剧集编号：
+
+```ts
+import { parseTorrentNames } from "@lani/parse-torrent-title";
+
+parseTorrentNames("[Release Subs] 蓝色行星 / Blue Planet [Movie][1080p]");
+// title.aliases: ["蓝色行星", "Blue Planet"]
+```
+
+名称识别根据括号、明确的别名分隔符、剧集位置和非标题标签划分片段，不查询作品名单。只有空格连接的混合语言名称保留整体，例如 `BLUE PLANET 蓝色行星 / Blue Planet` 返回两个名称；不会额外拆出“蓝色行星”。同语言词间下划线、标题内副标题与括注尽量保留，技术参数、字幕标签、招聘说明等被过滤。重复别名去重；无法识别出名称时返回空数组。这些规则仍是启发式判断，特殊书名标点和“检索用”系列词存在歧义。
+
+Nyaa 等发行格式支持技术参数后的 `|` 别名、带语言说明的括注别名列表、作品名内部方括号和数字连字符。`Weekly`、`Batch` 等完整发行标签会被过滤，同形词出现在标题正文中时保留。Scene 制作组尾签后可以继续出现别名或语言括注；`Multi-Subs` 等字幕属性不会成为独立署名。
+
+多个别名后的季限定只绑定原文中紧邻的前一个名称，例如 `A / B (Season 2)` 返回 `A`、`B (Season 2)`，不会给 `A` 补写季号。原有括号、dash 和名称内部限定保留；技术块后由 `|` 单独分隔的 `Season 2`、`S2` 属于发布说明，不回拼已有名称。单季码后的附赠说明（如 `S1+OVA`）只去掉附赠部分，保留 `S1`；正式季篇中的 `S01 Part1` 不按普通收录说明删除。
+
+默认 `parseTorrentTitle` 使用同一名称识别机制生成 `title.aliases`，保留原有的 `title.raw` 和位置字段用于原文定位；这些字段不承诺覆盖后来发现的尾部别名。显式提供 `separatorPairs`、`titleSeparatorChars` 或 `titleNonEnglishRegex` 时继续采用对应的自定义标题规则。独立 `parseTorrentNames` 的 `title.raw` 是识别出的名称以 `/` 连接后的展示文本，不是连续原文范围。
+
+`title.raw` 非空不代表识别出了有效作品名。默认路径在别名为空时不回填旧分段内容，以免将 `1080p` 等已过滤的技术参数当作标题。只有 `Movie` 等元信息同形词的名称仍可能漏识别，这是启发式规则的已知局限；不能通过统一回退原文来消除这种歧义。
+
+名称识别不会改变剧集和字幕的判断路径。主解析器仍可能因缺少编号返回 `undefined`；API 持久化适配层此时回退到 `parseTorrentNames` 保存名称，同时维持原先的剧集、来源、格式和旧字幕列处理方式。持久化解析版本为 2；已有记录需经过重解析才会更新。
+
 `subtitleInfo` 返回标题中明确标注的字幕信息：
 
 - `languages` 使用 BCP 47 语言标签，包含标题中已识别的语言，例如 `zh-Hans`、`zh-Hant`、`ja` 或 `en`。
@@ -43,3 +70,9 @@
 解析器本身不负责修改数据库结构。API 持久化适配层会为小数集和特别篇清空三个旧版整数编号列，同时保留其他解析信息；不会将小数舍入，也不会将特别篇编号存为普通剧集编号。项目通过新增的定点小数编号列和原始解析 JSON 保存这些结果，具体约定见[数据库迁移说明](../db/prisma/migrations/20261013000000_episode_metadata/README.md)。普通小数单集可在对应元数据和下载规则满足条件时自动匹配，特别篇暂不参与自动下载匹配。
 
 使用本地标题语料、独立分类基线及已审核的结果变更进行回放验证，参见 [CORPUS.md](./CORPUS.md)。
+
+## 名称与制作组规则维护
+
+`parseTorrentNames.ts` 负责名称提取流程，`nameSegments.ts` 负责括号分段，`nameMetadata.ts` 识别完整元信息字段，`nameAliases.ts` 负责名称清理与别名拆分。元信息规则表只合并连续的同类判断，不跨越否定判断或递归分支调整顺序。`parseTorrentOrganization.ts` 保留制作组判定流程，静态署名词典集中在 `organizationNames.ts`。
+
+新增回归用例按功能放入 `names.*.test.ts`（别名、附件、署名、元信息、季集边界、名称保留、版本）或 `organization.*.test.ts`（身份、联合署名、来源、属性、scene 尾签），不再按调研轮次新建测试文件。集成路径与独立名称路径的断言分别保留。
