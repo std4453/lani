@@ -4,19 +4,33 @@ export class RateLimitedClient {
   private lastStarted = 0;
   private readonly interval: number;
 
-  constructor(qps: number) {
-    if (!Number.isFinite(qps) || qps <= 0 || qps > 0.5) {
-      throw new Error('Nyaa QPS must be greater than 0 and at most 0.5');
+  constructor(qps: number, private readonly timeoutMs = 30000) {
+    if (!Number.isFinite(qps) || qps <= 0) {
+      throw new Error('Nyaa QPS must be a finite number greater than 0');
     }
     this.interval = Math.ceil(1000 / qps);
   }
 
-  request<T>(send: () => Promise<T>): Promise<T> {
+  request<T>(send: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const result = this.tail.then(async () => {
       const delay = this.lastStarted + this.interval - Date.now();
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       this.lastStarted = Date.now();
-      return send();
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout>;
+      try {
+        return await Promise.race([
+          Promise.resolve().then(() => send(controller.signal)),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              reject(new Error('Nyaa 请求超时，请重试'));
+              controller.abort();
+            }, this.timeoutMs);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer!);
+      }
     });
     this.tail = result.catch(() => undefined);
     return result;

@@ -1981,9 +1981,8 @@ export type Mutation = {
   syncMetadata: Scalars['ID'];
   /** Returns newly added torrent count */
   syncMikan: Scalars['Int'];
-  syncMikanHistory: Scalars['Int'];
   syncNyaa: Scalars['Int'];
-  syncNyaaHistory: NyaaHistorySync;
+  syncTorrentHistory: Scalars['String'];
   /** Updates a single `Episode` using its globally unique id and a patch. */
   updateEpisode?: Maybe<UpdateEpisodePayload>;
   /** Updates a single `Episode` using a unique key and a patch. */
@@ -2189,14 +2188,6 @@ export type Node = {
   nodeId: Scalars['ID'];
 };
 
-export type NyaaHistorySync = {
-  __typename?: 'NyaaHistorySync';
-  added: Scalars['Int'];
-  error?: Maybe<Scalars['String']>;
-  id: Scalars['String'];
-  running: Scalars['Boolean'];
-};
-
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -2262,7 +2253,6 @@ export type Query = {
   jellyfinFolderById?: Maybe<JellyfinFolder>;
   jellyfinFolderByJellyfinId?: Maybe<JellyfinFolder>;
   listFiles: Array<FileEntry>;
-  nyaaHistorySync: NyaaHistorySync;
   searchBangumi: Array<SearchBangumiSeason>;
   /** Reads a single `Season` using its globally unique `ID`. */
   season?: Maybe<Season>;
@@ -2278,6 +2268,7 @@ export type Query = {
   torrent?: Maybe<Torrent>;
   torrentByHash?: Maybe<Torrent>;
   torrentById?: Maybe<Torrent>;
+  torrentHistorySync: TorrentHistorySync;
 };
 
 
@@ -2534,6 +2525,11 @@ export type QueryTorrentByHashArgs = {
 
 export type QueryTorrentByIdArgs = {
   id: Scalars['Int'];
+};
+
+
+export type QueryTorrentHistorySyncArgs = {
+  id: Scalars['String'];
 };
 
 export type SaveSeasonPatch = {
@@ -4113,6 +4109,12 @@ export type TorrentFilter = {
   torrentLink?: InputMaybe<StringFilter>;
 };
 
+export type TorrentHistorySync = {
+  __typename?: 'TorrentHistorySync';
+  error?: Maybe<Scalars['String']>;
+  running: Scalars['Boolean'];
+};
+
 export enum TorrentPlatform {
   Baha = 'BAHA',
   Bilibili = 'BILIBILI',
@@ -4883,22 +4885,17 @@ export type ListTorrentsQueryVariables = Exact<{
 
 export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, displayId: number, channel: TorrentChannel, permalink?: string | null, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
 
-export type SyncMikanHistoryMutationVariables = Exact<{ [key: string]: never; }>;
+export type SyncTorrentHistoryMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type SyncMikanHistoryMutation = { __typename?: 'Mutation', syncMikanHistory: number };
+export type SyncTorrentHistoryMutation = { __typename?: 'Mutation', syncTorrentHistory: string };
 
-export type NyaaHistorySyncFieldsFragment = { __typename?: 'NyaaHistorySync', id: string, running: boolean, added: number, error?: string | null };
-
-export type SyncNyaaHistoryMutationVariables = Exact<{ [key: string]: never; }>;
-
-
-export type SyncNyaaHistoryMutation = { __typename?: 'Mutation', syncNyaaHistory: { __typename?: 'NyaaHistorySync', id: string, running: boolean, added: number, error?: string | null } };
-
-export type NyaaHistorySyncStatusQueryVariables = Exact<{ [key: string]: never; }>;
+export type TorrentHistorySyncStatusQueryVariables = Exact<{
+  id: Scalars['String'];
+}>;
 
 
-export type NyaaHistorySyncStatusQuery = { __typename?: 'Query', nyaaHistorySync: { __typename?: 'NyaaHistorySync', id: string, running: boolean, added: number, error?: string | null } };
+export type TorrentHistorySyncStatusQuery = { __typename?: 'Query', torrentHistorySync: { __typename?: 'TorrentHistorySync', running: boolean, error?: string | null } };
 
 export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -4922,7 +4919,6 @@ export const ListSeasonsFieldsFragmentDoc = {"kind":"Document","definitions":[{"
 export const JellyfinFolderFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"jellyfinFolderFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}}]}}]} as unknown as DocumentNode<JellyfinFolderFieldsFragment, unknown>;
 export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayId"}},{"kind":"Field","name":{"kind":"Name","value":"channel"}},{"kind":"Field","name":{"kind":"Name","value":"permalink"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"episodeInfo"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleInfo"}}]}}]} as unknown as DocumentNode<TorrentFieldsFragment, unknown>;
 export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
-export const NyaaHistorySyncFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"nyaaHistorySyncFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NyaaHistorySync"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"running"}},{"kind":"Field","name":{"kind":"Name","value":"added"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]} as unknown as DocumentNode<NyaaHistorySyncFieldsFragment, unknown>;
 export const LiveTaskFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"LiveTask"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"batchEntries"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]} as unknown as DocumentNode<LiveTaskFragment, unknown>;
 export const TaskVersionFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TaskVersion"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskVersionFragment, unknown>;
 export const GetEpisodeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeDetailsFields"}}]}}]}},...EpisodeDetailsFieldsFragmentDoc.definitions,...TaskDetailsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetEpisodeByIdQuery, GetEpisodeByIdQueryVariables>;
@@ -4965,7 +4961,6 @@ export const ListJellyfinFoldersDocument = {"kind":"Document","definitions":[{"k
 export const WriteSeasonMetadataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"WriteSeasonMetadata"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"writeMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<WriteSeasonMetadataMutation, WriteSeasonMetadataMutationVariables>;
 export const GetSeasonsStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonsStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions,...TaskStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetSeasonsStatusQuery, GetSeasonsStatusQueryVariables>;
 export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentParseFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions,...TorrentParseFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
-export const SyncMikanHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncMikanHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncMikanHistory"}}]}}]} as unknown as DocumentNode<SyncMikanHistoryMutation, SyncMikanHistoryMutationVariables>;
-export const SyncNyaaHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncNyaaHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncNyaaHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"nyaaHistorySyncFields"}}]}}]}},...NyaaHistorySyncFieldsFragmentDoc.definitions]} as unknown as DocumentNode<SyncNyaaHistoryMutation, SyncNyaaHistoryMutationVariables>;
-export const NyaaHistorySyncStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"NyaaHistorySyncStatus"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nyaaHistorySync"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"nyaaHistorySyncFields"}}]}}]}},...NyaaHistorySyncFieldsFragmentDoc.definitions]} as unknown as DocumentNode<NyaaHistorySyncStatusQuery, NyaaHistorySyncStatusQueryVariables>;
+export const SyncTorrentHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncTorrentHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncTorrentHistory"}}]}}]} as unknown as DocumentNode<SyncTorrentHistoryMutation, SyncTorrentHistoryMutationVariables>;
+export const TorrentHistorySyncStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TorrentHistorySyncStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"torrentHistorySync"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"running"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<TorrentHistorySyncStatusQuery, TorrentHistorySyncStatusQueryVariables>;
 export const GetConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetConfig"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfin"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lania"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"features"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lania"}}]}},{"kind":"Field","name":{"kind":"Name","value":"env"}}]}}]}}]} as unknown as DocumentNode<GetConfigQuery, GetConfigQueryVariables>;

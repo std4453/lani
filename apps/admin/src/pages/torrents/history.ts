@@ -1,7 +1,7 @@
 import { ApolloClient } from '@apollo/client';
 import {
-  NyaaHistorySyncStatusDocument,
-  SyncNyaaHistoryDocument,
+  TorrentHistorySyncStatusDocument,
+  SyncTorrentHistoryDocument,
 } from '@/generated/types';
 
 function waitForPoll(signal: AbortSignal) {
@@ -19,29 +19,27 @@ function waitForPoll(signal: AbortSignal) {
   });
 }
 
-export async function syncNyaaHistory(
+export async function syncTorrentHistory(
   client: ApolloClient<object>,
   signal: AbortSignal,
 ) {
   const context = { fetchOptions: { signal } };
   const { data } = await client.mutate({
-    mutation: SyncNyaaHistoryDocument,
+    mutation: SyncTorrentHistoryDocument,
     context,
   });
-  if (!data) throw new Error('无法启动 Nyaa 历史同步');
-  const id = data.syncNyaaHistory.id;
-  let state = data.syncNyaaHistory;
-  while (state.running) {
+  if (!data?.syncTorrentHistory) throw new Error('无法启动历史种子同步');
+  const id = data.syncTorrentHistory;
+  while (true) {
     await waitForPoll(signal);
-    const result = await client.query({
-      query: NyaaHistorySyncStatusDocument,
+    const { data: result } = await client.query({
+      query: TorrentHistorySyncStatusDocument,
+      variables: { id },
       fetchPolicy: 'network-only',
       context,
     });
-    state = result.data.nyaaHistorySync;
-    // 重启或另一轮同步会更换 ID，不能把别的结果误报成本次成功。
-    if (state.id !== id) throw new Error('同步状态已更新或服务已重启，请重试');
+    const state = result.torrentHistorySync;
+    if (state.error) throw new Error(state.error);
+    if (!state.running) return;
   }
-  if (state.error) throw new Error(state.error);
-  return state.added;
 }

@@ -8,7 +8,6 @@ import tableStyles from '@/components/MainTable/index.module.less';
 import {
   BigIntFilter,
   ListTorrentsDocument,
-  SyncMikanHistoryDocument,
   TorrentChannel,
   TorrentFieldsFragment,
   TorrentFilter,
@@ -44,16 +43,9 @@ import { useTheme } from '@/theme';
 import { tagColors } from '@/theme/tagColors';
 import md5 from 'md5';
 import prettyBytes from 'pretty-bytes';
-import {
-  CSSProperties,
-  useMemo,
-  useRef,
-  useState,
-  useLayoutEffect,
-  useEffect,
-} from 'react';
+import { CSSProperties, useMemo, useRef, useEffect } from 'react';
 import styles from './index.module.less';
-import { syncNyaaHistory } from './history';
+import { syncTorrentHistory } from './history';
 import { handleError } from '@/utils/error';
 
 function chooseColor(text: string) {
@@ -98,11 +90,12 @@ function useColumns() {
           title: 'ID',
           dataIndex: 'displayId',
           align: 'center',
-          width: 96,
+          width: 88,
         },
         {
           title: '种子标题',
           dataIndex: 'title',
+          width: mobile ? 312 : 512,
           copyable: true,
           render: (_, r) => (
             <span className={styles.title}>
@@ -110,16 +103,17 @@ function useColumns() {
                 {r.title}
               </Typography.Text>
               {r.permalink && (
-                <Typography.Link
-                  className={styles.permalinkButton}
-                  href={r.permalink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="打开种子详情"
-                  title="打开种子详情"
-                >
-                  <ExportOutlined />
-                </Typography.Link>
+                <Tooltip title="种子详情">
+                  <Typography.Link
+                    className={styles.permalinkButton}
+                    href={r.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="打开种子详情"
+                  >
+                    <ExportOutlined />
+                  </Typography.Link>
+                </Tooltip>
               )}
             </span>
           ),
@@ -127,7 +121,7 @@ function useColumns() {
         {
           title: '来源',
           dataIndex: 'channel',
-          width: 100,
+          width: 92,
           render: (_, r) =>
             r.channel === TorrentChannel.Nyaa ? 'Nyaa' : '蜜柑',
           filters: [
@@ -140,7 +134,7 @@ function useColumns() {
           title: '制作组',
           key: 'organizations',
           copyable: false,
-          width: 200,
+          width: 272,
           render: (_, r) => {
             const parts = r.organizationParts ?? [];
             if (!parts.length) {
@@ -172,7 +166,7 @@ function useColumns() {
           title: '剧集名称',
           dataIndex: 'aliases',
           copyable: false,
-          width: mobile ? 200 : 300,
+          width: 272,
           render: (_, r) => {
             const aliases = r.seasonTitleAliases ?? [];
             if (!aliases.length) {
@@ -204,7 +198,7 @@ function useColumns() {
           title: '集数',
           dataIndex: 'episode',
           render: (_, r) => formatEpisode(r.episodeInfo),
-          width: 72,
+          width: 96,
           sorter: true,
           stateKey: {
             sort: 'episode',
@@ -213,14 +207,14 @@ function useColumns() {
         {
           title: '字幕',
           key: 'subtitles',
-          width: 100,
+          width: 104,
           render: (_, r) => <TorrentSubtitle info={r.subtitleInfo} />,
         },
         {
           title: '发布时间',
           dataIndex: 'publishDate',
           valueType: 'dateTime',
-          width: 180,
+          width: 176,
           sorter: true,
           stateKey: {
             sort: 'publishDate',
@@ -229,7 +223,7 @@ function useColumns() {
         {
           title: '种子大小',
           dataIndex: 'size',
-          width: 100,
+          width: 112,
           render: (_, r) =>
             r.size ? prettyBytes(parseInt(r.size as string)) : '-',
           filters: [
@@ -322,7 +316,7 @@ function useColumns() {
               </Button>
             </Space>
           ),
-          width: 176,
+          width: 154,
           className: tableStyles.compactCell,
           fixed: 'right',
         },
@@ -454,70 +448,9 @@ export async function queryTorrents(
 }
 
 export default withAntdSearch(function Torrents() {
-  const baseColumns = useColumns();
+  const columns = useColumns();
   const historyAbort = useRef<AbortController>();
   useEffect(() => () => historyAbort.current?.abort(), []);
-  const container = useRef<HTMLDivElement>(null);
-  const [rows, setRows] = useState<readonly TorrentTableRow[]>([]);
-  const [widths, setWidths] = useState<number[]>([]);
-  useLayoutEffect(() => {
-    const root = container.current;
-    if (!root) return;
-    const measure = () => {
-      const next = baseColumns.map((column, index) => {
-        const cells = root.querySelectorAll<HTMLElement>(
-          `[data-torrent-column="${index}"]`,
-        );
-        const header = root.querySelectorAll<HTMLElement>('thead th')[index];
-        const padding = header
-          ? parseFloat(getComputedStyle(header).paddingLeft) +
-            parseFloat(getComputedStyle(header).paddingRight)
-          : 16;
-        const content = Math.max(
-          0,
-          ...Array.from(cells, (cell) => cell.getBoundingClientRect().width),
-        );
-        // 内容最大宽度外保留 16px，单元格 padding 另计。
-        return Math.ceil(content + 16 + padding);
-      });
-      setWidths((old) => (old.join() === next.join() ? old : next));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    root
-      .querySelectorAll('[data-torrent-column]')
-      .forEach((cell) => observer.observe(cell));
-    return () => observer.disconnect();
-  }, [rows, baseColumns]);
-  const columns = baseColumns.map((column, index) => ({
-    ...column,
-    width: widths[index] || column.width,
-    title: (
-      <span className={styles.cellContent} data-torrent-column={index}>
-        {column.title as string}
-      </span>
-    ),
-    render: (
-      dom: React.ReactNode,
-      row: TorrentTableRow,
-      rowIndex: number,
-      action: any,
-      schema: any,
-    ) => (
-      <span className={styles.cellContent} data-torrent-column={index}>
-        {column.render
-          ? (column.render(
-              dom,
-              row,
-              rowIndex,
-              action,
-              schema,
-            ) as React.ReactNode)
-          : dom}
-      </span>
-    ),
-  }));
-
   const ref = useRef<ActionType>();
   const client = useApolloClient();
   const props = useAntdSearchProps(
@@ -538,18 +471,20 @@ export default withAntdSearch(function Torrents() {
   );
 
   return (
-    <div ref={container} className={styles.root}>
+    <div className={styles.root}>
       <PageTitle title="种子列表" />
       <MainTable<TorrentTableRow>
         columns={columns}
-        onDataSourceChange={setRows}
         rowKey="id"
         {...props}
         defaultSize="middle"
         headerTitle={<TableTitle>种子列表</TableTitle>}
         actionRef={ref}
         toolBarRender={() => [
-          <Tooltip key={0} title="同步蜜柑历史及 Nyaa 约 10 天的历史种子">
+          <Tooltip
+            key={0}
+            title="同步失败超过 1 天时，获取历史数据补充缺失的种子"
+          >
             <AsyncButton
               type="primary"
               onClick={async () => {
@@ -557,27 +492,13 @@ export default withAntdSearch(function Torrents() {
                 historyAbort.current = controller;
                 const hide = message.loading('同步中，请稍候……', 0);
                 try {
-                  const results = await Promise.allSettled([
-                    client
-                      .mutate({ mutation: SyncMikanHistoryDocument })
-                      .then(({ data }) => data?.syncMikanHistory ?? 0),
-                    syncNyaaHistory(client, controller.signal),
-                  ]);
+                  await syncTorrentHistory(client, controller.signal);
                   if (controller.signal.aborted) return;
-                  const names = ['蜜柑', 'Nyaa'];
-                  results.forEach((result, index) => {
-                    if (result.status === 'fulfilled') {
-                      const count = result.value;
-                      void message.success(
-                        `${names[index]}同步成功，新增 ${count ?? 0} 条种子`,
-                      );
-                    } else {
-                      handleError(result.reason, `${names[index]}同步失败`);
-                    }
-                  });
+                  void message.success('历史种子同步成功');
                   void ref.current?.reload();
                 } catch (error) {
-                  handleError(error, '同步失败');
+                  if (!controller.signal.aborted)
+                    handleError(error, '同步失败');
                 } finally {
                   hide();
                 }
@@ -590,7 +511,7 @@ export default withAntdSearch(function Torrents() {
         ]}
         search={false}
         scroll={{
-          x: widths.length ? widths.reduce((a, b) => a + b, 0) : 1800,
+          x: columns.reduce((total, column) => total + Number(column.width), 0),
         }}
       />
     </div>

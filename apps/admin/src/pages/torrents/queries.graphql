@@ -42,25 +42,13 @@ query ListTorrents(
   }
 }
 
-mutation SyncMikanHistory {
-  syncMikanHistory
+mutation SyncTorrentHistory {
+  syncTorrentHistory
 }
 
-fragment nyaaHistorySyncFields on NyaaHistorySync {
-  id
-  running
-  added
-  error
-}
-
-mutation SyncNyaaHistory {
-  syncNyaaHistory {
-    ...nyaaHistorySyncFields
-  }
-}
-
-query NyaaHistorySyncStatus {
-  nyaaHistorySync {
-    ...nyaaHistorySyncFields
+query TorrentHistorySyncStatus($id: String!) {
+  torrentHistorySync(id: $id) {
+    running
+    error
   }
 }

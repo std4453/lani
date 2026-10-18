@@ -6,7 +6,7 @@ describe('Nyaa request rate limit', () => {
     jest.setSystemTime(10000);
   });
   afterEach(() => jest.useRealTimers());
-  it.each([0, -1, 0.51, NaN, Infinity])('rejects invalid QPS %s', (qps) => {
+  it.each([0, -1, NaN, Infinity])('rejects invalid QPS %s', (qps) => {
     expect(() => new RateLimitedClient(qps)).toThrow();
   });
   it('spaces concurrent callers and continues after a failed request', async () => {
@@ -28,12 +28,40 @@ describe('Nyaa request rate limit', () => {
     await expect(second).resolves.toBe(2);
     expect(started).toEqual([10000, 12000]);
   });
-  it('supports a slower configured rate', async () => {
-    const client = new RateLimitedClient(0.25);
+  it.each([0.25, 1, 2])('supports configured QPS %s', async (qps) => {
+    const client = new RateLimitedClient(qps);
     await client.request(async () => 1);
     const next = client.request(async () => Date.now());
     await Promise.resolve();
-    jest.advanceTimersByTime(4000);
-    await expect(next).resolves.toBe(14000);
+    jest.advanceTimersByTime(1000 / qps);
+    await expect(next).resolves.toBe(10000 + 1000 / qps);
   });
+});
+
+it('aborts a stuck request, releases the queue and handles a late rejection', async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(10000);
+  try {
+    const client = new RateLimitedClient(2, 1000);
+    let signal: AbortSignal;
+    let fail: (reason: Error) => void;
+    const first = client.request((value) => {
+      signal = value;
+      return new Promise((_, reject) => {
+        fail = reject;
+      });
+    });
+    const rejection = expect(first).rejects.toThrow('请求超时');
+    const next = client.request(async () => 2);
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    jest.advanceTimersByTime(1000);
+    await rejection;
+    expect(signal!.aborted).toBe(true);
+    await expect(next).resolves.toBe(2);
+    fail!(new Error('late network failure'));
+    await Promise.resolve();
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
 });

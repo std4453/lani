@@ -1,3 +1,4 @@
+import { torrentsConfig } from './torrents';
 import {
   obj,
   opt,
@@ -175,7 +176,7 @@ const featuresConfig = opt(
 
 export const rootConfig = root({
   network: networkConfig,
-  nyaa: opt(obj({ qps: opt(num(), 0.5) }), { qps: 0.5 }),
+  torrents: torrentsConfig,
   postgresUrl: str(),
   s3: s3Config,
   downloadClient: downloadClientConfig,

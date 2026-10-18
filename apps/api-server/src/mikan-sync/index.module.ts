@@ -8,5 +8,6 @@ import { Module } from '@nestjs/common';
 @Module({
   imports: [FetchMikanModule, CommonModule, TorrentSyncModule],
   providers: [MikanSyncService, MikanSyncResolver],
+  exports: [MikanSyncService],
 })
 export class MikanSyncModule {}

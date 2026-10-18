@@ -5,8 +5,6 @@ import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { TorrentChannel } from '@lani/db';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { randomUUID } from 'crypto';
-import { NyaaHistorySync } from './index.model';
 import { parseHistory, parseRSS } from './parse';
 import { RateLimitedClient } from './rate-limited-client';
 
@@ -17,14 +15,8 @@ type Category = keyof typeof NYAA_HISTORY_PAGES;
 @Injectable()
 export class NyaaSyncService {
   private readonly logger = new Logger(NyaaSyncService.name);
-  private readonly client = new RateLimitedClient(config.nyaa.qps);
+  private readonly client = new RateLimitedClient(config.torrents.nyaa.qps);
   private history?: Promise<number>;
-  private historyState: NyaaHistorySync = {
-    id: '',
-    running: false,
-    added: 0,
-    error: null,
-  };
   private readonly running = new Map<Category, Promise<number>>();
 
   constructor(
@@ -33,9 +25,10 @@ export class NyaaSyncService {
   ) {}
 
   private fetch(params: Record<string, string | number>) {
-    return this.client.request(async () => {
+    return this.client.request(async (signal) => {
       const { data } = await this.axios.get<string>('https://nyaa.si/', {
         params,
+        signal,
         responseType: 'text',
         // 禁止客户端自动跟随跳转绕过限速或访问非预期页面。
         maxRedirects: 0,
@@ -99,38 +92,6 @@ export class NyaaSyncService {
     );
   }
 
-  getHistorySync(): NyaaHistorySync {
-    return { ...this.historyState };
-  }
-
-  startHistorySync(): NyaaHistorySync {
-    if (this.historyState.running) return this.getHistorySync();
-    this.historyState = {
-      id: randomUUID(),
-      running: true,
-      added: 0,
-      error: null,
-    };
-    // 后台请求不占用 Gateway 长连接；拒绝在此收敛并供前端轮询。
-    void this.syncNyaaHistory().then(
-      (added) => {
-        this.historyState = { ...this.historyState, running: false, added };
-      },
-      (error: unknown) => {
-        this.logger.error(
-          'Nyaa history synchronization failed',
-          error instanceof Error ? error.stack : String(error),
-        );
-        this.historyState = {
-          ...this.historyState,
-          running: false,
-          error: 'Nyaa 历史同步失败，已入库的种子保留，请重试',
-        };
-      },
-    );
-    return this.getHistorySync();
-  }
-
   syncNyaaHistory(): Promise<number> {
     if (this.history) return this.history;
     this.history = this.fetchHistory().finally(() => {
@@ -150,7 +111,6 @@ export class NyaaSyncService {
           );
           const added = await this.torrents.insert(items, TorrentChannel.NYAA);
           count += added;
-          if (this.historyState.running) this.historyState.added += added;
           if (!items.length) break;
         }
         this.logger.log(

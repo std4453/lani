@@ -1,6 +1,6 @@
 jest.mock('@/config', () => ({
   __esModule: true,
-  default: { nyaa: { qps: 0.5 } },
+  default: { torrents: { nyaa: { qps: 1 } } },
 }));
 jest.mock('@/common/axios.service', () => ({ GlobalAxiosService: class {} }));
 jest.mock('@/torrent-sync/index.service', () => ({
@@ -17,7 +17,8 @@ function setup() {
   const axios = { get: jest.fn().mockResolvedValue({ data: 'page' }) };
   const torrents = { insert: jest.fn().mockResolvedValue(1) };
   const service = new NyaaSyncService(axios as any, torrents as any);
-  (service as any).client.request = (send: () => unknown) => send();
+  (service as any).client.request = (send: (signal: AbortSignal) => unknown) =>
+    send(new AbortController().signal);
   (parseRSS as jest.Mock).mockResolvedValue([{ title: 'RSS' }]);
   (parseHistory as jest.Mock).mockReturnValue([{ title: 'history' }]);
   return { service, axios, torrents };
@@ -30,6 +31,7 @@ describe('Nyaa synchronization', () => {
     const first = service.syncCategory('1_2');
     expect(service.syncCategory('1_2')).toBe(first);
     await first;
+    expect(axios.get.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
     expect(await service.syncNyaa()).toBe(3);
     expect(
       axios.get.mock.calls.slice(1).map(([, options]) => options.params),
@@ -63,50 +65,5 @@ describe('Nyaa synchronization', () => {
     (parseHistory as jest.Mock).mockReturnValue([]);
     await service.syncNyaaHistory();
     expect(axios.get).toHaveBeenCalledTimes(3);
-  });
-});
-
-it('returns a background run immediately and shares its ID until completion', async () => {
-  const { service } = setup();
-  let complete: (count: number) => void = () => undefined;
-  jest.spyOn(service, 'syncNyaaHistory').mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        complete = resolve;
-      }),
-  );
-  const started = service.startHistorySync();
-  expect(started.running).toBe(true);
-  expect(service.startHistorySync().id).toBe(started.id);
-  expect(service.syncNyaaHistory).toHaveBeenCalledTimes(1);
-  complete(7);
-  await Promise.resolve();
-  expect(service.getHistorySync()).toEqual({
-    ...started,
-    running: false,
-    added: 7,
-  });
-  expect(service.startHistorySync().id).not.toBe(started.id);
-  complete(0);
-  await Promise.resolve();
-});
-
-it('captures background rejection and exposes failure without an unhandled promise', async () => {
-  const { service } = setup();
-  expect(service.getHistorySync()).toEqual({
-    id: '',
-    running: false,
-    added: 0,
-    error: null,
-  });
-  jest
-    .spyOn(service, 'syncNyaaHistory')
-    .mockRejectedValue(new Error('upstream failure'));
-  const started = service.startHistorySync();
-  await Promise.resolve();
-  expect(service.getHistorySync()).toEqual({
-    ...started,
-    running: false,
-    error: expect.stringContaining('同步失败'),
   });
 });

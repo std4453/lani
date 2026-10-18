@@ -7,5 +7,6 @@ import { NyaaSyncResolver } from './index.resolver';
 @Module({
   imports: [CommonModule, TorrentSyncModule],
   providers: [NyaaSyncService, NyaaSyncResolver],
+  exports: [NyaaSyncService],
 })
 export class NyaaSyncModule {}

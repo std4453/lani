@@ -1,0 +1,51 @@
+import { MikanSyncService } from '@/mikan-sync/index.service';
+import { NyaaSyncService } from '@/nyaa-sync/index.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { TorrentHistorySync } from './index.model';
+
+@Injectable()
+export class TorrentHistorySyncService {
+  private readonly logger = new Logger(TorrentHistorySyncService.name);
+  private job?: TorrentHistorySync & { id: string };
+
+  constructor(private mikan: MikanSyncService, private nyaa: NyaaSyncService) {}
+
+  start(): string {
+    if (this.job?.running) return this.job.id;
+    const job = {
+      id: randomUUID(),
+      running: true,
+      error: null as string | null,
+    };
+    this.job = job;
+    void this.sync().then(
+      () => {
+        job.running = false;
+      },
+      (error: unknown) => {
+        this.logger.error('Torrent history synchronization failed', error);
+        job.error = '历史种子同步失败，已入库的种子保留，请重试';
+        job.running = false;
+      },
+    );
+    return job.id;
+  }
+
+  status(id: string): TorrentHistorySync {
+    if (!this.job || this.job.id !== id) {
+      throw new Error('同步任务不存在或服务已重启，请重新同步');
+    }
+    return { running: this.job.running, error: this.job.error };
+  }
+
+  private async sync() {
+    const results = await Promise.allSettled([
+      this.mikan.syncMikanHistory(),
+      this.nyaa.syncNyaaHistory(),
+    ]);
+    for (const result of results) {
+      if (result.status === 'rejected') throw result.reason;
+    }
+  }
+}

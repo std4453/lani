@@ -9,8 +9,7 @@ import { FetchMikanModule } from '@/fetch-mikan/index.module';
 import { ImportModule } from '@/import/index.module';
 import { LaniaModule } from '@/integrations/lania/LaniaModule';
 import { JellyfinSyncModule } from '@/jellyfin-sync/index.module';
-import { NyaaSyncModule } from '@/nyaa-sync/index.module';
-import { MikanSyncModule } from '@/mikan-sync/index.module';
+import { TorrentHistorySyncModule } from '@/torrent-history-sync/index.module';
 import { NotificationModule } from '@/notification/NotificationModule';
 import { ParseTorrentModule } from '@/parse-torrent/index.module';
 import { SeasonEmitModule } from '@/season-emit/index.module';
@@ -30,8 +29,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     CommonModule,
     FetchMikanModule,
-    MikanSyncModule,
-    NyaaSyncModule,
+    TorrentHistorySyncModule,
     ParseTorrentModule,
 
     SeasonScrapeModule,
