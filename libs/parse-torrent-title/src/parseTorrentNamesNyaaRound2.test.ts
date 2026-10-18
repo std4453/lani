@@ -120,7 +120,6 @@ describe("Nyaa 第二轮通用发行结构", () => {
         "Historias Cortas de Primera",
         "1 -Movie .",
         "Jap.sub.Chino",
-        ".avi",
       ],
     ],
     [
@@ -130,7 +129,6 @@ describe("Nyaa 第二轮通用发行结构", () => {
         "Historias Cortas de Primera",
         "2 -Movie .",
         "Jap.sub.Chino",
-        ".avi",
       ],
     ],
     [

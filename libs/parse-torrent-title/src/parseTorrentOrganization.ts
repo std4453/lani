@@ -1,7 +1,64 @@
 import { Organization } from "./types";
 
 // 发布者词典只记录独立身份及同组复合写法，不记录作品名或作品与发布者的关联。
+// 新身份的裸尾签还需要明确职责或连字符边界，避免从普通标题尾词中抽名。
+const contextualNames = [
+  "THORA",
+  "Doremi",
+  "DB-Style",
+  "Commie",
+  "Fork",
+  "Shinsen-Subs",
+  "Neroextreme",
+  "Takena Nagao",
+  "NovaWorks",
+  "Autem",
+  "Baka-Tsuki",
+  "μ's",
+  "BobP",
+  "CTR",
+  "HorribleSubs",
+  "CHIKI",
+  "KOTEX",
+  "Seto Otaku",
+  "Hiryuu",
+  "RKZ",
+  "PHT",
+  "KAW",
+  "Lambadelta",
+  "kayllin",
+  "Glitch",
+  "GRZ",
+  "KiteSeekers",
+  "Wasurenai",
+  "UTW",
+  "Tondemonai",
+  "INP",
+  "SAMPLE",
+  "DCTP",
+  "Perfectorizer",
+  "sheline",
+  "sage",
+  "Magai",
+  "Anonymoose",
+  "ANBU",
+  "umai",
+  "Shani-san",
+  "GJM",
+  "TFS",
+  "GKIDS",
+  "BSS",
+  "OldCastle",
+  "South Wind Subs",
+  "Kirakira",
+  "FavriteFixNames",
+  "Vivid",
+  "Asenshi",
+  "ASW",
+];
+const contextual = new Set(contextualNames.map((name) => name.toLowerCase()));
 const knownNames = [
+  ...contextualNames,
   "4K世界",
   "Chyrka",
   "yolerejiju",
@@ -337,13 +394,23 @@ const knownEntries = knownNames
   .sort((left, right) => right.name.length - left.name.length);
 const known = new Set(knownEntries.map(({ lower }) => lower));
 // 普通词身份只接受完整包装署名，避免把普通作品正文的尾词当作发布者。
-const wrappedNames = new Set(["stress"]);
+const wrappedNames = new Set(["stress", "tw", "nf"]);
 // 这些短署名仅在技术组合块中识别，避免把同词作品别名认作发布者。
 const technicalOnlyEntries = [
   { name: "Majin", lower: "majin" },
   { name: "Kira", lower: "kira" },
 ];
 const technicalEntries = [...knownEntries, ...technicalOnlyEntries];
+// 来源角色只描述字幕制作者；视频适配目标不会因 for 一词自动升级为署名。
+const subtitleReleaseNames = new Set([
+  "chiki",
+  "commie",
+  "horriblesubs",
+  "gjm",
+]);
+const videoReleaseNames = new Set(["reinforce", "ohys_raws", "ohys-raws"]);
+const artistNames = ["Takena Nagao", "μ's"];
+const barePrefixNames = new Set(["db-style", "tfs"]);
 // 已核实为不同制作身份的连字符联合署名；其他连字符仍属于原名。
 const knownHyphenJoints = new Set([
   "aprm-diogo4d",
@@ -354,6 +421,16 @@ const knownHyphenJoints = new Set([
   "lonelychaser-inka",
   "ste-merumeru",
   "as-nkwt",
+  "horriblesubs-reinforce",
+  "seto otaku-hiryuu",
+  "pht-kaw",
+  "kiteseekers-wasurenai",
+  "utw-thora",
+  "vivid-asenshi",
+  "magai-anonymoose",
+  "anbu-umai",
+  "bss-anon",
+  "oldcastle-south wind subs",
 ]);
 const nameSuffix =
   /(?:字幕[组組社]|[汉漢]化[组組]|[发發]布[组組]|搬[运運][组組]|制作[组組]|工作室|压制部|手抄部|后援会|後援會|摆烂组|擺爛組|机翻组|機翻組|字幕屋|字幕團|字幕团|字幕站|字幕坊|[\w\p{Script=Han} -](?:subs?|raws?|studio|team|production|fansub)|制作)$/iu;
@@ -373,6 +450,9 @@ const deliveryAttribute =
 // 别名和技术说明常以字幕属性结尾；这些描述不能因末尾的 Sub(s) 成为身份。
 const subtitleDescription =
   /(?:^|[,，;；/]|\s)(?:multi[-_ ]?subs?|[MD]-SUB|(?:hard|soft)\s+subs?|(?:eng?|english|jpn?|japanese|spa|spanish|fre|fra|french|ger|german|ita|italian|por|portuguese|rus|russian|ara|arabic)[-_ ]subs?)(?:\b|$)|[,，]\s*subs?$|(?:^|[,，;；/]|\s)dual[-_ ]?subs?(?=\s*(?:$|[,，;；/]))/i;
+// 完整职责和交付说明不因 Sub(s) 后缀成为品牌；复合品牌仍保留。
+const anonymousOrDelivery =
+  /^(?:OCR|(?:subs?|subtitles?)\s+only|(?:ASS|SRT)\s+scripts?|XML\s+chapter\s+files|ripped[-_ ]?subs?|honorifics|(?:english|eng|japanese|jpn|german|ger|french|fre|spanish|spa)[-_ ]+fansubs?|(?:Netflix|Daisuki)(?:\s+subs?)?|WEBSTEAM)$/i;
 const versionLabel = /^(?:TV|全遮|(?:轻微|輕微)?修正|(?:完全)?[无無]修)版$/i;
 const compactCredit =
   /^[\p{Script=Latin}\p{N}][\p{Script=Latin}\p{M}\p{N}._'’\-]*$/u;
@@ -436,6 +516,11 @@ function isDualSubtitleField(text: string): boolean {
   );
 }
 
+function isSubtitleDestination(text: string): boolean {
+  const destination = text.match(/^subtitle[-_](.+)$/i);
+  return !!destination && videoReleaseNames.has(destination[1].toLowerCase());
+}
+
 function isMetadata(text: string): boolean {
   const fragments = text.split(joint);
   if (
@@ -445,6 +530,10 @@ function isMetadata(text: string): boolean {
     return true;
   return (
     !text ||
+    anonymousOrDelivery.test(text) ||
+    deliveryAttribute.test(text) ||
+    /^Hi(?:8|10|12)p$/i.test(text) ||
+    isSubtitleDestination(text) ||
     isDualSubtitleField(text) ||
     /^\/?(?:img|url)(?:=.*)?$/i.test(text) ||
     /^[网網][盘盤](?:下载|下載)$/.test(text) ||
@@ -528,7 +617,10 @@ function strongName(text: string): boolean {
     known.has(text.toLowerCase()) ||
     (/^[^\s@\[\]【】]+@[A-Za-z0-9][A-Za-z0-9._-]*$/.test(text) &&
       !/^\d{3,4}[pi]?@\d+(?:\.\d+)?fps$/i.test(text)) ||
-    (!languageList.test(text) &&
+    (!deliveryAttribute.test(text) &&
+      !isSubtitleDestination(text) &&
+      !anonymousOrDelivery.test(text) &&
+      !languageList.test(text) &&
       !languageDelivery.test(text) &&
       !subtitleDescription.test(text) &&
       nameSuffix.test(text.replace(/\s*[（(][^）)]*[）)]$/, "")) &&
@@ -542,7 +634,9 @@ function plausibleName(text: string): boolean {
   return (
     text.length > 0 &&
     text.length <= 64 &&
-    (!isMetadata(text) || strongName(text)) &&
+    (!isMetadata(text) ||
+      strongName(text) ||
+      wrappedNames.has(text.toLowerCase())) &&
     !/[\/／|｜:：<>\[\]【】]/.test(text) &&
     !/\b(?:S\d{1,2}E\d+|EP\d+|season\s+\d+|episode\s+\d+)\b/i.test(text)
   );
@@ -560,6 +654,22 @@ function compactIdentity(text: string): boolean {
 }
 
 function partsOf(text: string): string[] {
+  // Patch 是修改职责，混流描述则明确命名两个实际素材来源。
+  const patchSource = text.match(/^patch\s+for\s+(.+)$/i);
+  if (patchSource && subtitleReleaseNames.has(patchSource[1].toLowerCase()))
+    return [patchSource[1]];
+  const patched = text.match(/^(.+?)-Patch\s+(.+)$/i);
+  if (patched && strongName(patched[1]) && compactIdentity(patched[2]))
+    return [...partsOf(patched[1]), ...partsOf(patched[2])];
+  const muxed = text.match(/^(.+?\S)\s+muxed\s+with\s+(.+?\S)\s+raws?$/i);
+  if (muxed && [muxed[1], muxed[2]].every(compactIdentity))
+    return [muxed[1], muxed[2]];
+  const edited = text.match(/^edited[-_ ]+(.+)$/i);
+  if (edited && subtitleReleaseNames.has(edited[1].toLowerCase()))
+    return partsOf(edited[1]);
+  const sourceSubs = text.match(/^(.+?\S)\s+subs?$/i);
+  if (sourceSubs && known.has(sourceSubs[1].toLowerCase()))
+    return [sourceSubs[1]];
   if (subtitleSource.test(text))
     text = text.replace(subtitleSource, "").replace(/字幕$/, "").trim();
   if (isVersionCombination(text)) return [];
@@ -691,6 +801,21 @@ export function parseTorrentOrganization(
   const subtitleDestinations = subtitleFields.filter(
     (field) => field.destination
   );
+  for (const target of input.matchAll(
+    /\b(?:re[- ]?timed?\s+(?:for|to)|timed?\s+to|chapters\s+for\s+DCP)\s+/gi
+  )) {
+    const start = target.index!;
+    const boundary = input
+      .slice(start)
+      .search(/\.(?:ass|srt|zip|7z|rar)\b|[;\n]/i);
+    let end = boundary < 0 ? input.length : start + boundary;
+    const technical = blocks.find(
+      (block) =>
+        block.open >= start && block.open < end && isMetadata(block.text)
+    );
+    if (technical) end = technical.open;
+    subtitleDestinations.push({ start, end, destination: true });
+  }
   const discScene = input.match(
     /\[(?:JPN?|ENG?|CH[ST]|US|USA|EU)\]\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|iso|torrent))?$/iu
   );
@@ -725,7 +850,7 @@ export function parseTorrentOrganization(
       .replace(/^[^\[【]*[\]】]/, (prefix) =>
         roleOnly.test(prefix.slice(0, -1).trim()) ? "" : prefix
       )
-      .replace(/[\u200b\ufeff★☆\s&＆×+、]/g, "");
+      .replace(/[\u200b\ufeff★☆_\s&＆×+、]/g, "");
     if (before && !isMetadata(before) && !/^[（(][^）)]*[）)]$/.test(before))
       hasTitle = true;
     if (
@@ -759,6 +884,19 @@ export function parseTorrentOrganization(
       cursor = block.close;
       continue;
     }
+    const subtitleList = block.text.match(/\bsubs?\s+-\s+(.+)$/i);
+    if (subtitleList) {
+      const names = subtitleList[1].split(/\s*,\s*/);
+      if (
+        names.length &&
+        names.every((name) => known.has(name.toLowerCase()))
+      ) {
+        const start = block.start + block.text.lastIndexOf(subtitleList[1]);
+        selected.push({ start, end: block.end, parts: names });
+        cursor = block.close;
+        continue;
+      }
+    }
     const parts = partsOf(block.text);
     const labelled =
       explicitLabel.test(block.text) ||
@@ -772,7 +910,10 @@ export function parseTorrentOrganization(
       parts.length > 0 &&
       (knownHyphenJoints.has(blockLower) ||
         parts.every(
-          (part) => strongName(part) || wrappedNames.has(part.toLowerCase())
+          (part) =>
+            strongName(part) ||
+            (wrappedNames.has(part.toLowerCase()) &&
+              ((!languageWord.test(part) && !/^NF$/i.test(part)) || !hasTitle))
         )) &&
       (!requiresLeadingContext || (!hasTitle && !selected.length));
     let followingTitle = false;
@@ -783,7 +924,7 @@ export function parseTorrentOrganization(
         .slice(previous.close, next?.open ?? input.length)
         .trim();
       if (
-        gap.replace(/[★☆\s&＆×+、]/g, "") &&
+        gap.replace(/[★☆_\s&＆×+、]/g, "") &&
         !isMetadata(gap) &&
         !(discScene && discDelivery && previous.open === discScene.index)
       ) {
@@ -866,6 +1007,7 @@ export function parseTorrentOrganization(
       leadingLower.startsWith(lower) &&
       /^[\s★☆『\[【-]/.test(leading.slice(name.length)) &&
       (nameSuffix.test(name) ||
+        barePrefixNames.has(lower) ||
         /^\s*[★☆『\[【-]/.test(leading.slice(name.length))) &&
       (!/^\p{Script=Han}{1,2}$/u.test(name) ||
         /^[★☆『\[【]/.test(leading.slice(name.length)))
@@ -888,7 +1030,37 @@ export function parseTorrentOrganization(
     )
   ) {
     const parts = partsOf(prefix);
-    if (parts.length && parts.every(strongName)) {
+    const prefixEnd = input.indexOf(prefix) + prefix.length;
+    const followingText = input
+      .slice(prefixEnd)
+      .replace(bracket, "")
+      .replace(
+        /\.(?:ass|srt|zip|7z|rar|torrent|mkv|mp4)(?:\.torrent)?\s*$/i,
+        ""
+      )
+      .replace(/^[★☆\s-]+/, "")
+      .trim();
+    // 多词 Sub(s) 也可能是作品加字幕说明；独立标题包装或星号、横线才提供边界。
+    const separatedTitle =
+      /^\s*[★☆『\[【-]/.test(input.slice(prefixEnd)) &&
+      ((!!followingText && !isMetadata(followingText)) ||
+        blocks.some(
+          (block) =>
+            block.open >= prefixEnd &&
+            !isMetadata(block.text) &&
+            !strongName(block.text) &&
+            !wrappedNames.has(block.text.toLowerCase())
+        ));
+    if (
+      parts.length &&
+      parts.every(
+        (part) =>
+          strongName(part) &&
+          (known.has(part.toLowerCase()) ||
+            !/\s+subs?$/i.test(part) ||
+            separatedTitle)
+      )
+    ) {
       const start = input.indexOf(prefix);
       selected.unshift({ start, end: start + prefix.length, parts });
     }
@@ -933,6 +1105,63 @@ export function parseTorrentOrganization(
         selected.splice(index, 1);
     }
     selected.push({ start, end, parts });
+  }
+  // 裸署名仍需职责或演出者分隔，不能把任意已知词从作品正文中抽出。
+  for (const { name, lower } of knownEntries) {
+    let offset = input.toLowerCase().indexOf(lower);
+    while (offset >= 0) {
+      const end = offset + name.length;
+      const before = input.slice(0, offset);
+      const after = input.slice(end);
+      const boundary = !before || /[\s_\[【(#-]$/.test(before);
+      const roleAfter =
+        /^\s+(?:(?:english|eng|japanese|jpn)\s+)?(?:subs?|subtitles?|OCR)\b/i.test(
+          after
+        );
+      const possessiveSource =
+        subtitleReleaseNames.has(lower) &&
+        /subtitles?\s+patch\s+for\s*$/i.test(before) &&
+        /^['’]s\s/.test(after);
+      const songContribution = /^Song\s*&\s*[A-Za-z0-9-]+Dialogue\b/.test(
+        after
+      );
+      const namedCreatorPrefix =
+        barePrefixNames.has(lower) &&
+        /^\s/.test(after) &&
+        (!before.trim() || /[\]】]\s*$/.test(before));
+      const performer =
+        artistNames.some((artist) => artist.toLowerCase() === lower) &&
+        /^(?:\s+[-–]\s+)/.test(after) &&
+        (!before.trim() || /[\]】]\s*$/.test(before));
+      const namedHash =
+        /#$/u.test(before) && /^(?:\.[a-z0-9]+)*\s*$/i.test(after);
+      if (
+        boundary &&
+        (roleAfter ||
+          possessiveSource ||
+          songContribution ||
+          namedCreatorPrefix ||
+          performer ||
+          namedHash) &&
+        !subtitleDestinations.some(
+          (field) => offset >= field.start && end <= field.end
+        ) &&
+        !selected.some((item) => item.start <= offset && item.end >= end)
+      )
+        selected.push({
+          start: offset,
+          end,
+          parts: [input.slice(offset, end)],
+        });
+      offset = input.toLowerCase().indexOf(lower, offset + name.length);
+    }
+  }
+  // by 明确引出卡拉OK制作人；普通作品内的 by 不提供这种身份边界。
+  for (const credit of input.matchAll(
+    /(?:^|[_\s])karaoke[_ ]+by[_ ]+([\p{L}\p{N}][\p{L}\p{M}\p{N}_'-]*)(?=\.(?:avi|mkv|mp4)|[\s[（(]|$)/giu
+  )) {
+    const start = credit.index! + credit[0].lastIndexOf(credit[1]);
+    selected.push({ start, end: start + credit[1].length, parts: [credit[1]] });
   }
   // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
   const sceneContainers = [
@@ -1012,7 +1241,9 @@ export function parseTorrentOrganization(
     });
   }
   // 按已核实身份匹配有分隔的裸尾签，不把它与某个作品绑定。
-  let tail = input.trimEnd().replace(/\.(?:mkv|mp4|avi|torrent)$/i, "");
+  let tail = input
+    .trimEnd()
+    .replace(/\.(?:mkv|mp4|avi|torrent|pdf|epub)$/i, "");
   for (let index = blocks.length - 1; index >= 0; index--) {
     const block = blocks[index];
     if (
@@ -1042,7 +1273,11 @@ export function parseTorrentOrganization(
       return false;
     const before = tail.slice(0, tail.length - name.length);
     if (!/[.\s]$/.test(before)) return false;
-    if (known.has(lower) && (!shortenedTail || /[-–]\s*$/.test(before)))
+    if (
+      known.has(lower) &&
+      (!shortenedTail || /[-–]\s*$/.test(before)) &&
+      (!contextual.has(lower) || /[-–]\s*$/.test(before))
+    )
       return true;
     // 无连字符时，音轨编码及完整声道字段提供技术链与署名之间的边界。
     return /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|LPCM|PCM|ATMOS|AC-?3|E-?AC-?3|DDP?|DTS)(?:[ ._]?[1-9](?:\.[01])?(?:ch)?)?\s+$/i.test(
@@ -1060,6 +1295,7 @@ export function parseTorrentOrganization(
       else selected.splice(following, 0, item);
     }
   }
+  selected.sort((left, right) => left.start - right.start);
   if (!selected.length) return undefined;
   const parts = Array.from(new Set(selected.flatMap((item) => item.parts)));
   return {
