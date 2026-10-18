@@ -12,7 +12,7 @@ export class TorrentHistorySyncResolver {
   }
 
   @Query(() => TorrentHistorySync)
-  torrentHistorySync(@Args('id') id: string) {
+  torrentHistorySyncState(@Args('id') id: string) {
     return this.service.status(id);
   }
 }

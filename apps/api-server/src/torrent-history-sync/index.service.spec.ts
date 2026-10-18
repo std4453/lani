@@ -28,10 +28,14 @@ it('returns an ID immediately, starts both sources once and completes only after
   expect(mikan.syncMikanHistory).toHaveBeenCalledTimes(1);
   expect(nyaa.syncNyaaHistory).toHaveBeenCalledTimes(1);
   await flush();
-  expect(service.status(id)).toEqual({ running: true, error: null });
+  expect(service.status(id)).toEqual({ running: true, added: 0, error: null });
   complete();
   await flush();
-  expect(service.status(id)).toEqual({ running: false, error: null });
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 10,
+    error: null,
+  });
   expect(service.start()).not.toBe(id);
   complete();
   await flush();
@@ -49,6 +53,7 @@ it.each(['mikan', 'nyaa'] as const)(
     await flush();
     expect(service.status(id)).toEqual({
       running: false,
+      added: 0,
       error: expect.stringContaining('已入库的种子保留'),
     });
     expect(service.start()).not.toBe(id);
@@ -64,7 +69,11 @@ it('keeps recent completed results while rejecting unknown IDs and IDs lost on r
   complete();
   await flush();
   service.start();
-  expect(service.status(id)).toEqual({ running: false, error: null });
+  expect(service.status(id)).toEqual({
+    running: false,
+    added: 10,
+    error: null,
+  });
   expect(() => setup().service.status(id)).toThrow('重新同步');
   complete();
   await flush();
@@ -80,5 +89,18 @@ it('bounds retained results to the ten most recent jobs', async () => {
   }
   expect(() => service.status(ids[0])).toThrow('重新同步');
   for (const id of ids.slice(1))
-    expect(service.status(id)).toEqual({ running: false, error: null });
+    expect(service.status(id)).toEqual({
+      running: false,
+      added: 10,
+      error: null,
+    });
+});
+
+it('reports zero when both sources add no torrents', async () => {
+  const { service, mikan, nyaa } = setup();
+  mikan.syncMikanHistory.mockResolvedValue(0);
+  nyaa.syncNyaaHistory.mockResolvedValue(0);
+  const id = service.start();
+  await flush();
+  expect(service.status(id)).toEqual({ running: false, added: 0, error: null });
 });

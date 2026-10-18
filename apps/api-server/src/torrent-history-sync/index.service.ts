@@ -17,6 +17,7 @@ export class TorrentHistorySyncService {
     const job = {
       id: randomUUID(),
       running: true,
+      added: 0,
       error: null as string | null,
     };
     this.job = job;
@@ -24,7 +25,8 @@ export class TorrentHistorySyncService {
     // 保留最近十次结果，避免新任务覆盖尚未被页面读到的完成状态。
     if (this.jobs.size > 10) this.jobs.delete(this.jobs.keys().next().value);
     void this.sync().then(
-      () => {
+      (added) => {
+        job.added = added;
         job.running = false;
       },
       (error: unknown) => {
@@ -41,7 +43,7 @@ export class TorrentHistorySyncService {
     if (!job) {
       throw new Error('同步任务不存在或服务已重启，请重新同步');
     }
-    return { running: job.running, error: job.error };
+    return { running: job.running, added: job.added, error: job.error };
   }
 
   private async sync() {
@@ -49,8 +51,11 @@ export class TorrentHistorySyncService {
       this.mikan.syncMikanHistory(),
       this.nyaa.syncNyaaHistory(),
     ]);
+    let added = 0;
     for (const result of results) {
       if (result.status === 'rejected') throw result.reason;
+      added += result.value;
     }
+    return added;
   }
 }

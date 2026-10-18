@@ -46,9 +46,10 @@ mutation SyncTorrentHistory {
   syncTorrentHistory
 }
 
-query TorrentHistorySyncStatus($id: String!) {
-  torrentHistorySync(id: $id) {
+query TorrentHistorySyncState($id: String!) {
+  torrentHistorySyncState(id: $id) {
     running
+    added
     error
   }
 }

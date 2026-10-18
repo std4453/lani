@@ -1,6 +1,6 @@
 import { ApolloClient } from '@apollo/client';
 import {
-  TorrentHistorySyncStatusDocument,
+  TorrentHistorySyncStateDocument,
   SyncTorrentHistoryDocument,
 } from '@/generated/types';
 
@@ -33,13 +33,13 @@ export async function syncTorrentHistory(
   while (true) {
     await waitForPoll(signal);
     const { data: result } = await client.query({
-      query: TorrentHistorySyncStatusDocument,
+      query: TorrentHistorySyncStateDocument,
       variables: { id },
       fetchPolicy: 'network-only',
       context,
     });
-    const state = result.torrentHistorySync;
+    const state = result.torrentHistorySyncState;
     if (state.error) throw new Error(state.error);
-    if (!state.running) return;
+    if (!state.running) return state.added;
   }
 }

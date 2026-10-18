@@ -2268,7 +2268,7 @@ export type Query = {
   torrent?: Maybe<Torrent>;
   torrentByHash?: Maybe<Torrent>;
   torrentById?: Maybe<Torrent>;
-  torrentHistorySync: TorrentHistorySync;
+  torrentHistorySyncState: TorrentHistorySync;
 };
 
 
@@ -2528,7 +2528,7 @@ export type QueryTorrentByIdArgs = {
 };
 
 
-export type QueryTorrentHistorySyncArgs = {
+export type QueryTorrentHistorySyncStateArgs = {
   id: Scalars['String'];
 };
 
@@ -4111,6 +4111,7 @@ export type TorrentFilter = {
 
 export type TorrentHistorySync = {
   __typename?: 'TorrentHistorySync';
+  added: Scalars['Int'];
   error?: Maybe<Scalars['String']>;
   running: Scalars['Boolean'];
 };
@@ -4890,12 +4891,12 @@ export type SyncTorrentHistoryMutationVariables = Exact<{ [key: string]: never; 
 
 export type SyncTorrentHistoryMutation = { __typename?: 'Mutation', syncTorrentHistory: string };
 
-export type TorrentHistorySyncStatusQueryVariables = Exact<{
+export type TorrentHistorySyncStateQueryVariables = Exact<{
   id: Scalars['String'];
 }>;
 
 
-export type TorrentHistorySyncStatusQuery = { __typename?: 'Query', torrentHistorySync: { __typename?: 'TorrentHistorySync', running: boolean, error?: string | null } };
+export type TorrentHistorySyncStateQuery = { __typename?: 'Query', torrentHistorySyncState: { __typename?: 'TorrentHistorySync', running: boolean, added: number, error?: string | null } };
 
 export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -4962,5 +4963,5 @@ export const WriteSeasonMetadataDocument = {"kind":"Document","definitions":[{"k
 export const GetSeasonsStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonsStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"now"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Datetime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allSeasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions,...TaskStatusFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetSeasonsStatusQuery, GetSeasonsStatusQueryVariables>;
 export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentParseFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions,...TorrentParseFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
 export const SyncTorrentHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncTorrentHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncTorrentHistory"}}]}}]} as unknown as DocumentNode<SyncTorrentHistoryMutation, SyncTorrentHistoryMutationVariables>;
-export const TorrentHistorySyncStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TorrentHistorySyncStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"torrentHistorySync"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"running"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<TorrentHistorySyncStatusQuery, TorrentHistorySyncStatusQueryVariables>;
+export const TorrentHistorySyncStateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TorrentHistorySyncState"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"torrentHistorySyncState"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"running"}},{"kind":"Field","name":{"kind":"Name","value":"added"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<TorrentHistorySyncStateQuery, TorrentHistorySyncStateQueryVariables>;
 export const GetConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetConfig"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfin"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lania"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"features"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lania"}}]}},{"kind":"Field","name":{"kind":"Name","value":"env"}}]}}]}}]} as unknown as DocumentNode<GetConfigQuery, GetConfigQueryVariables>;

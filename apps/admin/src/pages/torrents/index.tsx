@@ -291,7 +291,10 @@ function useColumns() {
         {
           title: '操作',
           render: (_, r) => (
-            <Space direction="horizontal">
+            <Space
+              direction={mobile ? 'vertical' : 'horizontal'}
+              size={mobile ? 0 : 8}
+            >
               <Typography.Link
                 href={r.torrentLink}
                 download
@@ -316,7 +319,7 @@ function useColumns() {
               </Button>
             </Space>
           ),
-          width: 154,
+          width: mobile ? 88 : 154,
           className: tableStyles.compactCell,
           fixed: 'right',
         },
@@ -492,9 +495,12 @@ export default withAntdSearch(function Torrents() {
                 historyAbort.current = controller;
                 const hide = message.loading('同步中，请稍候……', 0);
                 try {
-                  await syncTorrentHistory(client, controller.signal);
+                  const added = await syncTorrentHistory(
+                    client,
+                    controller.signal,
+                  );
                   if (controller.signal.aborted) return;
-                  void message.success('历史种子同步成功');
+                  void message.success(`同步成功，新增 ${added} 条种子`);
                   void ref.current?.reload();
                 } catch (error) {
                   if (!controller.signal.aborted)
