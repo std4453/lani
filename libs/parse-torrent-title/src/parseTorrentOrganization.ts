@@ -8,6 +8,12 @@ const knownNames = [
   "Earth",
   "aprm",
   "Diogo4D",
+  "NF93",
+  "ThanksBB",
+  "SCV",
+  "Asuka♥Shinji",
+  "ARR-JE-XenoCrypt",
+  "Lord Karasuma",
   "AMF",
   "SnF",
   "BakeSubs",
@@ -318,7 +324,12 @@ const known = new Set(knownEntries.map(({ lower }) => lower));
 // 这些短署名仅在技术组合块中识别，避免把同词作品别名认作发布者。
 const technicalEntries = [...knownEntries, { name: "Majin", lower: "majin" }];
 // 已核实为不同制作身份的连字符联合署名；其他连字符仍属于原名。
-const knownHyphenJoints = new Set(["aprm-diogo4d", "amf-snf", "bakesubs-yna"]);
+const knownHyphenJoints = new Set([
+  "aprm-diogo4d",
+  "amf-snf",
+  "bakesubs-yna",
+  "diogo4d-nf93",
+]);
 const nameSuffix =
   /(?:字幕[组組社]|[汉漢]化[组組]|[发發]布[组組]|搬[运運][组組]|制作[组組]|工作室|压制部|手抄部|后援会|後援會|摆烂组|擺爛組|机翻组|機翻組|字幕屋|字幕團|字幕团|字幕站|字幕坊|[\w\p{Script=Han} -](?:subs?|raws?|studio|team|production|fansub)|制作)$/iu;
 const joint = /\s*(?:[&＆×+、\\]|\s[xX]\s|feat\.)\s*/i;
@@ -328,6 +339,8 @@ const roleOnly =
   /^(?:(?:个人|個人|自)?(?:音[频頻]|视频|視頻|二次)?(?:[压壓]制|合成|封装|封裝|校[对對]|翻[译譯]|搬[运運])|自[压壓]|[转轉][载載]|整理搬运|整理搬運|自购自翻自压|[转轉](?:[运運发發])?|(?:个人|個人)[汉漢]化|自[购購]|自制(?:字幕)?|个人制作合集|個人製作合集)$/;
 const languageList =
   /^(?:multi[-_ ]?subs?|(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]?subs?|(?:[MD][- ]|hard[-_ ]?|soft[-_ ]?)subs?(?:\s*\([^)]*\))?|(?:CN|HK|TW|JP|EN|ENG|CHS|CHT)(?:[,，\s]+(?:CN|HK|TW|JP|EN|ENG|CHS|CHT))*(?:\s+subs?)?)$/i;
+const languageDelivery =
+  /^(?:eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|chs|cht)[-_ ]+(?:dubs?\s*(?:and|&)\s*subs?|subs?\s*(?:and|&)\s*dubs?)$/i;
 const languageWord =
   /^(?:CN|HK|TW|JP|EN|ENG|CHS|CHT|eng?|english|ger|german|jpn?|japanese|rus|russian|fre|fra|french|spa|spanish|ita|italian|por|portuguese|ara|arabic|日语|日語|英语|英語|简体|簡體|繁体|繁體)$/i;
 const deliveryAttribute =
@@ -388,6 +401,9 @@ function isMetadata(text: string): boolean {
     ) ||
     /\bver\.$/i.test(text) ||
     languageList.test(text) ||
+    languageDelivery.test(text) ||
+    /^JPN$/i.test(text) ||
+    /^Vol\.?\s*\d+(?:\s*[-~]\s*\d+)?(?:\s+FIN)?$/i.test(text) ||
     (subtitleDescription.test(text) &&
       (/[,，;；]/.test(text) ||
         /^(?:multi[-_ ]?|[MD]-|hard\s+|soft\s+)/i.test(text))) ||
@@ -451,6 +467,7 @@ function strongName(text: string): boolean {
     (/^[^\s@\[\]【】]+@[A-Za-z0-9][A-Za-z0-9._-]*$/.test(text) &&
       !/^\d{3,4}[pi]?@\d+(?:\.\d+)?fps$/i.test(text)) ||
     (!languageList.test(text) &&
+      !languageDelivery.test(text) &&
       !subtitleDescription.test(text) &&
       nameSuffix.test(text.replace(/\s*[（(][^）)]*[）)]$/, "")) &&
       !/^(?:\d{3,4}(?:[pi]|(?=\s|_|$))|[248]K|WEB(?:[-_. ]?(?:DL|RIP))?|BLU[-_. ]?RAY|BD(?:RIP|REMUX)?|DVD(?:RIP)?|UHD|HDR\d*|HEVC|AV1|AVC|AAC|FLAC|OPUS|PCM|[HX][ ._-]?26[45])(?:\b|_|\s|$)/i.test(
@@ -516,6 +533,12 @@ export function parseTorrentOrganization(
       end: match.index + 1 + text.trimEnd().length,
     });
   }
+  const discScene = input.match(
+    /\[(?:JPN?|ENG?|CH[ST]|US|USA|EU)\]\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|iso|torrent))?$/iu
+  );
+  const discDelivery = blocks.some((block) =>
+    /^(?:BDMV|DVDISO|UHD|BDREMUX)$/i.test(block.text)
+  );
   const selected: { start: number; end: number; parts: string[] }[] = [];
   let hasTitle = false;
   let cursor = 0;
@@ -590,7 +613,11 @@ export function parseTorrentOrganization(
       const gap = input
         .slice(previous.close, next?.open ?? input.length)
         .trim();
-      if (gap.replace(/[★☆\s&＆×+、]/g, "") && !isMetadata(gap)) {
+      if (
+        gap.replace(/[★☆\s&＆×+、]/g, "") &&
+        !isMetadata(gap) &&
+        !(discScene && discDelivery && previous.open === discScene.index)
+      ) {
         followingTitle = true;
         break;
       }
@@ -661,6 +688,8 @@ export function parseTorrentOrganization(
     ({ name, lower }) =>
       leadingLower.startsWith(lower) &&
       /^[\s★☆『\[【-]/.test(leading.slice(name.length)) &&
+      (nameSuffix.test(name) ||
+        /^\s*[★☆『\[【-]/.test(leading.slice(name.length))) &&
       (!/^\p{Script=Han}{1,2}$/u.test(name) ||
         /^[★☆『\[【]/.test(leading.slice(name.length)))
   )?.name;
@@ -687,9 +716,35 @@ export function parseTorrentOrganization(
       selected.unshift({ start, end: start + prefix.length, parts });
     }
   }
+  // 组织名词与后续作品有明确分隔时，保留片头已有发布者之后的制作方。
+  const productionCredit = input.match(
+    /(?:^|[\]】]\s*)([\p{L}\p{N}][\p{L}\p{M}\p{N} .'-]{0,80} Animation Study Group)\s+[-–]\s+(?=\S)/iu
+  );
+  if (productionCredit) {
+    const start =
+      productionCredit.index! +
+      productionCredit[0].indexOf(productionCredit[1]);
+    selected.push({
+      start,
+      end: start + productionCredit[1].length,
+      parts: [productionCredit[1]],
+    });
+  }
+  // 字幕、字体补包明确说明适配来源时，只提取原文中的已知制作身份。
+  const subtitleCredits = input.matchAll(
+    /\b(?:subs?|subtitles?)(?:\s*\+\s*fonts?)?\s+for\s+([^\[\]【】()]+?)(?=\s*[\[【(]|\.(?:zip|7z|rar|torrent)$|$)/gi
+  );
+  for (const credit of subtitleCredits) {
+    const name = credit[1].trim();
+    const parts = partsOf(name);
+    if (parts.length && parts.every(strongName)) {
+      const start = credit.index! + credit[0].lastIndexOf(credit[1]);
+      selected.push({ start, end: start + name.length, parts });
+    }
+  }
   // Scene 尾签紧接编码/音轨标记；其后允许独立的别名、语言括注及文件属性。
   const scenes = input.matchAll(
-    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:[- ._]HD)?(?:[. _-](?:MA|HRA))?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit)(?:[. _]?\d(?:\.\d)?(?:ch)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?(?:[- ._]+(?:8|10|12)[- ]?bits?)?\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/giu
+    /(?:^|[\s._\])])(?:AAC|FLAC|OPUS|PCM|AC-?3|E-?AC-?3|DDP?|DTS(?:[- ._]HD)?(?:[. _-](?:MA|HRA))?|AV1|AVC|HEVC|[xXhH][ ._-]?26[45]|(?:8|10|12)[- ]?bit|(?:DUAL|MULTI)[-_. ]?AUDIO)(?:[. _]?\d(?:\.\d)?(?:ch)?)?(?:[. _]+(?:MULTi|DUAL)(?!-Audio))?(?:[- ._]+(?:8|10|12)[- ]?bits?)?\s*-\s*([\p{L}\p{N}][\p{L}\p{M}\p{N}._-]*?)(?:\.(?:mkv|mp4|avi|torrent))?(?=$|[\s\[【(（\]】)）])/giu
   );
   for (const scene of scenes) {
     // 编码后的语言列表若继续接音轨编码或字幕职责，属于语言属性。
@@ -702,6 +757,10 @@ export function parseTorrentOrganization(
       );
     if (
       !languageAudio &&
+      !(
+        /(?:DUAL|MULTI)[-_. ]?AUDIO/i.test(scene[0]) &&
+        scene[1].split(/[-_.+]/).every((part) => languageWord.test(part))
+      ) &&
       (!isMetadata(scene[1]) || strongName(scene[1])) &&
       !/^(?:NOGRP|NoGroup|(?:HD(?:[.-](?:MA|HRA))?|MA|HRA)(?:[._-]?\d(?:\.\d)?(?:ch)?)?|HI|LC|HE|AC-?3|E-?AC-?3|AAC|FLAC|OPUS|PCM|AV1|AVC|HEVC|Subs?|\d+(?:\.\d+)*(?:ch)?|\d+bits?|yuv\d+(?:p\d+)?|HDR\d*|SDR)$/i.test(
         scene[1]
@@ -713,6 +772,22 @@ export function parseTorrentOrganization(
       const start = scene.index! + scene[0].lastIndexOf(scene[1]);
       selected.push({ start, end: start + scene[1].length, parts: [scene[1]] });
     }
+  }
+  // 原盘交付以地区/语言块结束时，也允许其后显式连字符引出的 scene 署名。
+  if (
+    discScene &&
+    discDelivery &&
+    plausibleName(discScene[1]) &&
+    !languageWord.test(discScene[1]) &&
+    !deliveryAttribute.test(discScene[1]) &&
+    !/^(?:NOGRP|NoGroup)$/i.test(discScene[1])
+  ) {
+    const start = discScene.index! + discScene[0].lastIndexOf(discScene[1]);
+    selected.push({
+      start,
+      end: start + discScene[1].length,
+      parts: [discScene[1]],
+    });
   }
   // 按已核实身份匹配有分隔的裸尾签，不把它与某个作品绑定。
   let tail = input.trimEnd().replace(/\.(?:mkv|mp4|avi|torrent)$/i, "");
