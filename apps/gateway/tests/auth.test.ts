@@ -12,6 +12,8 @@ import {
   JWTPayload,
 } from "jose";
 import { createAuth, safeReturnTo, AuthOptions, AuthError } from "../src/auth";
+import { graphqlAuth } from "../src/auth/graphql";
+import { createRefreshCookie } from "../src/auth/refresh-cookie";
 
 // Match the existing tests: Node 17 types predate the runtime's test/fetch APIs.
 type Run = () => Promise<void> | void;
@@ -42,6 +44,11 @@ let lifetime = 300,
   roles = ["user"];
 let idClaims: JWTPayload = {};
 const accessClaims: JWTPayload = {};
+const refreshTokens = new Set<string>();
+let refreshLifetime = 86400;
+let refreshFailure = "";
+let omitRefreshToken = false;
+let rotateRefreshToken = true;
 const codes = new Map<
   string,
   { nonce: string | null; challenge: string | null }
@@ -70,10 +77,11 @@ async function token(
 }
 async function tokenSet(nonce: string | null) {
   const rt = randomBytes(20).toString("hex");
+  refreshTokens.add(rt);
   return {
     access_token: await token(accessClaims),
-    refresh_token: rt,
-    refresh_expires_in: 3600,
+    refresh_token: omitRefreshToken ? undefined : rt,
+    refresh_expires_in: refreshLifetime,
     expires_in: lifetime,
     token_type: "Bearer",
     id_token: await token(
@@ -199,6 +207,16 @@ before(async () => {
           `${base}/api/gateway/auth/callback`
         );
         res.json(await tokenSet(data.nonce));
+      } else if (req.body.grant_type === "refresh_token") {
+        if (refreshFailure)
+          return res.status(400).json({ error: refreshFailure });
+        if (!refreshTokens.has(req.body.refresh_token))
+          return res.status(400).json({ error: "invalid_grant" });
+        if (rotateRefreshToken) refreshTokens.delete(req.body.refresh_token);
+        const tokens = await tokenSet(null);
+        if (!rotateRefreshToken)
+          delete (tokens as { refresh_token?: string }).refresh_token;
+        res.json(tokens);
       } else {
         res.status(400).json({ error: "unsupported_grant_type" });
       }
@@ -241,7 +259,9 @@ after(async () => {
 test("startup and anonymous session need no discovery or JWKS", async () => {
   assert.equal(discoveryRequests, 0);
   assert.equal(jwksRequests, 0);
-  const response = await new CookieClient().request("/api/gateway/auth/session");
+  const response = await new CookieClient().request(
+    "/api/gateway/auth/session"
+  );
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal((await response.json()).authenticated, false);
@@ -363,13 +383,13 @@ test("expired provider tokens and accounts outage do not affect a session, even 
       ).json();
       assert.equal(info.authenticated, true);
       assert.ok(info.expiresAt > Date.now() / 1000 + 3500);
-      assert.equal(info.refreshRequired, undefined);
+      assert.equal(info.refreshRequired, false);
       assert.equal((await browser.post("/graphql", target)).status, 200);
       assert.equal((await browser.request(callback, {}, target)).status, 303);
     }
     assert.equal(browser.header(), cookie);
     assert.deepEqual([tokenRequests, jwksRequests], requests);
-    assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 404);
+    assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 200);
   } finally {
     unavailable = false;
     await new Promise<void>((resolve) => cold.close(() => resolve()));
@@ -532,7 +552,9 @@ test("cold JWKS outage fails closed without taking down session endpoint", async
       } as Request),
       (error: unknown) => error instanceof AuthError && error.status === 503
     );
-    const response = await new CookieClient().request("/api/gateway/auth/session");
+    const response = await new CookieClient().request(
+      "/api/gateway/auth/session"
+    );
     assert.equal(response.status, 200);
   } finally {
     unavailable = false;
@@ -635,5 +657,337 @@ test("mismatched nonce is rejected and large provider claims do not bloat sessio
     );
   } finally {
     roles = ["user"];
+  }
+});
+
+test("expired session refreshes on a cold replica with rotated encrypted credentials", async () => {
+  const short = await listen(gateway({ ...options, sessionMaxAge: 1 }).app);
+  const browser = new CookieClient();
+  browser.target = address(short);
+  try {
+    await login(browser);
+    const oldRefresh = browser.cookies.get("lani-local-refresh");
+    assert.ok(oldRefresh && !oldRefresh.includes("Alice"));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    const rejected = await browser.post("/graphql");
+    assert.equal(rejected.status, 401);
+    assert.equal((await rejected.json()).error, "SESSION_REFRESH_REQUIRED");
+    const info = await (
+      await browser.request("/api/gateway/auth/session")
+    ).json();
+    assert.equal(info.authenticated, false);
+    assert.equal(info.refreshRequired, true);
+    assert.equal(info.refresh_token, undefined);
+    const cold = await listen(gateway().app);
+    try {
+      const response = await browser.post(
+        "/api/gateway/auth/refresh",
+        address(cold)
+      );
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).authenticated, true);
+      assert.notEqual(browser.cookies.get("lani-local-refresh"), oldRefresh);
+      assert.equal((await browser.post("/graphql", address(cold))).status, 200);
+      const count = tokenRequests;
+      const duplicate = await browser.post(
+        "/api/gateway/auth/refresh",
+        address(cold)
+      );
+      assert.equal(duplicate.status, 200);
+      assert.equal(duplicate.headers.get("set-cookie"), null);
+      assert.equal(tokenRequests, count);
+    } finally {
+      await new Promise<void>((resolve) => cold.close(() => resolve()));
+    }
+  } finally {
+    await new Promise<void>((resolve) => short.close(() => resolve()));
+  }
+});
+
+test("refresh rejects CSRF and distinguishes revocation from transient provider failures", async () => {
+  const { browser } = await login();
+  browser.cookies.delete("lani-local-gateway");
+  const cookies = browser.header();
+  const before = tokenRequests;
+  assert.equal(
+    (await browser.request("/api/gateway/auth/refresh", { method: "POST" }))
+      .status,
+    403
+  );
+  assert.equal(tokenRequests, before);
+  try {
+    for (const [failure, status, code] of [
+      ["invalid_grant", 401, "LOGIN_REQUIRED"],
+      ["invalid_client", 503, "AUTH_UNAVAILABLE"],
+      ["outage", 503, "AUTH_UNAVAILABLE"],
+    ] as const) {
+      refreshFailure = failure === "outage" ? "" : failure;
+      unavailable = failure === "outage";
+      const response = await browser.post("/api/gateway/auth/refresh");
+      assert.equal(response.status, status);
+      assert.equal((await response.json()).error, code);
+      assert.equal(response.headers.get("set-cookie"), null);
+      assert.equal(browser.header(), cookies);
+    }
+  } finally {
+    refreshFailure = "";
+    unavailable = false;
+  }
+  assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 200);
+});
+
+test("refresh rechecks permissions, signature, audience and both token subjects", async () => {
+  for (const failure of [
+    "permissions",
+    "audience",
+    "expiry",
+    "subject",
+    "id-subject",
+  ]) {
+    const { browser } = await login();
+    browser.cookies.delete("lani-local-gateway");
+    try {
+      if (failure === "permissions") roles = [];
+      if (failure === "audience") accessClaims.aud = "wrong";
+      if (failure === "expiry") lifetime = -1;
+      if (failure === "subject") accessClaims.sub = "someone-else";
+      if (failure === "id-subject") idClaims = { sub: "someone-else" };
+      // 覆盖 token() 设置的 audience。
+      const isolated = await listen(
+        gateway({
+          ...options,
+          audience: failure === "audience" ? "wrong" : options.audience,
+        }).app
+      );
+      try {
+        const response = await browser.post(
+          "/api/gateway/auth/refresh",
+          address(isolated)
+        );
+        assert.equal(response.status, failure === "permissions" ? 403 : 401);
+        assert.equal(response.headers.get("set-cookie"), null);
+        assert.equal((await browser.post("/graphql")).status, 401);
+      } finally {
+        await new Promise<void>((resolve) => isolated.close(() => resolve()));
+      }
+    } finally {
+      roles = ["user"];
+      lifetime = 300;
+      idClaims = {};
+      delete accessClaims.sub;
+      delete accessClaims.aud;
+    }
+  }
+});
+
+test("refresh credentials expire independently, respect an absolute cap and survive key rotation", async () => {
+  const capped = await listen(gateway({ ...options, refreshMaxAge: 3 }).app);
+  const browser = new CookieClient();
+  browser.target = address(capped);
+  const cookie = createRefreshCookie(
+    [key],
+    false,
+    `${base}:${issuer}:lani-web`
+  );
+  try {
+    await login(browser);
+    const original = (await cookie.read({
+      headers: { cookie: browser.header() },
+    } as Request))!;
+    browser.cookies.delete("lani-local-gateway");
+    assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 200);
+    const refreshed = (await cookie.read({
+      headers: { cookie: browser.header() },
+    } as Request))!;
+    assert.equal(refreshed.deadline, original.deadline);
+    assert.equal(refreshed.exp, original.exp);
+    browser.cookies.delete("lani-local-gateway");
+    const rotated = await listen(
+      gateway({
+        ...options,
+        cookieKeys: [randomBytes(32).toString("base64"), key],
+      }).app
+    );
+    try {
+      assert.equal(
+        (await browser.post("/api/gateway/auth/refresh", address(rotated)))
+          .status,
+        200
+      );
+    } finally {
+      await new Promise<void>((resolve) => rotated.close(() => resolve()));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3100));
+    browser.cookies.delete("lani-local-gateway");
+    const response = await browser.post("/api/gateway/auth/refresh");
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error, "LOGIN_REQUIRED");
+  } finally {
+    await new Promise<void>((resolve) => capped.close(() => resolve()));
+  }
+});
+
+test("missing, tampered and wrong-client refresh cookies fail closed; logout clears refresh", async () => {
+  const { browser } = await login();
+  const value = browser.cookies.get("lani-local-refresh")!;
+  browser.cookies.delete("lani-local-gateway");
+  const count = tokenRequests;
+  browser.cookies.set(
+    "lani-local-refresh",
+    value.slice(0, 25) + "x" + value.slice(26)
+  );
+  assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 401);
+  browser.cookies.set("lani-local-refresh", value);
+  const other = await listen(
+    gateway({ ...options, clientId: "other-client" }).app
+  );
+  try {
+    assert.equal(
+      (await browser.post("/api/gateway/auth/refresh", address(other))).status,
+      401
+    );
+  } finally {
+    await new Promise<void>((resolve) => other.close(() => resolve()));
+  }
+  assert.equal(tokenRequests, count);
+  await browser.post("/api/gateway/auth/logout");
+  assert.equal(browser.cookies.size, 0);
+  assert.equal((await browser.post("/api/gateway/auth/refresh")).status, 401);
+});
+
+test("refresh supports providers without rotation and legacy sessions without refresh tokens", async () => {
+  const { browser } = await login();
+  rotateRefreshToken = false;
+  try {
+    for (let i = 0; i < 2; i++) {
+      browser.cookies.delete("lani-local-gateway");
+      assert.equal(
+        (await browser.post("/api/gateway/auth/refresh")).status,
+        200
+      );
+    }
+  } finally {
+    rotateRefreshToken = true;
+  }
+  omitRefreshToken = true;
+  try {
+    const { browser: legacy } = await login();
+    assert.equal((await legacy.post("/graphql")).status, 200);
+    assert.equal(legacy.cookies.has("lani-local-refresh"), false);
+    legacy.cookies.delete("lani-local-gateway");
+    assert.equal(
+      (await (await legacy.post("/graphql")).json()).error,
+      "LOGIN_REQUIRED"
+    );
+  } finally {
+    omitRefreshToken = false;
+  }
+});
+
+test("login preserves provider refresh lifetime and leaves time for renewal", async () => {
+  refreshLifetime = 120;
+  try {
+    const { browser } = await login();
+    const info = await (
+      await browser.request("/api/gateway/auth/session")
+    ).json();
+    const credential = await createRefreshCookie(
+      [key],
+      false,
+      `${base}:${issuer}:lani-web`
+    ).read({ headers: { cookie: browser.header() } } as Request);
+    assert.ok(credential);
+    assert.ok(credential.exp <= Math.floor(Date.now() / 1000) + 120);
+    assert.ok(info.expiresAt <= credential.exp - 60);
+    browser.cookies.delete("lani-local-gateway");
+    const response = await browser.post("/api/gateway/auth/refresh");
+    assert.equal(response.status, 200);
+    assert.ok(
+      (await response.json()).expiresAt <= Math.floor(Date.now() / 1000) + 60
+    );
+  } finally {
+    refreshLifetime = 86400;
+  }
+});
+
+test("refresh cookie enforces size, confidentiality, expiry and host-only flags", async () => {
+  const cookie = createRefreshCookie([key], true, "test-client");
+  const exp = Math.floor(Date.now() / 1000) + 60;
+  const state = {
+    sub: "alice",
+    token: "private-refresh-token",
+    profile: {},
+    deadline: exp,
+    exp,
+  };
+  const encoded = await cookie.encode(state);
+  assert.ok(!encoded.includes(state.token));
+  const app = express();
+  app.get("/", (_req, res) => {
+    cookie.write(res, encoded, exp);
+    res.sendStatus(200);
+  });
+  const instance = await listen(app);
+  try {
+    const response = await new CookieClient().request(
+      "/",
+      {},
+      address(instance)
+    );
+    const header = response.headers.get("set-cookie")!;
+    for (const attribute of [
+      "__Host-lani-refresh=",
+      "HttpOnly",
+      "Secure",
+      "SameSite=Lax",
+      "Path=/",
+    ])
+      assert.ok(header.includes(attribute));
+    assert.ok(!header.includes("Domain="));
+  } finally {
+    await new Promise<void>((resolve) => instance.close(() => resolve()));
+  }
+  await assert.rejects(
+    cookie.encode({ ...state, token: "x".repeat(4000) }),
+    /size limit/
+  );
+  const expired = await cookie.encode({ ...state, exp: 1 });
+  assert.equal(
+    await cookie.read({
+      headers: { cookie: `__Host-lani-refresh=${expired}` },
+    } as Request),
+    undefined
+  );
+});
+
+test("GraphQL authentication signals refresh before executing any mutation", async () => {
+  const app = express();
+  const auth = createAuth(options);
+  let mutations = 0;
+  app.use(auth.middleware);
+  app.use("/graphql", ...graphqlAuth(auth));
+  app.post("/graphql", (_req, res) => {
+    mutations++;
+    res.json({ data: { done: true } });
+  });
+  const target = await listen(app);
+  try {
+    const { browser } = await login();
+    browser.cookies.delete("lani-local-gateway");
+    const response = await browser.post("/graphql", address(target));
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const body = await response.json();
+    assert.deepEqual(body.errors[0].extensions, {
+      code: "SESSION_REFRESH_REQUIRED",
+      authPhase: "gateway",
+    });
+    assert.equal(body.data, undefined);
+    assert.equal(mutations, 0);
+    await browser.post("/api/gateway/auth/refresh");
+    assert.equal((await browser.post("/graphql", address(target))).status, 200);
+    assert.equal(mutations, 1);
+  } finally {
+    await new Promise<void>((resolve) => target.close(() => resolve()));
   }
 });

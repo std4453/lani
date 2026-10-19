@@ -1,14 +1,13 @@
 import config from "@/config";
 import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 import { getPort } from "@lani/framework";
-import { getIntrospectionQuery, parse, print } from "graphql";
-import { createAuth, AuthError } from "./auth";
+import { createAuth } from "./auth";
+import { graphqlAuth } from "./auth/graphql";
 import { ApolloServer } from "apollo-server-express";
 import {
   ApolloServerPluginDrainHttpServer,
   ApolloServerPluginLandingPageLocalDefault,
   ContextFunction,
-  ApolloError,
 } from "apollo-server-core";
 import express from "express";
 import http from "http";
@@ -32,25 +31,8 @@ import { createImageProxy } from "./image-proxy";
     });
     app.use(auth.middleware);
     app.use("/auth", auth.router);
-    const introspectionQuery = print(parse(getIntrospectionQuery()));
-    context = async ({ req }) => {
-      // Preserve the existing schema/code-generation endpoint.
-      if (
-        req.body?.query &&
-        print(parse(req.body.query)) === introspectionQuery
-      )
-        return {};
-      try {
-        return { user: await auth.authenticate(req) };
-      } catch (error) {
-        if (error instanceof AuthError)
-          throw new ApolloError(error.code, error.code);
-        throw new ApolloError(
-          "Authentication service unavailable",
-          "AUTH_UNAVAILABLE"
-        );
-      }
-    };
+    app.use("/graphql", ...graphqlAuth(auth));
+    context = ({ res }) => ({ user: res.locals.user });
   } else {
     app.get("/auth/session", (_req, res) => {
       res

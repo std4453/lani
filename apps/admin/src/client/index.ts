@@ -7,13 +7,18 @@ import {
   from,
 } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
+import { authFetch } from '@/utils/auth-fetch';
+import { AuthRequestError } from '@/utils/auth-session';
 
 const httpLink = createHttpLink({
   uri: '/api/gateway/graphql',
+  fetch: authFetch,
   credentials: 'same-origin',
   headers: { 'X-Lani-CSRF': '1' },
 });
-const errorLink = onError(({ graphQLErrors }) => {
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (networkError instanceof AuthRequestError && networkError.status === 403)
+    store.dispatch(setAuthorized({ authorized: false }));
   if (
     (graphQLErrors ?? []).some(
       ({ extensions }) => extensions.code === 'UNAUTHENTICATED',

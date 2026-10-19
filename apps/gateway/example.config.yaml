@@ -22,8 +22,12 @@ auth:
   # Keycloak access token 必须包含此 audience，通常需要配置 audience mapper
   audience: lani-api
   scope: openid profile email
-  # 独立的会话绝对寿命（秒），不滚动续期；权限变更在下次登录时生效
+  # 单次业务会话的最长寿命（秒）；还会受剩余刷新窗口限制
+  # 权限变更在下次刷新或登录时重新评估
   sessionMaxAge: 28800
+  # 从首次登录起的刷新绝对上限（秒），不会因刷新延长
+  # 实际可刷新期限仍受 Keycloak 的 idle/max lifetime 限制
+  refreshMaxAge: 604800
   # 服务端配置，不经 /auth_config 返回给浏览器；替换为实际 client secret
   clientSecret: replace-with-client-secret
   # base64 32-byte 密钥列表；首个用于加密，其他用于轮换期间解密
