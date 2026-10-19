@@ -10,7 +10,7 @@ jest.mock('@lani/parse-nyaa', () => ({
 }));
 import { NyaaMetadataService } from './metadata.service';
 import { extractNyaaMetadata, parseNyaaSubtitles } from '@lani/parse-nyaa';
-import { NyaaPausedError } from './rate-limited-client';
+import { NyaaStoppedError } from './rate-limited-client';
 
 function setup() {
   const row = {
@@ -71,11 +71,17 @@ it('deduplicates concurrent batches and queued records, saving only the final re
   expect(prisma.torrent.updateMany.mock.calls[0][0].data).toMatchObject({
     metadataStatus: 'parsed',
     metadataFetchedAt: expect.any(Date),
-    metadataResult: { status: 'known' },
+    metadata: { status: 'known' },
     metadataError: null,
   });
   expect(prisma.torrent.updateMany.mock.calls[0][0].data).not.toHaveProperty(
     'parseResult',
+  );
+  expect(
+    prisma.torrent.updateMany.mock.calls[0][0].data.metadata,
+  ).not.toHaveProperty('description');
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data).not.toHaveProperty(
+    'metadataResult',
   );
   await service.syncMetadata();
   expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
@@ -91,7 +97,7 @@ it('stores an unknown parse as success', async () => {
   await service.syncMetadata();
   expect(prisma.torrent.updateMany.mock.calls[0][0].data).toMatchObject({
     metadataStatus: 'parsed',
-    metadataResult: { status: 'unknown' },
+    metadata: { status: 'unknown' },
   });
 });
 
@@ -145,13 +151,13 @@ it.each([403, 429])(
   },
 );
 
-it('honors a pause triggered by RSS and does not consume a retry while queued', async () => {
+it('honors a pause triggered by RSS and does not consume a retry after cancellation', async () => {
   const { service, prisma, nyaa } = setup();
   nyaa.pausedUntil = Date.now() + 60000;
   await service.syncMetadata();
   expect(prisma.torrent.findMany).not.toHaveBeenCalled();
   jest.advanceTimersByTime(60000);
-  nyaa.fetchDetails.mockRejectedValueOnce(new NyaaPausedError());
+  nyaa.fetchDetails.mockRejectedValueOnce(new NyaaStoppedError());
   await service.syncMetadata();
   nyaa.fetchDetails.mockRejectedValue(new Error('network'));
   await service.syncMetadata();
@@ -212,7 +218,7 @@ it('never persists unvalidated HTML and gives a bounded failure reason', async (
 
 it('stops taking new work on shutdown', async () => {
   const { service, prisma } = setup();
-  service.onApplicationShutdown();
+  service.onModuleDestroy();
   expect(await service.syncMetadata()).toBe(0);
   expect(prisma.torrent.findMany).not.toHaveBeenCalled();
 });
@@ -224,4 +230,23 @@ it('drops a deleted torrent without blocking remaining jobs', async () => {
   expect(await service.syncMetadata()).toBe(1);
   await service.syncMetadata();
   expect(nyaa.fetchDetails).toHaveBeenCalledTimes(2);
+});
+
+it('waits for shutdown cancellation without persisting a failed attempt', async () => {
+  const { service, nyaa, prisma } = setup();
+  let cancel: (error: Error) => void = () => undefined;
+  nyaa.fetchDetails.mockImplementation(
+    () =>
+      new Promise((_, reject) => {
+        cancel = reject;
+      }),
+  );
+  const task = service.syncMetadata();
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  const stopping = service.onModuleDestroy();
+  expect(stopping).toBe(task);
+  cancel(new NyaaStoppedError());
+  expect(await stopping).toBe(0);
+  expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+  expect(await service.syncMetadata()).toBe(0);
 });

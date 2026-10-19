@@ -7,8 +7,6 @@ import { postgraphile, PostGraphileOptions } from "postgraphile";
 import ConnectionFilterPlugin from "postgraphile-plugin-connection-filter";
 import PgOrderByRelatedPlugin from "@graphile-contrib/pg-order-by-related";
 
-import SubtitleInfoPlugin from "./subtitle-info-plugin";
-
 const options: PostGraphileOptions = {
   subscriptions: true,
   dynamicJson: true,
@@ -19,7 +17,6 @@ const options: PostGraphileOptions = {
     ConnectionFilterPlugin,
     FederationPlugin,
     PgOrderByRelatedPlugin,
-    SubtitleInfoPlugin,
   ],
   graphileBuildOptions: {
     connectionFilterRelations: true,

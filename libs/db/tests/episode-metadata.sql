@@ -6,12 +6,9 @@ BEGIN
   t := jsonb_populate_record(NULL::torrents, '{"index":3,"episode_index":9,"subtitle_has_chs":true,"subtitle_has_cht":false,"subtitle_has_jp":false,"subtitle_type":"内挂"}');
   ASSERT torrents_match_number(t) = 3, 'legacy matching must ignore episode_index';
   ASSERT torrents_episode_info(t)->>'index' = '3';
-  ASSERT torrents_subtitle_info(t)->'languages' = '["zh-Hans"]';
-  ASSERT torrents_subtitle_info(t)->'delivery' = '["muxed"]';
   t.parse_version := 1;
   ASSERT torrents_match_number(t) IS NULL, 'failed new recognition must not revive a legacy number';
   ASSERT torrents_episode_info(t) IS NULL;
-  ASSERT torrents_subtitle_info(t) IS NULL, 'new unknown subtitles must not use stale flags';
   t.episode_type := 'EPISODE'; t.episode_number := 12.5;
   ASSERT torrents_match_number(t) = 12.5;
   ASSERT (torrents_episode_info(t)->>'index')::numeric = 12.5;
@@ -21,9 +18,7 @@ BEGIN
   t.episode_number := NULL;
   ASSERT NOT (torrents_episode_info(t) ? 'index'), 'unnumbered SP remains unnumbered';
   t.parse_result := '{"subtitleInfo":null}';
-  ASSERT torrents_subtitle_info(t) = 'null'::jsonb;
   t.parse_result := '{"subtitleInfo":{"languages":["en"],"multi":true,"delivery":["external"]}}';
-  ASSERT torrents_subtitle_info(t) = t.parse_result->'subtitleInfo';
 
   INSERT INTO jellyfin_folders(name,jellyfin_id,location) VALUES ('metadata regression','metadata-regression','/tmp') RETURNING id INTO f;
   INSERT INTO seasons(title,jellyfin_folder_id,tags) VALUES ('metadata regression',f,'{}') RETURNING * INTO s;

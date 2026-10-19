@@ -2,10 +2,10 @@ import { PrismaService } from '@/common/prisma.service';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { Prisma, TorrentChannel } from '@lani/db';
 import { extractNyaaMetadata, parseNyaaSubtitles } from '@lani/parse-nyaa';
-import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { NyaaSyncService } from './index.service';
-import { NyaaPausedError, responseStatus } from './rate-limited-client';
+import { NyaaStoppedError, responseStatus } from './rate-limited-client';
 
 const DAY = 24 * 60 * 60 * 1000;
 type Job = {
@@ -18,7 +18,7 @@ type Job = {
 };
 
 @Injectable()
-export class NyaaMetadataService implements OnApplicationShutdown {
+export class NyaaMetadataService implements OnModuleDestroy {
   private readonly logger = new Logger(NyaaMetadataService.name);
   private running?: Promise<number>;
   private stopped = false;
@@ -29,7 +29,7 @@ export class NyaaMetadataService implements OnApplicationShutdown {
 
   constructor(private prisma: PrismaService, private nyaa: NyaaSyncService) {}
 
-  onApplicationShutdown() {
+  onModuleDestroy() {
     this.stopped = true;
     return this.running;
   }
@@ -91,15 +91,14 @@ export class NyaaMetadataService implements OnApplicationShutdown {
           const metadata = extractNyaaMetadata(html, job.hash);
           const result = parseNyaaSubtitles(metadata);
           job.result = {
-            metadata: JSON.parse(JSON.stringify(metadata)),
-            metadataResult: JSON.parse(JSON.stringify(result)),
+            metadata: JSON.parse(JSON.stringify(result)),
             metadataFetchedAt: new Date(),
             metadataStatus: 'parsed',
             metadataError: null,
           };
         } catch (error) {
-          // 其他 RSS/历史请求已触发暂停时，没有发出请求，不消耗重试次数。
-          if (error instanceof NyaaPausedError) break;
+          // 退出取消不记作抓取失败，也不保存中间状态。
+          if (error instanceof NyaaStoppedError) break;
           const status = responseStatus(error);
           const throttled = status === 429 || status === 403;
           if (throttled) this.pausedUntil = Date.now() + 15 * 60000;
@@ -109,7 +108,7 @@ export class NyaaMetadataService implements OnApplicationShutdown {
             this.pausedUntil,
           );
           if (job.attempts >= 3) {
-            // 只保存最终失败；旧页面、解析结果和成功时间保持不变。
+            // 只保存最终失败；旧解析结果和成功时间保持不变。
             job.result = {
               metadataStatus: 'failed',
               metadataError: status

@@ -1,3 +1,4 @@
+import { TorrentSubtitleResolver } from './torrent-subtitle.resolver';
 import { JellyfinFolderResolver } from '@/admin/JellyfinFolderResolver';
 import { ImageResolver } from '@/admin/image.resolver';
 import { AdminResolver } from '@/admin/index.resolver';
@@ -19,6 +20,7 @@ import { FilesResolver } from '@/admin/files.resolver';
   ],
   providers: [
     AdminResolver,
+    TorrentSubtitleResolver,
     ImageResolver,
     JellyfinFolderResolver,
     FilesResolver,

@@ -141,7 +141,6 @@ model Torrent {
   parseVersion      Int?         @map("parse_version")
   parsedAt          DateTime?    @map("parsed_at") @db.Timestamptz(6)
   metadata          Json?        @map("metadata")
-  metadataResult    Json?        @map("metadata_result")
   metadataFetchedAt DateTime?    @map("metadata_fetched_at") @db.Timestamptz(6)
   metadataStatus    String       @default("pending") @map("metadata_status")
   metadataError     String?      @map("metadata_error")

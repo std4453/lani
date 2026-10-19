@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
       - name: Build test dependencies
-        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --to @lani/data-server --parallelism 1
+        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --parallelism 1
       - name: Prepare isolated test database
         working-directory: libs/db
         env:
@@ -77,9 +77,6 @@ jobs:
       - name: Test Nyaa parser
         working-directory: libs/parse-nyaa
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
-      - name: Test Data Server
-        working-directory: apps/data-server
-        run: node ../../common/scripts/install-run-rushx.js test
       - name: Test API server
         working-directory: apps/api-server
         run: node ../../common/scripts/install-run-rushx.js test --runInBand

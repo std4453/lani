@@ -1,3 +1,4 @@
+import { Torrent } from '@/admin/torrent-subtitle.resolver';
 import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
 import { JellyfinFolder } from '@/admin/JellyfinFolderResolver';
@@ -48,7 +49,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       autoSchemaFile: true,
       buildSchemaOptions: {
         numberScalarMode: 'integer',
-        orphanedTypes: [Image, JellyfinFolder],
+        orphanedTypes: [Image, JellyfinFolder, Torrent],
       },
     }),
     ConfigModule.forRoot({

@@ -134,3 +134,29 @@ it('shares the one-QPS ceiling between detail and RSS requests even with a highe
     jest.useRealTimers();
   }
 });
+
+it('closes the shared queue during module shutdown and prevents pending RSS writes', async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(10000);
+  try {
+    const axios = {
+      get: jest.fn().mockRejectedValueOnce({ response: { status: 429 } }),
+    };
+    const torrents = { insert: jest.fn() };
+    const service = new NyaaSyncService(axios as any, torrents as any);
+    await expect(
+      service.fetchDetails('https://nyaa.si/view/1'),
+    ).rejects.toEqual({ response: { status: 429 } });
+    const rss = service.syncCategory('1_2');
+    const canceled = expect(rss).rejects.toThrow('已停止');
+    for (let i = 0; i < 12; i++) await Promise.resolve();
+    await service.onModuleDestroy();
+    await canceled;
+    expect(axios.get).toHaveBeenCalledTimes(1);
+    expect(torrents.insert).not.toHaveBeenCalled();
+    expect(await service.syncCategory('1_2')).toBe(0);
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
+});
