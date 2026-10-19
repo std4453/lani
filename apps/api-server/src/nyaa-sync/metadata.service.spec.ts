@@ -250,3 +250,108 @@ it('waits for shutdown cancellation without persisting a failed attempt', async 
   expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
   expect(await service.syncMetadata()).toBe(0);
 });
+
+it('manually refreshes completed records without clearing their stored results', async () => {
+  const { service, prisma, nyaa } = setup();
+  await service.syncMetadata();
+  prisma.torrent.updateMany.mockClear();
+  expect(await service.refreshMetadata([1, 1])).toBe(1);
+  expect(await service.refreshMetadata([1])).toBe(0);
+  expect(prisma.torrent.findMany).toHaveBeenLastCalledWith({
+    where: { id: { in: [1] }, channel: 'NYAA' },
+    select: { id: true, hash: true, permalink: true },
+  });
+  expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+  jest.advanceTimersByTime(60000);
+  expect(await service.syncMetadata()).toBe(1);
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(2);
+});
+
+it.each(
+  [[], [0], [-1], [1.5], [2147483648], Array(101).fill(1)].map((ids) => [ids]),
+)(
+  'rejects invalid refresh input %j before reading or enqueueing',
+  async (ids) => {
+    const { service, prisma } = setup();
+    await expect(service.refreshMetadata(ids)).rejects.toThrow('种子 ID');
+    expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  },
+);
+
+it('rejects a partially missing or non-Nyaa batch without queueing any of it', async () => {
+  const { service, prisma, nyaa } = setup();
+  await expect(service.refreshMetadata([1, 2])).rejects.toThrow(
+    '种子不存在或不属于 Nyaa',
+  );
+  prisma.torrent.findMany.mockResolvedValue([]);
+  expect(await service.syncMetadata()).toBe(0);
+  expect(nyaa.fetchDetails).not.toHaveBeenCalled();
+});
+
+it('prioritizes explicit refreshes over an automatic backlog', async () => {
+  const { service, prisma, nyaa, row } = setup();
+  prisma.torrent.findMany.mockResolvedValueOnce(
+    Array.from({ length: 80 }, (_, i) => ({ ...row, id: i + 1 })),
+  );
+  await service.syncMetadata();
+  prisma.torrent.findMany.mockResolvedValueOnce([
+    { ...row, id: 100, permalink: 'https://nyaa.si/view/100' },
+  ]);
+  await service.refreshMetadata([100]);
+  nyaa.fetchDetails.mockClear();
+  await service.syncMetadata();
+  expect(nyaa.fetchDetails).toHaveBeenNthCalledWith(
+    1,
+    'https://nyaa.si/view/100',
+  );
+});
+
+it('queues during cooldown without resetting retries, then permits an explicit retry after exhaustion', async () => {
+  const { service, prisma, nyaa } = setup();
+  nyaa.pausedUntil = Date.now() + 15 * 60000;
+  expect(await service.refreshMetadata([1])).toBe(1);
+  expect(await service.syncMetadata()).toBe(0);
+  expect(nyaa.fetchDetails).not.toHaveBeenCalled();
+  jest.advanceTimersByTime(15 * 60000);
+  nyaa.fetchDetails.mockRejectedValue(new Error('network'));
+  for (let i = 0; i < 3; i++) {
+    expect(await service.refreshMetadata([1])).toBe(0);
+    await service.syncMetadata();
+    jest.advanceTimersByTime(120000);
+  }
+  expect(prisma.torrent.updateMany).toHaveBeenLastCalledWith({
+    where: { id: 1 },
+    data: {
+      metadataStatus: 'failed',
+      metadataError: '抓取失败（网络或请求错误）',
+    },
+  });
+  nyaa.fetchDetails.mockResolvedValue('html');
+  expect(await service.refreshMetadata([1])).toBe(1);
+  expect(await service.syncMetadata()).toBe(1);
+});
+
+it('deduplicates an in-flight refresh and stops accepting refreshes during shutdown', async () => {
+  const { service, prisma, nyaa } = setup();
+  let resolve!: (html: string) => void;
+  nyaa.fetchDetails.mockImplementation(
+    () => new Promise<string>((done) => (resolve = done)),
+  );
+  const task = service.syncMetadata();
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  expect(await service.refreshMetadata([1])).toBe(0);
+  resolve('html');
+  expect(await task).toBe(1);
+  await service.syncMetadata();
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
+
+  let releaseRead!: (rows: unknown[]) => void;
+  prisma.torrent.findMany.mockImplementationOnce(
+    () => new Promise((done) => (releaseRead = done)),
+  );
+  const refreshing = service.refreshMetadata([1]);
+  await service.onModuleDestroy();
+  releaseRead([{ id: 1 }]);
+  await expect(refreshing).rejects.toThrow('服务正在停止');
+  await expect(service.refreshMetadata([1])).rejects.toThrow('服务正在停止');
+});

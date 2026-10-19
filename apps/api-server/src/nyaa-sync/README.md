@@ -17,6 +17,20 @@ RSS 按英文、非英文、RAW 三类每 5 分钟同步，在第 0、20、40 �
 
 HTML、提取的描述和文件列表仅存在于内存，不写入数据库。重新抓取失败保留旧解析结果和成功时间。页面抓取成功但语言未知属于 `parsed`，不重复请求；标题解析继续保存在 `parseResult`。API 的 `TorrentSubtitleResolver` 使用 Federation `@requires` 取得标题解析、旧字段和最终 metadata，并合并字幕信息。Gateway 在原有列表查询中读取这些字段，不逐行查询数据库；保持现有 `subtitleInfo` 字段和 UI 查询不变。Data Server 无需业务插件，数据库也不提供字幕兼容函数。页面未知时保留标题；标题具体语言优先于页面“无字幕”；简繁体证据替代笼统的 `zh`。
 
+## 手动刷新
+
+仅提供鉴权 GraphQL mutation，不增加前端入口：
+
+```graphql
+mutation RefreshNyaa($ids: [Int!]!) {
+  refreshNyaaMetadata(ids: $ids)
+}
+```
+
+`ids` 使用数据库 `Torrent.id`（不是 Nyaa 页面编号或 `displayId`），每次 1–100 条；重复 ID 合并，不存在或非 NYAA 的记录会使整个请求失败。返回新入队数量，0 表示请求的记录已经在队列中。已成功或本次运行已失败的记录可再次入队，手动指定的旧种子不受自动扫描的 30 天限制。
+
+任务在下一次分钟调度中优先于自动补抓处理，复用同一请求队列、限速、暂停和有限退避。重复提交不重置在途任务的重试次数或等待时间。刷新中不写数据库、不清空旧结果；通过 `metadataFetchedAt`、`metadataStatus`、`metadataError` 查看最终结果。队列只保存在内存，重启后手动刷新意图不保留；自动扫描仍只加载最近 30 天未处理和失败的记录。
+
 ## 解析与验证
 
 纯解析器和固定语料位于 [`@lani/parse-nyaa`](../../../../libs/parse-nyaa/README.md)。运行时不调用 AI，不读取评论、外部 MediaInfo 链接、图片或种子内容。扩展结构规则时同步验证精确率与召回率，不用解析器输出反向修改 ground truth。

@@ -2,7 +2,13 @@ import { PrismaService } from '@/common/prisma.service';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { Prisma, TorrentChannel } from '@lani/db';
 import { extractNyaaMetadata, parseNyaaSubtitles } from '@lani/parse-nyaa';
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { NyaaSyncService } from './index.service';
 import { NyaaStoppedError, responseStatus } from './rate-limited-client';
@@ -14,6 +20,7 @@ type Job = {
   permalink: string | null;
   attempts: number;
   readyAt: number;
+  manual?: boolean;
   result?: Prisma.TorrentUpdateManyMutationInput;
 };
 
@@ -36,6 +43,44 @@ export class NyaaMetadataService implements OnModuleDestroy {
 
   private get paused() {
     return Date.now() < Math.max(this.pausedUntil, this.nyaa.pausedUntil);
+  }
+
+  async refreshMetadata(ids: number[]): Promise<number> {
+    if (
+      ids.length < 1 ||
+      ids.length > 100 ||
+      ids.some((id) => !Number.isInteger(id) || id <= 0 || id > 2147483647)
+    ) {
+      throw new BadRequestException('请提供 1–100 个有效的种子 ID');
+    }
+    if (this.stopped) throw new ServiceUnavailableException('服务正在停止');
+    const uniqueIds = [...new Set(ids)];
+    const rows = await this.prisma.torrent.findMany({
+      where: { id: { in: uniqueIds }, channel: TorrentChannel.NYAA },
+      select: { id: true, hash: true, permalink: true },
+    });
+    if (rows.length !== uniqueIds.length) {
+      throw new BadRequestException('种子不存在或不属于 Nyaa');
+    }
+    if (this.stopped) throw new ServiceUnavailableException('服务正在停止');
+    let queued = 0;
+    for (const row of rows) {
+      const existing = this.queue.get(row.id);
+      if (existing) {
+        // 手动刷新提升优先级，但不重置在途请求、退避时间或已待保存的结果。
+        existing.manual = true;
+        continue;
+      }
+      this.finished.delete(row.id);
+      this.queue.set(row.id, {
+        ...row,
+        attempts: 0,
+        readyAt: 0,
+        manual: true,
+      });
+      queued++;
+    }
+    return queued;
   }
 
   @Cron('10 * * * * *')
@@ -79,7 +124,10 @@ export class NyaaMetadataService implements OnModuleDestroy {
     await this.loadQueue();
     let count = 0;
     let processed = 0;
-    for (const job of this.queue.values()) {
+    const jobs = [...this.queue.values()].sort(
+      (a, b) => Number(!!b.manual) - Number(!!a.manual),
+    );
+    for (const job of jobs) {
       if (this.stopped || this.paused || processed >= 40) break;
       if (job.readyAt > Date.now()) continue;
       processed++;
