@@ -405,6 +405,10 @@
       "projectFolder": "libs/db"
     },
     {
+      "packageName": "@lani/parse-nyaa",
+      "projectFolder": "libs/parse-nyaa"
+    },
+    {
       "packageName": "@lani/parse-torrent-title",
       "projectFolder": "libs/parse-torrent-title"
     },

@@ -67,11 +67,15 @@ jobs:
           export PATH="$(pg_config --bindir):$PATH"
           python3 libs/db/tests/download-source-migration.py
           python3 libs/db/tests/torrent-channel-migration.py
+          python3 libs/db/tests/nyaa-metadata-migration.py
       - name: Test workflow
         working-directory: libs/workflow
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
       - name: Test torrent title parser
         working-directory: libs/parse-torrent-title
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand
+      - name: Test Nyaa parser
+        working-directory: libs/parse-nyaa
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
       - name: Test API server
         working-directory: apps/api-server

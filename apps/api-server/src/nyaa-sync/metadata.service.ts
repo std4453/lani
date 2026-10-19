@@ -1,0 +1,190 @@
+import { PrismaService } from '@/common/prisma.service';
+import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
+import { Prisma, TorrentChannel } from '@lani/db';
+import { extractNyaaMetadata, parseNyaaSubtitles } from '@lani/parse-nyaa';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { NyaaSyncService } from './index.service';
+import { NyaaStoppedError, responseStatus } from './rate-limited-client';
+
+const DAY = 24 * 60 * 60 * 1000;
+type Job = {
+  id: number;
+  hash: string;
+  permalink: string | null;
+  attempts: number;
+  readyAt: number;
+  manual?: boolean;
+  result?: Prisma.TorrentUpdateManyMutationInput;
+};
+
+@Injectable()
+export class NyaaMetadataService implements OnModuleDestroy {
+  private readonly logger = new Logger(NyaaMetadataService.name);
+  private running?: Promise<number>;
+  private stopped = false;
+  private pausedUntil = 0;
+  private readonly queue = new Map<number, Job>();
+  // 本次运行处理完的任务不自动重新入队；重启后重新读取 pending/failed。
+  private readonly finished = new Set<number>();
+
+  constructor(private prisma: PrismaService, private nyaa: NyaaSyncService) {}
+
+  onModuleDestroy() {
+    this.stopped = true;
+    return this.running;
+  }
+
+  private get paused() {
+    return Date.now() < Math.max(this.pausedUntil, this.nyaa.pausedUntil);
+  }
+
+  async refreshMetadata(ids: number[]): Promise<number> {
+    if (
+      ids.length < 1 ||
+      ids.length > 100 ||
+      ids.some((id) => !Number.isInteger(id) || id <= 0 || id > 2147483647)
+    ) {
+      throw new BadRequestException('请提供 1–100 个有效的种子 ID');
+    }
+    if (this.stopped) throw new ServiceUnavailableException('服务正在停止');
+    const uniqueIds = [...new Set(ids)];
+    const rows = await this.prisma.torrent.findMany({
+      where: { id: { in: uniqueIds }, channel: TorrentChannel.NYAA },
+      select: { id: true, hash: true, permalink: true },
+    });
+    if (rows.length !== uniqueIds.length) {
+      throw new BadRequestException('种子不存在或不属于 Nyaa');
+    }
+    if (this.stopped) throw new ServiceUnavailableException('服务正在停止');
+    let queued = 0;
+    for (const row of rows) {
+      const existing = this.queue.get(row.id);
+      if (existing) {
+        // 手动刷新提升优先级，但不重置在途请求、退避时间或已待保存的结果。
+        existing.manual = true;
+        continue;
+      }
+      this.finished.delete(row.id);
+      this.queue.set(row.id, {
+        ...row,
+        attempts: 0,
+        readyAt: 0,
+        manual: true,
+      });
+      queued++;
+    }
+    return queued;
+  }
+
+  @Cron('10 * * * * *')
+  @LaniFilterCron()
+  syncMetadata(): Promise<number> {
+    if (this.stopped || this.paused) return Promise.resolve(0);
+    if (this.running) return this.running;
+    this.running = this.processBatch().finally(() => {
+      this.running = undefined;
+    });
+    return this.running;
+  }
+
+  private async loadQueue() {
+    const now = new Date();
+    let cursor = 0;
+    // 分页扫描防止已耗尽重试的记录占满首批，也能发现后来补入的历史资源。
+    while (!this.stopped && !this.paused) {
+      const rows = await this.prisma.torrent.findMany({
+        where: {
+          id: { gt: cursor },
+          channel: TorrentChannel.NYAA,
+          publishDate: { gte: new Date(now.getTime() - 30 * DAY), lte: now },
+          metadataStatus: { in: ['pending', 'failed'] },
+        },
+        orderBy: { id: 'asc' },
+        take: 200,
+        select: { id: true, hash: true, permalink: true },
+      });
+      for (const row of rows) {
+        if (!this.queue.has(row.id) && !this.finished.has(row.id)) {
+          this.queue.set(row.id, { ...row, attempts: 0, readyAt: 0 });
+        }
+      }
+      if (rows.length < 200) break;
+      cursor = rows[rows.length - 1].id;
+    }
+  }
+
+  private async processBatch() {
+    await this.loadQueue();
+    let count = 0;
+    let processed = 0;
+    const jobs = [...this.queue.values()].sort(
+      (a, b) => Number(!!b.manual) - Number(!!a.manual),
+    );
+    for (const job of jobs) {
+      if (this.stopped || this.paused || processed >= 40) break;
+      if (job.readyAt > Date.now()) continue;
+      processed++;
+      if (!job.result) {
+        let parsing = false;
+        try {
+          const html = await this.nyaa.fetchDetails(job.permalink ?? '');
+          parsing = true;
+          const metadata = extractNyaaMetadata(html, job.hash);
+          const result = parseNyaaSubtitles(metadata);
+          job.result = {
+            metadata: JSON.parse(JSON.stringify(result)),
+            metadataFetchedAt: new Date(),
+            metadataStatus: 'parsed',
+            metadataError: null,
+          };
+        } catch (error) {
+          // 退出取消不记作抓取失败，也不保存中间状态。
+          if (error instanceof NyaaStoppedError) break;
+          const status = responseStatus(error);
+          const throttled = status === 429 || status === 403;
+          if (throttled) this.pausedUntil = Date.now() + 15 * 60000;
+          job.attempts++;
+          job.readyAt = Math.max(
+            Date.now() + 60000 * 2 ** (job.attempts - 1),
+            this.pausedUntil,
+          );
+          if (job.attempts >= 3) {
+            // 只保存最终失败；旧解析结果和成功时间保持不变。
+            job.result = {
+              metadataStatus: 'failed',
+              metadataError: status
+                ? `抓取失败（HTTP ${status}）`
+                : parsing
+                ? '页面校验或字幕解析失败'
+                : '抓取失败（网络或请求错误）',
+            };
+          }
+          this.logger.warn(
+            `Nyaa metadata ${job.id} attempt ${job.attempts} failed (HTTP ${
+              status ?? 'unknown'
+            })`,
+          );
+        }
+      }
+      if (job.result) {
+        // 保存失败时保留结果，下次只重试数据库写入，不重复请求页面。
+        const saved = await this.prisma.torrent.updateMany({
+          where: { id: job.id },
+          data: job.result,
+        });
+        if (job.result.metadataStatus === 'parsed') count += saved.count;
+        this.finished.add(job.id);
+        this.queue.delete(job.id);
+      }
+    }
+    if (count) this.logger.log(`Parsed Nyaa metadata for ${count} torrents`);
+    return count;
+  }
+}

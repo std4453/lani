@@ -3,7 +3,7 @@ import config from '@/config';
 import { TorrentSyncService } from '@/torrent-sync/index.service';
 import { LaniFilterCron } from '@/utils/GraphQLExceptionFilter';
 import { TorrentChannel } from '@lani/db';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { parseHistory, parseRSS } from './parse';
 import { RateLimitedClient } from './rate-limited-client';
@@ -13,16 +13,33 @@ export const NYAA_HISTORY_PAGES = { '1_2': 30, '1_3': 12, '1_4': 7 } as const;
 type Category = keyof typeof NYAA_HISTORY_PAGES;
 
 @Injectable()
-export class NyaaSyncService {
+export class NyaaSyncService implements OnModuleDestroy {
   private readonly logger = new Logger(NyaaSyncService.name);
-  private readonly client = new RateLimitedClient(config.torrents.nyaa.qps);
+  private readonly client = new RateLimitedClient(
+    Math.min(config.torrents.nyaa.qps, 1),
+  );
   private history?: Promise<number>;
+  private stopped = false;
   private readonly running = new Map<Category, Promise<number>>();
 
   constructor(
     private axios: GlobalAxiosService,
     private torrents: TorrentSyncService,
   ) {}
+
+  async onModuleDestroy() {
+    this.stopped = true;
+    const pending = Promise.allSettled([
+      ...this.running.values(),
+      ...(this.history ? [this.history] : []),
+    ]);
+    await this.client.close();
+    await pending;
+  }
+
+  get pausedUntil() {
+    return this.client.pausedUntil;
+  }
 
   private fetch(params: Record<string, string | number>) {
     return this.client.request(async (signal) => {
@@ -37,13 +54,30 @@ export class NyaaSyncService {
     });
   }
 
+  fetchDetails(permalink: string) {
+    if (!/^https:\/\/nyaa\.si\/view\/[1-9]\d*$/.test(permalink)) {
+      throw new Error('Invalid Nyaa detail URL');
+    }
+    return this.client.request(async (signal) => {
+      const { data } = await this.axios.get<string>(permalink, {
+        signal,
+        responseType: 'text',
+        maxRedirects: 0,
+        maxContentLength: 2 * 1024 * 1024,
+      });
+      return data;
+    });
+  }
+
   syncCategory(category: Category): Promise<number> {
+    if (this.stopped) return Promise.resolve(0);
     const running = this.running.get(category);
     if (running) return running;
     const task = (async () => {
       const items = await parseRSS(
         await this.fetch({ page: 'rss', c: category }),
       );
+      if (this.stopped) return 0;
       const count = await this.torrents.insert(items, TorrentChannel.NYAA);
       this.logger.log(`Synced Nyaa ${category}: ${count} new torrents`);
       return count;
@@ -103,12 +137,14 @@ export class NyaaSyncService {
   private async fetchHistory(onAdded?: (added: number) => void) {
     const results: PromiseSettledResult<number>[] = [];
     for (const [category, pages] of Object.entries(NYAA_HISTORY_PAGES)) {
+      if (this.stopped) break;
       let count = 0;
       try {
         for (let page = 1; page <= pages; page++) {
           const items = parseHistory(
             await this.fetch({ c: category, p: page }),
           );
+          if (this.stopped) break;
           const added = await this.torrents.insert(items, TorrentChannel.NYAA);
           count += added;
           onAdded?.(added);
