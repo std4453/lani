@@ -58,6 +58,11 @@ export const auth = Joi.alternatives()
         .pattern(/(?:^|\s)openid(?:\s|$)/)
         .default("openid profile email"),
       sessionMaxAge: Joi.number().integer().min(60).max(2592000).default(28800),
+      refreshMaxAge: Joi.number()
+        .integer()
+        .min(60)
+        .max(2592000)
+        .default(604800),
       clientSecret: Joi.string().required(),
       cookieKeys: Joi.array().items(Joi.string().required()).min(1).required(),
       authz,

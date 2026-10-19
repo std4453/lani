@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "async_hooks";
 import {
   Request,
   Response,
@@ -14,6 +15,7 @@ import {
 } from "jose";
 import { auth as oidcAuth, Session } from "express-openid-connect";
 import jmespath from "jmespath";
+import { createRefreshCookie, RefreshSession } from "./refresh-cookie";
 
 export interface AuthOptions {
   testRoutingEnabled?: boolean;
@@ -24,6 +26,7 @@ export interface AuthOptions {
   audience: string;
   scope: string;
   sessionMaxAge: number;
+  refreshMaxAge?: number;
   authz?: { enabled: boolean; query?: string; result?: unknown };
   clientSecret: string;
   cookieKeys: string[];
@@ -104,6 +107,12 @@ export function createAuth(options: AuthOptions) {
   )
     throw new Error("auth.cookieKeys must contain base64-encoded 32-byte keys");
   const now = () => Math.floor(Date.now() / 1000);
+  const refreshMaxAge = options.refreshMaxAge ?? 604800;
+  const refreshCookie = createRefreshCookie(
+    options.cookieKeys,
+    secure,
+    `${origin.origin}:${authority}:${options.clientId}`
+  );
   // The SDK authenticates/decrypts the cookie and enforces its absolute lifetime.
   // Only sessions issued after the login authorization check are accepted.
   const session = (req: Request): GatewaySession | undefined => {
@@ -117,6 +126,8 @@ export function createAuth(options: AuthOptions) {
       ? value
       : undefined;
   };
+  // SDK 的 afterCallback 只保留标准 token 字段，按请求传递 Keycloak 的刷新期限。
+  const tokenContext = new AsyncLocalStorage<{ refreshExpiresIn?: unknown }>();
   const sdk = oidcAuth({
     issuerBaseURL: authority,
     baseURL: origin.origin,
@@ -138,7 +149,7 @@ export function createAuth(options: AuthOptions) {
     session: {
       name: sessionName,
       rolling: false,
-      absoluteDuration: options.sessionMaxAge,
+      absoluteDuration: Math.max(options.sessionMaxAge, refreshMaxAge),
       cookie: { secure, httpOnly: true, sameSite: "Lax", path: "/" },
     },
     transactionCookie: { name: transactionName, sameSite: "Lax" },
@@ -163,8 +174,15 @@ export function createAuth(options: AuthOptions) {
         );
       }
       for (const name of ["token", "certs"]) {
-        if (url === endpoint(authority, name))
-          return fetch(endpoint(backend, name), init);
+        if (url === endpoint(authority, name)) {
+          const response = await fetch(endpoint(backend, name), init);
+          const context = tokenContext.getStore();
+          if (name === "token" && response.ok && context) {
+            const tokens = await response.clone().json();
+            context.refreshExpiresIn = tokens.refresh_expires_in;
+          }
+          return response;
+        }
       }
       throw new Error("Unexpected OIDC backchannel endpoint");
     },
@@ -182,16 +200,21 @@ export function createAuth(options: AuthOptions) {
       const identity = req.oidc.idTokenClaims!;
       if (identity.sub !== claims.sub)
         throw new AuthError(401, "UNAUTHENTICATED");
-      // Tokens are used only to establish identity and authorization at login.
-      const gatewaySession: GatewaySession = {
-        sub: claims.sub!,
-        profile: profile(identity),
-        authorized: true,
-        expiresAt: now() + options.sessionMaxAge,
-      };
-      if (Buffer.byteLength(JSON.stringify(gatewaySession)) > 4200)
-        throw new Error("Auth session exceeds cookie size limit");
+      const userProfile = profile(identity);
+      const refresh = makeRefreshSession(
+        {
+          ...updated,
+          refresh_expires_in: tokenContext.getStore()?.refreshExpiresIn,
+        },
+        claims.sub!,
+        userProfile
+      );
+      const gatewaySession = makeSession(claims.sub!, userProfile, refresh);
+      const encoded = refresh ? await refreshCookie.encode(refresh) : undefined;
       (res as unknown as Response).locals.writeAuthSession = true;
+      if (refresh && encoded)
+        refreshCookie.write(res as unknown as Response, encoded, refresh.exp);
+      else refreshCookie.clear(res as unknown as Response);
       // Retire earlier token-bearing cookies on the first successful login.
       for (const name of ["oidc", "session"]) {
         for (const suffix of ["", ".0", ".1"]) {
@@ -218,13 +241,15 @@ export function createAuth(options: AuthOptions) {
         return res;
       return cookie(name, value, opts as CookieOptions);
     }) as Response["cookie"];
-    sdk(req, res, (error?: unknown) => {
-      if (!error) return next();
-      res.locals.writeAuthSession = false;
-      if (req.path.endsWith("/callback"))
-        return res.redirect(303, "/?auth_error=login_failed");
-      res.status(503).json({ error: "AUTH_UNAVAILABLE" });
-    });
+    tokenContext.run({}, () =>
+      sdk(req, res, (error?: unknown) => {
+        if (!error) return next();
+        res.locals.writeAuthSession = false;
+        if (req.path.endsWith("/callback"))
+          return res.redirect(303, "/?auth_error=login_failed");
+        res.status(503).json({ error: "AUTH_UNAVAILABLE" });
+      })
+    );
   };
 
   const router = Router();
@@ -288,7 +313,124 @@ export function createAuth(options: AuthOptions) {
     return result;
   }
 
-  function sessionInfo(current: GatewaySession | undefined) {
+  function makeRefreshSession(
+    tokens: { refresh_token?: unknown; refresh_expires_in?: unknown },
+    sub: string,
+    userProfile: Record<string, string>,
+    previous?: RefreshSession
+  ): RefreshSession | undefined {
+    const token = tokens.refresh_token ?? previous?.token;
+    if (typeof token !== "string" || !token) return;
+    const deadline = previous?.deadline ?? now() + refreshMaxAge;
+    const lifetime = tokens.refresh_expires_in;
+    if (
+      lifetime !== undefined &&
+      (typeof lifetime !== "number" ||
+        !Number.isFinite(lifetime) ||
+        lifetime <= 0)
+    )
+      return;
+    // 没有新期限时不延长旧凭据的期限；本地绝对上限始终从首次登录计算。
+    const exp = Math.min(
+      deadline,
+      typeof lifetime === "number"
+        ? now() + Math.floor(lifetime)
+        : previous?.exp ?? deadline
+    );
+    if (exp <= now()) return;
+    return { sub, profile: userProfile, token, deadline, exp };
+  }
+
+  function makeSession(
+    sub: string,
+    userProfile: Record<string, string>,
+    refresh?: RefreshSession
+  ): GatewaySession {
+    const current: GatewaySession = {
+      sub,
+      profile: userProfile,
+      authorized: true,
+      // 给活跃用户留下刷新窗口，避免业务会话晚于 Keycloak 刷新凭据过期。
+      expiresAt:
+        now() +
+        Math.min(
+          options.sessionMaxAge,
+          refresh
+            ? Math.max(1, Math.floor((refresh.exp - now()) / 2))
+            : options.sessionMaxAge
+        ),
+    };
+    if (Buffer.byteLength(JSON.stringify(current)) > 4200)
+      throw new Error("Auth session exceeds cookie size limit");
+    return current;
+  }
+
+  async function refreshTokens(current: RefreshSession) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(endpoint(backend, "token"), {
+        method: "POST",
+        redirect: "error",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: current.token,
+          client_id: options.clientId,
+          client_secret: options.clientSecret,
+        }),
+      });
+      const tokens = await response.json();
+      if (!response.ok) {
+        if (response.status === 400 && tokens.error === "invalid_grant")
+          throw new AuthError(401, "LOGIN_REQUIRED");
+        throw new AuthError(503, "AUTH_UNAVAILABLE");
+      }
+      if (
+        typeof tokens.access_token !== "string" ||
+        typeof tokens.token_type !== "string" ||
+        tokens.token_type.toLowerCase() !== "bearer"
+      )
+        throw new AuthError(503, "AUTH_UNAVAILABLE");
+      const claims = await verify(tokens.access_token);
+      if (claims.sub !== current.sub)
+        throw new AuthError(401, "LOGIN_REQUIRED");
+      if (!authorized(claims)) throw new AuthError(403, "FORBIDDEN");
+      let userProfile = current.profile;
+      if (tokens.id_token !== undefined) {
+        const { payload } = await jwtVerify(tokens.id_token, jwks, {
+          issuer: authority,
+          audience: options.clientId,
+          algorithms: ["RS256"],
+        });
+        if (payload.sub !== current.sub || !payload.exp || !payload.iat)
+          throw new AuthError(401, "LOGIN_REQUIRED");
+        userProfile = profile(payload);
+      }
+      const refresh = makeRefreshSession(
+        tokens,
+        current.sub,
+        userProfile,
+        current
+      );
+      if (!refresh) throw new AuthError(401, "LOGIN_REQUIRED");
+      return {
+        refresh,
+        current: makeSession(current.sub, userProfile, refresh),
+      };
+    } catch (error) {
+      if (error instanceof AuthError) throw error;
+      throw new AuthError(503, "AUTH_UNAVAILABLE");
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  function sessionInfo(
+    current: GatewaySession | undefined,
+    refreshRequired = false
+  ) {
     return {
       enabled: true,
       testRoutingEnabled: options.testRoutingEnabled === true,
@@ -296,6 +438,7 @@ export function createAuth(options: AuthOptions) {
       authorized: !!current,
       profile: current?.profile,
       expiresAt: current?.expiresAt,
+      refreshRequired,
     };
   }
 
@@ -317,7 +460,10 @@ export function createAuth(options: AuthOptions) {
   router.get(
     "/session",
     route(async (req, res) => {
-      res.json(sessionInfo(session(req)));
+      const current = session(req);
+      res.json(
+        sessionInfo(current, !current && !!(await refreshCookie.read(req)))
+      );
     })
   );
 
@@ -344,11 +490,33 @@ export function createAuth(options: AuthOptions) {
   );
 
   router.post(
+    "/refresh",
+    route(async (req, res) => {
+      csrf(req);
+      // 锁内重复检查可复用其他标签页已经更新的会话，不重复消费刷新凭据。
+      const existing = session(req);
+      if (existing) return res.json(sessionInfo(existing));
+      const credential = await refreshCookie.read(req);
+      if (!credential) throw new AuthError(401, "LOGIN_REQUIRED");
+      const { refresh, current } = await refreshTokens(credential);
+      const encoded = await refreshCookie.encode(refresh);
+      Object.assign(
+        (req as Request & Record<string, object>)[sessionName],
+        current
+      );
+      res.locals.writeAuthSession = true;
+      refreshCookie.write(res, encoded, refresh.exp);
+      res.json(sessionInfo(current));
+    })
+  );
+
+  router.post(
     "/logout",
     route(async (req, res) => {
       csrf(req);
       (req as Request & Record<string, unknown>)[sessionName] = undefined;
       res.locals.writeAuthSession = true;
+      refreshCookie.clear(res);
       res.json({ redirectTo: "/?signed_out=1" });
     })
   );
@@ -375,7 +543,13 @@ export function createAuth(options: AuthOptions) {
     }
     csrf(req);
     const current = session(req);
-    if (!current) throw new AuthError(401, "UNAUTHENTICATED");
+    if (!current)
+      throw new AuthError(
+        401,
+        (await refreshCookie.read(req))
+          ? "SESSION_REFRESH_REQUIRED"
+          : "LOGIN_REQUIRED"
+      );
     return { sub: current.sub };
   }
 

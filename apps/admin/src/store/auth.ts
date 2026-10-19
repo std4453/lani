@@ -1,6 +1,13 @@
 import { AppDispatch, AppGetState, RootState } from '@/store';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { authRequest, loginURL, Profile, Session } from '@/utils/auth-session';
+import {
+  AuthRequestError,
+  loadAuthSession,
+  logoutSession,
+  loginURL,
+  Profile,
+  Session,
+} from '@/utils/auth-session';
 import { notifyTestRouting } from '@/utils/test-routing-notice';
 
 export interface AuthState {
@@ -56,7 +63,7 @@ export const { sessionLoaded, loginError, setAuthorized } = authSlice.actions;
 async function loadSession(dispatch: AppDispatch, initial: boolean) {
   dispatch(authSlice.actions.loginStarted());
   try {
-    const session: Session = await authRequest('session');
+    const session: Session = await loadAuthSession();
     notifyTestRouting(session.testRoutingEnabled);
     dispatch(sessionLoaded(session));
     const params = new URLSearchParams(window.location.search);
@@ -87,6 +94,12 @@ async function loadSession(dispatch: AppDispatch, initial: boolean) {
       window.location.replace(loginURL());
     }
   } catch (error) {
+    if (error instanceof AuthRequestError && error.code === 'LOGIN_REQUIRED') {
+      window.location.replace(loginURL());
+      return;
+    }
+    if (error instanceof AuthRequestError && error.code === 'AUTH_CANCELLED')
+      return;
     dispatch(
       loginError(
         error instanceof Error ? error.message : '暂时无法连接登录服务，请重试',
@@ -104,7 +117,7 @@ export async function initAuth(dispatch: AppDispatch) {
 
 export async function logout(dispatch: AppDispatch) {
   try {
-    const result = await authRequest('logout', 'POST');
+    const result = await logoutSession();
     window.location.replace(result.redirectTo);
   } catch {
     dispatch(loginError('退出登录未完成，请重试'));
