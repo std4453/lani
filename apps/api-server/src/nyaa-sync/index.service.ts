@@ -15,7 +15,9 @@ type Category = keyof typeof NYAA_HISTORY_PAGES;
 @Injectable()
 export class NyaaSyncService {
   private readonly logger = new Logger(NyaaSyncService.name);
-  private readonly client = new RateLimitedClient(config.torrents.nyaa.qps);
+  private readonly client = new RateLimitedClient(
+    Math.min(config.torrents.nyaa.qps, 1),
+  );
   private history?: Promise<number>;
   private readonly running = new Map<Category, Promise<number>>();
 
@@ -32,6 +34,21 @@ export class NyaaSyncService {
         responseType: 'text',
         // 禁止客户端自动跟随跳转绕过限速或访问非预期页面。
         maxRedirects: 0,
+      });
+      return data;
+    });
+  }
+
+  fetchDetails(permalink: string) {
+    if (!/^https:\/\/nyaa\.si\/view\/[1-9]\d*$/.test(permalink)) {
+      throw new Error('Invalid Nyaa detail URL');
+    }
+    return this.client.request(async (signal) => {
+      const { data } = await this.axios.get<string>(permalink, {
+        signal,
+        responseType: 'text',
+        maxRedirects: 0,
+        maxContentLength: 2 * 1024 * 1024,
       });
       return data;
     });

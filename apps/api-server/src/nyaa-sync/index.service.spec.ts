@@ -10,6 +10,7 @@ jest.mock('@/utils/GraphQLExceptionFilter', () => ({
   LaniFilterCron: () => () => undefined,
 }));
 jest.mock('./parse', () => ({ parseRSS: jest.fn(), parseHistory: jest.fn() }));
+import config from '@/config';
 import { NyaaSyncService } from './index.service';
 import { parseHistory, parseRSS } from './parse';
 
@@ -85,4 +86,51 @@ it('reports only committed additions before the next page and preserves progress
   );
   expect(onAdded.mock.calls.flat().reduce((sum, n) => sum + n, 0)).toBe(2);
   expect(onAdded).toHaveBeenCalledTimes(20);
+});
+
+it('rejects external or malformed detail URLs without requesting them', () => {
+  const { service, axios } = setup();
+  for (const url of [
+    'http://nyaa.si/view/1',
+    'https://evil.test/view/1',
+    'https://nyaa.si/view/1?redirect=x',
+    'https://nyaa.si/view/0',
+  ]) {
+    expect(() => service.fetchDetails(url)).toThrow('Invalid Nyaa detail URL');
+  }
+  expect(axios.get).not.toHaveBeenCalled();
+});
+
+it('shares the one-QPS ceiling between detail and RSS requests even with a higher configured QPS', async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(10000);
+  config.torrents.nyaa.qps = 10;
+  try {
+    const started: number[] = [];
+    const axios = {
+      get: jest.fn<Promise<{ data: string }>, [string, unknown]>(async () => {
+        started.push(Date.now());
+        return { data: 'page' };
+      }),
+    };
+    const torrents = { insert: jest.fn().mockResolvedValue(1) };
+    const service = new NyaaSyncService(axios as any, torrents as any);
+    const first = service.fetchDetails('https://nyaa.si/view/123');
+    const second = service.syncCategory('1_2');
+    await first;
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    jest.advanceTimersByTime(999);
+    expect(started).toEqual([10000]);
+    jest.advanceTimersByTime(1);
+    await second;
+    expect(started).toEqual([10000, 11000]);
+    expect(axios.get.mock.calls[0][1]).toMatchObject({
+      maxRedirects: 0,
+      maxContentLength: 2097152,
+      responseType: 'text',
+    });
+  } finally {
+    config.torrents.nyaa.qps = 1;
+    jest.useRealTimers();
+  }
 });
