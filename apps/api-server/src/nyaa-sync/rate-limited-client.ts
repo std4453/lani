@@ -1,7 +1,23 @@
+export function responseStatus(error: unknown): number | undefined {
+  const failure = error as { status?: number; response?: { status?: number } };
+  return failure?.response?.status ?? failure?.status;
+}
+
+export class NyaaPausedError extends Error {
+  constructor() {
+    super('Nyaa 请求已暂停，请稍后重试');
+  }
+}
+
 // 同一客户端的 RSS、历史请求共用队列；失败不阻塞后续请求。
 export class RateLimitedClient {
   private tail: Promise<unknown> = Promise.resolve();
   private lastStarted = 0;
+  private pauseEnd = 0;
+
+  get pausedUntil() {
+    return this.pauseEnd;
+  }
   private readonly interval: number;
 
   constructor(qps: number, private readonly timeoutMs = 30000) {
@@ -13,6 +29,7 @@ export class RateLimitedClient {
 
   request<T>(send: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const result = this.tail.then(async () => {
+      if (Date.now() < this.pauseEnd) throw new NyaaPausedError();
       const delay = this.lastStarted + this.interval - Date.now();
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       this.lastStarted = Date.now();
@@ -28,6 +45,12 @@ export class RateLimitedClient {
             }, this.timeoutMs);
           }),
         ]);
+      } catch (error) {
+        const status = responseStatus(error);
+        if (status === 403 || status === 429) {
+          this.pauseEnd = Date.now() + 15 * 60000;
+        }
+        throw error;
       } finally {
         clearTimeout(timer!);
       }

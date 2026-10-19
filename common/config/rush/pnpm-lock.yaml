@@ -166,6 +166,9 @@ importers:
       '@rush-temp/gateway':
         specifier: file:./projects/gateway.tgz
         version: file:projects/gateway.tgz(encoding@0.1.13)
+      '@rush-temp/parse-nyaa':
+        specifier: file:./projects/parse-nyaa.tgz
+        version: file:projects/parse-nyaa.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
       '@rush-temp/parse-torrent-title':
         specifier: file:./projects/parse-torrent-title.tgz
         version: file:projects/parse-torrent-title.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
@@ -2947,7 +2950,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/api-server@file:projects/api-server.tgz':
-    resolution: {integrity: sha512-MUbVEWkU8q7IpQZwR6kzjrN8VJBCyrUSzfol6kGyVopE0tGtGVMkoWjIO/THW0YrWjsHjG2+e6a5rpHuT81QUw==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-Gu4c7/H+f5YKg0Qm32HzZ4YaDsw/C3874V0NxscfcKBcNt/bmNx2Lg37Fl4S5ONLzkjeaW+g1kEYNJlVhvSKmg==, tarball: file:projects/api-server.tgz}
     version: 0.0.0
 
   '@rush-temp/cli@file:projects/cli.tgz':
@@ -2955,7 +2958,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/data-server@file:projects/data-server.tgz':
-    resolution: {integrity: sha512-jAdescL6H3PLBCty+LL39YlK8dbqv8kJt+oP2zVEw+ojerML+DkowMo+4RiAdDgl0hI78YlsWtl46cDErJHIYg==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-BJd7q4JfB+Cxpv7bPQTPpYtvN7QWgRzhlPlI+LgsYVXgMjEy4+8ooIo07oucLXu7FztroAM/MYDbFbAHU/BWqQ==, tarball: file:projects/data-server.tgz}
     version: 0.0.0
 
   '@rush-temp/db@file:projects/db.tgz':
@@ -2972,6 +2975,10 @@ packages:
 
   '@rush-temp/gateway@file:projects/gateway.tgz':
     resolution: {integrity: sha512-LWKqGIEQtlIh01b245fN1g0zXRbea7g+o5HyC7/9vEAWjy8cUnn5XR+84tWXASG6sQzV3vwIxiSRsXWAb4mFQw==, tarball: file:projects/gateway.tgz}
+    version: 0.0.0
+
+  '@rush-temp/parse-nyaa@file:projects/parse-nyaa.tgz':
+    resolution: {integrity: sha512-UbYkVbWT4pBm1WAJoY8Y3eTXq1Izo5ONKwagXLETXqiRS4+gi6KH8KNba3PDTHnFfe9htbjHlcvQOpTE06OIsw==, tarball: file:projects/parse-nyaa.tgz}
     version: 0.0.0
 
   '@rush-temp/parse-torrent-title@file:projects/parse-torrent-title.tgz':
@@ -18262,6 +18269,26 @@ snapshots:
       - debug
       - encoding
       - supports-color
+
+  '@rush-temp/parse-nyaa@file:projects/parse-nyaa.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))':
+    dependencies:
+      '@types/jest': 27.4.1
+      '@types/node': 17.0.45
+      cheerio: 1.0.0-rc.12
+      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
+      typescript: 4.7.4
+      typescript-transform-paths: 3.5.6(typescript@4.7.4)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-jest
+      - bufferutil
+      - canvas
+      - esbuild
+      - node-notifier
+      - supports-color
+      - ts-node
+      - utf-8-validate
 
   '@rush-temp/parse-torrent-title@file:projects/parse-torrent-title.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))':
     dependencies:

@@ -26,6 +26,10 @@ export class NyaaSyncService {
     private torrents: TorrentSyncService,
   ) {}
 
+  get pausedUntil() {
+    return this.client.pausedUntil;
+  }
+
   private fetch(params: Record<string, string | number>) {
     return this.client.request(async (signal) => {
       const { data } = await this.axios.get<string>('https://nyaa.si/', {

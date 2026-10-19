@@ -65,3 +65,29 @@ it('aborts a stuck request, releases the queue and handles a late rejection', as
     jest.useRealTimers();
   }
 });
+
+it.each([403, 429])(
+  'pauses all queued callers for 15 minutes after HTTP %s',
+  async (status) => {
+    jest.useFakeTimers();
+    jest.setSystemTime(10000);
+    try {
+      const client = new RateLimitedClient(1);
+      const send = jest.fn().mockResolvedValue('ok');
+      const first = client.request(async () => {
+        throw { response: { status } };
+      });
+      const queued = client.request(send);
+      await expect(first).rejects.toEqual({ response: { status } });
+      await expect(queued).rejects.toThrow('已暂停');
+      jest.advanceTimersByTime(14 * 60000);
+      await expect(client.request(send)).rejects.toThrow('已暂停');
+      expect(send).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(60000);
+      await expect(client.request(send)).resolves.toBe('ok');
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  },
+);

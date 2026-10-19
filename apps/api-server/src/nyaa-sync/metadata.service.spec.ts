@@ -4,19 +4,19 @@ jest.mock('./index.service', () => ({ NyaaSyncService: class {} }));
 jest.mock('@/utils/GraphQLExceptionFilter', () => ({
   LaniFilterCron: () => () => undefined,
 }));
-jest.mock('./subtitles', () => ({
+jest.mock('@lani/parse-nyaa', () => ({
   extractNyaaMetadata: jest.fn(),
   parseNyaaSubtitles: jest.fn(),
 }));
 import { NyaaMetadataService } from './metadata.service';
-import { extractNyaaMetadata, parseNyaaSubtitles } from './subtitles';
+import { extractNyaaMetadata, parseNyaaSubtitles } from '@lani/parse-nyaa';
+import { NyaaPausedError } from './rate-limited-client';
 
 function setup() {
   const row = {
     id: 1,
     hash: 'a'.repeat(40),
     permalink: 'https://nyaa.si/view/1',
-    nyaaMetadataFailures: 0,
   };
   const prisma = {
     torrent: {
@@ -24,7 +24,10 @@ function setup() {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
-  const nyaa = { fetchDetails: jest.fn().mockResolvedValue('html') };
+  const nyaa = {
+    fetchDetails: jest.fn().mockResolvedValue('html'),
+    pausedUntil: 0,
+  };
   (extractNyaaMetadata as jest.Mock).mockReturnValue({
     title: 'Title',
     description: 'Subs: English',
@@ -51,47 +54,34 @@ beforeEach(() => {
 });
 afterEach(() => jest.useRealTimers());
 
-it('selects recent unfetched Nyaa records, claims a lease, and atomically saves metadata plus analysis', async () => {
+it('deduplicates concurrent batches and queued records, saving only the final result', async () => {
   const { service, prisma, nyaa, row } = setup();
   const first = service.syncMetadata();
   expect(service.syncMetadata()).toBe(first);
   expect(await first).toBe(1);
-  const query = prisma.torrent.findMany.mock.calls[0][0];
-  expect(query.where).toEqual({
+  expect(prisma.torrent.findMany.mock.calls[0][0].where).toEqual({
+    id: { gt: 0 },
     channel: 'NYAA',
     publishDate: { gte: new Date('2026-09-19'), lte: new Date('2026-10-19') },
-    nyaaMetadataFetchedAt: null,
-    nyaaMetadataStatus: { in: ['pending', 'failed'] },
-    OR: [
-      { nyaaMetadataRetryAt: null },
-      { nyaaMetadataRetryAt: { lte: new Date('2026-10-19') } },
-    ],
+    metadataStatus: { in: ['pending', 'failed'] },
   });
-  expect(query.take).toBe(40);
   expect(nyaa.fetchDetails).toHaveBeenCalledWith(row.permalink);
   expect(extractNyaaMetadata).toHaveBeenCalledWith('html', row.hash);
-  const save = prisma.torrent.updateMany.mock.calls[1][0];
-  expect(save.where).toEqual({
-    id: 1,
-    nyaaMetadataRetryAt: new Date('2026-10-19T00:05:00Z'),
+  expect(prisma.torrent.updateMany).toHaveBeenCalledTimes(1);
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data).toMatchObject({
+    metadataStatus: 'parsed',
+    metadataFetchedAt: expect.any(Date),
+    metadataResult: { status: 'known' },
+    metadataError: null,
   });
-  expect(save.data).toMatchObject({
-    nyaaMetadataStatus: 'parsed',
-    nyaaMetadataFailures: 0,
-    nyaaMetadataRetryAt: null,
-    nyaaMetadataResult: { status: 'known' },
-  });
-  expect(save.data).not.toHaveProperty('parseResult');
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data).not.toHaveProperty(
+    'parseResult',
+  );
+  await service.syncMetadata();
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
 });
 
-it('skips a record claimed by another worker', async () => {
-  const { service, prisma, nyaa } = setup();
-  prisma.torrent.updateMany.mockResolvedValue({ count: 0 });
-  expect(await service.syncMetadata()).toBe(0);
-  expect(nyaa.fetchDetails).not.toHaveBeenCalled();
-});
-
-it('persists unknown results as successfully fetched, not a retryable error', async () => {
+it('stores an unknown parse as success', async () => {
   const { service, prisma } = setup();
   (parseNyaaSubtitles as jest.Mock).mockReturnValue({
     version: 1,
@@ -99,65 +89,125 @@ it('persists unknown results as successfully fetched, not a retryable error', as
     evidence: [],
   });
   await service.syncMetadata();
-  expect(prisma.torrent.updateMany.mock.calls[1][0].data).toMatchObject({
-    nyaaMetadataStatus: 'parsed',
-    nyaaMetadataFetchedAt: expect.any(Date),
-    nyaaMetadataResult: { status: 'unknown' },
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data).toMatchObject({
+    metadataStatus: 'parsed',
+    metadataResult: { status: 'unknown' },
   });
 });
 
-it.each([404, 410])(
-  'marks HTTP %s unavailable without claiming successful parsing',
+it.each([404, 410, 500])(
+  'keeps HTTP %s retries in memory, then persists failure without clearing old success',
   async (status) => {
     const { service, prisma, nyaa } = setup();
-    nyaa.fetchDetails.mockRejectedValue({ status });
+    nyaa.fetchDetails.mockRejectedValue({ response: { status } });
     await service.syncMetadata();
-    const data = prisma.torrent.updateMany.mock.calls[1][0].data;
-    expect(data).toEqual({
-      nyaaMetadataStatus: 'unavailable',
-      nyaaMetadataFailures: 1,
-      nyaaMetadataRetryAt: null,
+    await service.syncMetadata();
+    expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
+    expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(60000);
+    await service.syncMetadata();
+    expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(119999);
+    await service.syncMetadata();
+    expect(nyaa.fetchDetails).toHaveBeenCalledTimes(2);
+    jest.advanceTimersByTime(1);
+    await service.syncMetadata();
+    expect(prisma.torrent.updateMany.mock.calls[0][0].data).toEqual({
+      metadataStatus: 'failed',
+      metadataError: `抓取失败（HTTP ${status}）`,
     });
+    jest.advanceTimersByTime(86400000);
+    await service.syncMetadata();
+    expect(nyaa.fetchDetails).toHaveBeenCalledTimes(3);
+    // 新实例会重新加载 failed；包括保留有旧成功结果的失败行。
+    const restarted = new NyaaMetadataService(prisma as any, nyaa as any);
+    nyaa.fetchDetails.mockResolvedValue('html');
+    expect(await restarted.syncMetadata()).toBe(1);
+    expect(nyaa.fetchDetails).toHaveBeenCalledTimes(4);
   },
 );
 
-it('backs off failures durably, continues other records, and releases the running guard', async () => {
-  const { service, prisma, nyaa, row } = setup();
-  prisma.torrent.findMany.mockResolvedValue([row, { ...row, id: 2 }]);
-  nyaa.fetchDetails.mockRejectedValueOnce(new Error('timeout'));
-  expect(await service.syncMetadata()).toBe(1);
-  expect(prisma.torrent.updateMany.mock.calls[1][0].data).toEqual({
-    nyaaMetadataStatus: 'failed',
-    nyaaMetadataFailures: 1,
-    nyaaMetadataRetryAt: new Date('2026-10-19T00:02:00Z'),
-  });
-  prisma.torrent.findMany.mockResolvedValue([]);
-  expect(await service.syncMetadata()).toBe(0);
-});
+it.each([403, 429])(
+  'pauses later batches and other rows for 15 minutes on HTTP %s',
+  async (status) => {
+    const { service, prisma, nyaa, row } = setup();
+    prisma.torrent.findMany.mockResolvedValue([row, { ...row, id: 2 }]);
+    nyaa.fetchDetails.mockRejectedValueOnce({ response: { status } });
+    await service.syncMetadata();
+    const reads = prisma.torrent.findMany.mock.calls.length;
+    jest.advanceTimersByTime(14 * 60000);
+    expect(await service.syncMetadata()).toBe(0);
+    expect(prisma.torrent.findMany).toHaveBeenCalledTimes(reads);
+    expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
+    expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(60000);
+    expect(await service.syncMetadata()).toBe(2);
+  },
+);
 
-it.each([403, 429])('pauses the batch on HTTP %s', async (status) => {
-  const { service, prisma, nyaa, row } = setup();
-  prisma.torrent.findMany.mockResolvedValue([row, { ...row, id: 2 }]);
-  nyaa.fetchDetails.mockRejectedValue({ response: { status } });
-  expect(await service.syncMetadata()).toBe(0);
-  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
-  expect(
-    prisma.torrent.updateMany.mock.calls[1][0].data.nyaaMetadataRetryAt,
-  ).toEqual(new Date('2026-10-19T00:15:00Z'));
-});
-
-it('treats invalid HTML as retryable and does not save unvalidated metadata', async () => {
-  const { service, prisma } = setup();
-  (extractNyaaMetadata as jest.Mock).mockImplementationOnce(() => {
-    throw new Error('captcha');
-  });
+it('honors a pause triggered by RSS and does not consume a retry while queued', async () => {
+  const { service, prisma, nyaa } = setup();
+  nyaa.pausedUntil = Date.now() + 60000;
   await service.syncMetadata();
-  expect(
-    prisma.torrent.updateMany.mock.calls[1][0].data.nyaaMetadataStatus,
-  ).toBe('failed');
-  expect(prisma.torrent.updateMany.mock.calls[1][0].data).not.toHaveProperty(
-    'nyaaMetadata',
+  expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  jest.advanceTimersByTime(60000);
+  nyaa.fetchDetails.mockRejectedValueOnce(new NyaaPausedError());
+  await service.syncMetadata();
+  nyaa.fetchDetails.mockRejectedValue(new Error('network'));
+  await service.syncMetadata();
+  jest.advanceTimersByTime(60000);
+  await service.syncMetadata();
+  expect(prisma.torrent.updateMany).not.toHaveBeenCalled();
+  jest.advanceTimersByTime(120000);
+  await service.syncMetadata();
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data.metadataStatus).toBe(
+    'failed',
   );
+});
+
+it('continues other jobs during backoff and discovers records beyond a full page', async () => {
+  const { service, prisma, nyaa, row } = setup();
+  prisma.torrent.findMany
+    .mockResolvedValueOnce(
+      Array.from({ length: 200 }, (_, i) => ({ ...row, id: i + 1 })),
+    )
+    .mockResolvedValueOnce([{ ...row, id: 201 }])
+    .mockResolvedValue([]);
+  nyaa.fetchDetails.mockRejectedValueOnce(new Error('network'));
+  expect(await service.syncMetadata()).toBe(39);
+  expect(prisma.torrent.findMany.mock.calls[1][0].where.id).toEqual({
+    gt: 200,
+  });
+  for (let i = 0; i < 5; i++) await service.syncMetadata();
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(201);
+  expect(prisma.torrent.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { id: 201 } }),
+  );
+});
+
+it('retries saving a successful result without refetching after a database outage', async () => {
+  const { service, prisma, nyaa } = setup();
+  prisma.torrent.updateMany.mockRejectedValueOnce(
+    new Error('database offline'),
+  );
+  await expect(service.syncMetadata()).rejects.toThrow('database offline');
+  expect(await service.syncMetadata()).toBe(1);
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(1);
+});
+
+it('never persists unvalidated HTML and gives a bounded failure reason', async () => {
+  const { service, prisma } = setup();
+  (extractNyaaMetadata as jest.Mock).mockImplementation(() => {
+    throw new Error('untrusted page');
+  });
+  for (let i = 0; i < 3; i++) {
+    await service.syncMetadata();
+    jest.advanceTimersByTime(120000);
+  }
+  expect(prisma.torrent.updateMany.mock.calls[0][0].data).toEqual({
+    metadataStatus: 'failed',
+    metadataError: '页面校验或字幕解析失败',
+  });
 });
 
 it('stops taking new work on shutdown', async () => {
@@ -167,10 +217,11 @@ it('stops taking new work on shutdown', async () => {
   expect(prisma.torrent.findMany).not.toHaveBeenCalled();
 });
 
-it('does not report a save after another worker takes over an expired lease', async () => {
-  const { service, prisma } = setup();
-  prisma.torrent.updateMany
-    .mockResolvedValueOnce({ count: 1 })
-    .mockResolvedValueOnce({ count: 0 });
-  expect(await service.syncMetadata()).toBe(0);
+it('drops a deleted torrent without blocking remaining jobs', async () => {
+  const { service, prisma, row, nyaa } = setup();
+  prisma.torrent.findMany.mockResolvedValue([row, { ...row, id: 2 }]);
+  prisma.torrent.updateMany.mockResolvedValueOnce({ count: 0 });
+  expect(await service.syncMetadata()).toBe(1);
+  await service.syncMetadata();
+  expect(nyaa.fetchDetails).toHaveBeenCalledTimes(2);
 });

@@ -58,7 +58,8 @@
     "@lani/parse-torrent-title": "~1.0.0",
     "@lani/workflow": "~1.0.0",
     "@ctrl/torrent-file": "4.5.2",
-    "magnet-uri": "~6.2.0"
+    "magnet-uri": "~6.2.0",
+    "@lani/parse-nyaa": "~1.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
