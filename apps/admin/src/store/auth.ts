@@ -95,11 +95,18 @@ async function loadSession(dispatch: AppDispatch, initial: boolean) {
     }
   } catch (error) {
     if (error instanceof AuthRequestError && error.code === 'LOGIN_REQUIRED') {
+      const params = new URLSearchParams(window.location.search);
+      if (initial && (params.has('auth_error') || params.has('signed_out'))) {
+        dispatch(loginError('登录未完成，请重试'));
+        return;
+      }
       window.location.replace(loginURL());
       return;
     }
-    if (error instanceof AuthRequestError && error.code === 'AUTH_CANCELLED')
+    if (error instanceof AuthRequestError && error.code === 'AUTH_CANCELLED') {
+      dispatch(loginError('登录状态已变更，请重新登录'));
       return;
+    }
     dispatch(
       loginError(
         error instanceof Error ? error.message : '暂时无法连接登录服务，请重试',
