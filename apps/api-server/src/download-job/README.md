@@ -6,7 +6,7 @@
 - **Task**：持久化的任务实例。`TaskService`、`TaskStore` 和 `WorkflowRunner` 统一负责创建、查询、取消、重试、恢复及串行执行，不按任务类型选择运行时。
 - **DownloadJob**：下载业务入口，负责剧集与种子参数、同集下载去重及自动选源，再交给 Task。默认定义包含提交、下载、查找文件、导入、元数据、播放器刷新和发布剧集七个原子，执行器不依赖此数量或顺序。
 
-共享原子位于 `task/atoms`，下载器客户端独立位于 `download-client`。任务的 `type` 当前只有 `DOWNLOAD`，用于业务标识和前端详情入口，不参与执行调度。快照分别记录协议版本与流程定义版本，之后修改定义不改变已有任务。当前沿用单个 API 实例执行任务，不提供跨实例执行租约。
+共享原子位于 `task/atoms`，下载器客户端独立位于 `download-client`。任务的 `type` 包含 `DOWNLOAD`、`IMPORT`、`BATCH_IMPORT` 和 `BATCH_DOWNLOAD`，用于业务标识和前端详情入口，不参与执行调度。快照分别记录协议版本与流程定义版本，之后修改定义不改变已有任务。当前沿用单个 API 实例执行任务，不提供跨实例执行租约。
 
 Prisma 模型为 `Task`，通过 `@@map` / `@map` 保留 `download_jobs` 表和所有物理列名；PostGraphile 用 `@name` smart comment 提供 `Task`、`allTasks`、`taskById` 和 `tasksByEpisodeId`。旧物理 `status` 只表示兼容阶段，对外命名 `legacyStage` / `LegacyTaskStage`，运行状态以 Workflow 为准。GraphQL 名称随前后端同步发布，不保留旧查询和 mutation 别名。
 
@@ -62,3 +62,12 @@ Admin 的 `TaskWorkflow` 按快照顺序渲染，atom 注册表只选择 JSX 展
 任务发现与列表集合检查每 30 秒执行，活动任务状态每 3 秒执行，展开的下载步骤每 2 秒读取进度。页面隐藏、离线、弹窗关闭或没有目标时停止对应轮询；恢复前台或联网立即刷新。状态查询串行化，终态退出高频查询，列表只合并当前行的状态，集合变化由用户点击更新。
 
 共享协议测试位于 `libs/workflow`，前端测试位于 `apps/admin`，分别在包目录运行 `rushx test --runInBand`。GraphQL 生成必须同时包含 data 和 API 的 Federation schema，`Workflow` scalar 映射到共享协议类型。
+
+
+## 整季下载
+
+`previewTorrent(torrentId)` 读取数据库中的种子地址，解析并一次性返回完整文件列表。此时不向下载器添加种子、不创建任务，也不持久化识别结果；内存预览保留 15 分钟，最多 100 项，重启或缓存淘汰后需要重新选择种子。磁力链接不能在不提交下载器的前提下读取文件列表，因此预览要求资源提供 torrent 文件。
+
+`downloadTorrentForSeason(seasonId, previewToken, entries)` 校验所选视频属于预览、文件和剧集没有重复、全部剧集属于指定季度，再在同一事务中创建任务和关联。`batchEntries` 保存种子内相对路径及用户确认的映射；提交时重新读取种子并核对预览身份，链接内容变化时失败。已有相同 hash 的下载器任务继续复用，已完成的种子直接进入查找文件步骤。
+
+整季任务沿用下载七步流程；查找文件按映射精确匹配下载器文件名，不再执行单集的大小占比推断，文件缺失时报告具体剧集。后续导入、写入元数据、刷新 Jellyfin 和发布均复用批量导入的逐项检查点、失败重试与取消行为。下载器会下载整个种子，所选文件决定导入范围。部署需要执行新增 `BATCH_DOWNLOAD` 枚举值的 Prisma 迁移。

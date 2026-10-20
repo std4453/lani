@@ -36,6 +36,8 @@ export default function ImportConfirmDialog({
   episodes,
   importPaths,
   onCancel,
+  onClose,
+  download = false,
   onSubmit,
 }: {
   visible: boolean;
@@ -43,6 +45,8 @@ export default function ImportConfirmDialog({
   episodes: ImportEpisode[];
   importPaths: string[];
   onCancel(): void;
+  onClose?(): void;
+  download?: boolean;
   onSubmit(entries: ImportEntry[]): Promise<void>;
 }) {
   const [paths, setPaths] = useState<string[]>([]);
@@ -169,7 +173,7 @@ export default function ImportConfirmDialog({
         paths.map((path) => ({ importPath: path, episodeId: mapping[path] })),
       );
     } catch (error) {
-      handleError(error, '导入任务创建失败');
+      handleError(error, download ? '下载任务创建失败' : '导入任务创建失败');
     } finally {
       setSubmitting(false);
     }
@@ -177,15 +181,15 @@ export default function ImportConfirmDialog({
   return (
     <Modal
       visible={visible}
-      title={`确认导入（${title}）`}
+      title={download ? '确认下载文件' : `确认导入（${title}）`}
       width={740}
       centered
       destroyOnClose
       className={styles.importModal}
       onCancel={() => {
-        if (!submitting) onCancel();
+        if (!submitting) (onClose ?? onCancel)();
       }}
-      maskClosable={!submitting}
+      maskClosable={false}
       closable={!submitting}
       footer={
         <div className={styles.importFooter}>
@@ -216,7 +220,7 @@ export default function ImportConfirmDialog({
               disabled={submitting}
               onClick={onCancel}
             >
-              取消
+              上一步
             </Button>
             <Button
               type="primary"
@@ -224,7 +228,7 @@ export default function ImportConfirmDialog({
               loading={submitting}
               onClick={() => void submit()}
             >
-              导入
+              {download ? '确定' : '导入'}
             </Button>
           </div>
         </div>

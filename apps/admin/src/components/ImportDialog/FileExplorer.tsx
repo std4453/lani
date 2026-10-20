@@ -36,6 +36,7 @@ import {
 import { useVT } from 'virtualizedtableforantd4';
 import { VIDEO_FILE_MATCHER } from './help';
 import styles from './index.scoped.less';
+import { torrentDirectoryEntries } from './torrent-tree';
 
 function VirtualTable<T extends object>(props: TableProps<T>) {
   const [vt] = useVT(() => ({ scroll: { y: 'calc(100vh - 400px)' } }), []);
@@ -50,6 +51,7 @@ function VirtualTable<T extends object>(props: TableProps<T>) {
 }
 
 type FileExplorerProps = {
+  files?: Array<{ path: string; size: number }>;
   path: string;
   setPath: (path: string) => void;
 } & (
@@ -117,6 +119,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
       path,
     },
     fetchPolicy: 'no-cache',
+    skip: !!props.files,
   });
 
   const pathParts = useMemo(() => {
@@ -128,7 +131,9 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
   }, [path]);
 
   const dataSearched = useMemo(() => {
-    const files = data?.listFiles;
+    const files = props.files
+      ? torrentDirectoryEntries(props.files, path)
+      : data?.listFiles;
 
     if (!files) {
       return [];
@@ -151,7 +156,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
 
       return true;
     });
-  }, [data, search]);
+  }, [data, search, props.files, path]);
 
   const dataFiltered = useMemo(() => {
     const filters: ((file: FileEntry) => boolean)[] = [];
@@ -231,6 +236,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
                   ...props.selected,
                   ...dataFiltered
                     .slice(startIndex, endIndex + 1)
+                    .filter((file) => file.type !== FileEntryType.Directory)
                     .map((file) => file.path),
                 ]),
               ),
@@ -333,7 +339,7 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
                 goTo('/');
               }}
             >
-              <a href="#">根目录</a>
+              <a href="#">{props.files ? '种子目录' : '根目录'}</a>
             </Breadcrumb.Item>
             {pathParts.map((part, index) => (
               <Breadcrumb.Item
@@ -364,46 +370,49 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
           rowKey="path"
           tableLayout="fixed"
           size="small"
-          columns={[
-            {
-              title: '',
-              dataIndex: 'type',
-              render: (type: FileEntryType) =>
-                type === FileEntryType.Directory ? (
-                  <FolderOutlined />
-                ) : (
-                  <FileOutlined />
+          columns={(
+            [
+              {
+                title: '',
+                dataIndex: 'type',
+                render: (type: FileEntryType) =>
+                  type === FileEntryType.Directory ? (
+                    <FolderOutlined />
+                  ) : (
+                    <FileOutlined />
+                  ),
+                width: props.type === 'multiple' ? 24 : 50,
+                align: props.type === 'multiple' ? 'center' : 'right',
+              },
+              {
+                title: '名称',
+                dataIndex: 'name',
+                className: styles.filename,
+                render: (name: string) => (
+                  <Highlight content={name} keyword={search} />
                 ),
-              width: props.type === 'multiple' ? 24 : 50,
-              align: props.type === 'multiple' ? 'center' : 'right',
-            },
-            {
-              title: '名称',
-              dataIndex: 'name',
-              className: styles.filename,
-              render: (name: string) => (
-                <Highlight content={name} keyword={search} />
-              ),
-            },
-            {
-              title: '修改时间',
-              dataIndex: 'lastModified',
-              responsive: ['md'],
-              render: (date: string) => (
-                <>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</>
-              ),
-              width: 160,
-            },
-            {
-              title: '大小',
-              dataIndex: 'size',
-              responsive: ['sm'],
-              render: (size: string) => (
-                <>{size ? prettyBytes(parseInt(size, 10)) : '-'}</>
-              ),
-              width: 100,
-            },
-          ]}
+              },
+              {
+                key: 'modified',
+                title: '修改时间',
+                dataIndex: 'lastModified',
+                responsive: ['md'],
+                render: (date: string) => (
+                  <>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</>
+                ),
+                width: 160,
+              },
+              {
+                title: '大小',
+                dataIndex: 'size',
+                responsive: ['sm'],
+                render: (size: string) => (
+                  <>{size ? prettyBytes(parseInt(size, 10)) : '-'}</>
+                ),
+                width: 100,
+              },
+            ] as NonNullable<TableProps<FileEntry>['columns']>
+          ).filter((column) => !props.files || column.key !== 'modified')}
           pagination={false}
           onRow={(record, index) => ({
             onClick: (e: MouseEvent) => {

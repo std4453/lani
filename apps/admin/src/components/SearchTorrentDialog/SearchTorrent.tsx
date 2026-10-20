@@ -20,6 +20,7 @@ function SearchTorrentDialog({
   {
     seasonFullName?: string;
     seasonId?: number;
+    title?: string;
   } | void,
   TorrentFieldsFragment
 >) {
@@ -33,6 +34,47 @@ function SearchTorrentDialog({
     }
   }, [visible]);
 
+  return (
+    <SearchTorrentModal
+      visible={visible}
+      active={visible}
+      selected={selected}
+      setSelected={setSelected}
+      seasonFullName={input?.seasonFullName}
+      seasonId={input?.seasonId}
+      title={input?.title}
+      submitting={submitting}
+      onCancel={reject}
+      onSubmit={resolve}
+    />
+  );
+}
+
+export function SearchTorrentModal({
+  visible,
+  active,
+  selected,
+  setSelected,
+  seasonFullName,
+  seasonId,
+  title,
+  submitting,
+  onCancel,
+  onSubmit,
+  okText,
+}: {
+  visible: boolean;
+  active: boolean;
+  selected?: TorrentFieldsFragment;
+  setSelected(value?: TorrentFieldsFragment): void;
+  seasonFullName?: string;
+  seasonId?: number;
+  title?: string;
+  submitting: boolean;
+  onCancel(): void;
+  onSubmit(torrent: TorrentFieldsFragment): Promise<void>;
+  okText?: string;
+}) {
   const {
     keywords,
     setKeywords,
@@ -43,21 +85,23 @@ function SearchTorrentDialog({
     loadMore,
     lastQueryKeyword,
   } = useSearchTorrentData({
-    visible,
-    initialKeyword: input?.seasonFullName
-      ? getSeasonKeyword(input.seasonFullName)
-      : '',
-    seasonId: input?.seasonId,
+    visible: active,
+    initialKeyword: seasonFullName ? getSeasonKeyword(seasonFullName) : '',
+    seasonId,
   });
 
   return (
     <Modal
       visible={visible}
       destroyOnClose={true}
-      title="搜索种子"
+      title={
+        title ?? `搜索种子${seasonFullName ? `（${seasonFullName}）` : ''}`
+      }
+      okText={okText}
+      maskClosable={false}
       width={900}
       onCancel={() => {
-        reject();
+        onCancel();
       }}
       okButtonProps={{
         disabled: !selected,
@@ -65,7 +109,7 @@ function SearchTorrentDialog({
       }}
       onOk={async () => {
         if (selected) {
-          await resolve(selected);
+          await onSubmit(selected);
         }
       }}
       centered
@@ -77,11 +121,11 @@ function SearchTorrentDialog({
           placeholder="输入关键词"
           allowClear
         />
-        {input?.seasonFullName ? (
+        {seasonFullName ? (
           <Typography.Link
             onClick={() => {
-              if (input.seasonFullName) {
-                setKeywords(input.seasonFullName);
+              if (seasonFullName) {
+                setKeywords(seasonFullName);
               }
             }}
             style={{

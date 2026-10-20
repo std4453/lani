@@ -1,0 +1,21 @@
+mutation PreviewTorrent($torrentId: Int!) {
+  previewTorrent(torrentId: $torrentId) {
+    token
+    files {
+      path
+      size
+    }
+  }
+}
+
+mutation DownloadTorrentForSeason(
+  $seasonId: Int!
+  $previewToken: String!
+  $entries: [BatchDownloadEntry!]!
+) {
+  downloadTorrentForSeason(
+    seasonId: $seasonId
+    previewToken: $previewToken
+    entries: $entries
+  )
+}

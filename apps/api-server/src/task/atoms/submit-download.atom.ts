@@ -9,11 +9,17 @@ export class SubmitDownloadAtom extends AsyncAtom {
     super();
   }
 
-  async run(_id: number, { torrentLink }: TaskInput, context: AtomContext) {
+  async run(
+    _id: number,
+    { torrentLink, type, qbtTorrentHash }: TaskInput,
+    context: AtomContext,
+  ) {
     if (!torrentLink) throw new Error('缺少种子地址');
     const torrent = await this.client.prepareTorrent(torrentLink);
     const { hash, clientHash, name } = torrent;
     const previous = context.checkpoint.submission;
+    if (type === 'BATCH_DOWNLOAD' && !previous && qbtTorrentHash !== clientHash)
+      throw new Error('种子内容与预览不一致，请重新选择种子');
     if (previous && previous.hash !== hash)
       throw new Error('种子地址对应的 hash 已变化，请新建任务');
     await context.assertActive();

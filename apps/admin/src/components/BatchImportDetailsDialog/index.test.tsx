@@ -73,7 +73,7 @@ it('页签切换流程和表格，逐字段复制完整内容，缺失关联仍�
     const tabs = [...document.querySelectorAll('[role="tab"]')];
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       '任务流程',
-      '导入列表',
+      '文件列表',
     ]);
     expect(document.querySelector('.ant-tabs-extra-content')?.textContent).toBe(
       '自动刷新中',

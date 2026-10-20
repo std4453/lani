@@ -45,6 +45,28 @@ function setup(checkpoint: Checkpoint = {}) {
   };
   return { client, context, atom, input };
 }
+it('整季下载拒绝预览后被替换的种子，且不保存或提交下载', async () => {
+  const test = setup();
+  await expect(
+    test.atom.run(
+      1,
+      { ...test.input, type: 'BATCH_DOWNLOAD', qbtTorrentHash: 'preview-id' },
+      test.context,
+    ),
+  ).rejects.toThrow('与预览不一致');
+  expect(test.client.submitTorrent).not.toHaveBeenCalled();
+  expect(test.context.saveCheckpoint).not.toHaveBeenCalled();
+});
+it('整季下载验证预览身份后沿用下载器确认的实际 ID', async () => {
+  const test = setup();
+  await expect(
+    test.atom.run(
+      1,
+      { ...test.input, type: 'BATCH_DOWNLOAD', qbtTorrentHash: 'prepared-id' },
+      test.context,
+    ),
+  ).resolves.toEqual({ qbtTorrentHash: 'client-id', torrentTitle: 'video' });
+});
 it('先保存 hash 和提交意图，再确认完成', async () => {
   const test = setup();
   test.client.submitTorrent.mockImplementation(async () => {

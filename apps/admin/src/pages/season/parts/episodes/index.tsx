@@ -1,3 +1,4 @@
+import { useBatchDownloadDialog } from '@/components/BatchDownloadDialog';
 import { formatNumbering } from '@/utils/episode';
 import { TaskType } from '@/generated/types';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
@@ -206,6 +207,9 @@ function useColumns({
                       return;
                     }
                     void openSearchTorrent({
+                      title: `搜索种子（#${formatNumbering(r.numbering)} - ${
+                        r.title
+                      }）`,
                       seasonId: id,
                       seasonFullName: formRef.current?.getFieldValue('title'),
                       async onResolve(torrent: TorrentFieldsFragment) {
@@ -239,6 +243,9 @@ function useColumns({
                   onClick={() => {
                     void openDownloadMagnet({
                       episodeId: r.id,
+                      title: `磁力链接（#${formatNumbering(r.numbering)} - ${
+                        r.title
+                      }）`,
                       onResolve: (taskId) => {
                         void openTaskDetails({
                           taskId,
@@ -404,6 +411,7 @@ export default function Episodes() {
     useEpisodeDetailsDialog();
   const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
   const [searchTorrentDialog, , openSearchTorrent] = useSearchTorrentDialog();
+  const [batchDownloadDialog, , openBatchDownload] = useBatchDownloadDialog();
   const [importSingleDialog, , openImportSingleDialog] =
     useImportSingleDialog();
   const [importMultipleDialog, , openImportMultipleDialog] =
@@ -557,11 +565,21 @@ export default function Episodes() {
           >
             批量导入……
           </Button>
-          <Tooltip title="暂不支持">
-            <Button ghost disabled>
-              整季下载
-            </Button>
-          </Tooltip>
+          <Button
+            ghost
+            onClick={() => {
+              void openBatchDownload({
+                seasonId: id,
+                title: formRef.current?.getFieldValue('title') ?? '',
+                async onResolve() {
+                  void reloadEpisodes();
+                  void refetchEpisodesStatus();
+                },
+              });
+            }}
+          >
+            整季下载
+          </Button>
         </div>
       </Form.Item>
       <EpisodesStatusContext.Provider value={episodesStatus}>
@@ -586,6 +604,7 @@ export default function Episodes() {
       {searchTorrentDialog}
       {importSingleDialog}
       {importMultipleDialog}
+      {batchDownloadDialog}
     </Section>
   );
 }

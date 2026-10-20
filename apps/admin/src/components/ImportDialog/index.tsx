@@ -149,6 +149,7 @@ function ImportMultipleDialog({
   return (
     <>
       <Modal
+        maskClosable={false}
         visible={visible && !confirming}
         onCancel={reject}
         title={`批量导入（${snapshot?.title ?? '加载中…'}）`}
@@ -174,6 +175,7 @@ function ImportMultipleDialog({
         episodes={snapshot?.episodes ?? []}
         importPaths={selected}
         onCancel={() => setConfirming(false)}
+        onClose={reject}
         onSubmit={async (entries) => {
           const { data } = await client.mutate({
             mutation: ImportMultipleDocument,

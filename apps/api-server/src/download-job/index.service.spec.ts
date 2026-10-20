@@ -151,26 +151,28 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       await prisma.jellyfinFolder.delete({ where: { id: folderId } });
     await prisma.$disconnect();
   });
-  it.each([TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT])(
-    '%s 关联创建失败时任务和已写入关联一起回滚',
-    async (type) => {
-      const before = await prisma.task.count();
-      await expect(
-        prisma.$transaction((tx) =>
-          createEpisodeTask(
-            service,
-            tx,
-            type,
-            [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
-            { episodeId },
-            [episodeId, -1],
-          ),
+  it.each([
+    TaskType.DOWNLOAD,
+    TaskType.IMPORT,
+    TaskType.BATCH_IMPORT,
+    TaskType.BATCH_DOWNLOAD,
+  ])('%s 关联创建失败时任务和已写入关联一起回滚', async (type) => {
+    const before = await prisma.task.count();
+    await expect(
+      prisma.$transaction((tx) =>
+        createEpisodeTask(
+          service,
+          tx,
+          type,
+          [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
+          { episodeId },
+          [episodeId, -1],
         ),
-      ).rejects.toMatchObject({ code: 'P2003' });
-      expect(await prisma.task.count()).toBe(before);
-      expect(await prisma.taskEpisode.count({ where: { episodeId } })).toBe(0);
-    },
-  );
+      ),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    expect(await prisma.task.count()).toBe(before);
+    expect(await prisma.taskEpisode.count({ where: { episodeId } })).toBe(0);
+  });
   it('原子事务回滚同时撤销业务写入和检查点，内存只在提交后更新', async () => {
     const task = await createImportTask();
     const context = await contextFor(task.id);
@@ -477,7 +479,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       ).rejects.toThrow('其他任务正在发布或已发布');
     },
   );
-  it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT])(
+  it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT, TaskType.BATCH_DOWNLOAD])(
     '%s 发布检查点提交失败时，回滚 atom 写入的剧集关联',
     async (type) => {
       const task = await prisma.$transaction((tx) =>
@@ -486,7 +488,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           tx,
           type,
           [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
-          type === TaskType.BATCH_IMPORT
+          type !== TaskType.IMPORT
             ? {
                 batchEntries: [
                   {
@@ -613,14 +615,18 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     });
   });
   it.each(
-    [TaskType.DOWNLOAD, TaskType.IMPORT, TaskType.BATCH_IMPORT].flatMap(
-      (type) =>
-        ['running', 'failed', 'cancelled'].flatMap((status) =>
-          (type !== TaskType.DOWNLOAD && status !== 'running'
-            ? [false, true]
-            : [false]
-          ).map((hasMedia) => ({ type, status, hasMedia })),
-        ),
+    [
+      TaskType.DOWNLOAD,
+      TaskType.IMPORT,
+      TaskType.BATCH_IMPORT,
+      TaskType.BATCH_DOWNLOAD,
+    ].flatMap((type) =>
+      ['running', 'failed', 'cancelled'].flatMap((status) =>
+        (type !== TaskType.DOWNLOAD && status !== 'running'
+          ? [false, true]
+          : [false]
+        ).map((hasMedia) => ({ type, status, hasMedia })),
+      ),
     ),
   )(
     '$type / $status / media=$hasMedia 自动下载排除',

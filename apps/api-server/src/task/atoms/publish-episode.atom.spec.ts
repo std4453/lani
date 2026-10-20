@@ -184,12 +184,12 @@ it('发布区段冲突时同一事务内拒绝关联更新', async () => {
   expect(test.emit).not.toHaveBeenCalled();
 });
 
-it.each(['IMPORT', 'BATCH_IMPORT'] as const)(
+it.each(['IMPORT', 'BATCH_IMPORT', 'BATCH_DOWNLOAD'] as const)(
   '%s 发布关联但不发送下载发布事件',
   async (type) => {
     const test = setup();
     test.input.type = type;
-    if (type === 'BATCH_IMPORT') {
+    if (type !== 'IMPORT') {
       test.input.batchEntries = [
         {
           id: 'entry-a',
@@ -202,7 +202,7 @@ it.each(['IMPORT', 'BATCH_IMPORT'] as const)(
     await test.atom.run(1, test.input, test.context);
     const checkpoint = test.workflow.steps[0].checkpoint;
     expect(
-      type === 'BATCH_IMPORT'
+      type !== 'IMPORT'
         ? checkpoint.entries?.['entry-a'].episodePublished
         : checkpoint.episodePublished,
     ).toBe(true);
