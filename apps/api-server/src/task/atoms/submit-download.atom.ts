@@ -36,7 +36,10 @@ export class SubmitDownloadAtom extends AsyncAtom {
     );
     await context.assertActive();
     // 请求与确认收敛后才进入取消清理，避免迟到添加覆盖已经完成的清理。
-    const confirmed = await this.client.submitTorrent(torrent);
+    const confirmed =
+      type === 'BATCH_DOWNLOAD'
+        ? await this.client.submitTorrent(torrent, { preservePaths: true })
+        : await this.client.submitTorrent(torrent);
     const output = { qbtTorrentHash: confirmed.hash, torrentTitle: name };
     await context.saveCheckpoint(
       {

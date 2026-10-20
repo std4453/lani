@@ -21,10 +21,18 @@ export type PreparedTorrent = TorrentInfo & {
   input: string | Buffer;
 };
 
+export type TorrentSubmissionOptions = {
+  /** 保留种子中的原始目录结构，避免下载器全局布局改写预览路径。 */
+  preservePaths?: boolean;
+};
+
 export abstract class IDownloadClient {
   abstract prepareTorrent(torrentLink: string): Promise<PreparedTorrent>;
   /** 返回下载器确认后的实际 ID，可能与输入的内容 hash 不同。 */
-  abstract submitTorrent(torrent: PreparedTorrent): Promise<TorrentInfo>;
+  abstract submitTorrent(
+    torrent: PreparedTorrent,
+    options?: TorrentSubmissionOptions,
+  ): Promise<TorrentInfo>;
 
   abstract removeTorrent(hash: string): Promise<void>;
 

@@ -66,6 +66,9 @@ it('整季下载验证预览身份后沿用下载器确认的实际 ID', async (
       test.context,
     ),
   ).resolves.toEqual({ qbtTorrentHash: 'client-id', torrentTitle: 'video' });
+  expect(test.client.submitTorrent).toHaveBeenCalledWith(expect.any(Object), {
+    preservePaths: true,
+  });
 });
 it('先保存 hash 和提交意图，再确认完成', async () => {
   const test = setup();
