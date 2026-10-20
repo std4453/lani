@@ -3,19 +3,19 @@
   "algorithmVersion": 1,
   "images": {
     "admin": {
-      "fingerprint": "cc987a5b81fdf9f0d64927b96a0480277f821af331673e718694f6bc6cd7eed8"
+      "fingerprint": "e7e0d416ae05579d383f9e8b26bc5c8f6a8074083c11c84f759ea941249d8f8b"
     },
     "api-server": {
-      "fingerprint": "17f7ee3e4655fe79af0292e560baf86965f405e6e1ae6368adba1755e5a6d8c0"
+      "fingerprint": "f3ae57958359d7b36fa8870456792f246163219b5299e612060e4fdb211711fd"
     },
     "data-server": {
-      "fingerprint": "cb84b2f830ba44c4d6a4c632054b21ab56a3385c57e73ebb0095309b9258b962"
+      "fingerprint": "1466bf34b41a657b4cc489b39d634aef9440b2c16175fe25abe7b27662188cf2"
     },
     "gateway": {
-      "fingerprint": "0a5e5f0de4c843f42543bbb1c0c1d4e68fb562ba5e75015a07e4d4a4acafce3a"
+      "fingerprint": "f184566c3e5e3d887ae44a6a642cdaa77353f1f928b092bb614645891f1e9983"
     },
     "db": {
-      "fingerprint": "54b0e1570affa591c34a7e5cedfb62ab9efe4924130909dba100f988b6af724b"
+      "fingerprint": "73bee1a81f2f69908af1fce96c5dbfbd9c3d4b8d270fa73251af10c2f98ac711"
     }
   }
 }

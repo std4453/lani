@@ -18,6 +18,16 @@ const { GraphQLModule, GraphQLSchemaHost, Resolver, Query } =
   apiRequire("@nestjs/graphql");
 const { ApolloFederationDriver } = apiRequire("@nestjs/apollo");
 const { graphql, parse } = apiRequire("graphql");
+const { PrismaClient } = apiRequire("@lani/db");
+// 仅替换依赖注入令牌，避免加载应用配置；查询仍由真实 Prisma Client 执行。
+class PrismaService {}
+const prismaServicePath = apiRequire.resolve("./dist/common/prisma.service");
+require.cache[prismaServicePath] = {
+  id: prismaServicePath,
+  filename: prismaServicePath,
+  loaded: true,
+  exports: { PrismaService },
+};
 const { Torrent, TorrentSubtitleResolver } = apiRequire(
   "./dist/admin/torrent-subtitle.resolver"
 );
@@ -40,6 +50,16 @@ Query(() => Boolean)(
 );
 
 async function main() {
+  assert(
+    process.env.LANI_METADATA_TEST_DATABASE_URL,
+    "Missing test database URL"
+  );
+  const prisma = new PrismaClient({
+    datasources: { db: { url: process.env.LANI_METADATA_TEST_DATABASE_URL } },
+    log: [{ emit: "event", level: "query" }],
+  });
+  let subtitleStatements = 0;
+  prisma.$on("query", () => subtitleStatements++);
   const module = await Test.createTestingModule({
     imports: [
       GraphQLModule.forRoot({
@@ -48,7 +68,11 @@ async function main() {
         buildSchemaOptions: { orphanedTypes: [Torrent] },
       }),
     ],
-    providers: [TorrentSubtitleResolver, Probe],
+    providers: [
+      TorrentSubtitleResolver,
+      Probe,
+      { provide: PrismaService, useValue: prisma },
+    ],
   }).compile();
   const api = module.createNestApplication();
   const data = postgraphile(
@@ -58,6 +82,7 @@ async function main() {
   );
   let server;
   try {
+    await prisma.$connect();
     await api.init();
     const schemas = {
       api: api.get(GraphQLSchemaHost).schema,
@@ -74,9 +99,18 @@ async function main() {
       })
     );
     let context;
+    const apiRequests = [];
     const gateway = new ApolloGateway({
       localServiceList,
-      buildService: ({ name }) => new LocalGraphQLDataSource(schemas[name]),
+      buildService: ({ name }) =>
+        new (class extends LocalGraphQLDataSource {
+          process(options) {
+            if (name === "api" && options.request.variables?.representations) {
+              apiRequests.push(options.request.variables.representations);
+            }
+            return super.process(options);
+          }
+        })(schemas[name]),
     });
     server = new ApolloServer({ gateway, context: () => context });
     await withPostGraphileContext({ pgPool: data.pgPool }, async (value) => {
@@ -96,8 +130,20 @@ async function main() {
         assert.equal(
           statements,
           1,
-          "list + subtitle enrichment should use one SQL query"
+          "list should use one Data Server SQL query"
         );
+        assert.equal(
+          subtitleStatements,
+          1,
+          "subtitles should use one Prisma batch query"
+        );
+        assert.equal(apiRequests.length, 1);
+        for (const representation of apiRequests[0]) {
+          assert.deepEqual(Object.keys(representation).sort(), [
+            "__typename",
+            "nodeId",
+          ]);
+        }
         const rows = result.data.allTorrents.nodes;
         assert.deepEqual(rows[0].subtitleInfo, {
           languages: ["en", "zh-Hant"],
@@ -116,12 +162,13 @@ async function main() {
       }
     });
     console.log(
-      "Federated subtitles: composition, list, aliases, legacy fallback and single SQL query passed"
+      "Federated subtitles: composition, ID-only representations, aliases, legacy fallback, one list query and one subtitle batch query passed"
     );
   } finally {
     if (server) await server.stop();
     await data.release();
     await api.close();
+    await prisma.$disconnect();
   }
 }
 main().catch((error) => {
