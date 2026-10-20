@@ -11,6 +11,7 @@ import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
+import { normalizeAliases } from '../aliases';
 
 @Injectable()
 export class SkyhookSeasonService {
@@ -44,6 +45,12 @@ export class SkyhookSeasonService {
     if (needInfo) {
       // XXX: 这里使用 tvdb 中全系列的数据来描述季度，其实是错误的
       result.info = {
+        aliases: normalizeAliases([
+          show.title,
+          ...(Array.isArray(show.alternativeTitles)
+            ? show.alternativeTitles.map((entry) => entry?.title)
+            : []),
+        ]),
         description: show.overview,
         genres: show.genres ?? [],
         tags: [],

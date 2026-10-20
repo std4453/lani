@@ -95,6 +95,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     folderId = folder.id;
     const season = await prisma.season.create({
       data: {
+        aliases: [],
         title: `lifecycle-test-${Date.now()}`,
         jellyfinFolderId: folder.id,
         tags: [],

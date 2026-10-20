@@ -2,6 +2,7 @@ import { HideField, InputType, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class SeasonInfo {
+  aliases: string[];
   description?: string;
   tags: string[];
   genres: string[];

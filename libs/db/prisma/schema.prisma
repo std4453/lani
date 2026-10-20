@@ -84,6 +84,8 @@ model Season {
 
   infoSource               MetadataSource @default(MANUAL) @map("info_source")
   description              String         @default("")
+  // Prisma 3.15 不支持数组默认值，由迁移设置空数组默认值。
+  aliases                  String[]
   tags                     String[]       @db.VarChar
   yearAndSemester          String         @default("") @map("year_and_semester") @db.VarChar(16)
   yearAndSemesterCanonical Int            @default(0) @map("year_and_semester_canonical")

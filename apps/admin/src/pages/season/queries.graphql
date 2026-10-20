@@ -37,6 +37,7 @@ fragment seasonConfigFields on Season {
   bilibiliThmId
   createdAt
   description
+  aliases
   episodesSource
   downloadSourcesBySeasonId {
     edges {

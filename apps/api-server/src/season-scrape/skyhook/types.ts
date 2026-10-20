@@ -57,6 +57,8 @@ export class SkyhookShow {
 
   title: string;
   @IsOptional()
+  alternativeTitles?: { title: string }[];
+  @IsOptional()
   overview?: string;
   slug: string;
 

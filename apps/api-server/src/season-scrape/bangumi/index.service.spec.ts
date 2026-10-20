@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { BangumiAPIService } from '@/api/bangumi';
 import { BangumiSeasonService } from './index.service';
 jest.mock('@/api/bangumi', () => ({
-  BangumiAPIService: { getEpisodes: jest.fn() },
+  BangumiAPIService: { getEpisodes: jest.fn(), getSubjectById: jest.fn() },
   EpType: { MainStory: 0, SP: 1 },
 }));
 const getEpisodes = BangumiAPIService.getEpisodes as jest.Mock;
@@ -97,4 +97,21 @@ it('跳过异常编号并保留同页的有效剧集', async () => {
   } finally {
     warn.mockRestore();
   }
+});
+
+it('元数据包含所有名称，中文主标题也保留在别名数组', async () => {
+  (BangumiAPIService.getSubjectById as jest.Mock).mockResolvedValue({
+    name: 'SPY×FAMILY',
+    name_cn: '间谍过家家',
+    summary: '简介',
+    tags: [],
+    infobox: [{ key: '别名', value: [{ k: '日文名', v: 'スパイファミリー' }] }],
+  });
+  const result = await new BangumiSeasonService().fetch({ info: true }, '1');
+  expect(result.info?.aliases).toEqual([
+    'SPY×FAMILY',
+    '间谍过家家',
+    'スパイファミリー',
+  ]);
+  expect(result.info?.description).toBe('简介');
 });

@@ -72,6 +72,7 @@ export interface FormValues {
   bilibiliMainlandId: string;
   bilibiliThmId: string;
   description: string;
+  aliases: string[];
   downloadSources: DownloadSource[];
   infoSource: MetadataSource;
   episodesSource: MetadataSource;
@@ -102,6 +103,7 @@ export function queryToFormValues({
   bilibiliMainlandId,
   bilibiliThmId,
   description,
+  aliases,
   downloadSourcesBySeasonId,
   infoSource,
   episodesSource,
@@ -134,6 +136,7 @@ export function queryToFormValues({
     bilibiliMainlandId,
     bilibiliThmId,
     description,
+    aliases: (aliases ?? []).filter((alias): alias is string => Boolean(alias)),
     downloadSources: (extractNode(downloadSourcesBySeasonId) ?? []).map(
       ({ offset, ...source }) => ({
         ...source,
