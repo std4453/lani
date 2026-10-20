@@ -18,6 +18,7 @@ const MAX_PREVIEWS = 100;
 @Injectable()
 @Resolver()
 export class BatchDownloadService {
+  private submittingPreviews = new Set<string>();
   private previews = new Map<
     string,
     {
@@ -75,6 +76,8 @@ export class BatchDownloadService {
       this.previews.delete(previewToken);
       throw new LaniError('种子预览已失效，请返回上一步重新读取');
     }
+    if (this.submittingPreviews.has(previewToken))
+      throw new LaniError('此种子预览正在提交，请勿重复操作');
     const available = new Set(preview.files.map((file) => file.path));
     if (
       !entries.length ||
@@ -90,35 +93,41 @@ export class BatchDownloadService {
       throw new LaniError(
         '请选择种子内的视频文件，且每个文件与剧集只能选择一次',
       );
-    const id = await this.prisma.$transaction(async (tx) => {
-      const episodes = await tx.episode.findMany({
-        where: {
-          id: { in: entries.map((entry) => entry.episodeId) },
-          seasonId,
-        },
+    this.submittingPreviews.add(previewToken);
+    try {
+      const id = await this.prisma.$transaction(async (tx) => {
+        const episodes = await tx.episode.findMany({
+          where: {
+            id: { in: entries.map((entry) => entry.episodeId) },
+            seasonId,
+          },
+        });
+        if (episodes.length !== entries.length)
+          throw new LaniError('部分剧集不存在或不属于当前季度');
+        const task = await createEpisodeTask(
+          this.tasks,
+          tx,
+          TaskType.BATCH_DOWNLOAD,
+          downloadDefinition,
+          {
+            torrentLink: preview.torrentLink,
+            // 提交阶段重新读取种子时核对身份，避免预览之后链接内容被替换。
+            qbtTorrentHash: preview.clientHash,
+            batchEntries: entries.map((entry) => ({
+              id: randomUUID(),
+              episodeId: entry.episodeId,
+              sourcePath: entry.path,
+            })),
+          },
+          entries.map((entry) => entry.episodeId),
+        );
+        return task.id;
       });
-      if (episodes.length !== entries.length)
-        throw new LaniError('部分剧集不存在或不属于当前季度');
-      const task = await createEpisodeTask(
-        this.tasks,
-        tx,
-        TaskType.BATCH_DOWNLOAD,
-        downloadDefinition,
-        {
-          torrentLink: preview.torrentLink,
-          // 提交阶段重新读取种子时核对身份，避免预览之后链接内容被替换。
-          qbtTorrentHash: preview.clientHash,
-          batchEntries: entries.map((entry) => ({
-            id: randomUUID(),
-            episodeId: entry.episodeId,
-            sourcePath: entry.path,
-          })),
-        },
-        entries.map((entry) => entry.episodeId),
-      );
-      return task.id;
-    });
-    void this.tasks.start(id);
-    return id;
+      this.previews.delete(previewToken);
+      void this.tasks.start(id);
+      return id;
+    } finally {
+      this.submittingPreviews.delete(previewToken);
+    }
   }
 }

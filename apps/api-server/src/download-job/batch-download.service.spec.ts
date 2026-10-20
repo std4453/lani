@@ -170,3 +170,40 @@ it('读取种子失败与关联事务失败均不启动任务', async () => {
   ).rejects.toThrow('write failed');
   expect(tasks.start).not.toHaveBeenCalled();
 });
+
+it('同一预览只允许一个并发提交，成功后不能再次使用', async () => {
+  const { service, tasks, tx } = setup();
+  const preview = await service.previewTorrent(1);
+  let release!: (episodes: { id: number; seasonId: number }[]) => void;
+  tx.episode.findMany.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const entries = [{ episodeId: 1, path: '合集/01.mkv' }];
+  const first = service.downloadTorrentForSeason(1, preview.token, entries);
+  await expect(
+    service.downloadTorrentForSeason(1, preview.token, entries),
+  ).rejects.toThrow('正在提交');
+  release([{ id: 1, seasonId: 1 }]);
+  await expect(first).resolves.toBe(42);
+  await expect(
+    service.downloadTorrentForSeason(1, preview.token, entries),
+  ).rejects.toThrow('预览已失效');
+  expect(tasks.create).toHaveBeenCalledTimes(1);
+});
+
+it('事务失败释放提交占用，允许修正后重试同一预览', async () => {
+  const { service, tx, tasks } = setup();
+  const preview = await service.previewTorrent(1);
+  const entries = [{ episodeId: 1, path: '合集/01.mkv' }];
+  tx.taskEpisode.createMany.mockRejectedValueOnce(new Error('write failed'));
+  await expect(
+    service.downloadTorrentForSeason(1, preview.token, entries),
+  ).rejects.toThrow('write failed');
+  await expect(
+    service.downloadTorrentForSeason(1, preview.token, entries),
+  ).resolves.toBe(42);
+  expect(tasks.start).toHaveBeenCalledTimes(1);
+});
