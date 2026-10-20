@@ -21,7 +21,7 @@ BEGIN
   t.parse_result := '{"subtitleInfo":{"languages":["en"],"multi":true,"delivery":["external"]}}';
 
   INSERT INTO jellyfin_folders(name,jellyfin_id,location) VALUES ('metadata regression','metadata-regression','/tmp') RETURNING id INTO f;
-  INSERT INTO seasons(title,jellyfin_folder_id,tags) VALUES ('metadata regression',f,'{}') RETURNING * INTO s;
+  INSERT INTO seasons(title,jellyfin_folder_id,tags,aliases) VALUES ('metadata regression',f,'{}','{}') RETURNING * INTO s;
   INSERT INTO episodes(season_id,index,title,air_time) VALUES(s.id,1,'legacy',now()-interval '1 day');
   INSERT INTO episodes(season_id,episode_type,episode_number,title,air_time) VALUES(s.id,'EPISODE',1.5,'fractional',now()-interval '1 day') RETURNING id INTO ordinary;
   INSERT INTO episodes(season_id,episode_type,episode_number,title,air_time,jellyfin_episode_id) VALUES(s.id,'SP',1,'special',now()-interval '1 day','available-special') RETURNING id INTO special;
