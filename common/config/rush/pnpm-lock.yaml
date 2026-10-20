@@ -292,6 +292,9 @@ importers:
       cookie:
         specifier: ~0.4.2
         version: 0.4.2
+      dataloader:
+        specifier: ~2.2.3
+        version: 2.2.3
       dayjs:
         specifier: ~1.10.7
         version: 1.10.8
@@ -2950,7 +2953,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/api-server@file:projects/api-server.tgz':
-    resolution: {integrity: sha512-Gu4c7/H+f5YKg0Qm32HzZ4YaDsw/C3874V0NxscfcKBcNt/bmNx2Lg37Fl4S5ONLzkjeaW+g1kEYNJlVhvSKmg==, tarball: file:projects/api-server.tgz}
+    resolution: {integrity: sha512-Xo9zlEoV+D3XTxuDkqmLNrfZjQs9fTC9sFMMtXCj3xQ0XE58vKj4gaEosPQxTvgPHXYBn57s4BLPEkyIxOY6SA==, tarball: file:projects/api-server.tgz}
     version: 0.0.0
 
   '@rush-temp/cli@file:projects/cli.tgz':
@@ -2958,7 +2961,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/data-server@file:projects/data-server.tgz':
-    resolution: {integrity: sha512-BJd7q4JfB+Cxpv7bPQTPpYtvN7QWgRzhlPlI+LgsYVXgMjEy4+8ooIo07oucLXu7FztroAM/MYDbFbAHU/BWqQ==, tarball: file:projects/data-server.tgz}
+    resolution: {integrity: sha512-jAdescL6H3PLBCty+LL39YlK8dbqv8kJt+oP2zVEw+ojerML+DkowMo+4RiAdDgl0hI78YlsWtl46cDErJHIYg==, tarball: file:projects/data-server.tgz}
     version: 0.0.0
 
   '@rush-temp/db@file:projects/db.tgz':
@@ -18062,6 +18065,7 @@ snapshots:
       class-transformer: 0.5.1
       class-validator: 0.13.2
       cookie: 0.4.2
+      dataloader: 2.2.3
       dayjs: 1.10.8
       eslint: 7.32.0
       eslint-config-prettier: 8.10.2(eslint@7.32.0)
