@@ -1,5 +1,17 @@
 import { bangumiAliases, normalizeAliases } from './aliases';
 
+it('移除 PostgreSQL 文本不支持的 NUL，并在清理后去重和丢弃空值', () => {
+  expect(
+    normalizeAliases([
+      '原\u0000名',
+      '原名',
+      '\u0000',
+      ' \u0000 ',
+      'A\u0000\nB',
+    ]),
+  ).toEqual(['原名', 'A B']);
+});
+
 it('清理空白和换行，稳定去重且保留大小写与标点差异', () => {
   expect(
     normalizeAliases([

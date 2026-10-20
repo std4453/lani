@@ -4,7 +4,13 @@ export function normalizeAliases(values: unknown[]): string[] {
     new Set(
       values
         .filter((value): value is string => typeof value === 'string')
-        .map((value) => value.replace(/[\r\n\u2028\u2029]+/g, ' ').trim())
+        .map((value) =>
+          value
+            // PostgreSQL 文本不能存储 NUL，避免异常来源名称阻断元数据同步。
+            .replace(/\u0000/g, '')
+            .replace(/[\r\n\u2028\u2029]+/g, ' ')
+            .trim(),
+        )
         .filter(Boolean),
     ),
   );
