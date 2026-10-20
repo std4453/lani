@@ -31,6 +31,10 @@ it('读取全系列主标题和 alternativeTitles，保留主标题并清理异�
   );
   expect(result.info?.aliases).toEqual(['Series title', '原名', 'Line Two']);
   expect(get).toHaveBeenCalledTimes(1);
+  expect(get).toHaveBeenCalledWith(
+    'https://skyhook.sonarr.tv/v1/tvdb/shows/en/1',
+    { headers: { 'User-Agent': 'Lani (+https://github.com/std4453/lani)' } },
+  );
 });
 
 it.each([undefined, null, {}, []])(

@@ -33,6 +33,10 @@ export class SkyhookSeasonService {
 
     const resp = await this.axios.get(
       `https://skyhook.sonarr.tv/v1/tvdb/shows/en/${tvdbId}`,
+      {
+        // Skyhook 会拒绝 Axios 默认标识，使用真实应用名称标识请求来源。
+        headers: { 'User-Agent': 'Lani (+https://github.com/std4453/lani)' },
+      },
     );
     const show = plainToClass(SkyhookShow, resp.data);
     await validateOrReject(show);
