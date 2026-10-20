@@ -8,6 +8,7 @@ export default function TaskDetailsDialog(
   props: DialogProps<{ taskId: number; taskType: TaskType }>,
 ) {
   switch (props.input?.taskType) {
+    case TaskType.BatchDownload:
     case TaskType.BatchImport:
       return <BatchImportDetailsDialog {...props} />;
     case TaskType.Import:

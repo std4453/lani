@@ -9,11 +9,19 @@ export class SubmitDownloadAtom extends AsyncAtom {
     super();
   }
 
-  async run(_id: number, { torrentLink }: TaskInput, context: AtomContext) {
+  async run(
+    _id: number,
+    { torrentLink, type, qbtTorrentHash }: TaskInput,
+    context: AtomContext,
+  ) {
     if (!torrentLink) throw new Error('缺少种子地址');
     const torrent = await this.client.prepareTorrent(torrentLink);
     const { hash, clientHash, name } = torrent;
     const previous = context.checkpoint.submission;
+    // 首次比较两次 prepareTorrent 派生的 ID（v2 截断、hybrid 优先 v2）。
+    // 重试时 qbtTorrentHash 可能已是下载器实际 ID，改用 checkpoint 的内容 hash 校验。
+    if (type === 'BATCH_DOWNLOAD' && !previous && qbtTorrentHash !== clientHash)
+      throw new Error('种子内容与预览不一致，请重新选择种子');
     if (previous && previous.hash !== hash)
       throw new Error('种子地址对应的 hash 已变化，请新建任务');
     await context.assertActive();
@@ -30,7 +38,10 @@ export class SubmitDownloadAtom extends AsyncAtom {
     );
     await context.assertActive();
     // 请求与确认收敛后才进入取消清理，避免迟到添加覆盖已经完成的清理。
-    const confirmed = await this.client.submitTorrent(torrent);
+    const confirmed =
+      type === 'BATCH_DOWNLOAD'
+        ? await this.client.submitTorrent(torrent, { preservePaths: true })
+        : await this.client.submitTorrent(torrent);
     const output = { qbtTorrentHash: confirmed.hash, torrentTitle: name };
     await context.saveCheckpoint(
       {

@@ -93,7 +93,7 @@ function useColumns({
             <div className={styles.episode}>
               <Link to={`/season/${season.id}`}>{season.title}</Link>
               &nbsp;/&nbsp;
-              {r.type === TaskType.BatchImport
+              {[TaskType.BatchImport, TaskType.BatchDownload].includes(r.type)
                 ? taskEpisodesLabel(r)
                 : `#${formatNumbering(episode.numbering)}`}
             </div>

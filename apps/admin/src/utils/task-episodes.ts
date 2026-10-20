@@ -7,6 +7,7 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   [TaskType.Download]: '下载',
   [TaskType.Import]: '导入',
   [TaskType.BatchImport]: '批量导入',
+  [TaskType.BatchDownload]: '整季下载',
 };
 
 /** 只合并连续普通整数；特别篇和小数编号保持各自命名空间。 */

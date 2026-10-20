@@ -16,6 +16,7 @@ export default function ManualDownloadMagnetDialog({
 }: DialogPropsWithOnResolve<
   {
     episodeId: number;
+    title?: string;
   },
   number
 >) {
@@ -24,7 +25,7 @@ export default function ManualDownloadMagnetDialog({
     <ModalForm<{
       torrentLink: string;
     }>
-      title="手动下载磁力链接"
+      title={input?.title ?? '磁力链接'}
       visible={visible}
       modalProps={{
         destroyOnClose: true,

@@ -3,7 +3,7 @@ import TaskDialog, {
   TaskDialogTabs,
 } from '@/components/TaskDialog';
 import ProDescriptions from '@ant-design/pro-descriptions';
-import { GetTaskByIdDocument } from '@/generated/types';
+import { GetTaskByIdDocument, TaskType } from '@/generated/types';
 import { DialogProps } from '@/utils/useDialog';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { useTaskStates } from '@/utils/useTaskStates';
@@ -36,6 +36,8 @@ export default function BatchImportDetailsDialog({
     query.data?.taskById?.id === input?.taskId
       ? query.data?.taskById
       : undefined;
+  const download = task?.type === TaskType.BatchDownload;
+  const entriesLabel = download ? '文件列表' : '导入列表';
   const entries = taskImportEntries(task);
   const season = entries.find((e) => e.episodeByEpisodeId?.seasonBySeasonId)
     ?.episodeByEpisodeId?.seasonBySeasonId;
@@ -55,7 +57,7 @@ export default function BatchImportDetailsDialog({
         <Typography.Text
           copyable={input ? { text: String(input.taskId) } : false}
         >
-          批量导入 #{input?.taskId ?? ''}
+          {download ? '整季下载' : '批量导入'} #{input?.taskId ?? ''}
         </Typography.Text>
       }
       running={!!running}
@@ -89,9 +91,11 @@ export default function BatchImportDetailsDialog({
                   '关联季度不存在'
                 )}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="导入目录">
-                <Typography.Text copyable>{root}</Typography.Text>
-              </ProDescriptions.Item>
+              {!download && (
+                <ProDescriptions.Item label="导入目录">
+                  <Typography.Text copyable>{root}</Typography.Text>
+                </ProDescriptions.Item>
+              )}
             </ProDescriptions>
           </TaskDialogHeader>
           <TaskDialogTabs activeKey={tab} onChange={setTab}>
@@ -102,11 +106,11 @@ export default function BatchImportDetailsDialog({
                 refresh={states.refetch}
               />
             </Tabs.TabPane>
-            <Tabs.TabPane key="entries" tab="导入列表">
+            <Tabs.TabPane key="entries" tab={entriesLabel}>
               <div
                 className={styles.tableScroll}
                 role="region"
-                aria-label="导入列表"
+                aria-label={entriesLabel}
                 tabIndex={0}
               >
                 <Table
@@ -127,7 +131,11 @@ export default function BatchImportDetailsDialog({
                             copyable={{ text: entry.sourcePath }}
                           >
                             {entry.sourcePath.slice(
-                              root === '/' ? 1 : root.length + 1,
+                              root === '/'
+                                ? entry.sourcePath.startsWith('/')
+                                  ? 1
+                                  : 0
+                                : root.length + 1,
                             )}
                           </Typography.Text>
                         ) : (

@@ -154,3 +154,26 @@ it('btih 提交后取得 hybrid 元数据导致 ID 变化，仍能查询和取�
     expect.any(Object),
   );
 });
+
+it.each([true, false])(
+  '新种子仅在显式要求时覆盖下载器全局目录布局：%s',
+  async (preservePaths) => {
+    const { service, list, client } = setup();
+    list.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    service.post = jest.fn(async () => ({ data: 'Ok.' })) as never;
+    await client.submitTorrent(
+      {
+        hash: v1,
+        clientHash: v1,
+        input: Buffer.from('torrent'),
+        name: 'season',
+      },
+      preservePaths ? { preservePaths } : undefined,
+    );
+    const body = (service.post as jest.Mock).mock.calls[0][1].toString();
+    if (preservePaths)
+      expect(body).toContain('name="contentLayout"\r\n\r\nOriginal');
+    else expect(body).not.toContain('contentLayout');
+    expect(body).not.toContain('skip_checking');
+  },
+);

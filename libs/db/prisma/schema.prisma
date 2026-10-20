@@ -176,6 +176,7 @@ enum TaskType {
   DOWNLOAD
   IMPORT
   BATCH_IMPORT
+  BATCH_DOWNLOAD
 
   @@map("task_type")
 }

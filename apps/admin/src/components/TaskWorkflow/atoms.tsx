@@ -16,7 +16,7 @@ function Paths({
   field: 'importPath' | 'filePath' | 'nfoPath';
   label: string;
 }) {
-  if (task.type !== TaskType.BatchImport)
+  if (![TaskType.BatchImport, TaskType.BatchDownload].includes(task.type))
     return <Field label={label}>{task[field]}</Field>;
   const paths = taskImportEntries(task).flatMap((entry) =>
     entry?.[field] ? [entry[field]!] : [],
@@ -81,7 +81,7 @@ export const atomViews: Record<
   publishEpisode: { fields: null },
   refreshPlayer: {
     fields: (task) =>
-      task.type === TaskType.BatchImport ? (
+      [TaskType.BatchImport, TaskType.BatchDownload].includes(task.type) ? (
         <Field label="Jellyfin 季度 ID">
           {
             task.taskEpisodesByTaskId?.nodes.find(

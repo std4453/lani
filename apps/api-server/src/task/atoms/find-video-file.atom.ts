@@ -4,6 +4,7 @@ import { IDownloadClient } from '@/download-client/IDownloadClient';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
 import { Injectable } from '@nestjs/common';
 import path from 'path';
+import { isTorrentFilePath } from '@/download-client/torrent-files';
 
 @Injectable()
 export class FindVideoFileAtom extends BatchableEpisodeAtom {
@@ -15,12 +16,21 @@ export class FindVideoFileAtom extends BatchableEpisodeAtom {
 
   protected async runEpisode(
     _id: number,
-    { qbtTorrentHash, downloadPath }: TaskInput,
+    { qbtTorrentHash, downloadPath, type, sourcePath }: TaskInput,
   ) {
     if (!qbtTorrentHash || !downloadPath) {
       throw new Error('submitDownload or download step not finished');
     }
     const files = await this.client.getTorrentFiles(qbtTorrentHash);
+    if (type === 'BATCH_DOWNLOAD') {
+      if (
+        !sourcePath ||
+        !isTorrentFilePath(sourcePath) ||
+        !files.some((file) => file.path === sourcePath)
+      )
+        throw new Error('下载结果中未找到所选文件');
+      return { importPath: path.posix.join(downloadPath, sourcePath) };
+    }
     const totalSize = files.reduce((acc, { size }) => acc + size, 0);
     const videoFile = files.find(
       ({ path, size }) =>

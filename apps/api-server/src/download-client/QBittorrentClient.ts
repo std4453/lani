@@ -5,6 +5,7 @@ import {
   PreparedTorrent,
   TorrentInfo,
   TorrentInfoWithStatus,
+  TorrentSubmissionOptions,
 } from '@/download-client/IDownloadClient';
 import { QBittorrentService } from '@/download-client/QBittorrentService';
 import { QBTTorrentState } from '@/download-client/types';
@@ -290,10 +291,14 @@ export class QBittorrentClient implements IDownloadClient {
     };
   }
 
-  async submitTorrent({ hash, clientHash, name, input }: PreparedTorrent) {
+  async submitTorrent(
+    { hash, clientHash, name, input }: PreparedTorrent,
+    options: TorrentSubmissionOptions = {},
+  ) {
     const params = new FormData();
     if (typeof input === 'string') params.append('urls', input);
     else params.append('torrents', input, { filename: name });
+    if (options.preservePaths) params.append('contentLayout', 'Original');
     const confirmed = await this.addAndConfirm(clientHash, params);
     this.logger.log(
       `Torrent ${name ?? '(unnamed)'} (${hash}) submission confirmed as ${

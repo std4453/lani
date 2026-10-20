@@ -12,12 +12,21 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** A floating point number that requires more precision than IEEE 754 binary 64 */
   BigFloat: any;
+  /** BigInt */
   BigInt: any;
+  /** A location in a connection that can be used for resuming pagination. */
   Cursor: any;
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: string;
+  /**
+   * A point in time as described by the [ISO
+   * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
+   */
   Datetime: any;
   JSON: any;
+  /** 版本化的任务流程快照；协议由 @lani/workflow 定义。 */
   Workflow: Workflow;
 };
 
@@ -27,6 +36,11 @@ export type AdminConfig = {
   features: FeaturesConfig;
   jellyfin?: Maybe<JellyfinConfig>;
   lania?: Maybe<LaniaConfig>;
+};
+
+export type BatchDownloadEntry = {
+  episodeId: Scalars['Int'];
+  path: Scalars['String'];
 };
 
 export type BatchImportEntryState = {
@@ -1963,14 +1977,18 @@ export type Mutation = {
   deleteSeasonById: Scalars['ID'];
   downloadBilibiliCC: Scalars['ID'];
   downloadTorrentForEpisode: Scalars['Int'];
+  downloadTorrentForSeason: Scalars['Int'];
   enqueueDownloadJobs: Scalars['Int'];
   importMultiple: Scalars['Int'];
   importSingle: Scalars['Int'];
   mockEpisodePublish: Scalars['ID'];
   notifyMissingEpisodes: Scalars['Int'];
   parseTorrentTitleForAll: Scalars['ID'];
+  previewTorrent: TorrentPreview;
   refreshAllLegacyTaskStage: Scalars['Int'];
   refreshAllPlayerWaitingStatus: Scalars['Int'];
+  /** 按数据库种子 ID 刷新 Nyaa 字幕元数据（1–100 条），返回新入队数量。已在队列中的记录不重复入队；后台按分钟处理，限流期间继续等待。 */
+  refreshNyaaMetadata: Scalars['Int'];
   retryTask: Scalars['ID'];
   saveSeason: Scalars['ID'];
   setJellyfinFolderDefault: Scalars['ID'];
@@ -2061,6 +2079,13 @@ export type MutationDownloadTorrentForEpisodeArgs = {
 };
 
 
+export type MutationDownloadTorrentForSeasonArgs = {
+  entries: Array<BatchDownloadEntry>;
+  previewToken: Scalars['String'];
+  seasonId: Scalars['Int'];
+};
+
+
 export type MutationImportMultipleArgs = {
   entries: Array<ImportMultipleEntry>;
 };
@@ -2074,6 +2099,16 @@ export type MutationImportSingleArgs = {
 
 export type MutationMockEpisodePublishArgs = {
   episodeId: Scalars['Int'];
+};
+
+
+export type MutationPreviewTorrentArgs = {
+  torrentId: Scalars['Int'];
+};
+
+
+export type MutationRefreshNyaaMetadataArgs = {
+  ids: Array<Scalars['Int']>;
 };
 
 
@@ -3720,6 +3755,7 @@ export type TaskToManyTaskEpisodeFilter = {
 };
 
 export enum TaskType {
+  BatchDownload = 'BATCH_DOWNLOAD',
   BatchImport = 'BATCH_IMPORT',
   Download = 'DOWNLOAD',
   Import = 'IMPORT'
@@ -3890,6 +3926,10 @@ export type Torrent = Node & {
   index?: Maybe<Scalars['Int']>;
   indexFrom?: Maybe<Scalars['Int']>;
   indexTo?: Maybe<Scalars['Int']>;
+  metadata?: Maybe<Scalars['JSON']>;
+  metadataError?: Maybe<Scalars['String']>;
+  metadataFetchedAt?: Maybe<Scalars['Datetime']>;
+  metadataStatus: Scalars['String'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   organizationParts?: Maybe<Array<Maybe<Scalars['String']>>>;
@@ -3983,6 +4023,14 @@ export type TorrentCondition = {
   indexFrom?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `indexTo` field. */
   indexTo?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `metadata` field. */
+  metadata?: InputMaybe<Scalars['JSON']>;
+  /** Checks for equality with the object’s `metadataError` field. */
+  metadataError?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `metadataFetchedAt` field. */
+  metadataFetchedAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `metadataStatus` field. */
+  metadataStatus?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `organizationParts` field. */
   organizationParts?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
   /** Checks for equality with the object’s `organizationRaw` field. */
@@ -4065,6 +4113,14 @@ export type TorrentFilter = {
   indexFrom?: InputMaybe<IntFilter>;
   /** Filter by the object’s `indexTo` field. */
   indexTo?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `metadata` field. */
+  metadata?: InputMaybe<JsonFilter>;
+  /** Filter by the object’s `metadataError` field. */
+  metadataError?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `metadataFetchedAt` field. */
+  metadataFetchedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `metadataStatus` field. */
+  metadataStatus?: InputMaybe<StringFilter>;
   /** Negates the expression. */
   not?: InputMaybe<TorrentFilter>;
   /** Checks for any expressions in this list. */
@@ -4099,8 +4155,6 @@ export type TorrentFilter = {
   subtitleHasCht?: InputMaybe<BooleanFilter>;
   /** Filter by the object’s `subtitleHasJp` field. */
   subtitleHasJp?: InputMaybe<BooleanFilter>;
-  /** Filter by the object’s `subtitleInfo` field. */
-  subtitleInfo?: InputMaybe<JsonFilter>;
   /** Filter by the object’s `subtitleType` field. */
   subtitleType?: InputMaybe<StringFilter>;
   /** Filter by the object’s `title` field. */
@@ -4148,6 +4202,18 @@ export type TorrentPlatformFilter = {
   notEqualTo?: InputMaybe<TorrentPlatform>;
   /** Not included in the specified list. */
   notIn?: InputMaybe<Array<TorrentPlatform>>;
+};
+
+export type TorrentPreview = {
+  __typename?: 'TorrentPreview';
+  files: Array<TorrentPreviewFile>;
+  token: Scalars['String'];
+};
+
+export type TorrentPreviewFile = {
+  __typename?: 'TorrentPreviewFile';
+  path: Scalars['String'];
+  size: Scalars['Float'];
 };
 
 export enum TorrentSourceType {
@@ -4246,6 +4312,14 @@ export enum TorrentsOrderBy {
   IndexFromDesc = 'INDEX_FROM_DESC',
   IndexToAsc = 'INDEX_TO_ASC',
   IndexToDesc = 'INDEX_TO_DESC',
+  MetadataAsc = 'METADATA_ASC',
+  MetadataDesc = 'METADATA_DESC',
+  MetadataErrorAsc = 'METADATA_ERROR_ASC',
+  MetadataErrorDesc = 'METADATA_ERROR_DESC',
+  MetadataFetchedAtAsc = 'METADATA_FETCHED_AT_ASC',
+  MetadataFetchedAtDesc = 'METADATA_FETCHED_AT_DESC',
+  MetadataStatusAsc = 'METADATA_STATUS_ASC',
+  MetadataStatusDesc = 'METADATA_STATUS_DESC',
   Natural = 'NATURAL',
   OrganizationPartsAsc = 'ORGANIZATION_PARTS_ASC',
   OrganizationPartsDesc = 'ORGANIZATION_PARTS_DESC',
@@ -4560,6 +4634,22 @@ export type UpdateSeasonPayload = {
 export type UpdateSeasonPayloadSeasonEdgeArgs = {
   orderBy?: InputMaybe<Array<SeasonsOrderBy>>;
 };
+
+export type PreviewTorrentMutationVariables = Exact<{
+  torrentId: Scalars['Int'];
+}>;
+
+
+export type PreviewTorrentMutation = { __typename?: 'Mutation', previewTorrent: { __typename?: 'TorrentPreview', token: string, files: Array<{ __typename?: 'TorrentPreviewFile', path: string, size: number }> } };
+
+export type DownloadTorrentForSeasonMutationVariables = Exact<{
+  seasonId: Scalars['Int'];
+  previewToken: Scalars['String'];
+  entries: Array<BatchDownloadEntry> | BatchDownloadEntry;
+}>;
+
+
+export type DownloadTorrentForSeasonMutation = { __typename?: 'Mutation', downloadTorrentForSeason: number };
 
 export type GetEpisodeByIdQueryVariables = Exact<{
   episodeByIdId: Scalars['Int'];
@@ -4922,6 +5012,8 @@ export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind
 export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
 export const LiveTaskFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"LiveTask"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"batchEntries"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]} as unknown as DocumentNode<LiveTaskFragment, unknown>;
 export const TaskVersionFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TaskVersion"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskVersionFragment, unknown>;
+export const PreviewTorrentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"PreviewTorrent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"previewTorrent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"torrentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}},{"kind":"Field","name":{"kind":"Name","value":"size"}}]}}]}}]}}]} as unknown as DocumentNode<PreviewTorrentMutation, PreviewTorrentMutationVariables>;
+export const DownloadTorrentForSeasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DownloadTorrentForSeason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"previewToken"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entries"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"BatchDownloadEntry"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"downloadTorrentForSeason"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}}},{"kind":"Argument","name":{"kind":"Name","value":"previewToken"},"value":{"kind":"Variable","name":{"kind":"Name","value":"previewToken"}}},{"kind":"Argument","name":{"kind":"Name","value":"entries"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entries"}}}]}]}}]} as unknown as DocumentNode<DownloadTorrentForSeasonMutation, DownloadTorrentForSeasonMutationVariables>;
 export const GetEpisodeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeByIdId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeDetailsFields"}}]}}]}},...EpisodeDetailsFieldsFragmentDoc.definitions,...TaskDetailsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetEpisodeByIdQuery, GetEpisodeByIdQueryVariables>;
 export const GetTaskByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTaskById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"taskById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskDetailsFields"}},{"kind":"Field","name":{"kind":"Name","value":"episodeByEpisodeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeDetailsFields"}}]}}]}}]}},...TaskDetailsFieldsFragmentDoc.definitions,...EpisodeDetailsFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetTaskByIdQuery, GetTaskByIdQueryVariables>;
 export const ListFilesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListFiles"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"path"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"listFiles"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"path"},"value":{"kind":"Variable","name":{"kind":"Name","value":"path"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lastModified"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"path"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<ListFilesQuery, ListFilesQueryVariables>;

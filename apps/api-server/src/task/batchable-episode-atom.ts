@@ -110,7 +110,7 @@ export abstract class BatchableEpisodeAtom extends AsyncAtom {
     input: TaskInput,
     parent: AtomContext,
   ): Promise<TaskOutput> {
-    if (input.type !== 'BATCH_IMPORT')
+    if (!['BATCH_IMPORT', 'BATCH_DOWNLOAD'].includes(input.type))
       return this.runEpisode(id, input, parent);
     const entries = batchImportEntries(input.batchEntries);
     if (!entries.length) throw new Error('批量导入任务没有条目');
@@ -150,13 +150,13 @@ export abstract class BatchableEpisodeAtom extends AsyncAtom {
   }
 
   recover(id: number, input: TaskInput, parent: AtomContext) {
-    return input.type === 'BATCH_IMPORT'
+    return ['BATCH_IMPORT', 'BATCH_DOWNLOAD'].includes(input.type)
       ? this.run(id, input, parent)
       : this.recoverEpisode(id, input, parent);
   }
 
   async cancel(id: number, input: TaskInput, parent: AtomContext) {
-    if (input.type !== 'BATCH_IMPORT')
+    if (!['BATCH_IMPORT', 'BATCH_DOWNLOAD'].includes(input.type))
       return this.cancelEpisode(id, input, parent);
     const results = await Promise.allSettled(
       batchImportEntries(input.batchEntries).map((entry) =>

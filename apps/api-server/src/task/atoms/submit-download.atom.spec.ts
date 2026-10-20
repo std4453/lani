@@ -1,15 +1,23 @@
 import { SubmitDownloadAtom } from './submit-download.atom';
-import { IDownloadClient } from '@/download-client/IDownloadClient';
+import {
+  IDownloadClient,
+  PreparedTorrent,
+} from '@/download-client/IDownloadClient';
+import { parseTorrentInput } from '@/download-client/torrent-input';
+import { toTorrentFile } from '@ctrl/torrent-file';
+import { createHash } from 'crypto';
 import { AtomContext } from '@/task/atom';
 import { Checkpoint } from '@lani/workflow';
 function setup(checkpoint: Checkpoint = {}) {
   const client = {
-    prepareTorrent: jest.fn(async () => ({
-      hash: 'known',
-      clientHash: 'prepared-id',
-      name: 'video',
-      input: 'magnet:test',
-    })),
+    prepareTorrent: jest.fn(
+      async (): Promise<PreparedTorrent> => ({
+        hash: 'known',
+        clientHash: 'prepared-id',
+        name: 'video',
+        input: 'magnet:test',
+      }),
+    ),
     submitTorrent: jest.fn(async () => ({ hash: 'client-id' })),
     lookupTorrents: jest.fn(),
     removeTorrent: jest.fn(async () => undefined),
@@ -45,6 +53,133 @@ function setup(checkpoint: Checkpoint = {}) {
   };
   return { client, context, atom, input };
 }
+it('整季下载拒绝预览后被替换的种子，且不保存或提交下载', async () => {
+  const test = setup();
+  await expect(
+    test.atom.run(
+      1,
+      { ...test.input, type: 'BATCH_DOWNLOAD', qbtTorrentHash: 'preview-id' },
+      test.context,
+    ),
+  ).rejects.toThrow('与预览不一致');
+  expect(test.client.submitTorrent).not.toHaveBeenCalled();
+  expect(test.context.saveCheckpoint).not.toHaveBeenCalled();
+});
+it('整季下载验证预览身份后沿用下载器确认的实际 ID', async () => {
+  const test = setup();
+  await expect(
+    test.atom.run(
+      1,
+      { ...test.input, type: 'BATCH_DOWNLOAD', qbtTorrentHash: 'prepared-id' },
+      test.context,
+    ),
+  ).resolves.toEqual({ qbtTorrentHash: 'client-id', torrentTitle: 'video' });
+  expect(test.client.submitTorrent).toHaveBeenCalledWith(expect.any(Object), {
+    preservePaths: true,
+  });
+});
+
+describe.each(['v1', 'v2', 'hybrid'] as const)('整季下载 %s 身份', (kind) => {
+  function prepare(name = '合集'): PreparedTorrent {
+    const files = ['01.mkv', '02.mkv', '01.ass'];
+    const info = {
+      name,
+      'piece length': 16384,
+      ...(kind !== 'v2' && {
+        pieces: createHash('sha1').update('xxx').digest(),
+        files: files.map((file) => ({ path: [file], length: 1 })),
+      }),
+      ...(kind !== 'v1' && {
+        'meta version': 2,
+        'file tree': Object.fromEntries(
+          files.map((file) => [
+            file,
+            {
+              '': {
+                length: 1,
+                'pieces root': createHash('sha256').update('x').digest(),
+              },
+            },
+          ]),
+        ),
+      }),
+    };
+    const input = Buffer.from(toTorrentFile({ info }));
+    return { ...parseTorrentInput(input), input };
+  }
+
+  it('以一致的派生 ID 校验预览，完整提交含未选视频和字幕的种子', async () => {
+    const test = setup();
+    const torrent = prepare();
+    const expectedClientHash = createHash(kind === 'v1' ? 'sha1' : 'sha256')
+      .update((torrent.input as Buffer).subarray(7, -1))
+      .digest('hex')
+      .slice(0, 40);
+    expect(torrent.clientHash).toBe(expectedClientHash);
+    test.client.prepareTorrent.mockResolvedValue(torrent);
+    await test.atom.run(
+      1,
+      {
+        ...test.input,
+        type: 'BATCH_DOWNLOAD',
+        torrentLink: 'https://example.test/batch.torrent',
+        qbtTorrentHash: expectedClientHash,
+        batchEntries: [{ id: 'one', episodeId: 1, sourcePath: '合集/01.mkv' }],
+      },
+      test.context,
+    );
+    expect(test.client.submitTorrent).toHaveBeenCalledTimes(1);
+    expect(test.client.submitTorrent).toHaveBeenCalledWith(torrent, {
+      preservePaths: true,
+    });
+    expect(test.context.checkpoint.submission?.hash).toBe(torrent.hash);
+    expect(test.context.checkpoint.submission?.clientHash).toBe('client-id');
+  });
+
+  it('预览后内容变化则拒绝提交', async () => {
+    const test = setup();
+    test.client.prepareTorrent.mockResolvedValue(prepare('另一合集'));
+    await expect(
+      test.atom.run(
+        1,
+        {
+          ...test.input,
+          type: 'BATCH_DOWNLOAD',
+          qbtTorrentHash: prepare().clientHash,
+        },
+        test.context,
+      ),
+    ).rejects.toThrow('与预览不一致');
+    expect(test.client.submitTorrent).not.toHaveBeenCalled();
+    expect(test.context.saveCheckpoint).not.toHaveBeenCalled();
+  });
+
+  it.each(['requested', 'confirmed'] as const)(
+    '%s 重试按内容 hash 校验，兼容实际 ID 与派生 ID 不同',
+    async (phase) => {
+      const torrent = prepare();
+      // hybrid 的实际 ID 可以是 v1；纯 v2 也可能由客户端返回完整 hash。
+      const actualId = torrent.hash;
+      const test = setup({
+        submission: { hash: torrent.hash, clientHash: actualId, phase },
+      });
+      const input = {
+        ...test.input,
+        type: 'BATCH_DOWNLOAD' as const,
+        qbtTorrentHash: actualId,
+      };
+      test.client.prepareTorrent.mockResolvedValue(torrent);
+      await test.atom.run(1, input, test.context);
+      expect(test.client.submitTorrent).toHaveBeenCalledTimes(1);
+      test.client.submitTorrent.mockClear();
+      test.client.prepareTorrent.mockResolvedValue(prepare('另一合集'));
+      await expect(test.atom.run(1, input, test.context)).rejects.toThrow(
+        'hash 已变化',
+      );
+      expect(test.client.submitTorrent).not.toHaveBeenCalled();
+    },
+  );
+});
 it('先保存 hash 和提交意图，再确认完成', async () => {
   const test = setup();
   test.client.submitTorrent.mockImplementation(async () => {
