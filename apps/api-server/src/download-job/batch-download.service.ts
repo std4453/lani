@@ -71,6 +71,7 @@ export class BatchDownloadService {
     @Args({ name: 'entries', type: () => [BatchDownloadEntry] })
     entries: BatchDownloadEntry[],
   ) {
+    // 此处仅创建任务，用预览校验导入映射；实际下载不读取缓存，也不按 entries 筛选种子文件。
     const preview = this.previews.get(previewToken);
     if (!preview || preview.expiresAt <= Date.now()) {
       this.previews.delete(previewToken);
@@ -111,7 +112,7 @@ export class BatchDownloadService {
           downloadDefinition,
           {
             torrentLink: preview.torrentLink,
-            // 提交阶段重新读取种子时核对身份，避免预览之后链接内容被替换。
+            // 首次提交前暂存相同解析器派生的 ID，确认后由实际下载器 ID 覆盖。
             qbtTorrentHash: preview.clientHash,
             batchEntries: entries.map((entry) => ({
               id: randomUUID(),

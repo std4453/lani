@@ -18,6 +18,8 @@ export class SubmitDownloadAtom extends AsyncAtom {
     const torrent = await this.client.prepareTorrent(torrentLink);
     const { hash, clientHash, name } = torrent;
     const previous = context.checkpoint.submission;
+    // 首次比较两次 prepareTorrent 派生的 ID（v2 截断、hybrid 优先 v2）。
+    // 重试时 qbtTorrentHash 可能已是下载器实际 ID，改用 checkpoint 的内容 hash 校验。
     if (type === 'BATCH_DOWNLOAD' && !previous && qbtTorrentHash !== clientHash)
       throw new Error('种子内容与预览不一致，请重新选择种子');
     if (previous && previous.hash !== hash)

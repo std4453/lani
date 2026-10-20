@@ -37,6 +37,7 @@ export default function BatchImportDetailsDialog({
       ? query.data?.taskById
       : undefined;
   const download = task?.type === TaskType.BatchDownload;
+  const entriesLabel = download ? '文件列表' : '导入列表';
   const entries = taskImportEntries(task);
   const season = entries.find((e) => e.episodeByEpisodeId?.seasonBySeasonId)
     ?.episodeByEpisodeId?.seasonBySeasonId;
@@ -105,11 +106,11 @@ export default function BatchImportDetailsDialog({
                 refresh={states.refetch}
               />
             </Tabs.TabPane>
-            <Tabs.TabPane key="entries" tab="文件列表">
+            <Tabs.TabPane key="entries" tab={entriesLabel}>
               <div
                 className={styles.tableScroll}
                 role="region"
-                aria-label="文件列表"
+                aria-label={entriesLabel}
                 tabIndex={0}
               >
                 <Table
