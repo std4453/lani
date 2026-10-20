@@ -4,7 +4,6 @@ jest.mock('@/common/axios.service', () => ({ GlobalAxiosService: class {} }));
 
 const show = () => ({
   title: 'Series title',
-  added: '2026-01-01T00:00:00Z',
   lastUpdated: '2026-01-01T00:00:00Z',
   firstAired: '2026-07-01',
   seasons: [{ seasonNumber: 1 }],

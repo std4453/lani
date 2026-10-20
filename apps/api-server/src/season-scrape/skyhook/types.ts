@@ -65,7 +65,8 @@ export class SkyhookShow {
   firstAired: string;
 
   @IsISO8601()
-  added: string;
+  @IsOptional()
+  added?: string;
   @IsISO8601()
   lastUpdated: string;
 
