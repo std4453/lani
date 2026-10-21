@@ -22,7 +22,7 @@ function getModuleMetadata(): ModuleMetadata {
           QBittorrentClient,
           IDownloadClientProvider,
         ],
-        exports: [IDownloadClient],
+        exports: [IDownloadClient, QBittorrentService],
       };
   }
 }

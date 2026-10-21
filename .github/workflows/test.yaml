@@ -69,6 +69,7 @@ jobs:
           python3 libs/db/tests/torrent-channel-migration.py
           python3 libs/db/tests/nyaa-metadata-migration.py
           python3 libs/db/tests/season-aliases-migration.py
+          python3 libs/db/tests/torrent-retention-migration.py
       - name: Test workflow
         working-directory: libs/workflow
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
