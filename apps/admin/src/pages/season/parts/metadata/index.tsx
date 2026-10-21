@@ -139,6 +139,30 @@ export default function Metadata() {
         }}
         formItemProps={formItemProps}
       />
+      <Form.Item
+        label="别名"
+        {...formItemProps}
+        shouldUpdate={(previous, next) =>
+          previous.aliases !== next.aliases || previous.title !== next.title
+        }
+      >
+        {(form: FormInstance<FormValues>) => {
+          const aliases = (form.getFieldValue('aliases') as string[]) ?? [];
+          const visibleAliases = aliases.filter(
+            (alias) => alias !== form.getFieldValue('title'),
+          );
+          return visibleAliases.length > 0 ? (
+            <Input.TextArea
+              aria-label="别名"
+              disabled
+              autoSize
+              value={visibleAliases.join('\n')}
+            />
+          ) : (
+            <Typography.Text>无</Typography.Text>
+          );
+        }}
+      </Form.Item>
       <Form.Item label="标签" {...formItemProps} dependencies={['tags']}>
         {(form: FormInstance<FormValues>) => {
           const tags = (form.getFieldValue('tags') as string[]) ?? [];

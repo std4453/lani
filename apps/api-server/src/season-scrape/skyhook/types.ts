@@ -57,13 +57,16 @@ export class SkyhookShow {
 
   title: string;
   @IsOptional()
+  alternativeTitles?: { title: string }[];
+  @IsOptional()
   overview?: string;
   slug: string;
 
   firstAired: string;
 
   @IsISO8601()
-  added: string;
+  @IsOptional()
+  added?: string;
   @IsISO8601()
   lastUpdated: string;
 

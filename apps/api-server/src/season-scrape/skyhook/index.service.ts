@@ -11,6 +11,7 @@ import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import dayjs from 'dayjs';
+import { normalizeAliases } from '../aliases';
 
 @Injectable()
 export class SkyhookSeasonService {
@@ -32,6 +33,10 @@ export class SkyhookSeasonService {
 
     const resp = await this.axios.get(
       `https://skyhook.sonarr.tv/v1/tvdb/shows/en/${tvdbId}`,
+      {
+        // Skyhook 会拒绝 Axios 默认标识，使用真实应用名称标识请求来源。
+        headers: { 'User-Agent': 'Lani (+https://github.com/std4453/lani)' },
+      },
     );
     const show = plainToClass(SkyhookShow, resp.data);
     await validateOrReject(show);
@@ -44,6 +49,12 @@ export class SkyhookSeasonService {
     if (needInfo) {
       // XXX: 这里使用 tvdb 中全系列的数据来描述季度，其实是错误的
       result.info = {
+        aliases: normalizeAliases([
+          show.title,
+          ...(Array.isArray(show.alternativeTitles)
+            ? show.alternativeTitles.map((entry) => entry?.title)
+            : []),
+        ]),
         description: show.overview,
         genres: show.genres ?? [],
         tags: [],

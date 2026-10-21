@@ -92,6 +92,7 @@ export class SeasonScrapeService {
     const { info, images } = result;
 
     const data: Prisma.SeasonUpdateInput = {
+      aliases: info?.aliases ?? [],
       description: info?.description ?? '',
       tags: info?.tags ?? info?.genres ?? [],
       weekday: info?.weekday ?? null,

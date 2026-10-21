@@ -406,6 +406,8 @@ export enum DownloadSourcesOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   SeasonBySeasonIdAirTimeAsc = 'SEASON_BY_SEASON_ID__AIR_TIME_ASC',
   SeasonBySeasonIdAirTimeDesc = 'SEASON_BY_SEASON_ID__AIR_TIME_DESC',
+  SeasonBySeasonIdAliasesAsc = 'SEASON_BY_SEASON_ID__ALIASES_ASC',
+  SeasonBySeasonIdAliasesDesc = 'SEASON_BY_SEASON_ID__ALIASES_DESC',
   SeasonBySeasonIdBangumiIdAsc = 'SEASON_BY_SEASON_ID__BANGUMI_ID_ASC',
   SeasonBySeasonIdBangumiIdDesc = 'SEASON_BY_SEASON_ID__BANGUMI_ID_DESC',
   SeasonBySeasonIdBannerImageIdAsc = 'SEASON_BY_SEASON_ID__BANNER_IMAGE_ID_ASC',
@@ -753,6 +755,8 @@ export enum EpisodesOrderBy {
   RawAirTimeDesc = 'RAW_AIR_TIME_DESC',
   SeasonBySeasonIdAirTimeAsc = 'SEASON_BY_SEASON_ID__AIR_TIME_ASC',
   SeasonBySeasonIdAirTimeDesc = 'SEASON_BY_SEASON_ID__AIR_TIME_DESC',
+  SeasonBySeasonIdAliasesAsc = 'SEASON_BY_SEASON_ID__ALIASES_ASC',
+  SeasonBySeasonIdAliasesDesc = 'SEASON_BY_SEASON_ID__ALIASES_DESC',
   SeasonBySeasonIdBangumiIdAsc = 'SEASON_BY_SEASON_ID__BANGUMI_ID_ASC',
   SeasonBySeasonIdBangumiIdDesc = 'SEASON_BY_SEASON_ID__BANGUMI_ID_DESC',
   SeasonBySeasonIdBannerImageIdAsc = 'SEASON_BY_SEASON_ID__BANNER_IMAGE_ID_ASC',
@@ -1128,6 +1132,8 @@ export enum ImagesOrderBy {
   SeasonsByBannerImageIdCountDesc = 'SEASONS_BY_BANNER_IMAGE_ID__COUNT_DESC',
   SeasonsByBannerImageIdMaxAirTimeAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_AIR_TIME_ASC',
   SeasonsByBannerImageIdMaxAirTimeDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_AIR_TIME_DESC',
+  SeasonsByBannerImageIdMaxAliasesAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_ALIASES_ASC',
+  SeasonsByBannerImageIdMaxAliasesDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_ALIASES_DESC',
   SeasonsByBannerImageIdMaxBangumiIdAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_BANGUMI_ID_ASC',
   SeasonsByBannerImageIdMaxBangumiIdDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_BANGUMI_ID_DESC',
   SeasonsByBannerImageIdMaxBannerImageIdAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_BANNER_IMAGE_ID_ASC',
@@ -1196,6 +1202,8 @@ export enum ImagesOrderBy {
   SeasonsByBannerImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByBannerImageIdMinAirTimeAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByBannerImageIdMinAirTimeDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_AIR_TIME_DESC',
+  SeasonsByBannerImageIdMinAliasesAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_ALIASES_ASC',
+  SeasonsByBannerImageIdMinAliasesDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_ALIASES_DESC',
   SeasonsByBannerImageIdMinBangumiIdAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_BANGUMI_ID_ASC',
   SeasonsByBannerImageIdMinBangumiIdDesc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_BANGUMI_ID_DESC',
   SeasonsByBannerImageIdMinBannerImageIdAsc = 'SEASONS_BY_BANNER_IMAGE_ID__MIN_BANNER_IMAGE_ID_ASC',
@@ -1266,6 +1274,8 @@ export enum ImagesOrderBy {
   SeasonsByFanartImageIdCountDesc = 'SEASONS_BY_FANART_IMAGE_ID__COUNT_DESC',
   SeasonsByFanartImageIdMaxAirTimeAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_AIR_TIME_ASC',
   SeasonsByFanartImageIdMaxAirTimeDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_AIR_TIME_DESC',
+  SeasonsByFanartImageIdMaxAliasesAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_ALIASES_ASC',
+  SeasonsByFanartImageIdMaxAliasesDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_ALIASES_DESC',
   SeasonsByFanartImageIdMaxBangumiIdAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_BANGUMI_ID_ASC',
   SeasonsByFanartImageIdMaxBangumiIdDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_BANGUMI_ID_DESC',
   SeasonsByFanartImageIdMaxBannerImageIdAsc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_BANNER_IMAGE_ID_ASC',
@@ -1334,6 +1344,8 @@ export enum ImagesOrderBy {
   SeasonsByFanartImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_FANART_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByFanartImageIdMinAirTimeAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByFanartImageIdMinAirTimeDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_AIR_TIME_DESC',
+  SeasonsByFanartImageIdMinAliasesAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_ALIASES_ASC',
+  SeasonsByFanartImageIdMinAliasesDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_ALIASES_DESC',
   SeasonsByFanartImageIdMinBangumiIdAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_BANGUMI_ID_ASC',
   SeasonsByFanartImageIdMinBangumiIdDesc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_BANGUMI_ID_DESC',
   SeasonsByFanartImageIdMinBannerImageIdAsc = 'SEASONS_BY_FANART_IMAGE_ID__MIN_BANNER_IMAGE_ID_ASC',
@@ -1404,6 +1416,8 @@ export enum ImagesOrderBy {
   SeasonsByPosterImageIdCountDesc = 'SEASONS_BY_POSTER_IMAGE_ID__COUNT_DESC',
   SeasonsByPosterImageIdMaxAirTimeAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_AIR_TIME_ASC',
   SeasonsByPosterImageIdMaxAirTimeDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_AIR_TIME_DESC',
+  SeasonsByPosterImageIdMaxAliasesAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_ALIASES_ASC',
+  SeasonsByPosterImageIdMaxAliasesDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_ALIASES_DESC',
   SeasonsByPosterImageIdMaxBangumiIdAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_BANGUMI_ID_ASC',
   SeasonsByPosterImageIdMaxBangumiIdDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_BANGUMI_ID_DESC',
   SeasonsByPosterImageIdMaxBannerImageIdAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_BANNER_IMAGE_ID_ASC',
@@ -1472,6 +1486,8 @@ export enum ImagesOrderBy {
   SeasonsByPosterImageIdMaxYearAndSemesterDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByPosterImageIdMinAirTimeAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_AIR_TIME_ASC',
   SeasonsByPosterImageIdMinAirTimeDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_AIR_TIME_DESC',
+  SeasonsByPosterImageIdMinAliasesAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_ALIASES_ASC',
+  SeasonsByPosterImageIdMinAliasesDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_ALIASES_DESC',
   SeasonsByPosterImageIdMinBangumiIdAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_BANGUMI_ID_ASC',
   SeasonsByPosterImageIdMinBangumiIdDesc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_BANGUMI_ID_DESC',
   SeasonsByPosterImageIdMinBannerImageIdAsc = 'SEASONS_BY_POSTER_IMAGE_ID__MIN_BANNER_IMAGE_ID_ASC',
@@ -1749,6 +1765,8 @@ export enum JellyfinFoldersOrderBy {
   SeasonsByJellyfinFolderIdCountDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__COUNT_DESC',
   SeasonsByJellyfinFolderIdMaxAirTimeAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_AIR_TIME_ASC',
   SeasonsByJellyfinFolderIdMaxAirTimeDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_AIR_TIME_DESC',
+  SeasonsByJellyfinFolderIdMaxAliasesAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_ALIASES_ASC',
+  SeasonsByJellyfinFolderIdMaxAliasesDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_ALIASES_DESC',
   SeasonsByJellyfinFolderIdMaxBangumiIdAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_BANGUMI_ID_ASC',
   SeasonsByJellyfinFolderIdMaxBangumiIdDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_BANGUMI_ID_DESC',
   SeasonsByJellyfinFolderIdMaxBannerImageIdAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_BANNER_IMAGE_ID_ASC',
@@ -1817,6 +1835,8 @@ export enum JellyfinFoldersOrderBy {
   SeasonsByJellyfinFolderIdMaxYearAndSemesterDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MAX_YEAR_AND_SEMESTER_DESC',
   SeasonsByJellyfinFolderIdMinAirTimeAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_AIR_TIME_ASC',
   SeasonsByJellyfinFolderIdMinAirTimeDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_AIR_TIME_DESC',
+  SeasonsByJellyfinFolderIdMinAliasesAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_ALIASES_ASC',
+  SeasonsByJellyfinFolderIdMinAliasesDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_ALIASES_DESC',
   SeasonsByJellyfinFolderIdMinBangumiIdAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_BANGUMI_ID_ASC',
   SeasonsByJellyfinFolderIdMinBangumiIdDesc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_BANGUMI_ID_DESC',
   SeasonsByJellyfinFolderIdMinBannerImageIdAsc = 'SEASONS_BY_JELLYFIN_FOLDER_ID__MIN_BANNER_IMAGE_ID_ASC',
@@ -2607,6 +2627,7 @@ export type Season = Node & {
   __typename?: 'Season';
   /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
   airTime: Scalars['String'];
+  aliases: Array<Maybe<Scalars['String']>>;
   bangumiId: Scalars['String'];
   bannerImageId?: Maybe<Scalars['Int']>;
   bilibiliMainlandId: Scalars['String'];
@@ -2725,6 +2746,8 @@ export type SeasonCharacter = {
 export type SeasonCondition = {
   /** Checks for equality with the object’s `airTime` field. */
   airTime?: InputMaybe<Scalars['String']>;
+  /** Checks for equality with the object’s `aliases` field. */
+  aliases?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
   /** Checks for equality with the object’s `bangumiId` field. */
   bangumiId?: InputMaybe<Scalars['String']>;
   /** Checks for equality with the object’s `bannerImageId` field. */
@@ -2809,6 +2832,8 @@ export type SeasonEpisode = {
 export type SeasonFilter = {
   /** Filter by the object’s `airTime` field. */
   airTime?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `aliases` field. */
+  aliases?: InputMaybe<StringListFilter>;
   /** Checks for all expressions in this list. */
   and?: InputMaybe<Array<SeasonFilter>>;
   /** Filter by the object’s `bangumiId` field. */
@@ -2914,6 +2939,7 @@ export type SeasonImages = {
 
 export type SeasonInfo = {
   __typename?: 'SeasonInfo';
+  aliases: Array<Scalars['String']>;
   description?: Maybe<Scalars['String']>;
   genres: Array<Scalars['String']>;
   semester?: Maybe<Scalars['Int']>;
@@ -2927,6 +2953,7 @@ export type SeasonInfo = {
 export type SeasonInput = {
   /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
   airTime?: InputMaybe<Scalars['String']>;
+  aliases?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
   bangumiId?: InputMaybe<Scalars['String']>;
   bannerImageId?: InputMaybe<Scalars['Int']>;
   bilibiliMainlandId?: InputMaybe<Scalars['String']>;
@@ -2977,6 +3004,7 @@ export type SeasonInput = {
 export type SeasonPatch = {
   /** hh:mm air time, or null if unknown, hour can be up to 48, timezone always GMT+8 */
   airTime?: InputMaybe<Scalars['String']>;
+  aliases?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
   bangumiId?: InputMaybe<Scalars['String']>;
   bannerImageId?: InputMaybe<Scalars['Int']>;
   bilibiliMainlandId?: InputMaybe<Scalars['String']>;
@@ -3069,6 +3097,8 @@ export type SeasonsEdge = {
 export enum SeasonsOrderBy {
   AirTimeAsc = 'AIR_TIME_ASC',
   AirTimeDesc = 'AIR_TIME_DESC',
+  AliasesAsc = 'ALIASES_ASC',
+  AliasesDesc = 'ALIASES_DESC',
   BangumiIdAsc = 'BANGUMI_ID_ASC',
   BangumiIdDesc = 'BANGUMI_ID_DESC',
   BannerImageIdAsc = 'BANNER_IMAGE_ID_ASC',
@@ -4810,7 +4840,7 @@ export type DisplayImageFieldsFragment = { __typename?: 'Image', id: number, dow
 
 export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } };
 
-export type SeasonConfigFieldsFragment = { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null };
+export type SeasonConfigFieldsFragment = { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, aliases: Array<string | null>, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null };
 
 export type GetSeasonByIdQueryVariables = Exact<{
   id: Scalars['Int'];
@@ -4819,7 +4849,7 @@ export type GetSeasonByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } } | null };
+export type GetSeasonByIdQuery = { __typename: 'Query', seasonById?: { __typename?: 'Season', id: number, infoSource: MetadataSource, isMonitoring: boolean, tags: Array<string | null>, title: string, tvdbId: string, tvdbSeason?: number | null, weekday?: number | null, yearAndSemester: string, airTime: string, bangumiId: string, bilibiliMainlandId: string, bilibiliThmId: string, createdAt: any, description: string, aliases: Array<string | null>, episodesSource: MetadataSource, needDownloadCc: boolean, notifyMissing: boolean, notifyPublish: boolean, episodesAutoSync: boolean, downloadOffsetHours: number, integrationsLaniaSync: boolean, episodesLastSync?: any | null, downloadSourcesBySeasonId: { __typename?: 'DownloadSourcesConnection', edges: Array<{ __typename?: 'DownloadSourcesEdge', node?: { __typename?: 'DownloadSource', id: number, pattern: string, offset: number } | null }> }, poster?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, banner?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, fanart?: { __typename?: 'Image', id: number, downloadPath?: string | null } | null, jellyfinFolder?: { __typename?: 'JellyfinFolder', name: string, location: string } | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, legacyStage: LegacyTaskStage, isFailed: boolean, isCancelled: boolean, workflow?: any | null, version: number } | null }> } } | null }> } } | null };
 
 export type UpdateSeasonByIdMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -5005,7 +5035,7 @@ export const TaskStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"k
 export const EpisodeStatusFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"episodeStatusFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Episode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","alias":{"kind":"Name","value":"tasks"},"name":{"kind":"Name","value":"tasksByEpisodeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"ID_DESC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"taskStatusFields"}}]}}]}}]}}]}}]} as unknown as DocumentNode<EpisodeStatusFieldsFragment, unknown>;
 export const SeasonEpisodesFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonEpisodes"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"episodesLastSync"}},{"kind":"Field","name":{"kind":"Name","value":"episodesBySeasonId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"INDEX_ASC"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"rawAirTime"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"index"}},{"kind":"Field","name":{"kind":"Name","value":"numbering"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SeasonEpisodesFragment, unknown>;
 export const DisplayImageFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"displayImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}}]}}]} as unknown as DocumentNode<DisplayImageFieldsFragment, unknown>;
-export const SeasonConfigFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonConfigFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"infoSource"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"episodesSource"}},{"kind":"Field","name":{"kind":"Name","value":"downloadSourcesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"offset"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"poster"},"name":{"kind":"Name","value":"imageByPosterImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"banner"},"name":{"kind":"Name","value":"imageByBannerImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"fanart"},"name":{"kind":"Name","value":"imageByFanartImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"needDownloadCc"}},{"kind":"Field","alias":{"kind":"Name","value":"jellyfinFolder"},"name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}}]}},{"kind":"Field","name":{"kind":"Name","value":"notifyMissing"}},{"kind":"Field","name":{"kind":"Name","value":"notifyPublish"}},{"kind":"Field","name":{"kind":"Name","value":"episodesAutoSync"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}},{"kind":"Field","name":{"kind":"Name","value":"integrationsLaniaSync"}}]}}]} as unknown as DocumentNode<SeasonConfigFieldsFragment, unknown>;
+export const SeasonConfigFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"seasonConfigFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"infoSource"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"aliases"}},{"kind":"Field","name":{"kind":"Name","value":"episodesSource"}},{"kind":"Field","name":{"kind":"Name","value":"downloadSourcesBySeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pattern"}},{"kind":"Field","name":{"kind":"Name","value":"offset"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"poster"},"name":{"kind":"Name","value":"imageByPosterImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"banner"},"name":{"kind":"Name","value":"imageByBannerImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"fanart"},"name":{"kind":"Name","value":"imageByFanartImageId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"displayImageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"needDownloadCc"}},{"kind":"Field","alias":{"kind":"Name","value":"jellyfinFolder"},"name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}}]}},{"kind":"Field","name":{"kind":"Name","value":"notifyMissing"}},{"kind":"Field","name":{"kind":"Name","value":"notifyPublish"}},{"kind":"Field","name":{"kind":"Name","value":"episodesAutoSync"}},{"kind":"Field","name":{"kind":"Name","value":"downloadOffsetHours"}},{"kind":"Field","name":{"kind":"Name","value":"integrationsLaniaSync"}}]}}]} as unknown as DocumentNode<SeasonConfigFieldsFragment, unknown>;
 export const ListSeasonsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listSeasonsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","alias":{"kind":"Name","value":"allEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"airedEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"availableEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"jellyfinEpisodeId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isNull"},"value":{"kind":"BooleanValue","value":false}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"firstEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"nextEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"greaterThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]} as unknown as DocumentNode<ListSeasonsFieldsFragment, unknown>;
 export const JellyfinFolderFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"jellyfinFolderFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}}]}}]} as unknown as DocumentNode<JellyfinFolderFieldsFragment, unknown>;
 export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayId"}},{"kind":"Field","name":{"kind":"Name","value":"channel"}},{"kind":"Field","name":{"kind":"Name","value":"permalink"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"episodeInfo"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleInfo"}}]}}]} as unknown as DocumentNode<TorrentFieldsFragment, unknown>;

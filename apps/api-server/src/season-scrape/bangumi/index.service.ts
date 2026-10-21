@@ -8,6 +8,7 @@ import {
 } from '@/season-scrape/index.model';
 import { Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
+import { bangumiAliases } from '../aliases';
 
 @Injectable()
 export class BangumiSeasonService {
@@ -16,6 +17,7 @@ export class BangumiSeasonService {
   private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
     const season = await BangumiAPIService.getSubjectById(bangumiId);
     result.info = {
+      aliases: bangumiAliases(season.name, season.name_cn, season.infobox),
       description: season.summary,
       genres: [],
       tags: season.tags
