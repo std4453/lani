@@ -1,4 +1,5 @@
 import { BackgroundQueueService } from '@/background-queue/index.service';
+import { HttpRequestError } from '@/common/axios.service';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { QBittorrentService } from '@/download-client/QBittorrentService';
@@ -22,6 +23,19 @@ export class TorrentRetentionService implements OnModuleInit {
   private readonly policy = config.downloadClient.qbittorrent.retention;
   private scanning?: Promise<number>;
 
+  private errorDetails(error: unknown) {
+    // 不记录 message、请求或任意异常对象，避免上游错误夹带凭据。
+    if (error instanceof HttpRequestError) {
+      const status = Number.isInteger(error.status) ? error.status : 'unknown';
+      const code =
+        typeof error.code === 'string' && /^[A-Z0-9_]{1,40}$/.test(error.code)
+          ? error.code
+          : 'unknown';
+      return `type=HttpRequestError, status=${status}, code=${code}`;
+    }
+    return `type=${error instanceof Error ? 'Error' : typeof error}`;
+  }
+
   constructor(
     private prisma: PrismaService,
     private qbt: QBittorrentService,
@@ -39,8 +53,12 @@ export class TorrentRetentionService implements OnModuleInit {
   async poll() {
     try {
       await this.scanTorrentRetention();
-    } catch {
-      this.logger.warn('Torrent retention scan failed; waiting for next scan');
+    } catch (error) {
+      this.logger.warn(
+        `Torrent retention scan failed; waiting for next scan; ${this.errorDetails(
+          error,
+        )}`,
+      );
     }
   }
 
@@ -169,12 +187,12 @@ export class TorrentRetentionService implements OnModuleInit {
             selected.length
           }, hashes=${selected.join(',')}, deleteFiles=false`,
         );
-      } catch {
+      } catch (error) {
         // 批次错误不抛给队列，不阻塞后续批次；下一轮扫描重新判断，不立即重试。
         this.logger.warn(
           `Torrent retention batch failed: hashes=${batch.join(
             ',',
-          )}; waiting for next scan`,
+          )}; waiting for next scan; ${this.errorDetails(error)}`,
         );
       }
     }

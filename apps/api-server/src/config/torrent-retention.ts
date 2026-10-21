@@ -4,11 +4,16 @@ import { bool, D, obj, opt, str, T } from '@lani/framework';
 export function durationSeconds(value: string): number {
   const match = /^(\d+(?:\.\d+)?)\s*(s|m|h|d|w)$/i.exec(value.trim());
   const units = { s: 1, m: 60, h: 3600, d: 86400, w: 604800 };
-  const seconds = match
-    ? Number(match[1]) * units[match[2].toLowerCase() as keyof typeof units]
-    : NaN;
+  if (!match) throw new Error('保留时长必须带 s、m、h、d 或 w 单位');
+  // 按十进制整数换算，避免 1.1h 的浮点误差，也不舍入真正的小数秒。
+  const [whole, fraction = ''] = match[1].split('.');
+  const scale = BigInt(10) ** BigInt(fraction.length);
+  const scaled =
+    BigInt(whole + fraction) *
+    BigInt(units[match[2].toLowerCase() as keyof typeof units]);
+  const seconds = scaled % scale === BigInt(0) ? Number(scaled / scale) : NaN;
   if (!Number.isSafeInteger(seconds) || seconds <= 0)
-    throw new Error('保留时长必须是正数并带 s、m、h、d 或 w 单位');
+    throw new Error('保留时长必须能换算为正的安全整数秒');
   return seconds;
 }
 

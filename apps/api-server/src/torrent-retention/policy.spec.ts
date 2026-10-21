@@ -30,6 +30,8 @@ describe('retention configuration', () => {
     expect(durationSeconds('1.5d')).toBe(129600);
     expect(durationSeconds('12 h')).toBe(43200);
     expect(durationSeconds('2w')).toBe(1209600);
+    expect(durationSeconds('1.1h')).toBe(3960);
+    expect(durationSeconds('0.7d')).toBe(60480);
   });
   it.each([
     '0d',
@@ -39,6 +41,8 @@ describe('retention configuration', () => {
     '7',
     '1y',
     '0.1s',
+    '1.0000001s',
+    '9007199254740991.1s',
     '999999999999999999d',
     '1d garbage',
   ])('rejects %s', (value) => {

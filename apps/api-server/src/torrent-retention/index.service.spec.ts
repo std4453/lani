@@ -143,3 +143,23 @@ it('continues after a lookup failure and rejects malformed stored jobs', async (
     handler.execute({ payload: { hashes: ['all'] } }),
   ).rejects.toThrow();
 });
+
+it('logs bounded HTTP diagnostics without leaking exception messages or request data', async () => {
+  const { Logger } = await import('@nestjs/common');
+  const { HttpRequestError } = await import('@/common/axios.service');
+  const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+  try {
+    const { qbt, handler, service } = setup();
+    const error = new HttpRequestError('secret-token', 413, 'ERR_BAD_REQUEST');
+    qbt.deleteTorrentsKeepFiles.mockRejectedValue(error);
+    await handler.execute({ payload: { hashes: [hash(1)] } });
+    qbt.listTorrents.mockRejectedValue(new Error('secret-token'));
+    await service.poll();
+    const messages = warn.mock.calls.map(([message]) => message).join('\n');
+    expect(messages).toContain('status=413, code=ERR_BAD_REQUEST');
+    expect(messages).toContain('type=Error');
+    expect(messages).not.toContain('secret-token');
+  } finally {
+    warn.mockRestore();
+  }
+});
