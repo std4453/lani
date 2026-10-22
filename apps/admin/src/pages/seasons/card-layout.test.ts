@@ -1,4 +1,9 @@
-import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
+import {
+  cardQueryVariables,
+  episodeColor,
+  episodeRows,
+  selectEpisodeWindow,
+} from './card-layout';
 
 test.each<[number, number[]]>([
   [0, []],
@@ -104,4 +109,17 @@ test('only unmapped resource states become grey for unmonitored seasons', () => 
   expect(episodeColor('AVAILABLE', false)).toBe('green');
   expect(episodeColor('DOWNLOAD_FAILED', false)).toBe('red');
   expect(episodeColor('download', false)).toBe('blue');
+});
+
+test('omits the filter when searching with an empty title or clearing a search', () => {
+  for (const keyword of ['', '  ']) {
+    const variables = cardQueryVariables(2, keyword);
+    expect(variables).not.toHaveProperty('filter');
+    expect(variables).toEqual({ first: 30, offset: 30 });
+  }
+  expect(cardQueryVariables(1, ' 星际旅行 ')).toEqual({
+    first: 30,
+    offset: 0,
+    filter: { title: { includesInsensitive: '星际旅行' } },
+  });
 });

@@ -1,3 +1,4 @@
+import { ListSeasonCardsQueryVariables } from '@/generated/types';
 import { compareEpisodes, EpisodeNumbering } from '@/utils/episode';
 import {
   EPISODE_STATUS_TAGS,
@@ -6,6 +7,19 @@ import {
 
 export const CARD_PAGE_SIZE = 30;
 export const CARD_EPISODE_LIMIT = 14;
+
+export function cardQueryVariables(
+  page: number,
+  keyword: string,
+): ListSeasonCardsQueryVariables {
+  const title = keyword.trim();
+  return {
+    first: CARD_PAGE_SIZE,
+    offset: (page - 1) * CARD_PAGE_SIZE,
+    // 后端拒绝显式 null 或空对象；清空搜索时必须省略 filter。
+    ...(title ? { filter: { title: { includesInsensitive: title } } } : {}),
+  };
+}
 
 type NumberedEpisode = {
   id: number;

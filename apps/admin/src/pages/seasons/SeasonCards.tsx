@@ -10,7 +10,11 @@ import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
 import { Alert, Button, Empty, Pagination, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { CARD_PAGE_SIZE, selectEpisodeWindow } from './card-layout';
+import {
+  CARD_PAGE_SIZE,
+  cardQueryVariables,
+  selectEpisodeWindow,
+} from './card-layout';
 import SeasonCard from './SeasonCard';
 import styles from './SeasonCards.module.less';
 
@@ -36,11 +40,7 @@ export default function SeasonCards({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dialog, , openEpisode] = useEpisodeDetailsDialog();
   const { data, loading, error, refetch } = useQuery(ListSeasonCardsDocument, {
-    variables: {
-      first: CARD_PAGE_SIZE,
-      offset: (page - 1) * CARD_PAGE_SIZE,
-      filter: keyword ? { title: { includesInsensitive: keyword } } : null,
-    },
+    variables: cardQueryVariables(page, keyword),
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
