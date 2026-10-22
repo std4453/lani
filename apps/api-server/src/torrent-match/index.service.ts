@@ -5,6 +5,7 @@ import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { Prisma, Torrent, TorrentMatchStatus } from '@lani/db';
 import {
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -24,6 +25,7 @@ import {
 import { CatalogSnapshot, CatalogState, MatchQuery } from './protocol';
 import { MatcherTransport } from './transport';
 
+import { enqueueTorrentMatch, matchingEnabled } from './producer';
 import { CATALOG_QUEUE, MATCH_QUEUE, TorrentMatchPayload } from './queues';
 export { CATALOG_QUEUE, MATCH_QUEUE } from './queues';
 
@@ -298,6 +300,23 @@ export class TorrentMatchService
         },
       });
     };
+  }
+
+  async enqueueBatch(torrentIds: number[], rematch = false): Promise<number> {
+    if (!matchingEnabled()) throw new BadRequestException('种子匹配未启用');
+    if (
+      !Array.isArray(torrentIds) ||
+      torrentIds.length < 1 ||
+      torrentIds.length > 500 ||
+      torrentIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
+    )
+      throw new BadRequestException('每批需提供 1 至 500 个有效种子 ID');
+    const count = await this.prisma.$transaction((tx) =>
+      enqueueTorrentMatch(tx, torrentIds, !rematch),
+    );
+    // 先提交业务状态及队列事务，再唤醒消费者。
+    if (count) void this.queues.wake(MATCH_QUEUE);
+    return count;
   }
 
   async cancelAssociation(torrentId: number): Promise<boolean> {

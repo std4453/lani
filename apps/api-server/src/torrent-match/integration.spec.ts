@@ -291,8 +291,18 @@ suite('种子入库、目录等待与结果持久化', () => {
     await module.close();
     config.matching.enabled = false;
     await start();
-    await insert();
+    const disabled = await insert();
     await queues.wake(MATCH_QUEUE);
+    expect(
+      await db.torrent.findUnique({ where: { id: disabled.id } }),
+    ).toMatchObject({
+      matchStatus: null,
+      matchedAt: null,
+      matchedSeasonId: null,
+    });
+    await expect(service.enqueueBatch([disabled.id])).rejects.toThrow(
+      '种子匹配未启用',
+    );
     expect(match).not.toHaveBeenCalled();
     expect(
       await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),

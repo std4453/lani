@@ -8,14 +8,23 @@ export const matchingEnabled = () => config.matching?.enabled === true;
 export async function enqueueTorrentMatch(
   tx: Prisma.TransactionClient,
   ids: number[],
+  onlyUnprocessed = false,
 ) {
-  if (!matchingEnabled()) return;
-  for (const id of [...ids].sort((a, b) => a - b)) {
+  if (!matchingEnabled()) return 0;
+  let enqueued = 0;
+  for (const id of [...new Set(ids)].sort((a, b) => a - b)) {
     // 与结果提交一致，先业务行、再任务行；事务回滚时两者一起撤销。
     const changed = await tx.torrent.updateMany({
       where: {
         id,
-        OR: [{ matchStatus: null }, { matchStatus: { not: 'DISMISSED' } }],
+        ...(onlyUnprocessed
+          ? { matchStatus: null }
+          : {
+              OR: [
+                { matchStatus: null },
+                { matchStatus: { not: 'DISMISSED' as const } },
+              ],
+            }),
       },
       data: {
         matchedSeasonId: null,
@@ -24,12 +33,15 @@ export async function enqueueTorrentMatch(
         matchedAt: null,
       },
     });
-    if (changed.count)
+    if (changed.count) {
+      enqueued += changed.count;
       await enqueueJob(tx, MATCH_QUEUE, String(id), {
         version: 1,
         torrentId: id,
       });
+    }
   }
+  return enqueued;
 }
 
 const inputs = {

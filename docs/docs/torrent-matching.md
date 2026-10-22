@@ -43,7 +43,7 @@ matching:
   timeoutMs: 120000 # 每次协议操作的超时，冷目录较大时可调高
 ```
 
-API 只连接 HTTP worker；开启后必须提供 `endpoint`。设置 `enabled: false` 关闭匹配，重新启用不会回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
+API 只连接 HTTP worker；开启后必须提供 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
 
 ## all-in-one
 

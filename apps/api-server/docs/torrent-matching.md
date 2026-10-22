@@ -42,3 +42,12 @@ worker 的目录缓存可丢弃。API 消费前查询版本，缓存缺失时上
 ## 验证
 
 真实 PostgreSQL 测试覆盖事务回滚、并发导入去重、重解析失效、拒答、等待目录、重启恢复和旧执行的 revision 栅栏。HTTP 测试覆盖目录丢失恢复、非法返回和不重试；worker 自己覆盖 JSONL。测试使用开发指南中的隔离 `*_test` 数据库与 `LANI_LIFECYCLE_TEST_DATABASE_URL`，不连接维护者环境。
+
+
+### 运维批量入队
+
+`matching.enabled: false` 时不创建新的匹配任务、不修改新种子的匹配状态（保持 NULL），已排队任务暂停消费；已有关联展示与取消关联仍可用。重新启用不会自动回填关闭期间的新种子。
+
+通过现有鉴权 Gateway 调用 `enqueueTorrentSeasonMatches(torrentIds: [Int!]!, rematch: Boolean = false): Int!`。每批 1–500 个正整数 ID，去重后在同一事务内标记 PENDING 并入队，返回实际入队数量；不存在的 ID 跳过。默认仅匹配状态为 NULL 的种子；`rematch: true` 可重跑已处理或待处理记录，但始终跳过用户取消关联的 DISMISSED。通用队列中已有的失败屏障不会被入队操作清除，需按通用队列机制处理失败。禁用匹配时调用报错且不写入。前端不调用此运维入口。
+
+独立部署时 matcher 使用独立 Deployment/Service，每个环境一份；API 不依赖 initContainer，不携带 Python 或模型权重。HTTP endpoint 由 `matching.endpoint` 配置。
