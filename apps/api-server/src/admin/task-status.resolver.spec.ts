@@ -167,7 +167,7 @@ describe('Task status Federation HTTP resolver', () => {
   it('keeps valid summaries when another task has a corrupt workflow', async () => {
     findMany.mockResolvedValue([{ ...row(1), workflow: {} }, row(2)]);
     const result = await execute([1, 2]);
-    expect(result.errors).toHaveLength(2);
+    expect(result.errors).toBeUndefined();
     expect(result.data._entities).toEqual([
       { statusSummary: null, alias: null },
       { statusSummary: 'AVAILABLE', alias: 'AVAILABLE' },

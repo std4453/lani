@@ -1,6 +1,7 @@
 import { PrismaService } from '@/common/prisma.service';
 import { getIdFromNodeId } from '@/utils/graphile';
 import { taskDisplayStatus, TaskDisplayStatus } from '@lani/workflow';
+import { Logger } from '@nestjs/common';
 import {
   Context,
   Directive,
@@ -24,6 +25,7 @@ export class Task {
 
 @Resolver(() => Task)
 export class TaskStatusResolver {
+  private readonly logger = new Logger(TaskStatusResolver.name);
   private readonly loaders = new WeakMap<
     object,
     DataLoader<number, TaskDisplayStatus | null>
@@ -47,16 +49,14 @@ export class TaskStatusResolver {
             isCancelled: true,
           },
         });
-        const summaries = new Map<number, TaskDisplayStatus | Error>(
+        const summaries = new Map<number, TaskDisplayStatus | null>(
           tasks.map((task) => {
             try {
               return [task.id, taskDisplayStatus(task)];
-            } catch (error) {
+            } catch {
               // 单个损坏的流程只影响该任务，不让整批卡片的摘要一起失败。
-              return [
-                task.id,
-                error instanceof Error ? error : new Error(String(error)),
-              ];
+              this.logger.warn(`Invalid workflow for task ${task.id}`);
+              return [task.id, null];
             }
           }),
         );
