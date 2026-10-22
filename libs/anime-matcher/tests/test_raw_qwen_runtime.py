@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / 'python'))
@@ -47,6 +48,15 @@ class FakeScorer(raw.RawQwenScorer):
 
 
 class RawQwenTests(unittest.TestCase):
+    def test_native_inference_disables_implicit_jit_without_changing_device(self):
+        triton = SimpleNamespace(enabled=True)
+        torch = SimpleNamespace(backends=SimpleNamespace(
+            python_native=SimpleNamespace(triton=triton)))
+        raw.configure_native_inference(torch)
+        self.assertFalse(triton.enabled)
+        # 旧版 PyTorch 没有该 backend，仍可用于固定输入的升级对照。
+        raw.configure_native_inference(SimpleNamespace(backends=SimpleNamespace()))
+
     def test_manifest_revision_size_hash_and_path_are_bound(self):
         for model in raw.MODEL_SPECS:
             with self.subTest(model=model), tempfile.TemporaryDirectory() as tmp:

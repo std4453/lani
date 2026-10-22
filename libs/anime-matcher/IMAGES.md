@@ -31,6 +31,14 @@ docker build --build-arg VARIANT=semantic-cpu --build-arg WITH_MODELS=false \
 
 ## 验证
 
+PyTorch 2.14 的 eager 路径可能自动选择 Triton 原生算子（Qwen 的 `bmm` 会触发）。worker 通过官方 `torch.backends.python_native.triton.enabled = False` 使用预编译 ATen 算子，避免容器运行时依赖编译器及 Pascal 不支持的 Triton JIT；CUDA 推理仍在所选 GPU 上执行。这项策略同时用于 CPU 与 CUDA 变体，不根据设备错误静默降级。参见 [PyTorch backend 控制](https://docs.pytorch.org/docs/2.14/backends.html#torch.backends.python_native)。
+
 单元测试覆盖默认模式、CLI 覆盖、显式 CUDA 不可用失败；发布规划测试覆盖按变体复用。容器验证需在断网环境检查三种默认值、包版本、模型 SHA256、CUDA 镜像 CPU 推理及关闭语义；有 GPU 的环境还需验证实际推理并与旧组合对照，记录耗时、分数和最终决策差异。大小应同时报告压缩传输体积与本地解包体积，部署端应为归档、内容存储和解包预留空间。
 
 第三方模型和运行依赖再分发说明见 [NOTICE.md](NOTICE.md) 及 `licenses/`。
+
+### 2026-10-23 本机升级对照
+
+GTX 1070 8 GiB、驱动 535.54.03，CPU E5 与 GPU Qwen float32：在相同目录、12 条固定查询（6 条接受、6 条拒答）、108 个候选对上，对照 PyTorch 2.5.1+cu121 与 2.14.1+cu126。预热后每条请求清空 Qwen 缓存，单请求耗时中位数分别为 0.374 s 与 0.370 s；最终季度、拒答与树分数全部相同，原始 logits 最大绝对差为 5.34e-5。新版 CPU 对照为 3.490 s。该小样本用于运行兼容与数值检查，不代表完整准确率评测或稳定性能提升；没有重训、改阈值或回填数据库。
+
+本地三种镜像解包大小约为 0.437 / 3.073 / 8.874 GB（lexical / semantic-cpu / semantic-cu126，十进制）。实际发布 digest 与传输体积见对应发布记录；部署应考虑归档、镜像内容与解包并存的峰值。

@@ -91,6 +91,13 @@ def left_pad(sequences, pad_id):
     }
 
 
+def configure_native_inference(torch):
+    """使用预编译 ATen 算子，避免新版本 eager 路径隐式触发 Triton JIT。"""
+    native = getattr(torch.backends, 'python_native', None)
+    if native is not None:
+        native.triton.enabled = False
+
+
 def token_id(tokenizer, token):
     method = getattr(tokenizer, 'convert_tokens_to_ids', None) or tokenizer.token_to_id
     value = method(token)
@@ -119,6 +126,7 @@ class RawQwenScorer:
         import torch
         import transformers
 
+        configure_native_inference(torch)
         cuda_available = torch.cuda.is_available()
         validate_precision(self.device, self.dtype, cuda_available=cuda_available,
             bf16_supported=cuda_available and torch.cuda.is_bf16_supported(including_emulation=False))
