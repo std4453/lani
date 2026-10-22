@@ -12,7 +12,7 @@ ARG PIP_INDEX_URL=https://pypi.org/simple
 WORKDIR /matcher
 COPY libs/anime-matcher/pyproject.toml libs/anime-matcher/MANIFEST.in libs/anime-matcher/README.md libs/anime-matcher/NOTICE.md libs/anime-matcher/PROTOCOL.md libs/anime-matcher/INTEGRATION.md ./
 COPY libs/anime-matcher/python ./python
-RUN if [ "$MATCHER_SEMANTIC" = true ]; then pip install --no-cache-dir --no-deps torch==2.5.1 --index-url "$TORCH_INDEX_URL" \
+RUN if [ "$MATCHER_SEMANTIC" = true ]; then pip install --no-cache-dir torch==2.14.1+cpu --index-url "$TORCH_INDEX_URL" \
     && pip install --no-cache-dir '.[semantic]'; \
     else pip install --no-cache-dir .; fi
 

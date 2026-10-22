@@ -3,7 +3,8 @@ services:
     build:
       context: .
       args:
-        SEMANTIC: "false"
+        VARIANT: lexical
+        WITH_MODELS: "false"
     ports:
       - "127.0.0.1:8090:8090"
     read_only: true
@@ -11,7 +12,9 @@ services:
       - /tmp
     mem_limit: 4g
     cpus: 4
-    # CPU 语义模式：内存先设为 8g，构建参数改为 true，启用下面两项。
-    # 先通过 lani-anime-models --model-dir ./models 下载并校验模型。
-    # command: ["--semantic"]
-    # volumes: ["./models:/models:ro"]
+    # CPU 语义：VARIANT=semantic-cpu、WITH_MODELS=true、mem_limit=8g。
+    # CUDA 语义：VARIANT=semantic-cu126、WITH_MODELS=true，另配置 GPU 设备预留。
+    # CUDA 镜像在无 GPU 主机可显式使用 command: ["--device", "cpu"]。
+    # 外部权重是可选项，不要覆盖默认 /opt/lani/models：
+    # command: ["--model-dir", "/external-models"]
+    # volumes: ["./models:/external-models:ro"]

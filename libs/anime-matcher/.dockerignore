@@ -11,3 +11,7 @@
 !python/**
 python/**/__pycache__/
 python/*.egg-info/
+!docker/
+!docker/**
+!licenses/
+!licenses/**

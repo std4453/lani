@@ -13,6 +13,11 @@
         "url": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d128750597153bb5987e10b1c3493a34e5a4502a/onnx/model_qint8_avx512_vnni.onnx",
         "sha256": "2523551878658b305550d8759443822dbfda9ed9c8012ef2c354ba2c5b9de503",
         "bytes": 278686411
+      },
+      "README.md": {
+        "url": "https://huggingface.co/intfloat/multilingual-e5-base/resolve/d128750597153bb5987e10b1c3493a34e5a4502a/README.md",
+        "sha256": "9d129cb0b912b55c7b5378f976a9c35ae4796c80466b659ad63930d8ca090fca",
+        "bytes": 179345
       }
     }
   },

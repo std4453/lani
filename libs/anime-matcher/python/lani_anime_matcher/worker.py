@@ -1,6 +1,7 @@
 """无权威状态的 v1 HTTP / JSONL 匹配协议；目录仅作为可丢弃缓存。"""
 
 import argparse
+import os
 import datetime
 import hashlib
 import json
@@ -412,15 +413,20 @@ def make_http_server(host="127.0.0.1", port=8090, **options):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Lani anime season matcher worker")
-    parser.add_argument("--semantic", action="store_true")
+    parser.add_argument("--semantic", action=argparse.BooleanOptionalAction,
+                        default=os.environ.get("LANI_MATCHER_SEMANTIC", "false") == "true")
     parser.add_argument("--model-dir")
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--device", choices=("cpu", "cuda"), default=os.environ.get("LANI_MATCHER_DEVICE", "cpu"))
     parser.add_argument("--dtype", choices=("float32", "bfloat16", "float16"), default="float32")
     parser.add_argument("--profile", type=Path, help="Explicit static model profile manifest")
     parser.add_argument("--http", action="store_true")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8090)
     args = parser.parse_args(argv)
+    if args.semantic and args.device == "cuda":
+        import torch
+        if not torch.cuda.is_available():
+            parser.error("CUDA was explicitly requested but is unavailable")
     options = {"semantic": args.semantic, "model_dir": args.model_dir,
                "device": args.device, "dtype": args.dtype, "profile_path": args.profile}
     if args.http:

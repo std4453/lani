@@ -2,21 +2,34 @@
 
 启用后，新种子和匹配输入发生变化的种子会在后台匹配已录入季度。本阶段只记录结果，不触发下载，也不会自动重跑历史记录。未匹配到季度属于正常结果。季度资料变更后，受影响的新种子可能等待约 30 分钟，待资料稳定后再匹配。
 
-种子列表的「季度」列会将识别成功的结果显示为季度链接；尚未识别时保留解析出的名称标签。将鼠标移到链接上，点击红色删除图标可取消关联。取消后显示「用户主动取消关联」，后续自动匹配不会重新关联该种子。
+种子列表的「季度」列会将识别成功的结果显示为季度链接；尚未识别时保留解析出的名称标签。将鼠标移到链接上，点击红色删除图标可取消关联。取消后恢复名称标签，后续自动匹配不会重新关联该种子。
 
 ## 配置与本机语义服务
 
-独立 API 默认关闭匹配；本机部署建议使用独立语义 worker，API 镜像无需 Python。先使用已适配 v1 的源码构建 worker，并按匹配器说明显式下载、校验权重，以下命令在仓库根目录执行：
+独立 API 默认关闭匹配。本机部署建议使用独立语义服务，API 镜像无需 Python。成品镜像 tag 使用 `fp-<fingerprint>-<variant>`，fingerprint 可从对应提交的 `build-manifest.json` 中读取 `images.anime-matcher.fingerprint`。
+
+| 变体后缀 | 默认行为 | 内置模型 |
+| --- | --- | --- |
+| `lexical` | 词法匹配，无神经推理依赖 | 无 |
+| `semantic-cpu` | CPU、float32 | 固定版本 E5-base 和 Qwen3-Reranker-0.6B |
+| `semantic-cu126` | CUDA、float32 | 同上 |
+
+将下面 `<fingerprint>` 替换为所需版本：
 
 ```bash
-docker build --build-arg SEMANTIC=true -t lani-anime-matcher:semantic libs/anime-matcher
 docker run --rm -p 127.0.0.1:8090:8090 \
-  -v "$PWD/models:/models:ro" lani-anime-matcher:semantic --semantic
+  ghcr.io/std4453/lani-anime-matcher:fp-<fingerprint>-semantic-cpu
+
+# 需要宿主机 NVIDIA 驱动及已配置的容器 GPU 运行环境。
+docker run --rm --gpus all -p 127.0.0.1:8090:8090 \
+  ghcr.io/std4453/lani-anime-matcher:fp-<fingerprint>-semantic-cu126
 ```
 
-语义模式使用 E5-base 与 Qwen3-Reranker-0.6B，权重约 1.40 GiB；CPU FP32 建议为 worker 预留 8 GiB 内存。按[模型下载说明](../../libs/anime-matcher/README.md)准备并校验权重，旧模型目录的校验结果不能代替新版校验。
+语义镜像已含校验过的权重，运行时不会隐式下载。CPU 推理建议预留 8 GiB 内存。CUDA 镜像可添加 `--device cpu` 在无 GPU 机器运行，也可添加 `--no-semantic` 使用词法模式。显式选择 CUDA 而设备不可用会报错。
 
-这里 `models` 是维护者准备的权重目录；worker 以非 root 用户读取它。容器间调用时使用服务网络地址，`127.0.0.1` 只适用于同一网络命名空间。worker API 应留在内部服务网络，实际环境部署由维护者配置。
+cu126 使用 PyTorch 2.14.1，支持 Pascal。CUDA 12.x 的 Linux 小版本兼容最低驱动要求为 525.60.13，但部分功能要求较新驱动，需验证实际硬件；驱动和 NVIDIA Container Toolkit 由宿主机独立管理，镜像不会升级驱动。Kubernetes 还需 GPU device plugin 和匹配的 RuntimeClass。
+
+默认无需挂载模型。使用外部模型时显式添加 `-v /path/to/models:/external-models:ro` 和 `--model-dir /external-models`；该目录必须通过当前模型清单校验，且容器用户可读。HTTP 服务应留在内部网络；跨容器使用服务地址，`127.0.0.1` 仅适用于同一网络命名空间。
 
 API 的 `config.yaml`：
 

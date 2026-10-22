@@ -22,3 +22,9 @@
 ## 运行库
 
 日语读音由可选依赖 pykakasi 生成，简繁转换由 OpenCC Python 实现提供；这些是通用文本特征，不是外部动画别名来源。各 Python／Node 依赖适用自身许可证，通过标准包管理器安装，未将其源代码或二进制复制入本仓库。语义依赖包含 GPL 许可的 pykakasi；重新分发完整运行环境时应保留该依赖所需的许可及源码提供信息。本目录公开可重建环境的包清单与 Dockerfile。
+
+## 容器再分发
+
+`semantic-cpu` 与 `semantic-cu126` 成品镜像包含上表两种固定 revision 权重；未修改权重，E5 使用上游提供的 int8 ONNX 文件。模型目录保留原模型卡，`/usr/share/licenses/lani-anime-matcher` 保留本声明、E5/Microsoft MIT 许可和 Qwen Apache-2.0 全文。两个固定模型仓库没有独立 NOTICE 文件。MIT 与 Apache-2.0 允许按其条件再分发，本镜像保留归属及许可声明。
+
+语义镜像同时在该目录 `sources/` 保存未修改的 `pykakasi==2.3.0` 源码分发包，安装的 Python 包保留自身许可证。完整容器构建文件和依赖清单在本包内公开；模型许可不替代各运行库的许可。

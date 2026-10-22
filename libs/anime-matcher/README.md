@@ -93,7 +93,7 @@ try {
 
 ```bash
 # CPU 环境先选择 CPU Torch，避免默认安装 CUDA 运行库
-pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+pip install torch==2.14.1+cpu --index-url https://download.pytorch.org/whl/cpu
 pip install '.[semantic]'
 lani-anime-models --model-dir ./models
 lani-anime-models --model-dir ./models --verify-only
@@ -134,10 +134,10 @@ result = matcher.match({
 docker build -t lani-anime-matcher:lexical .
 docker run --rm -p 127.0.0.1:8090:8090 lani-anime-matcher:lexical
 
-# CPU 语义运行；先下载模型
-docker build --build-arg SEMANTIC=true -t lani-anime-matcher:semantic .
+# CPU 语义运行；构建时下载并校验固定模型
+docker build --build-arg VARIANT=semantic-cpu --build-arg WITH_MODELS=true -t lani-anime-matcher:semantic .
 docker run --rm -p 127.0.0.1:8090:8090 \
-   -v "$PWD/models:/models:ro" lani-anime-matcher:semantic --semantic
+  lani-anime-matcher:semantic
 ```
 
 [compose.example.yaml](compose.example.yaml) 提供本地配置示例。容器以非 root 用户运行，无业务凭据。HTTP 应位于受保护的内部服务网络；每 worker 顺序处理请求。可部署成独立服务／sidecar，也可在业务镜像安装 Python 后通过 npm 客户端启动子进程。这里不包含业务队列、API 部署矩阵或私有部署修改。
@@ -166,3 +166,5 @@ MATCHER_TEST_PYTHON=python npm test
 连续多季单独统计：新收集的既有开发样本中，10 条连续编号资源仅 9 条真值在窗内；静态时间语义方案正确接受 9 条，纯标题方案 8 条。规模很小，且已用于开发，不能外推“所有连续多季都可靠”。同系列同标题、分割放送、重发和错误季度仍可能无法确定，允许拒答；没有输出用于下载的 episode offset。
 
 来源与第三方资源声明见 [NOTICE.md](NOTICE.md)。
+
+成品变体、源码构建和分层说明见 [镜像发布](IMAGES.md)。

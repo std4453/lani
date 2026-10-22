@@ -86,7 +86,7 @@ it('shows the season link and only refreshes its own cell after cancellation', a
   });
   expect(container.querySelectorAll('a')).toHaveLength(1);
   expect(container.textContent).toContain('原始名称标签');
-  expect(container.textContent).toContain('用户主动取消关联');
+  expect(container.textContent).not.toContain('用户主动取消关联');
   expect(container.textContent).not.toContain('另一行名称标签');
   expect(modify).toHaveBeenCalledWith(
     expect.objectContaining({ id: 'Torrent:42' }),
@@ -127,8 +127,6 @@ it.each([
     render(status);
     expect(container.querySelectorAll('a')).toHaveLength(1);
     expect(container.textContent).toContain('原始名称标签');
-    expect(container.textContent?.includes('用户主动取消关联')).toBe(
-      status === TorrentMatchStatus.Dismissed,
-    );
+    expect(container.textContent?.includes('用户主动取消关联')).toBe(false);
   },
 );

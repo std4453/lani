@@ -5,7 +5,7 @@ import {
 } from '@/generated/types';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useApolloClient } from '@apollo/client';
-import { Button, message, Tooltip, Typography } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'umi';
 import styles from './index.module.less';
@@ -63,17 +63,7 @@ export default function TorrentSeason({
     !dismissed && torrent.matchStatus === TorrentMatchStatus.Matched
       ? torrent.seasonByMatchedSeasonId
       : null;
-  if (!season)
-    return (
-      <div className={styles.seasonCell}>
-        {children}
-        {dismissed && (
-          <Typography.Text type="secondary" className={styles.dismissed}>
-            用户主动取消关联
-          </Typography.Text>
-        )}
-      </div>
-    );
+  if (!season) return <div className={styles.seasonCell}>{children}</div>;
 
   return (
     <span className={styles.seasonCell}>

@@ -22,7 +22,7 @@
 
 纯标题模式只需 Python 基础依赖和内置小树，默认不开启语义。语义模式需要 E5-base 与 Qwen3-Reranker-0.6B，旧版 E5-small／后备 reranker 权重不再使用；请显式执行新下载器与 `--verify-only`，不要复用旧模型目录的成功状态作为校验结果。
 
-Python 支持 3.11–3.12。语义依赖新增 Torch／Transformers；CPU 镜像应先从 Torch CPU 索引安装 2.5.1，再安装 `.[semantic]`，避免默认额外下载 CUDA 库。本包 Dockerfile 已处理；如果工程镜像自行 `pip install '.[semantic]'`，应同步此选择。神经权重约 1.40 GiB，放在只读卷，不写入 Git 或 npm 包。
+Python 支持 3.11–3.12。语义依赖新增 Torch／Transformers；CPU 镜像应先从 Torch CPU 索引安装 2.14.1+cpu，再安装 `.[semantic]`，避免默认额外下载 CUDA 库。本包 Dockerfile 已处理；如果工程镜像自行 `pip install '.[semantic]'`，应同步此选择。神经权重约 1.40 GiB，成品语义镜像内置，不写入 Git 或 npm 包。具体变体及设备兼容见 [IMAGES.md](IMAGES.md)。
 
 HTTP worker 使用启动参数 `--device`、`--dtype`、`--model-dir`，默认 CPU FP32；Node 的 `device`／`dtype`／`profile` 选项仅控制本地 JSONL 子进程。HTTP 客户端不能切换远端配置。CPU 语义进程建议先预留 8 GiB 内存；GPU BF16 需要原生支持且应回归，不自动切换后端。目录刷新复用语义模型；状态查询不加载模型。
 
