@@ -431,8 +431,7 @@ export async function queryTorrents(
       variables: {
         first: pageSize,
         offset: pageSize * (current - 1),
-        orderBy:
-          orderBy.length > 0 ? orderBy : [TorrentsOrderBy.PublishDateDesc],
+        orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.IdDesc],
         ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       },
     });
