@@ -4,7 +4,8 @@ import parseDuration from 'parse-duration';
 
 /** 使用 parse-duration 换算，保留正整数秒和安全数值范围约束。 */
 export function durationSeconds(value: string): number {
-  if (value.length > 100 || !/[a-zμ]/i.test(value))
+  const units = value.replace(/e[+-]?\d+/gi, '');
+  if (value.length > 100 || !/[a-zμ]/i.test(units))
     throw new Error('保留时长必须带时间单位且不超过 100 个字符');
   const milliseconds = parseDuration(value);
   const raw = milliseconds === null ? NaN : milliseconds / 1000;

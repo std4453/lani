@@ -34,6 +34,7 @@ describe('retention configuration', () => {
     expect(durationSeconds('0.7d')).toBe(60480);
     expect(durationSeconds('1 hour 20 minutes')).toBe(4800);
     expect(durationSeconds('1y')).toBe(31557600);
+    expect(durationSeconds('1e3s')).toBe(1000);
   });
   it.each([
     '0d',
@@ -42,6 +43,7 @@ describe('retention configuration', () => {
     'NaNd',
     '7',
     '1000',
+    '1e3',
     '1'.repeat(101) + 'd',
     '0.1s',
     '1.0000001s',
