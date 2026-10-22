@@ -1,3 +1,4 @@
+import { torrentRetentionConfig } from './torrent-retention';
 import { torrentsConfig } from './torrents';
 import {
   obj,
@@ -31,6 +32,7 @@ const qbittorrentConfig = obj({
   username: str(),
   password: str(),
   pathMapping: pathMappingConfig,
+  retention: torrentRetentionConfig,
 });
 export type QBittorrentConfig = T<typeof qbittorrentConfig>;
 

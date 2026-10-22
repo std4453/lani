@@ -1,3 +1,4 @@
+import { TorrentRetentionModule } from '@/torrent-retention/index.module';
 import { Torrent } from '@/admin/torrent-subtitle.resolver';
 import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
@@ -29,6 +30,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     CommonModule,
+    TorrentRetentionModule,
     FetchMikanModule,
     TorrentHistorySyncModule,
     ParseTorrentModule,

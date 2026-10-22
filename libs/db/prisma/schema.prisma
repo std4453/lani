@@ -328,3 +328,21 @@ enum EpisodeType {
 
   @@map("episode_type")
 }
+
+model BackgroundJob {
+  id          Int      @id @default(autoincrement())
+  queueName   String   @map("queue_name")
+  key         String
+  revision    Int      @default(1)
+  payload     Json
+  status      String   @default("pending")
+  attempts    Int      @default(0)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+  lastError   String?  @map("last_error")
+  availableAt DateTime @default(now()) @map("available_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([queueName, key])
+  @@index([queueName, id])
+  @@map("background_jobs")
+}

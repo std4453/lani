@@ -309,6 +309,26 @@ export class QBittorrentService extends AxiosService {
     return (await this.resolveTorrents([hash])).get(hash);
   }
 
+  /** 清理专用：保留文件，删除请求只发送一次（包括鉴权失败也不重放）。 */
+  async deleteTorrentsKeepFiles(hashes: string[]) {
+    if (!hashes.length) return;
+    if (
+      hashes.length > 100 ||
+      hashes.some((hash) => !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(hash))
+    )
+      throw new LaniError('种子清理批次无效');
+    await this.ensureCredentials();
+    await this.requestWithSID({
+      method: 'post',
+      url: '/torrents/delete',
+      data: new URLSearchParams({
+        hashes: hashes.join('|'),
+        deleteFiles: 'false',
+      }).toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  }
+
   async getFiles(hash: string) {
     const resp = await this.get('/torrents/files', { params: { hash } });
     const obj = plainToClass(QBTFiles, { files: resp.data });
