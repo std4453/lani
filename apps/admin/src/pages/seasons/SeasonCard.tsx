@@ -5,7 +5,7 @@ import {
 import { CardSeasonFieldsFragment } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { extractNode } from '@/utils/graphql';
-import { Badge } from 'antd';
+import { Badge, Card } from 'antd';
 import { useState } from 'react';
 import { Link } from 'umi';
 import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
@@ -24,7 +24,12 @@ export default function SeasonCard({
   const rows = episodeRows(episodes);
 
   return (
-    <article className={styles.card}>
+    <Card
+      hoverable
+      role="article"
+      className={styles.card}
+      bodyStyle={{ padding: 0 }}
+    >
       <div className={styles.poster}>
         <Link
           className={styles.posterLink}
@@ -87,6 +92,6 @@ export default function SeasonCard({
           {season.title}
         </h3>
       </Link>
-    </article>
+    </Card>
   );
 }

@@ -46,17 +46,7 @@
   max-width: 184px;
   min-width: 0;
   justify-self: center;
-  transition: box-shadow var(--lani-motion-duration-slow);
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      box-shadow: var(--lani-card-shadow);
-    }
-  }
-  border: 1px solid var(--lani-divider);
   border-radius: var(--lani-radius);
-  background: var(--lani-surface);
-  display: flex;
-  flex-direction: column;
 }
 .seasonLink {
   color: var(--lani-text);
@@ -120,11 +110,11 @@
 }
 .title {
   color: inherit;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: inherit;
+  font-weight: bold;
   line-height: 24px;
   height: 48px;
-  margin: 10px 8px 6px;
+  margin: 6px 8px 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
