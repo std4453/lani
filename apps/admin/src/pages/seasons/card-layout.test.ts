@@ -1,9 +1,84 @@
 import {
+  cardEpisodeStatus,
   cardQueryVariables,
   episodeColor,
   episodeRows,
   selectEpisodeWindow,
 } from './card-layout';
+import { atomTypes } from '@lani/workflow';
+import { ListSeasonCardsDocument } from '@/generated/types';
+
+const statusEpisode = {
+  id: 1,
+  title: '第一集',
+  airTime: '2099-01-01T00:00:00Z',
+  jellyfinEpisodeId: null,
+  latestTask: { nodes: [] },
+};
+
+test.each([
+  ...atomTypes,
+  'AVAILABLE',
+  'DOWNLOAD_FAILED',
+  'CANCELLED',
+  'CANCELLING',
+])(
+  'preserves task summary %s without loading workflow details',
+  (statusSummary) => {
+    expect(
+      cardEpisodeStatus({
+        ...statusEpisode,
+        latestTask: { nodes: [{ statusSummary }] },
+      }),
+    ).toBe(statusSummary);
+  },
+);
+
+test('prioritizes available media and safely handles absent or unknown summaries', () => {
+  expect(
+    cardEpisodeStatus({
+      ...statusEpisode,
+      jellyfinEpisodeId: 'available',
+      latestTask: { nodes: [{ statusSummary: 'DOWNLOAD_FAILED' }] },
+    }),
+  ).toBe('AVAILABLE');
+  expect(cardEpisodeStatus(statusEpisode)).toBe('NOT_AIRED');
+  expect(
+    cardEpisodeStatus({
+      ...statusEpisode,
+      latestTask: { nodes: [{ statusSummary: null }] },
+    }),
+  ).toBe('UNKNOWN');
+  expect(cardEpisodeStatus({ ...statusEpisode, airTime: null })).toBe(
+    'DATE_UNKNOWN',
+  );
+  expect(
+    cardEpisodeStatus({ ...statusEpisode, airTime: '2000-01-01T00:00:00Z' }),
+  ).toBe('RESOURCE_MISSING');
+  expect(
+    cardEpisodeStatus({
+      ...statusEpisode,
+      latestTask: { nodes: [{ statusSummary: 'future-step' }] },
+    }),
+  ).toBe('UNKNOWN');
+});
+
+test('card query excludes task details and requests a status summary', () => {
+  const query = JSON.stringify(ListSeasonCardsDocument);
+  expect(query).toContain('"value":"statusSummary"');
+  for (const field of [
+    'workflow',
+    'legacyStage',
+    'isFailed',
+    'isCancelled',
+    'taskStatusFields',
+    'episodeStatusFields',
+    'sourcePath',
+    'targetPath',
+  ]) {
+    expect(query).not.toContain(`"value":"${field}"`);
+  }
+});
 
 test.each<[number, number[]]>([
   [0, []],

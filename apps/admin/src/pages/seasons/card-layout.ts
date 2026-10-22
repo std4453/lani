@@ -1,6 +1,10 @@
-import { ListSeasonCardsQueryVariables } from '@/generated/types';
+import {
+  CardSeasonFieldsFragment,
+  ListSeasonCardsQueryVariables,
+} from '@/generated/types';
 import { compareEpisodes, EpisodeNumbering } from '@/utils/episode';
 import {
+  calcEpisodeStatus,
   EPISODE_STATUS_TAGS,
   EpisodeStatus,
 } from '@/constants/download-status';
@@ -86,4 +90,21 @@ export function episodeColor(status: EpisodeStatus, monitoring: boolean) {
     return undefined;
   }
   return EPISODE_STATUS_TAGS[status].color;
+}
+
+export function cardEpisodeStatus(
+  episode: NonNullable<
+    CardSeasonFieldsFragment['mainEpisodes']['edges'][number]['node']
+  >,
+): EpisodeStatus {
+  if (episode.jellyfinEpisodeId) return 'AVAILABLE';
+  const task = episode.latestTask.nodes[0];
+  if (task) {
+    const status = task.statusSummary;
+    return status &&
+      Object.prototype.hasOwnProperty.call(EPISODE_STATUS_TAGS, status)
+      ? (status as EpisodeStatus)
+      : 'UNKNOWN';
+  }
+  return calcEpisodeStatus({ ...episode, tasks: { edges: [] } }).status;
 }

@@ -165,11 +165,15 @@ function SeasonStatusTag({
 
 function useColumns({
   openTaskDetails,
+  enabled,
 }: {
   openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
+  enabled: boolean;
 }) {
   const history = useHistory();
-  const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
+  const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument, {
+    skip: !enabled,
+  });
   const semesterOptions = useMemo(
     (): ColumnFilterItem[] =>
       (optionsData?.getAvailableSemesters ?? []).map((yearAndSemester) => ({
@@ -752,7 +756,6 @@ export default withAntdSearch(function MetadataPage() {
   );
 
   const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
-  const columns = useColumns({ openTaskDetails });
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
@@ -768,6 +771,7 @@ export default withAntdSearch(function MetadataPage() {
       return false;
     }
   });
+  const columns = useColumns({ openTaskDetails, enabled: !cardMode });
   const [seasonIds, setSeasonIds] = useState<number[]>([]);
   const inactiveSeasonIds = useMemo(() => [], []);
   const seasonsStatus = useSeasonsStatus(

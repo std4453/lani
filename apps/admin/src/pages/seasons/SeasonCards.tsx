@@ -3,18 +3,13 @@ import { ListSeasonCardsDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import useMobile from '@/utils/useMobile';
-import { useTaskStates } from '@/utils/useTaskStates';
 import { ListToolBar } from '@ant-design/pro-table';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
 import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import {
-  CARD_PAGE_SIZE,
-  cardQueryVariables,
-  selectEpisodeWindow,
-} from './card-layout';
+import { CARD_PAGE_SIZE, cardQueryVariables } from './card-layout';
 import SeasonCard from './SeasonCard';
 import styles from './SeasonCards.module.less';
 
@@ -46,13 +41,6 @@ export default function SeasonCards({
   });
   const seasons = extractNode(data?.allSeasons) ?? [];
   const total = data?.allSeasons?.totalCount;
-  useTaskStates(
-    seasons.flatMap((season) =>
-      selectEpisodeWindow(extractNode(season.mainEpisodes) ?? []).flatMap(
-        (episode) => (extractNode(episode.tasks) ?? []).map((task) => task.id),
-      ),
-    ),
-  );
   useApolloPoll({ refetch, pollInterval: 30000 });
   useEffect(() => {
     if (

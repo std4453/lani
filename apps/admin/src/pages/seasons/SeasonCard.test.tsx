@@ -29,7 +29,6 @@ const season = (count = 12): CardSeasonFieldsFragment => ({
   isMonitoring: false,
   poster: null,
   mainEpisodes: {
-    totalCount: count,
     edges: Array.from({ length: count }, (_, i) => ({
       node: {
         id: i + 1,
@@ -37,7 +36,7 @@ const season = (count = 12): CardSeasonFieldsFragment => ({
         numbering: { type: 'episode', number: String(i + 1) },
         jellyfinEpisodeId: null,
         airTime: '2020-01-01T00:00:00Z',
-        tasks: { edges: [] },
+        latestTask: { nodes: [] },
       },
     })),
   },

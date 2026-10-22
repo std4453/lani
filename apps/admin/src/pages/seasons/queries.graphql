@@ -6,12 +6,18 @@ fragment cardSeasonFields on Season {
     ...displayImageFields
   }
   mainEpisodes {
-    totalCount
     edges {
       node {
+        id
         title
         numbering
-        ...episodeStatusFields
+        airTime
+        jellyfinEpisodeId
+        latestTask: tasksByEpisodeId(first: 1, orderBy: ID_DESC) {
+          nodes {
+            statusSummary
+          }
+        }
       }
     }
   }

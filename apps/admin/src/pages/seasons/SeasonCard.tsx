@@ -1,14 +1,16 @@
-import {
-  calcEpisodeStatus,
-  EPISODE_STATUS_TAGS,
-} from '@/constants/download-status';
+import { EPISODE_STATUS_TAGS } from '@/constants/download-status';
 import { CardSeasonFieldsFragment } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { extractNode } from '@/utils/graphql';
 import { Badge, Card } from 'antd';
 import { useState } from 'react';
 import { Link } from 'umi';
-import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
+import {
+  cardEpisodeStatus,
+  episodeColor,
+  episodeRows,
+  selectEpisodeWindow,
+} from './card-layout';
 import styles from './SeasonCards.module.less';
 
 export default function SeasonCard({
@@ -63,7 +65,7 @@ export default function SeasonCard({
             {rows.map((row, index) => (
               <div key={index} className={styles.episodeRow}>
                 {row.map((episode) => {
-                  const { status } = calcEpisodeStatus(episode);
+                  const status = cardEpisodeStatus(episode);
                   const number = formatNumbering(episode.numbering);
                   const label = `${number} · ${episode.title} · ${EPISODE_STATUS_TAGS[status].children}`;
                   return (

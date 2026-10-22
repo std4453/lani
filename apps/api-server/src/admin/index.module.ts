@@ -1,3 +1,4 @@
+import { TaskStatusResolver } from './task-status.resolver';
 import { TorrentSubtitleResolver } from './torrent-subtitle.resolver';
 import { JellyfinFolderResolver } from '@/admin/JellyfinFolderResolver';
 import { ImageResolver } from '@/admin/image.resolver';
@@ -21,6 +22,7 @@ import { FilesResolver } from '@/admin/files.resolver';
   providers: [
     AdminResolver,
     TorrentSubtitleResolver,
+    TaskStatusResolver,
     ImageResolver,
     JellyfinFolderResolver,
     FilesResolver,

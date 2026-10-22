@@ -1,4 +1,4 @@
-import { AtomType, currentStep, parseWorkflow } from '@lani/workflow';
+import { TaskDisplayStatus, taskDisplayStatus } from '@lani/workflow';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import {
   LegacyTaskStage,
@@ -11,12 +11,8 @@ import { Tag, TagProps } from 'antd';
 import dayjs from 'dayjs';
 
 export type EpisodeStatus =
-  | AtomType
-  | 'AVAILABLE'
+  | TaskDisplayStatus
   | 'UNKNOWN'
-  | 'DOWNLOAD_FAILED'
-  | 'CANCELLED'
-  | 'CANCELLING'
   | 'NOT_AIRED'
   | 'DATE_UNKNOWN'
   | 'RESOURCE_WAITING'
@@ -44,27 +40,8 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   if (episode.jellyfinEpisodeId) {
     return { status: 'AVAILABLE' };
   } else if (task) {
-    if (task.workflow) {
-      const workflow = parseWorkflow(task.workflow);
-      const status: EpisodeStatus =
-        workflow.status === 'running'
-          ? currentStep(workflow).atom
-          : (
-              {
-                succeeded: 'AVAILABLE',
-                failed: 'DOWNLOAD_FAILED',
-                cancelled: 'CANCELLED',
-                cancelling: 'CANCELLING',
-              } as const
-            )[workflow.status];
-      return { status, taskId: task.id, taskType: task.type };
-    }
     return {
-      status: task.isCancelled
-        ? 'CANCELLED'
-        : task.isFailed || task.legacyStage !== LegacyTaskStage.Available
-        ? 'DOWNLOAD_FAILED'
-        : LEGACY_EPISODE_STATUS[task.legacyStage],
+      status: taskDisplayStatus(task),
       taskId: task.id,
       taskType: task.type,
     };
