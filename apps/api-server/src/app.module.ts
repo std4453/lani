@@ -1,3 +1,4 @@
+import { Task } from '@/admin/task-status.resolver';
 import { TorrentRetentionModule } from '@/torrent-retention/index.module';
 import { Torrent } from '@/admin/torrent-subtitle.resolver';
 import { TorrentMatchModule } from '@/torrent-match/index.module';
@@ -53,7 +54,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       autoSchemaFile: true,
       buildSchemaOptions: {
         numberScalarMode: 'integer',
-        orphanedTypes: [Image, JellyfinFolder, Torrent],
+        orphanedTypes: [Image, JellyfinFolder, Torrent, Task],
       },
     }),
     ConfigModule.forRoot({

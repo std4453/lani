@@ -1,3 +1,37 @@
+fragment cardSeasonFields on Season {
+  id
+  title
+  isMonitoring
+  poster: imageByPosterImageId {
+    ...displayImageFields
+  }
+  mainEpisodes {
+    edges {
+      node {
+        title
+        numbering
+        ...episodeStatusFields
+      }
+    }
+  }
+}
+
+query ListSeasonCards($offset: Int!, $first: Int!, $filter: SeasonFilter) {
+  allSeasons(
+    offset: $offset
+    first: $first
+    orderBy: ID_DESC
+    filter: $filter
+  ) {
+    totalCount
+    edges {
+      node {
+        ...cardSeasonFields
+      }
+    }
+  }
+}
+
 fragment listSeasonsFields on Season {
   bangumiId
   airTime

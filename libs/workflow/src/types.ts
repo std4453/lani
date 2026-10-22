@@ -42,3 +42,26 @@ export interface Workflow {
   };
 }
 export type AtomRegistry = Record<AtomType, { wants: Wants }>;
+
+/** 供列表展示使用，不包含 checkpoint、路径或错误详情。 */
+export interface WorkflowSummary {
+  status: WorkflowStatus;
+  currentStepId: string;
+  steps: {
+    id: string;
+    atom: string;
+    title: string;
+    status: StepStatus;
+  }[];
+}
+
+/** 与 Workflow 一样按 JSON 传输，version 与流程取自同一任务快照。 */
+export interface TaskSummary {
+  version: number;
+  workflow?: WorkflowSummary | null;
+  legacy?: {
+    stage: string;
+    isFailed: boolean;
+    isCancelled: boolean;
+  } | null;
+}

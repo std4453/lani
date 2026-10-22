@@ -1,11 +1,7 @@
+import { createCache } from './cache';
 import { store } from '@/store';
 import { loginError, setAuthorized } from '@/store/auth';
-import {
-  ApolloClient,
-  createHttpLink,
-  InMemoryCache,
-  from,
-} from '@apollo/client';
+import { ApolloClient, createHttpLink, from } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import { authFetch } from '@/utils/auth-fetch';
 import { AuthRequestError } from '@/utils/auth-session';
@@ -37,7 +33,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 export const client = new ApolloClient({
   link: from([errorLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: createCache(),
   defaultOptions: {
     query: {
       fetchPolicy: 'no-cache',

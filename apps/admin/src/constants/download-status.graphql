@@ -15,8 +15,22 @@ fragment episodeStatusFields on Episode {
   tasks: tasksByEpisodeId(first: 1, orderBy: ID_DESC) {
     edges {
       node {
-        ...taskStatusFields
+        ...taskSummaryFields
       }
+    }
+  }
+}
+
+fragment taskSummaryFields on Task {
+  id
+  type
+  statusSummary
+}
+
+query GetTaskSummaries($taskIds: [Int!]!) {
+  allTasks(filter: { id: { in: $taskIds } }) {
+    nodes {
+      ...taskSummaryFields
     }
   }
 }
