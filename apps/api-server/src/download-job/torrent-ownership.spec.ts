@@ -1,3 +1,4 @@
+import { PrismaClient } from '@lani/db';
 import { DownloadJobService } from './index.service';
 
 jest.mock('@/config', () => ({ __esModule: true, default: { jellyfin: {} } }));
@@ -44,4 +45,40 @@ it('exposes confirmed ownership and active usage without leaking task states', a
       },
     }),
   );
+});
+
+const databaseUrl = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
+const databaseTests = databaseUrl ? describe : describe.skip;
+databaseTests('scoped torrent ownership in PostgreSQL', () => {
+  it('matches uppercase stored identities, excludes unrelated tasks and handles empty identities', async () => {
+    const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    const ids: number[] = [];
+    try {
+      const stored = 'AB'.repeat(32);
+      for (const qbtTorrentHash of [stored, 'cd'.repeat(20)]) {
+        const task = await db.task.create({
+          data: {
+            type: 'BATCH_DOWNLOAD',
+            legacyStage: 'DOWNLOADING',
+            qbtTorrentHash,
+          },
+        });
+        ids.push(task.id);
+      }
+      const service = new DownloadJobService(db as any, {} as any);
+      expect(
+        await service.getTorrentOwnership([stored.toLowerCase(), stored]),
+      ).toEqual({
+        owned: new Set([stored.toLowerCase()]),
+        active: new Set([stored.toLowerCase()]),
+      });
+      expect(await service.getTorrentOwnership([])).toEqual({
+        owned: new Set(),
+        active: new Set(),
+      });
+    } finally {
+      await db.task.deleteMany({ where: { id: { in: ids } } });
+      await db.$disconnect();
+    }
+  });
 });

@@ -122,8 +122,10 @@ export class TorrentRetentionService
       const batch = hashes.slice(offset, offset + RETENTION_BATCH_SIZE);
       try {
         // 队列可能在重启后恢复；按最新归属、状态、时间重新判断，避免删除陈旧候选。
-        const ownership = await this.downloads.getTorrentOwnership();
         const current = await this.qbt.listTorrents({ hashes: batch });
+        const ownership = await this.downloads.getTorrentOwnership(
+          current.flatMap((torrent) => torrentIdentities(torrent)),
+        );
         const selected = [
           ...new Set(
             current

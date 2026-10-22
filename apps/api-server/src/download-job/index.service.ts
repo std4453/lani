@@ -16,11 +16,15 @@ export class DownloadJobService {
   private logger = new Logger(DownloadJobService.name);
   constructor(private prisma: PrismaService, private tasks: TaskService) {}
   /** 已越过提交阶段的下载证明归属；同 hash 仍被未完成任务使用时暂不清理。 */
-  async getTorrentOwnership() {
+  async getTorrentOwnership(hashes?: readonly string[]) {
+    const identities = hashes?.map((hash) => hash.toLowerCase());
     const tasks = await this.prisma.task.findMany({
       where: {
         type: { in: ['DOWNLOAD', 'BATCH_DOWNLOAD'] },
-        qbtTorrentHash: { not: null },
+        qbtTorrentHash:
+          identities === undefined
+            ? { not: null }
+            : { in: [...new Set(identities)], mode: 'insensitive' },
       },
       select: {
         qbtTorrentHash: true,

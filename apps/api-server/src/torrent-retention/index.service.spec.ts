@@ -108,6 +108,24 @@ it('revalidates ownership, state and time immediately before deletion', async ()
   });
   expect(qbt.deleteTorrentsKeepFiles).toHaveBeenCalledWith([hash(1)]);
 });
+it('revalidates all identities of the current batch and protects an active hybrid hash', async () => {
+  const { tasks, qbt, handler } = setup();
+  const v2 = 'A'.repeat(64);
+  qbt.listTorrents.mockResolvedValue([
+    { ...torrent(1), infohash_v1: hash(2), infohash_v2: v2 },
+  ]);
+  tasks.getTorrentOwnership.mockResolvedValue({
+    owned: new Set([hash(1)]),
+    active: new Set([v2.toLowerCase()]),
+  });
+  await handler.execute({ payload: { hashes: [hash(1)] } });
+  expect(tasks.getTorrentOwnership).toHaveBeenCalledWith([
+    hash(1),
+    hash(2),
+    v2.toLowerCase(),
+  ]);
+  expect(qbt.deleteTorrentsKeepFiles).not.toHaveBeenCalled();
+});
 it('splits batches serially, continues after failure and never retries a failed batch', async () => {
   const { tasks, qbt, handler } = setup();
   const ids = Array.from({ length: 201 }, (_, n) => n + 1);
