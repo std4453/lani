@@ -55,9 +55,9 @@ export default function SeasonCard({
             />
           </span>
         </Link>
-        <div className={styles.episodes} aria-label="逐集状态">
-          {rows.length ? (
-            rows.map((row, index) => (
+        {rows.length > 0 && (
+          <div className={styles.episodes} aria-label="逐集状态">
+            {rows.map((row, index) => (
               <div key={index} className={styles.episodeRow}>
                 {row.map((episode) => {
                   const { status } = calcEpisodeStatus(episode);
@@ -81,11 +81,9 @@ export default function SeasonCard({
                   );
                 })}
               </div>
-            ))
-          ) : (
-            <span className={styles.emptyEpisodes}>暂无剧集</span>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
       <Link className={styles.seasonLink} to={`/season/${season.id}`}>
         <h3 className={styles.title} title={season.title}>

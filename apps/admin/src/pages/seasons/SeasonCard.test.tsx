@@ -158,5 +158,5 @@ test('replaces failed posters and retries when the signed URL changes', () => {
   expect(container.querySelector('img')?.getAttribute('src')).toBe(
     '/fresh.jpg',
   );
-  expect(container.textContent).toContain('暂无剧集');
+  expect(container.querySelector('[aria-label="逐集状态"]')).toBeNull();
 });
