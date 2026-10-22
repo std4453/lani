@@ -14,7 +14,7 @@ RUN sed -i "s|http://deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/
 COPY pyproject.toml MANIFEST.in README.md NOTICE.md PROTOCOL.md INTEGRATION.md REPORT.md ./
 COPY python ./python
 RUN if [ "$SEMANTIC" = true ]; then \
-      pip install --no-cache-dir torch==2.5.1 --index-url "$TORCH_INDEX_URL" \
+      pip install --no-cache-dir --no-deps torch==2.5.1 --index-url "$TORCH_INDEX_URL" \
       && pip install --no-cache-dir '.[semantic]'; \
     else pip install --no-cache-dir .; fi
 RUN useradd --create-home --uid 10001 matcher
