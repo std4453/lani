@@ -27,6 +27,7 @@ jest.mock('@/config', () => ({
       enabled: true,
       endpoint: 'http://127.0.0.1:1',
       timeoutMs: 1000,
+      catalogDebounceMs: 30 * 60 * 1000,
       timezone: 'Asia/Shanghai',
       previousQuarters: 0,
       nextQuarters: 0,

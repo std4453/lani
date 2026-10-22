@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import { CatalogSnapshot, CatalogState, MatchQuery } from './protocol';
 
-export const DEBOUNCE_MS = 30 * 60 * 1000;
 export const digest = (value: unknown) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -35,6 +34,7 @@ export function observeCatalog(
   previous: CatalogState | null,
   desired: CatalogSnapshot,
   now: Date,
+  debounceMs: number,
 ): CatalogState {
   if (previous?.desired.version === desired.version) return previous;
   return {
@@ -42,8 +42,8 @@ export function observeCatalog(
     active: previous?.active ?? null,
     desired,
     changedAt: now.toISOString(),
-    // 首次快照立即初始化；后续实际内容变化从最后一次检测起等待 30 分钟。
-    dueAt: new Date(now.getTime() + (previous ? DEBOUNCE_MS : 0)).toISOString(),
+    // 首次快照立即初始化；后续实际内容变化从最后一次检测起等待配置的静默窗口。
+    dueAt: new Date(now.getTime() + (previous ? debounceMs : 0)).toISOString(),
   };
 }
 

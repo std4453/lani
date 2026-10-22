@@ -156,7 +156,12 @@ export class TorrentMatchService
         where: { id: 1 },
       });
       const previous = stateFrom(row!.state);
-      const next = observeCatalog(previous, desired, new Date());
+      const next = observeCatalog(
+        previous,
+        desired,
+        new Date(),
+        config.matching.catalogDebounceMs,
+      );
       if (next === previous) return;
       await tx.torrentMatchCatalog.update({
         where: { id: 1 },

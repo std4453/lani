@@ -11,6 +11,7 @@ it.each([undefined, {}])(
       endpoint: '',
       previousQuarters: 0,
       nextQuarters: 0,
+      catalogDebounceMs: 1800000,
     });
   },
 );
@@ -33,5 +34,21 @@ it.each([-1, 0.5, 9, NaN])(
         nextQuarters: 0,
       }),
     ).toThrow();
+  },
+);
+
+it.each([0, 5000, 60000])(
+  'accepts a %i ms catalog debounce',
+  (catalogDebounceMs) => {
+    const { value, error } = matchingConfig.validate({ catalogDebounceMs });
+    expect(error).toBeUndefined();
+    expect(value.catalogDebounceMs).toBe(catalogDebounceMs);
+  },
+);
+
+it.each([-1, 0.5, NaN, Infinity, 'invalid'])(
+  'rejects invalid catalog debounce: %s',
+  (catalogDebounceMs) => {
+    expect(matchingConfig.validate({ catalogDebounceMs }).error).toBeDefined();
   },
 );
