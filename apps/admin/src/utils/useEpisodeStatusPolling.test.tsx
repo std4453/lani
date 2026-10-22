@@ -95,14 +95,14 @@ test.each([false, true])(
     }
     const container = document.createElement('div');
     const render = () =>
-      act(() =>
+      act(() => {
         ReactDOM.render(
           <ApolloProvider client={client}>
             <Harness />
           </ApolloProvider>,
           container,
-        ),
-      );
+        );
+      });
     render();
     try {
       expect(requests).toHaveLength(0);
@@ -157,16 +157,13 @@ test('活跃摘要更新页面，任务完成后停止快速轮询', async () =>
     id: 1,
     type: TaskType.Download,
     statusSummary: {
-      __typename: 'TaskStatusSummary',
       version,
       legacy: null,
       workflow: {
-        __typename: 'TaskWorkflowSummary',
         status,
         currentStepId: 'custom',
         steps: [
           {
-            __typename: 'TaskStepSummary',
             id: 'custom',
             atom: 'download',
             title: '动态任务',

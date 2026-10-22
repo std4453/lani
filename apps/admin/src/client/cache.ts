@@ -1,31 +1,20 @@
-import {
-  InMemoryCache,
-  StoreObject,
-  FieldFunctionOptions,
-} from '@apollo/client';
+import { InMemoryCache } from '@apollo/client';
+import { TaskSummary } from '@lani/workflow';
 
 export function createCache() {
   return new InMemoryCache({
     typePolicies: {
-      TaskStepSummary: { keyFields: false },
-      TaskStatusSummary: { keyFields: false },
       Task: {
         fields: {
           statusSummary: {
-            // 慢请求不能用旧版本覆盖快速轮询已经读到的新流程。
+            // JSON 摘要整体替换；慢请求不能覆盖已读到的较新版本。
             merge(
-              existing: StoreObject | undefined,
-              incoming: StoreObject | null,
-              { readField }: FieldFunctionOptions,
+              existing: TaskSummary | undefined,
+              incoming: TaskSummary | null,
             ) {
-              if (
-                existing &&
-                incoming &&
-                (readField<number>('version', existing) ?? -1) >
-                  (readField<number>('version', incoming) ?? -1)
-              )
-                return existing;
-              return incoming;
+              return existing && incoming && existing.version > incoming.version
+                ? existing
+                : incoming;
             },
           },
         },

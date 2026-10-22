@@ -1,7 +1,7 @@
 import { PrismaService } from '@/common/prisma.service';
 import { getIdFromNodeId } from '@/utils/graphile';
-import { summarizeWorkflow } from '@lani/workflow';
-import { TaskStatusSummary } from './task-summary.model';
+import { summarizeWorkflow, TaskSummary } from '@lani/workflow';
+import { TaskSummaryScalar } from './task-summary.scalar';
 import { Logger } from '@nestjs/common';
 import {
   Context,
@@ -29,17 +29,17 @@ export class TaskStatusResolver {
   private readonly logger = new Logger(TaskStatusResolver.name);
   private readonly loaders = new WeakMap<
     object,
-    DataLoader<number, TaskStatusSummary | null>
+    DataLoader<number, TaskSummary | null>
   >();
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @ResolveField(() => TaskStatusSummary, { nullable: true })
+  @ResolveField(() => TaskSummaryScalar, { nullable: true })
   statusSummary(@Parent() { nodeId }: Task, @Context() context: object) {
     let loader = this.loaders.get(context);
     if (!loader) {
       // Federation 只携带任务 ID；同一请求中的摘要合并为一次数据库查询。
-      loader = new DataLoader<number, TaskStatusSummary | null>(async (ids) => {
+      loader = new DataLoader<number, TaskSummary | null>(async (ids) => {
         const tasks = await this.prisma.task.findMany({
           where: { id: { in: [...ids] } },
           select: {
@@ -51,9 +51,9 @@ export class TaskStatusResolver {
             isCancelled: true,
           },
         });
-        const summaries = new Map<number, TaskStatusSummary>(
+        const summaries = new Map<number, TaskSummary>(
           tasks.map((task) => {
-            const summary: TaskStatusSummary = { version: task.version };
+            const summary: TaskSummary = { version: task.version };
             try {
               if (task.workflow) {
                 summary.workflow = summarizeWorkflow(task.workflow);

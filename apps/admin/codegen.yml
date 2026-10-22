@@ -14,3 +14,4 @@ config:
     DateTime: 'string'
     JSON: 'any'
     Workflow: '@lani/workflow#Workflow'
+    TaskSummary: '@lani/workflow#TaskSummary'

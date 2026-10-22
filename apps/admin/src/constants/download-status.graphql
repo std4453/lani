@@ -24,24 +24,7 @@ fragment episodeStatusFields on Episode {
 fragment taskSummaryFields on Task {
   id
   type
-  statusSummary {
-    version
-    workflow {
-      status
-      currentStepId
-      steps {
-        id
-        atom
-        title
-        status
-      }
-    }
-    legacy {
-      stage
-      isFailed
-      isCancelled
-    }
-  }
+  statusSummary
 }
 
 query GetTaskSummaries($taskIds: [Int!]!) {

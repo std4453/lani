@@ -18,8 +18,9 @@ test.each([
 ])('%s 只查询结构化流程摘要', (_, document) => {
   const query = JSON.stringify(document);
   expect(query).toContain('"value":"taskSummaryFields"');
-  expect(query).toContain('"value":"currentStepId"');
-  expect(query).toContain('"value":"steps"');
+  expect(query).toContain('"value":"statusSummary"');
+  expect(query).not.toContain('"value":"TaskStepSummary"');
+  expect(query).not.toContain('"value":"currentStepId"');
   for (const name of [
     'checkpoint',
     'failedReason',

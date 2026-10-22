@@ -18,9 +18,7 @@ class ProbeResolver {
   }
 }
 
-const summaryFields =
-  'version workflow { status currentStepId steps { id atom title status } } legacy { stage isFailed isCancelled }';
-const query = `query($rows: [_Any!]!) { _entities(representations: $rows) { ... on Task { statusSummary { ${summaryFields} } alias: statusSummary { ${summaryFields} } } } }`;
+const query = `query($rows: [_Any!]!) { _entities(representations: $rows) { ... on Task { statusSummary alias: statusSummary } } }`;
 const entity = (id: number) => ({
   __typename: 'Task',
   nodeId: Buffer.from(JSON.stringify(['download_jobs', id])).toString('base64'),
@@ -81,7 +79,7 @@ describe('Task status Federation HTTP resolver', () => {
     return response.data;
   }
 
-  it('exposes a structured summary and requires only the entity key', async () => {
+  it('exposes a JSON summary scalar and requires only the entity key', async () => {
     const response = await http.post('/graphql', {
       query: '{ _service { sdl } }',
     });
@@ -98,8 +96,10 @@ describe('Task status Federation HTTP resolver', () => {
       task.fields?.find((f) => f.name.value === 'statusSummary')?.type,
     ).toMatchObject({
       kind: 'NamedType',
-      name: { value: 'TaskStatusSummary' },
+      name: { value: 'TaskSummary' },
     });
+    expect(sdl).toContain('scalar TaskSummary');
+    expect(sdl).not.toContain('type TaskStepSummary');
     expect(sdl).toContain('@key(fields: "nodeId")');
     expect(findMany).not.toHaveBeenCalled();
   });
@@ -116,7 +116,6 @@ describe('Task status Federation HTTP resolver', () => {
             ? null
             : {
                 version: 1,
-                workflow: null,
                 legacy: {
                   stage: 'AVAILABLE',
                   isFailed: false,
@@ -128,7 +127,6 @@ describe('Task status Federation HTTP resolver', () => {
             ? null
             : {
                 version: 1,
-                workflow: null,
                 legacy: {
                   stage: 'AVAILABLE',
                   isFailed: false,
@@ -177,7 +175,6 @@ describe('Task status Federation HTTP resolver', () => {
     const running = (await execute([1])).data._entities[0].statusSummary;
     expect(running).toEqual({
       version: 1,
-      legacy: null,
       workflow: {
         status: 'running',
         currentStepId: 'step',
@@ -210,18 +207,16 @@ describe('Task status Federation HTTP resolver', () => {
     expect(result.errors).toBeUndefined();
     expect(result.data._entities).toEqual([
       {
-        statusSummary: { version: 1, workflow: null, legacy: null },
-        alias: { version: 1, workflow: null, legacy: null },
+        statusSummary: { version: 1 },
+        alias: { version: 1 },
       },
       {
         statusSummary: {
           version: 1,
-          workflow: null,
           legacy: { stage: 'AVAILABLE', isFailed: false, isCancelled: false },
         },
         alias: {
           version: 1,
-          workflow: null,
           legacy: { stage: 'AVAILABLE', isFailed: false, isCancelled: false },
         },
       },

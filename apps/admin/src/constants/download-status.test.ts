@@ -1,4 +1,4 @@
-import { atomTypes } from '@lani/workflow';
+import { atomTypes, WorkflowSummary, WorkflowStatus } from '@lani/workflow';
 import {
   EpisodeStatusFieldsFragment,
   TaskSummaryFieldsFragment,
@@ -6,7 +6,7 @@ import {
 } from '@/generated/types';
 import { calcEpisodeStatus, EPISODE_STATUS_TAGS } from './download-status';
 
-const workflow = {
+const workflow: WorkflowSummary = {
   status: 'running',
   currentStepId: 'custom-step',
   steps: [
@@ -70,7 +70,7 @@ it('步骤重排后按 ID 定位，未知 atom 仍显示服务端标题', () => 
     ),
   ).toMatchObject({ status: 'RUNNING', label: '新流程步骤' });
 });
-it.each([
+it.each<[WorkflowStatus, string]>([
   ['failed', 'DOWNLOAD_FAILED'],
   ['cancelling', 'CANCELLING'],
   ['cancelled', 'CANCELLED'],
