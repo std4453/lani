@@ -1,5 +1,6 @@
 import { TorrentRetentionModule } from '@/torrent-retention/index.module';
 import { Torrent } from '@/admin/torrent-subtitle.resolver';
+import { TorrentMatchModule } from '@/torrent-match/index.module';
 import { Image } from '@/admin/image.resolver';
 import { AdminModule } from '@/admin/index.module';
 import { JellyfinFolder } from '@/admin/JellyfinFolderResolver';
@@ -31,6 +32,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     CommonModule,
     TorrentRetentionModule,
+    TorrentMatchModule,
     FetchMikanModule,
     TorrentHistorySyncModule,
     ParseTorrentModule,

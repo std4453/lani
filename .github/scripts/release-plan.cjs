@@ -5,7 +5,7 @@ const allowed = ["admin", "api-server", "data-server", "gateway"];
 
 // A 404 is a missing image. Authentication, rate limits and network failures stop
 // planning rather than cause unnecessary builds. GHCR write access is maintainer-only.
-async function imageExists(name, fingerprint, request = fetch) {
+async function imageExists(name, fingerprint, request = fetch, variant = "") {
   const auth = await request(
     `https://ghcr.io/token?service=ghcr.io&scope=repository:${name}:pull`,
     { signal: AbortSignal.timeout(30000) }
@@ -14,7 +14,9 @@ async function imageExists(name, fingerprint, request = fetch) {
     throw new Error(`Registry authorization failed: HTTP ${auth.status}`);
   const { token } = await auth.json();
   const response = await request(
-    `https://ghcr.io/v2/${name}/manifests/fp-${fingerprint}`,
+    `https://ghcr.io/v2/${name}/manifests/fp-${fingerprint}${
+      variant ? `-${variant}` : ""
+    }`,
     {
       method: "HEAD",
       headers: {
@@ -34,13 +36,14 @@ async function imageExists(name, fingerprint, request = fetch) {
 async function planImages(owner, images, exists = imageExists) {
   const matrix = [],
     report = [];
-  for (const { app, fingerprint } of images) {
+  for (const { app, fingerprint, variant = "" } of images) {
     const name = `${owner.toLowerCase()}/lani-${app}`;
-    const reused = await exists(name, fingerprint);
-    if (!reused) matrix.push({ app, fingerprint });
+    const reused = await exists(name, fingerprint, undefined, variant);
+    if (!reused)
+      matrix.push({ app, fingerprint, ...(variant ? { variant } : {}) });
     report.push({
       app,
-      image: `ghcr.io/${name}:fp-${fingerprint}`,
+      image: `ghcr.io/${name}:fp-${fingerprint}${variant ? `-${variant}` : ""}`,
       action: reused ? "reuse" : "build",
     });
   }
@@ -59,6 +62,14 @@ async function main() {
     ...apps,
     ...(apps.some((app) => app !== "admin") ? ["db"] : []),
   ].map((app) => ({ app, fingerprint: manifest.images[app].fingerprint }));
+  if (manifest.images["anime-matcher"]) {
+    for (const variant of ["lexical", "semantic-cpu", "semantic-cu126"])
+      images.push({
+        app: "anime-matcher",
+        fingerprint: manifest.images["anime-matcher"].fingerprint,
+        variant,
+      });
+  }
   const { matrix, report } = await planImages(
     process.env.GITHUB_REPOSITORY.split("/")[0],
     images
@@ -67,7 +78,11 @@ async function main() {
     process.env.GITHUB_OUTPUT,
     `apps=${JSON.stringify(
       apps
-    )}\nrevision=${revision}\nmatrix=${JSON.stringify(matrix)}\n`
+    )}\nrevision=${revision}\nmatrix=${JSON.stringify(
+      matrix.filter((x) => x.app !== "anime-matcher")
+    )}\nmatcherMatrix=${JSON.stringify(
+      matrix.filter((x) => x.app === "anime-matcher")
+    )}\n`
   );
   await fs.appendFile(
     process.env.GITHUB_STEP_SUMMARY,

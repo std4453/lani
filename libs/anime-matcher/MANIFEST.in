@@ -1,0 +1,4 @@
+include README.md NOTICE.md PROTOCOL.md INTEGRATION.md REPORT.md
+prune tests
+prune benchmark
+prune training

@@ -1,0 +1,55 @@
+# 种子季度匹配的工程边界
+
+API 负责候选范围、目录生命周期、入队与结果提交；worker 只执行推理。通信字段见[协议 v1](./matcher-protocol.md)，通用调度见[队列协议](../src/background-queue/README.md)。用户配置与部署命令见[使用文档](../../../docs/docs/torrent-matching.md)。本阶段不接下载，也不自动回填历史种子。
+
+## 写入与触发
+
+`TorrentSyncService.insert` 是 Mikan、Nyaa 的统一入库入口：事务内持有导入互斥锁，去重、创建种子、调用 `enqueueTorrentMatch` 一起提交。锁使用 PostgreSQL 内置事务 advisory lock，没有自定义数据库函数或触发器。加锁复用 `utils/advisory-lock.ts` 的 `acquireAdvisoryTransactionLock`，锁键保持不变，事务内后续操作必须使用同一个 `tx`。PostGraphile 不提供 Torrent 的通用创建／更新 mutation，避免绕过 API 的业务边界；读取和现有下载业务不受影响。
+
+重解析在同一事务里调用 `updateWithTorrentMatching`，按 ID 顺序锁定业务行，比较标题、发布时间、解析名称及剧集编号。只有这些输入发生变化才清空旧结果、置为 PENDING 并入队；字幕、解析版本、元数据抓取状态等变化不重新匹配。新增种子写入入口也须复用上述事务方法。直接 SQL 写入属于维护操作，不会隐式匹配。
+
+关闭匹配时既不入队也不消费，保留既有工作与结果；再次开启不自动补录关闭期间的种子。
+
+## 目录生命周期
+
+每分钟读取数据库现有季度标题、别名、年／季度，规范排序后计算 SHA-256。当前模型不使用逐集目录，剧集日期更新不触发目录重建。`torrent_match_catalog` 单行保存 active、desired 快照及 dueAt。首次初始化立即构建；之后按 `matching.catalogDebounceMs` 等待静默窗口（默认 30 分钟，允许为 0）才激活。配置变更只影响后续检测到的目录变化，已持久化的截止时间不变。重启核对当前数据库并保留截止时间；离线发生新变化则从本次检测开始等待。轮询检测最多比实际变化晚约一分钟。
+
+目录和匹配消费者通过 `@QueueConsumer` 注册，复用已落地的通用队列；匹配 payload 新写入 `version: 1`，兼容无版本的已有输入，未知版本保留为失败。目录快照的 `version` 是内容哈希。目录任务与匹配任务分别 FIFO。候选季度存在待生效变化时，匹配队头等待，后续不越过；其他季度变化不阻塞当前候选。目录构建期间短暂暂停匹配，避免旧版本反向覆盖新缓存。目录构建失败保留旧 active；失败任务留在队头，需显式恢复。目录观察失败时停止匹配，后续每分钟的数据库观察不调用模型。
+
+worker 的目录缓存可丢弃。API 消费前查询版本，缓存缺失时上传保存的 active 快照；失败不重试。权重由独立 worker 进程配置和挂载，API 无 Python／模型目录配置。
+
+候选按种子发布时间对应的公历季度、配置的相邻季度和时区选择，不按逐集发布日期过滤。工程层传数据库已有输入，不推断 episode offset 或调整模型特征。已完成结果不因目录、模型、候选配置变化自动重跑。
+
+## 结果存储
+
+`Torrent.matchStatus` 是可直接筛选的业务状态：
+
+| 值          | 含义                                                           |
+| ----------- | -------------------------------------------------------------- |
+| NULL        | 未进入匹配流程，例如历史记录或功能关闭期间入库                 |
+| PENDING     | 等待本轮匹配完成；组件失败时仍保留待处理状态，故障由任务表记录 |
+| MATCHED     | 得到季度匹配结果                                               |
+| NO_MATCH    | 服务明确拒答，正常完成；不需要业务判断拒答是否合理             |
+| UNSUPPORTED | 缺少可用解析名称，未调用模型                                   |
+| DISMISSED   | 用户主动取消关联；后续自动入队跳过该种子                       |
+
+`matchedSeasonId` 保存季度关联，`matchedAt` 保存完成时间。`matchDetails` 仅存输入／目录／模型版本、运行模式、原因和分数，不重复 status 或 seasonId；前端判断拒答只读 matchStatus。已匹配季度后来被删除时，外键置空，但保留历史判断为 MATCHED，不伪造为模型拒答。
+
+`cancelTorrentSeasonMatch(torrentId: Int!)` 在 API 事务中清空关联，写入 DISMISSED 和 `user_cancelled` 原因，并删除该种子的匹配任务。与生产者和结果提交保持相同锁顺序，在途结果无法覆盖取消操作。重复取消幂等；种子不存在则报错。前端只更新当前单元格及对应缓存，不重载种子列表。
+
+迁移 `20261026000000_torrent_matching` 复用通用任务表，创建目录检查点及种子匹配结果字段，不回填历史数据。先执行迁移，再启动启用匹配的 API。
+
+## 验证
+
+真实 PostgreSQL 测试覆盖事务回滚、并发导入去重、重解析失效、拒答、等待目录、重启恢复和旧执行的 revision 栅栏。HTTP 测试覆盖目录丢失恢复、非法返回和不重试；worker 自己覆盖 JSONL。测试使用开发指南中的隔离 `*_test` 数据库与 `LANI_LIFECYCLE_TEST_DATABASE_URL`，不连接维护者环境。
+
+
+### 运维批量入队
+
+`matching.enabled: false` 时不创建新的匹配任务、不修改新种子的匹配状态（保持 NULL），已排队任务暂停消费；已有关联展示与取消关联仍可用。重新启用不会自动回填关闭期间的新种子。
+
+通过现有鉴权 Gateway 调用 `enqueueTorrentSeasonMatches(torrentIds: [Int!]!, rematch: Boolean = false): Int!`。每批 1–500 个正整数 ID，去重后在同一事务内标记 PENDING 并入队，返回实际入队数量；不存在的 ID 跳过。默认仅匹配状态为 NULL 的种子；`rematch: true` 可重跑已处理或待处理记录，但始终跳过用户取消关联的 DISMISSED。通用队列中已有的失败屏障不会被入队操作清除，需按通用队列机制处理失败。禁用匹配时调用报错且不写入。前端不调用此运维入口。
+
+独立部署时 matcher 使用独立 Deployment/Service，每个环境一份；API 不依赖 initContainer，不携带 Python 或模型权重。HTTP endpoint 由 `matching.endpoint` 配置。
+
+API 的 HTTP 传输复用 `LocalAxiosService`，覆盖匹配专用超时并在关闭时取消在途请求；保留 16 MiB 请求／响应上限，不经过环境代理、不跟随重定向、不自动重试。目录同步与协议校验仍由 `MatcherTransport` 负责。

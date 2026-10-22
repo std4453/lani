@@ -1,5 +1,6 @@
 import { torrentRetentionConfig } from './torrent-retention';
 import { torrentsConfig } from './torrents';
+import { matchingConfig } from './matching';
 import {
   obj,
   opt,
@@ -179,6 +180,7 @@ const featuresConfig = opt(
 export const rootConfig = root({
   network: networkConfig,
   torrents: torrentsConfig,
+  matching: matchingConfig,
   postgresUrl: str(),
   s3: s3Config,
   downloadClient: downloadClientConfig,

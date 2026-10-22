@@ -1,0 +1,79 @@
+{
+  "repository": "Qwen/Qwen3-Reranker-0.6B",
+  "revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+  "files": [
+    {
+      "file": "config.json",
+      "sha256": "d479c427a9ca5295218063d4f9aca4f297ab4ac27487cca7af42c84643d51ef0",
+      "bytes": 727,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "39784456e9de7a06590f8a4a38760ac1fb38d65e",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/config.json"
+    },
+    {
+      "file": "generation_config.json",
+      "sha256": "81051cd3f6e77013827148d0b8a6ead93f8ac390d5ab805f849199f0af6a08db",
+      "bytes": 214,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "e4f1d3193e99a3e5d7047edf56e93a6e933fa31b",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/generation_config.json"
+    },
+    {
+      "file": "tokenizer.json",
+      "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "bytes": 11422654,
+      "upstreamLfsSha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "upstreamGitBlobId": "cd71f61a15a522601badb3dc960d800d9cb3766c",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/tokenizer.json"
+    },
+    {
+      "file": "tokenizer_config.json",
+      "sha256": "253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0",
+      "bytes": 9706,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "7345216a0785dc7086e8c245b2a9d3896ce2b756",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/tokenizer_config.json"
+    },
+    {
+      "file": "vocab.json",
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "bytes": 2776833,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "4783fe10ac3adce15ac8f358ef5462739852c569",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/vocab.json"
+    },
+    {
+      "file": "merges.txt",
+      "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "bytes": 1671853,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/merges.txt"
+    },
+    {
+      "file": "model.safetensors",
+      "sha256": "27cd75a405b9c1b46b59abfd88aaa209e6fed2a1972cde9b70e7659537c5e65b",
+      "bytes": 1191588280,
+      "upstreamLfsSha256": "27cd75a405b9c1b46b59abfd88aaa209e6fed2a1972cde9b70e7659537c5e65b",
+      "upstreamGitBlobId": "c2009afdaf622dc596bec224a625daa46a2b4cc9",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/model.safetensors"
+    },
+    {
+      "file": "README.md",
+      "sha256": "5bba8c734f6dd3ae48317b4139317e45a7fce48fc55e15670b23a0dd15492ab6",
+      "bytes": 14742,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "b8bfdef6c3cd9297bf8f5965c87edbee65a444aa",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/README.md"
+    },
+    {
+      "file": "chat_template.jinja",
+      "sha256": "6f682162495ec5b39fd9005c01b6aa2a74669379fe967039f1e2cbbe8752369d",
+      "bytes": 741,
+      "upstreamLfsSha256": null,
+      "upstreamGitBlobId": "63b97f268a9ddb9c6b34e6d7d8ef531d1fee9cf4",
+      "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B/resolve/e61197ed45024b0ed8a2d74b80b4d909f1255473/chat_template.jinja"
+    }
+  ],
+  "metadataSha256": "9d05b9dd82e3145d143476a2572b1d38b5a58ed1a68de69a9da17426b0ff34ed"
+}

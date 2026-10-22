@@ -286,6 +286,62 @@ export type DeleteImagePayloadImageEdgeArgs = {
   orderBy?: InputMaybe<Array<ImagesOrderBy>>;
 };
 
+/** All input for the `deleteTorrentByHash` mutation. */
+export type DeleteTorrentByHashInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  hash: Scalars['String'];
+};
+
+/** All input for the `deleteTorrentById` mutation. */
+export type DeleteTorrentByIdInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  id: Scalars['Int'];
+};
+
+/** All input for the `deleteTorrent` mutation. */
+export type DeleteTorrentInput = {
+  /**
+   * An arbitrary string value with no semantic meaning. Will be included in the
+   * payload verbatim. May be used to track mutations by the client.
+   */
+  clientMutationId?: InputMaybe<Scalars['String']>;
+  /** The globally unique `ID` which will identify a single `Torrent` to be deleted. */
+  nodeId: Scalars['ID'];
+};
+
+/** The output of our delete `Torrent` mutation. */
+export type DeleteTorrentPayload = {
+  __typename?: 'DeleteTorrentPayload';
+  /**
+   * The exact same `clientMutationId` that was provided in the mutation input,
+   * unchanged and unused. May be used by a client to track mutations.
+   */
+  clientMutationId?: Maybe<Scalars['String']>;
+  deletedTorrentId?: Maybe<Scalars['ID']>;
+  /** Our root query field type. Allows us to run any query from our mutation payload. */
+  query?: Maybe<Query>;
+  /** Reads a single `Season` that is related to this `Torrent`. */
+  seasonByMatchedSeasonId?: Maybe<Season>;
+  /** The `Torrent` that was deleted by this mutation. */
+  torrent?: Maybe<Torrent>;
+  /** An edge for our `Torrent`. May be used by Relay 1. */
+  torrentEdge?: Maybe<TorrentsEdge>;
+};
+
+
+/** The output of our delete `Torrent` mutation. */
+export type DeleteTorrentPayloadTorrentEdgeArgs = {
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
+};
+
 export type DownloadProgress = {
   __typename?: 'DownloadProgress';
   downloaded: Scalars['BigInt'];
@@ -1984,6 +2040,7 @@ export type MetadataSourceFilter = {
 export type Mutation = {
   __typename?: 'Mutation';
   cancelTask: Scalars['ID'];
+  cancelTorrentSeasonMatch: Scalars['Boolean'];
   /** Creates a single `Image`. */
   createImage?: Maybe<CreateImagePayload>;
   /** Creates a single `Season`. */
@@ -1995,6 +2052,12 @@ export type Mutation = {
   /** Deletes a single `Image` using a unique key. */
   deleteImageBySourceUrl?: Maybe<DeleteImagePayload>;
   deleteSeasonById: Scalars['ID'];
+  /** Deletes a single `Torrent` using its globally unique id. */
+  deleteTorrent?: Maybe<DeleteTorrentPayload>;
+  /** Deletes a single `Torrent` using a unique key. */
+  deleteTorrentByHash?: Maybe<DeleteTorrentPayload>;
+  /** Deletes a single `Torrent` using a unique key. */
+  deleteTorrentById?: Maybe<DeleteTorrentPayload>;
   downloadBilibiliCC: Scalars['ID'];
   downloadTorrentForEpisode: Scalars['Int'];
   downloadTorrentForSeason: Scalars['Int'];
@@ -2011,6 +2074,8 @@ export type Mutation = {
   refreshNyaaMetadata: Scalars['Int'];
   retryTask: Scalars['ID'];
   saveSeason: Scalars['ID'];
+  /** 检查种子保留规则并入队，返回候选数量；配置关闭时不执行 */
+  scanTorrentRetention: Scalars['Int'];
   setJellyfinFolderDefault: Scalars['ID'];
   syncAllSeasonsEpisodeData: Scalars['Int'];
   syncEpisodeData: Scalars['ID'];
@@ -2058,6 +2123,11 @@ export type MutationCancelTaskArgs = {
 };
 
 
+export type MutationCancelTorrentSeasonMatchArgs = {
+  torrentId: Scalars['Int'];
+};
+
+
 export type MutationCreateImageArgs = {
   input: CreateImageInput;
 };
@@ -2085,6 +2155,21 @@ export type MutationDeleteImageBySourceUrlArgs = {
 
 export type MutationDeleteSeasonByIdArgs = {
   id: Scalars['Int'];
+};
+
+
+export type MutationDeleteTorrentArgs = {
+  input: DeleteTorrentInput;
+};
+
+
+export type MutationDeleteTorrentByHashArgs = {
+  input: DeleteTorrentByHashInput;
+};
+
+
+export type MutationDeleteTorrentByIdArgs = {
+  input: DeleteTorrentByIdInput;
 };
 
 
@@ -2685,6 +2770,8 @@ export type Season = Node & {
   posterImageId?: Maybe<Scalars['Int']>;
   tags: Array<Maybe<Scalars['String']>>;
   title: Scalars['String'];
+  /** Reads and enables pagination through a set of `Torrent`. */
+  torrentsByMatchedSeasonId: TorrentsConnection;
   tvdbId: Scalars['String'];
   /** null if unknown */
   tvdbSeason?: Maybe<Scalars['Int']>;
@@ -2732,6 +2819,18 @@ export type SeasonMainEpisodesArgs = {
   first?: InputMaybe<Scalars['Int']>;
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
+};
+
+
+export type SeasonTorrentsByMatchedSeasonIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  condition?: InputMaybe<TorrentCondition>;
+  filter?: InputMaybe<TorrentFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<TorrentsOrderBy>>;
 };
 
 export type SeasonCharacter = {
@@ -2918,6 +3017,10 @@ export type SeasonFilter = {
   tags?: InputMaybe<StringListFilter>;
   /** Filter by the object’s `title` field. */
   title?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `torrentsByMatchedSeasonId` relation. */
+  torrentsByMatchedSeasonId?: InputMaybe<SeasonToManyTorrentFilter>;
+  /** Some related `torrentsByMatchedSeasonId` exist. */
+  torrentsByMatchedSeasonIdExist?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `tvdbId` field. */
   tvdbId?: InputMaybe<StringFilter>;
   /** Filter by the object’s `tvdbSeason` field. */
@@ -3069,6 +3172,16 @@ export type SeasonToManyEpisodeFilter = {
   none?: InputMaybe<EpisodeFilter>;
   /** Some related `Episode` matches the filter criteria. All fields are combined with a logical ‘and.’ */
   some?: InputMaybe<EpisodeFilter>;
+};
+
+/** A filter to be used against many `Torrent` object types. All fields are combined with a logical ‘and.’ */
+export type SeasonToManyTorrentFilter = {
+  /** Every related `Torrent` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  every?: InputMaybe<TorrentFilter>;
+  /** No related `Torrent` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  none?: InputMaybe<TorrentFilter>;
+  /** Some related `Torrent` matches the filter criteria. All fields are combined with a logical ‘and.’ */
+  some?: InputMaybe<TorrentFilter>;
 };
 
 /** A connection to a list of `Season` values. */
@@ -3292,6 +3405,184 @@ export enum SeasonsOrderBy {
   TagsDesc = 'TAGS_DESC',
   TitleAsc = 'TITLE_ASC',
   TitleDesc = 'TITLE_DESC',
+  TorrentsByMatchedSeasonIdCountAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__COUNT_ASC',
+  TorrentsByMatchedSeasonIdCountDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__COUNT_DESC',
+  TorrentsByMatchedSeasonIdMaxChannelAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_CHANNEL_ASC',
+  TorrentsByMatchedSeasonIdMaxChannelDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_CHANNEL_DESC',
+  TorrentsByMatchedSeasonIdMaxCreatedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_CREATED_AT_ASC',
+  TorrentsByMatchedSeasonIdMaxCreatedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_CREATED_AT_DESC',
+  TorrentsByMatchedSeasonIdMaxDisplayIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_DISPLAY_ID_ASC',
+  TorrentsByMatchedSeasonIdMaxDisplayIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_DISPLAY_ID_DESC',
+  TorrentsByMatchedSeasonIdMaxEpisodeIndexAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_INDEX_ASC',
+  TorrentsByMatchedSeasonIdMaxEpisodeIndexDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_INDEX_DESC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_ASC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_DESC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberFromAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_FROM_ASC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberFromDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_FROM_DESC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberToAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_TO_ASC',
+  TorrentsByMatchedSeasonIdMaxEpisodeNumberToDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_NUMBER_TO_DESC',
+  TorrentsByMatchedSeasonIdMaxEpisodeTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMaxEpisodeTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_EPISODE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMaxFormatAudioEncodingAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_AUDIO_ENCODING_ASC',
+  TorrentsByMatchedSeasonIdMaxFormatAudioEncodingDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_AUDIO_ENCODING_DESC',
+  TorrentsByMatchedSeasonIdMaxFormatColorDepthAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_COLOR_DEPTH_ASC',
+  TorrentsByMatchedSeasonIdMaxFormatColorDepthDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_COLOR_DEPTH_DESC',
+  TorrentsByMatchedSeasonIdMaxFormatContainerAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_CONTAINER_ASC',
+  TorrentsByMatchedSeasonIdMaxFormatContainerDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_CONTAINER_DESC',
+  TorrentsByMatchedSeasonIdMaxFormatResolutionAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_RESOLUTION_ASC',
+  TorrentsByMatchedSeasonIdMaxFormatResolutionDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_RESOLUTION_DESC',
+  TorrentsByMatchedSeasonIdMaxFormatVideoEncodingAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_VIDEO_ENCODING_ASC',
+  TorrentsByMatchedSeasonIdMaxFormatVideoEncodingDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_FORMAT_VIDEO_ENCODING_DESC',
+  TorrentsByMatchedSeasonIdMaxHashAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_HASH_ASC',
+  TorrentsByMatchedSeasonIdMaxHashDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_HASH_DESC',
+  TorrentsByMatchedSeasonIdMaxIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ID_ASC',
+  TorrentsByMatchedSeasonIdMaxIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ID_DESC',
+  TorrentsByMatchedSeasonIdMaxIndexAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_ASC',
+  TorrentsByMatchedSeasonIdMaxIndexDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_DESC',
+  TorrentsByMatchedSeasonIdMaxIndexFromAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_FROM_ASC',
+  TorrentsByMatchedSeasonIdMaxIndexFromDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_FROM_DESC',
+  TorrentsByMatchedSeasonIdMaxIndexToAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_TO_ASC',
+  TorrentsByMatchedSeasonIdMaxIndexToDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_INDEX_TO_DESC',
+  TorrentsByMatchedSeasonIdMaxMatchedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCHED_AT_ASC',
+  TorrentsByMatchedSeasonIdMaxMatchedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCHED_AT_DESC',
+  TorrentsByMatchedSeasonIdMaxMatchedSeasonIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCHED_SEASON_ID_ASC',
+  TorrentsByMatchedSeasonIdMaxMatchedSeasonIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCHED_SEASON_ID_DESC',
+  TorrentsByMatchedSeasonIdMaxMatchDetailsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCH_DETAILS_ASC',
+  TorrentsByMatchedSeasonIdMaxMatchDetailsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCH_DETAILS_DESC',
+  TorrentsByMatchedSeasonIdMaxMatchStatusAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCH_STATUS_ASC',
+  TorrentsByMatchedSeasonIdMaxMatchStatusDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_MATCH_STATUS_DESC',
+  TorrentsByMatchedSeasonIdMaxMetadataAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_ASC',
+  TorrentsByMatchedSeasonIdMaxMetadataDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_DESC',
+  TorrentsByMatchedSeasonIdMaxMetadataErrorAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_ERROR_ASC',
+  TorrentsByMatchedSeasonIdMaxMetadataErrorDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_ERROR_DESC',
+  TorrentsByMatchedSeasonIdMaxMetadataFetchedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_FETCHED_AT_ASC',
+  TorrentsByMatchedSeasonIdMaxMetadataFetchedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_FETCHED_AT_DESC',
+  TorrentsByMatchedSeasonIdMaxMetadataStatusAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_STATUS_ASC',
+  TorrentsByMatchedSeasonIdMaxMetadataStatusDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_METADATA_STATUS_DESC',
+  TorrentsByMatchedSeasonIdMaxOrganizationPartsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ORGANIZATION_PARTS_ASC',
+  TorrentsByMatchedSeasonIdMaxOrganizationPartsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ORGANIZATION_PARTS_DESC',
+  TorrentsByMatchedSeasonIdMaxOrganizationRawAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ORGANIZATION_RAW_ASC',
+  TorrentsByMatchedSeasonIdMaxOrganizationRawDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_ORGANIZATION_RAW_DESC',
+  TorrentsByMatchedSeasonIdMaxParsedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSED_AT_ASC',
+  TorrentsByMatchedSeasonIdMaxParsedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSED_AT_DESC',
+  TorrentsByMatchedSeasonIdMaxParseResultAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSE_RESULT_ASC',
+  TorrentsByMatchedSeasonIdMaxParseResultDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSE_RESULT_DESC',
+  TorrentsByMatchedSeasonIdMaxParseVersionAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSE_VERSION_ASC',
+  TorrentsByMatchedSeasonIdMaxParseVersionDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PARSE_VERSION_DESC',
+  TorrentsByMatchedSeasonIdMaxPermalinkAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PERMALINK_ASC',
+  TorrentsByMatchedSeasonIdMaxPermalinkDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PERMALINK_DESC',
+  TorrentsByMatchedSeasonIdMaxPublishDateAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PUBLISH_DATE_ASC',
+  TorrentsByMatchedSeasonIdMaxPublishDateDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_PUBLISH_DATE_DESC',
+  TorrentsByMatchedSeasonIdMaxSeasonTitleAliasesAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SEASON_TITLE_ALIASES_ASC',
+  TorrentsByMatchedSeasonIdMaxSeasonTitleAliasesDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SEASON_TITLE_ALIASES_DESC',
+  TorrentsByMatchedSeasonIdMaxSeasonTitleRawAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SEASON_TITLE_RAW_ASC',
+  TorrentsByMatchedSeasonIdMaxSeasonTitleRawDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SEASON_TITLE_RAW_DESC',
+  TorrentsByMatchedSeasonIdMaxSizeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SIZE_ASC',
+  TorrentsByMatchedSeasonIdMaxSizeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SIZE_DESC',
+  TorrentsByMatchedSeasonIdMaxSourcePlatformAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SOURCE_PLATFORM_ASC',
+  TorrentsByMatchedSeasonIdMaxSourcePlatformDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SOURCE_PLATFORM_DESC',
+  TorrentsByMatchedSeasonIdMaxSourceTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SOURCE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMaxSourceTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SOURCE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasChsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_CHS_ASC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasChsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_CHS_DESC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasChtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_CHT_ASC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasChtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_CHT_DESC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasJpAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_JP_ASC',
+  TorrentsByMatchedSeasonIdMaxSubtitleHasJpDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_HAS_JP_DESC',
+  TorrentsByMatchedSeasonIdMaxSubtitleTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMaxSubtitleTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_SUBTITLE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMaxTitleAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_TITLE_ASC',
+  TorrentsByMatchedSeasonIdMaxTitleDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_TITLE_DESC',
+  TorrentsByMatchedSeasonIdMaxTorrentLinkAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_TORRENT_LINK_ASC',
+  TorrentsByMatchedSeasonIdMaxTorrentLinkDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MAX_TORRENT_LINK_DESC',
+  TorrentsByMatchedSeasonIdMinChannelAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_CHANNEL_ASC',
+  TorrentsByMatchedSeasonIdMinChannelDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_CHANNEL_DESC',
+  TorrentsByMatchedSeasonIdMinCreatedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_CREATED_AT_ASC',
+  TorrentsByMatchedSeasonIdMinCreatedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_CREATED_AT_DESC',
+  TorrentsByMatchedSeasonIdMinDisplayIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_DISPLAY_ID_ASC',
+  TorrentsByMatchedSeasonIdMinDisplayIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_DISPLAY_ID_DESC',
+  TorrentsByMatchedSeasonIdMinEpisodeIndexAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_INDEX_ASC',
+  TorrentsByMatchedSeasonIdMinEpisodeIndexDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_INDEX_DESC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_ASC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_DESC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberFromAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_FROM_ASC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberFromDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_FROM_DESC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberToAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_TO_ASC',
+  TorrentsByMatchedSeasonIdMinEpisodeNumberToDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_NUMBER_TO_DESC',
+  TorrentsByMatchedSeasonIdMinEpisodeTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMinEpisodeTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_EPISODE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMinFormatAudioEncodingAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_AUDIO_ENCODING_ASC',
+  TorrentsByMatchedSeasonIdMinFormatAudioEncodingDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_AUDIO_ENCODING_DESC',
+  TorrentsByMatchedSeasonIdMinFormatColorDepthAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_COLOR_DEPTH_ASC',
+  TorrentsByMatchedSeasonIdMinFormatColorDepthDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_COLOR_DEPTH_DESC',
+  TorrentsByMatchedSeasonIdMinFormatContainerAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_CONTAINER_ASC',
+  TorrentsByMatchedSeasonIdMinFormatContainerDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_CONTAINER_DESC',
+  TorrentsByMatchedSeasonIdMinFormatResolutionAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_RESOLUTION_ASC',
+  TorrentsByMatchedSeasonIdMinFormatResolutionDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_RESOLUTION_DESC',
+  TorrentsByMatchedSeasonIdMinFormatVideoEncodingAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_VIDEO_ENCODING_ASC',
+  TorrentsByMatchedSeasonIdMinFormatVideoEncodingDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_FORMAT_VIDEO_ENCODING_DESC',
+  TorrentsByMatchedSeasonIdMinHashAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_HASH_ASC',
+  TorrentsByMatchedSeasonIdMinHashDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_HASH_DESC',
+  TorrentsByMatchedSeasonIdMinIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ID_ASC',
+  TorrentsByMatchedSeasonIdMinIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ID_DESC',
+  TorrentsByMatchedSeasonIdMinIndexAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_ASC',
+  TorrentsByMatchedSeasonIdMinIndexDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_DESC',
+  TorrentsByMatchedSeasonIdMinIndexFromAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_FROM_ASC',
+  TorrentsByMatchedSeasonIdMinIndexFromDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_FROM_DESC',
+  TorrentsByMatchedSeasonIdMinIndexToAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_TO_ASC',
+  TorrentsByMatchedSeasonIdMinIndexToDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_INDEX_TO_DESC',
+  TorrentsByMatchedSeasonIdMinMatchedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCHED_AT_ASC',
+  TorrentsByMatchedSeasonIdMinMatchedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCHED_AT_DESC',
+  TorrentsByMatchedSeasonIdMinMatchedSeasonIdAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCHED_SEASON_ID_ASC',
+  TorrentsByMatchedSeasonIdMinMatchedSeasonIdDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCHED_SEASON_ID_DESC',
+  TorrentsByMatchedSeasonIdMinMatchDetailsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCH_DETAILS_ASC',
+  TorrentsByMatchedSeasonIdMinMatchDetailsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCH_DETAILS_DESC',
+  TorrentsByMatchedSeasonIdMinMatchStatusAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCH_STATUS_ASC',
+  TorrentsByMatchedSeasonIdMinMatchStatusDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_MATCH_STATUS_DESC',
+  TorrentsByMatchedSeasonIdMinMetadataAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_ASC',
+  TorrentsByMatchedSeasonIdMinMetadataDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_DESC',
+  TorrentsByMatchedSeasonIdMinMetadataErrorAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_ERROR_ASC',
+  TorrentsByMatchedSeasonIdMinMetadataErrorDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_ERROR_DESC',
+  TorrentsByMatchedSeasonIdMinMetadataFetchedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_FETCHED_AT_ASC',
+  TorrentsByMatchedSeasonIdMinMetadataFetchedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_FETCHED_AT_DESC',
+  TorrentsByMatchedSeasonIdMinMetadataStatusAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_STATUS_ASC',
+  TorrentsByMatchedSeasonIdMinMetadataStatusDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_METADATA_STATUS_DESC',
+  TorrentsByMatchedSeasonIdMinOrganizationPartsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ORGANIZATION_PARTS_ASC',
+  TorrentsByMatchedSeasonIdMinOrganizationPartsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ORGANIZATION_PARTS_DESC',
+  TorrentsByMatchedSeasonIdMinOrganizationRawAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ORGANIZATION_RAW_ASC',
+  TorrentsByMatchedSeasonIdMinOrganizationRawDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_ORGANIZATION_RAW_DESC',
+  TorrentsByMatchedSeasonIdMinParsedAtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSED_AT_ASC',
+  TorrentsByMatchedSeasonIdMinParsedAtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSED_AT_DESC',
+  TorrentsByMatchedSeasonIdMinParseResultAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSE_RESULT_ASC',
+  TorrentsByMatchedSeasonIdMinParseResultDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSE_RESULT_DESC',
+  TorrentsByMatchedSeasonIdMinParseVersionAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSE_VERSION_ASC',
+  TorrentsByMatchedSeasonIdMinParseVersionDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PARSE_VERSION_DESC',
+  TorrentsByMatchedSeasonIdMinPermalinkAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PERMALINK_ASC',
+  TorrentsByMatchedSeasonIdMinPermalinkDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PERMALINK_DESC',
+  TorrentsByMatchedSeasonIdMinPublishDateAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PUBLISH_DATE_ASC',
+  TorrentsByMatchedSeasonIdMinPublishDateDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_PUBLISH_DATE_DESC',
+  TorrentsByMatchedSeasonIdMinSeasonTitleAliasesAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SEASON_TITLE_ALIASES_ASC',
+  TorrentsByMatchedSeasonIdMinSeasonTitleAliasesDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SEASON_TITLE_ALIASES_DESC',
+  TorrentsByMatchedSeasonIdMinSeasonTitleRawAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SEASON_TITLE_RAW_ASC',
+  TorrentsByMatchedSeasonIdMinSeasonTitleRawDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SEASON_TITLE_RAW_DESC',
+  TorrentsByMatchedSeasonIdMinSizeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SIZE_ASC',
+  TorrentsByMatchedSeasonIdMinSizeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SIZE_DESC',
+  TorrentsByMatchedSeasonIdMinSourcePlatformAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SOURCE_PLATFORM_ASC',
+  TorrentsByMatchedSeasonIdMinSourcePlatformDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SOURCE_PLATFORM_DESC',
+  TorrentsByMatchedSeasonIdMinSourceTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SOURCE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMinSourceTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SOURCE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasChsAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_CHS_ASC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasChsDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_CHS_DESC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasChtAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_CHT_ASC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasChtDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_CHT_DESC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasJpAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_JP_ASC',
+  TorrentsByMatchedSeasonIdMinSubtitleHasJpDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_HAS_JP_DESC',
+  TorrentsByMatchedSeasonIdMinSubtitleTypeAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_TYPE_ASC',
+  TorrentsByMatchedSeasonIdMinSubtitleTypeDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_SUBTITLE_TYPE_DESC',
+  TorrentsByMatchedSeasonIdMinTitleAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_TITLE_ASC',
+  TorrentsByMatchedSeasonIdMinTitleDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_TITLE_DESC',
+  TorrentsByMatchedSeasonIdMinTorrentLinkAsc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_TORRENT_LINK_ASC',
+  TorrentsByMatchedSeasonIdMinTorrentLinkDesc = 'TORRENTS_BY_MATCHED_SEASON_ID__MIN_TORRENT_LINK_DESC',
   TvdbIdAsc = 'TVDB_ID_ASC',
   TvdbIdDesc = 'TVDB_ID_DESC',
   TvdbSeasonAsc = 'TVDB_SEASON_ASC',
@@ -3956,6 +4247,10 @@ export type Torrent = Node & {
   index?: Maybe<Scalars['Int']>;
   indexFrom?: Maybe<Scalars['Int']>;
   indexTo?: Maybe<Scalars['Int']>;
+  matchDetails?: Maybe<Scalars['JSON']>;
+  matchStatus?: Maybe<TorrentMatchStatus>;
+  matchedAt?: Maybe<Scalars['Datetime']>;
+  matchedSeasonId?: Maybe<Scalars['Int']>;
   metadata?: Maybe<Scalars['JSON']>;
   metadataError?: Maybe<Scalars['String']>;
   metadataFetchedAt?: Maybe<Scalars['Datetime']>;
@@ -3969,6 +4264,8 @@ export type Torrent = Node & {
   parsedAt?: Maybe<Scalars['Datetime']>;
   permalink?: Maybe<Scalars['String']>;
   publishDate: Scalars['Datetime'];
+  /** Reads a single `Season` that is related to this `Torrent`. */
+  seasonByMatchedSeasonId?: Maybe<Season>;
   seasonTitleAliases?: Maybe<Array<Maybe<Scalars['String']>>>;
   seasonTitleRaw?: Maybe<Scalars['String']>;
   size: Scalars['BigInt'];
@@ -4053,6 +4350,14 @@ export type TorrentCondition = {
   indexFrom?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `indexTo` field. */
   indexTo?: InputMaybe<Scalars['Int']>;
+  /** Checks for equality with the object’s `matchDetails` field. */
+  matchDetails?: InputMaybe<Scalars['JSON']>;
+  /** Checks for equality with the object’s `matchStatus` field. */
+  matchStatus?: InputMaybe<TorrentMatchStatus>;
+  /** Checks for equality with the object’s `matchedAt` field. */
+  matchedAt?: InputMaybe<Scalars['Datetime']>;
+  /** Checks for equality with the object’s `matchedSeasonId` field. */
+  matchedSeasonId?: InputMaybe<Scalars['Int']>;
   /** Checks for equality with the object’s `metadata` field. */
   metadata?: InputMaybe<Scalars['JSON']>;
   /** Checks for equality with the object’s `metadataError` field. */
@@ -4143,6 +4448,14 @@ export type TorrentFilter = {
   indexFrom?: InputMaybe<IntFilter>;
   /** Filter by the object’s `indexTo` field. */
   indexTo?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `matchDetails` field. */
+  matchDetails?: InputMaybe<JsonFilter>;
+  /** Filter by the object’s `matchStatus` field. */
+  matchStatus?: InputMaybe<TorrentMatchStatusFilter>;
+  /** Filter by the object’s `matchedAt` field. */
+  matchedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `matchedSeasonId` field. */
+  matchedSeasonId?: InputMaybe<IntFilter>;
   /** Filter by the object’s `metadata` field. */
   metadata?: InputMaybe<JsonFilter>;
   /** Filter by the object’s `metadataError` field. */
@@ -4169,6 +4482,10 @@ export type TorrentFilter = {
   permalink?: InputMaybe<StringFilter>;
   /** Filter by the object’s `publishDate` field. */
   publishDate?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `seasonByMatchedSeasonId` relation. */
+  seasonByMatchedSeasonId?: InputMaybe<SeasonFilter>;
+  /** A related `seasonByMatchedSeasonId` exists. */
+  seasonByMatchedSeasonIdExists?: InputMaybe<Scalars['Boolean']>;
   /** Filter by the object’s `seasonTitleAliases` field. */
   seasonTitleAliases?: InputMaybe<StringListFilter>;
   /** Filter by the object’s `seasonTitleRaw` field. */
@@ -4198,6 +4515,40 @@ export type TorrentHistorySyncState = {
   added: Scalars['Int'];
   error?: Maybe<Scalars['String']>;
   running: Scalars['Boolean'];
+};
+
+export enum TorrentMatchStatus {
+  Dismissed = 'DISMISSED',
+  Matched = 'MATCHED',
+  NoMatch = 'NO_MATCH',
+  Pending = 'PENDING',
+  Unsupported = 'UNSUPPORTED'
+}
+
+/** A filter to be used against TorrentMatchStatus fields. All fields are combined with a logical ‘and.’ */
+export type TorrentMatchStatusFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<TorrentMatchStatus>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<TorrentMatchStatus>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<TorrentMatchStatus>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<TorrentMatchStatus>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<TorrentMatchStatus>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<TorrentMatchStatus>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<TorrentMatchStatus>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<TorrentMatchStatus>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<TorrentMatchStatus>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<TorrentMatchStatus>>;
 };
 
 export enum TorrentPlatform {
@@ -4342,6 +4693,14 @@ export enum TorrentsOrderBy {
   IndexFromDesc = 'INDEX_FROM_DESC',
   IndexToAsc = 'INDEX_TO_ASC',
   IndexToDesc = 'INDEX_TO_DESC',
+  MatchedAtAsc = 'MATCHED_AT_ASC',
+  MatchedAtDesc = 'MATCHED_AT_DESC',
+  MatchedSeasonIdAsc = 'MATCHED_SEASON_ID_ASC',
+  MatchedSeasonIdDesc = 'MATCHED_SEASON_ID_DESC',
+  MatchDetailsAsc = 'MATCH_DETAILS_ASC',
+  MatchDetailsDesc = 'MATCH_DETAILS_DESC',
+  MatchStatusAsc = 'MATCH_STATUS_ASC',
+  MatchStatusDesc = 'MATCH_STATUS_DESC',
   MetadataAsc = 'METADATA_ASC',
   MetadataDesc = 'METADATA_DESC',
   MetadataErrorAsc = 'METADATA_ERROR_ASC',
@@ -4367,6 +4726,76 @@ export enum TorrentsOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   PublishDateAsc = 'PUBLISH_DATE_ASC',
   PublishDateDesc = 'PUBLISH_DATE_DESC',
+  SeasonByMatchedSeasonIdAirTimeAsc = 'SEASON_BY_MATCHED_SEASON_ID__AIR_TIME_ASC',
+  SeasonByMatchedSeasonIdAirTimeDesc = 'SEASON_BY_MATCHED_SEASON_ID__AIR_TIME_DESC',
+  SeasonByMatchedSeasonIdAliasesAsc = 'SEASON_BY_MATCHED_SEASON_ID__ALIASES_ASC',
+  SeasonByMatchedSeasonIdAliasesDesc = 'SEASON_BY_MATCHED_SEASON_ID__ALIASES_DESC',
+  SeasonByMatchedSeasonIdBangumiIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__BANGUMI_ID_ASC',
+  SeasonByMatchedSeasonIdBangumiIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__BANGUMI_ID_DESC',
+  SeasonByMatchedSeasonIdBannerImageIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__BANNER_IMAGE_ID_ASC',
+  SeasonByMatchedSeasonIdBannerImageIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__BANNER_IMAGE_ID_DESC',
+  SeasonByMatchedSeasonIdBilibiliMainlandIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__BILIBILI_MAINLAND_ID_ASC',
+  SeasonByMatchedSeasonIdBilibiliMainlandIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__BILIBILI_MAINLAND_ID_DESC',
+  SeasonByMatchedSeasonIdBilibiliThmIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__BILIBILI_THM_ID_ASC',
+  SeasonByMatchedSeasonIdBilibiliThmIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__BILIBILI_THM_ID_DESC',
+  SeasonByMatchedSeasonIdCreatedAtAsc = 'SEASON_BY_MATCHED_SEASON_ID__CREATED_AT_ASC',
+  SeasonByMatchedSeasonIdCreatedAtDesc = 'SEASON_BY_MATCHED_SEASON_ID__CREATED_AT_DESC',
+  SeasonByMatchedSeasonIdDescriptionAsc = 'SEASON_BY_MATCHED_SEASON_ID__DESCRIPTION_ASC',
+  SeasonByMatchedSeasonIdDescriptionDesc = 'SEASON_BY_MATCHED_SEASON_ID__DESCRIPTION_DESC',
+  SeasonByMatchedSeasonIdDirectoryAsc = 'SEASON_BY_MATCHED_SEASON_ID__DIRECTORY_ASC',
+  SeasonByMatchedSeasonIdDirectoryDesc = 'SEASON_BY_MATCHED_SEASON_ID__DIRECTORY_DESC',
+  SeasonByMatchedSeasonIdDownloadOffsetHoursAsc = 'SEASON_BY_MATCHED_SEASON_ID__DOWNLOAD_OFFSET_HOURS_ASC',
+  SeasonByMatchedSeasonIdDownloadOffsetHoursDesc = 'SEASON_BY_MATCHED_SEASON_ID__DOWNLOAD_OFFSET_HOURS_DESC',
+  SeasonByMatchedSeasonIdEpisodesAutoSyncAsc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_AUTO_SYNC_ASC',
+  SeasonByMatchedSeasonIdEpisodesAutoSyncDesc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_AUTO_SYNC_DESC',
+  SeasonByMatchedSeasonIdEpisodesLastSyncAsc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_LAST_SYNC_ASC',
+  SeasonByMatchedSeasonIdEpisodesLastSyncDesc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_LAST_SYNC_DESC',
+  SeasonByMatchedSeasonIdEpisodesSourceAsc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_SOURCE_ASC',
+  SeasonByMatchedSeasonIdEpisodesSourceDesc = 'SEASON_BY_MATCHED_SEASON_ID__EPISODES_SOURCE_DESC',
+  SeasonByMatchedSeasonIdFanartImageIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__FANART_IMAGE_ID_ASC',
+  SeasonByMatchedSeasonIdFanartImageIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__FANART_IMAGE_ID_DESC',
+  SeasonByMatchedSeasonIdIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__ID_ASC',
+  SeasonByMatchedSeasonIdIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__ID_DESC',
+  SeasonByMatchedSeasonIdInfoSourceAsc = 'SEASON_BY_MATCHED_SEASON_ID__INFO_SOURCE_ASC',
+  SeasonByMatchedSeasonIdInfoSourceDesc = 'SEASON_BY_MATCHED_SEASON_ID__INFO_SOURCE_DESC',
+  SeasonByMatchedSeasonIdIntegrationsLaniaSyncAsc = 'SEASON_BY_MATCHED_SEASON_ID__INTEGRATIONS_LANIA_SYNC_ASC',
+  SeasonByMatchedSeasonIdIntegrationsLaniaSyncDesc = 'SEASON_BY_MATCHED_SEASON_ID__INTEGRATIONS_LANIA_SYNC_DESC',
+  SeasonByMatchedSeasonIdIsMonitoringAsc = 'SEASON_BY_MATCHED_SEASON_ID__IS_MONITORING_ASC',
+  SeasonByMatchedSeasonIdIsMonitoringDesc = 'SEASON_BY_MATCHED_SEASON_ID__IS_MONITORING_DESC',
+  SeasonByMatchedSeasonIdJellyfinFolderIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__JELLYFIN_FOLDER_ID_ASC',
+  SeasonByMatchedSeasonIdJellyfinFolderIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__JELLYFIN_FOLDER_ID_DESC',
+  SeasonByMatchedSeasonIdJellyfinIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__JELLYFIN_ID_ASC',
+  SeasonByMatchedSeasonIdJellyfinIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__JELLYFIN_ID_DESC',
+  SeasonByMatchedSeasonIdLastWriteDirectoryAsc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_DIRECTORY_ASC',
+  SeasonByMatchedSeasonIdLastWriteDirectoryDesc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_DIRECTORY_DESC',
+  SeasonByMatchedSeasonIdLastWriteTitleAsc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_TITLE_ASC',
+  SeasonByMatchedSeasonIdLastWriteTitleDesc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_TITLE_DESC',
+  SeasonByMatchedSeasonIdLastWriteToDiskAsc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_TO_DISK_ASC',
+  SeasonByMatchedSeasonIdLastWriteToDiskDesc = 'SEASON_BY_MATCHED_SEASON_ID__LAST_WRITE_TO_DISK_DESC',
+  SeasonByMatchedSeasonIdMikanAnimeIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__MIKAN_ANIME_ID_ASC',
+  SeasonByMatchedSeasonIdMikanAnimeIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__MIKAN_ANIME_ID_DESC',
+  SeasonByMatchedSeasonIdNeedDownloadCcAsc = 'SEASON_BY_MATCHED_SEASON_ID__NEED_DOWNLOAD_CC_ASC',
+  SeasonByMatchedSeasonIdNeedDownloadCcDesc = 'SEASON_BY_MATCHED_SEASON_ID__NEED_DOWNLOAD_CC_DESC',
+  SeasonByMatchedSeasonIdNotifyMissingAsc = 'SEASON_BY_MATCHED_SEASON_ID__NOTIFY_MISSING_ASC',
+  SeasonByMatchedSeasonIdNotifyMissingDesc = 'SEASON_BY_MATCHED_SEASON_ID__NOTIFY_MISSING_DESC',
+  SeasonByMatchedSeasonIdNotifyPublishAsc = 'SEASON_BY_MATCHED_SEASON_ID__NOTIFY_PUBLISH_ASC',
+  SeasonByMatchedSeasonIdNotifyPublishDesc = 'SEASON_BY_MATCHED_SEASON_ID__NOTIFY_PUBLISH_DESC',
+  SeasonByMatchedSeasonIdPosterImageIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__POSTER_IMAGE_ID_ASC',
+  SeasonByMatchedSeasonIdPosterImageIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__POSTER_IMAGE_ID_DESC',
+  SeasonByMatchedSeasonIdTagsAsc = 'SEASON_BY_MATCHED_SEASON_ID__TAGS_ASC',
+  SeasonByMatchedSeasonIdTagsDesc = 'SEASON_BY_MATCHED_SEASON_ID__TAGS_DESC',
+  SeasonByMatchedSeasonIdTitleAsc = 'SEASON_BY_MATCHED_SEASON_ID__TITLE_ASC',
+  SeasonByMatchedSeasonIdTitleDesc = 'SEASON_BY_MATCHED_SEASON_ID__TITLE_DESC',
+  SeasonByMatchedSeasonIdTvdbIdAsc = 'SEASON_BY_MATCHED_SEASON_ID__TVDB_ID_ASC',
+  SeasonByMatchedSeasonIdTvdbIdDesc = 'SEASON_BY_MATCHED_SEASON_ID__TVDB_ID_DESC',
+  SeasonByMatchedSeasonIdTvdbSeasonAsc = 'SEASON_BY_MATCHED_SEASON_ID__TVDB_SEASON_ASC',
+  SeasonByMatchedSeasonIdTvdbSeasonDesc = 'SEASON_BY_MATCHED_SEASON_ID__TVDB_SEASON_DESC',
+  SeasonByMatchedSeasonIdWeekdayAsc = 'SEASON_BY_MATCHED_SEASON_ID__WEEKDAY_ASC',
+  SeasonByMatchedSeasonIdWeekdayDesc = 'SEASON_BY_MATCHED_SEASON_ID__WEEKDAY_DESC',
+  SeasonByMatchedSeasonIdYearAndSemesterAsc = 'SEASON_BY_MATCHED_SEASON_ID__YEAR_AND_SEMESTER_ASC',
+  SeasonByMatchedSeasonIdYearAndSemesterCanonicalAsc = 'SEASON_BY_MATCHED_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_ASC',
+  SeasonByMatchedSeasonIdYearAndSemesterCanonicalDesc = 'SEASON_BY_MATCHED_SEASON_ID__YEAR_AND_SEMESTER_CANONICAL_DESC',
+  SeasonByMatchedSeasonIdYearAndSemesterDesc = 'SEASON_BY_MATCHED_SEASON_ID__YEAR_AND_SEMESTER_DESC',
   SeasonTitleAliasesAsc = 'SEASON_TITLE_ALIASES_ASC',
   SeasonTitleAliasesDesc = 'SEASON_TITLE_ALIASES_DESC',
   SeasonTitleRawAsc = 'SEASON_TITLE_RAW_ASC',
@@ -4994,7 +5423,7 @@ export type GetSeasonsStatusQuery = { __typename?: 'Query', allSeasons?: { __typ
 
 export type TorrentFieldsFragment = { __typename?: 'Torrent', id: number, displayId: number, channel: TorrentChannel, permalink?: string | null, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null };
 
-export type TorrentParseFieldsFragment = { __typename?: 'Torrent', organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null };
+export type TorrentParseFieldsFragment = { __typename?: 'Torrent', organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null, matchStatus?: TorrentMatchStatus | null, matchedAt?: any | null, matchedSeasonId?: number | null, seasonByMatchedSeasonId?: { __typename?: 'Season', id: number, title: string } | null };
 
 export type ListTorrentsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']>;
@@ -5004,7 +5433,7 @@ export type ListTorrentsQueryVariables = Exact<{
 }>;
 
 
-export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, displayId: number, channel: TorrentChannel, permalink?: string | null, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
+export type ListTorrentsQuery = { __typename?: 'Query', allTorrents?: { __typename?: 'TorrentsConnection', totalCount: number, edges: Array<{ __typename?: 'TorrentsEdge', cursor?: any | null, node?: { __typename?: 'Torrent', id: number, displayId: number, channel: TorrentChannel, permalink?: string | null, publishDate: any, size: any, title: string, torrentLink: string, episodeInfo?: any | null, subtitleInfo?: any | null, organizationParts?: Array<string | null> | null, seasonTitleAliases?: Array<string | null> | null, matchStatus?: TorrentMatchStatus | null, matchedAt?: any | null, matchedSeasonId?: number | null, seasonByMatchedSeasonId?: { __typename?: 'Season', id: number, title: string } | null } | null }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } | null };
 
 export type SyncTorrentHistoryMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -5017,6 +5446,13 @@ export type TorrentHistorySyncStateQueryVariables = Exact<{
 
 
 export type TorrentHistorySyncStateQuery = { __typename?: 'Query', torrentHistorySyncState: { __typename?: 'TorrentHistorySyncState', running: boolean, added: number, error?: string | null } };
+
+export type CancelTorrentSeasonMatchMutationVariables = Exact<{
+  torrentId: Scalars['Int'];
+}>;
+
+
+export type CancelTorrentSeasonMatchMutation = { __typename?: 'Mutation', cancelTorrentSeasonMatch: boolean };
 
 export type GetConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -5039,7 +5475,7 @@ export const SeasonConfigFieldsFragmentDoc = {"kind":"Document","definitions":[{
 export const ListSeasonsFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"listSeasonsFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Season"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bangumiId"}},{"kind":"Field","name":{"kind":"Name","value":"airTime"}},{"kind":"Field","name":{"kind":"Name","value":"weekday"}},{"kind":"Field","name":{"kind":"Name","value":"isMonitoring"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinFolderByJellyfinFolderId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"yearAndSemester"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbId"}},{"kind":"Field","name":{"kind":"Name","value":"tvdbSeason"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliThmId"}},{"kind":"Field","name":{"kind":"Name","value":"bilibiliMainlandId"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinId"}},{"kind":"Field","alias":{"kind":"Name","value":"allEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"airedEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"lessThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"availableEpisodes"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"jellyfinEpisodeId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isNull"},"value":{"kind":"BooleanValue","value":false}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"firstEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"nextEpisode"},"name":{"kind":"Name","value":"mainEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"airTime"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"greaterThanOrEqualTo"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"airTime"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"latestEpisode"},"name":{"kind":"Name","value":"latestMainEpisode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"atTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"now"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]} as unknown as DocumentNode<ListSeasonsFieldsFragment, unknown>;
 export const JellyfinFolderFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"jellyfinFolderFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"JellyfinFolder"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"isHidden"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}}]}}]} as unknown as DocumentNode<JellyfinFolderFieldsFragment, unknown>;
 export const TorrentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayId"}},{"kind":"Field","name":{"kind":"Name","value":"channel"}},{"kind":"Field","name":{"kind":"Name","value":"permalink"}},{"kind":"Field","name":{"kind":"Name","value":"publishDate"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"torrentLink"}},{"kind":"Field","name":{"kind":"Name","value":"episodeInfo"}},{"kind":"Field","name":{"kind":"Name","value":"subtitleInfo"}}]}}]} as unknown as DocumentNode<TorrentFieldsFragment, unknown>;
-export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
+export const TorrentParseFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"torrentParseFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Torrent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationParts"}},{"kind":"Field","name":{"kind":"Name","value":"seasonTitleAliases"}},{"kind":"Field","name":{"kind":"Name","value":"matchStatus"}},{"kind":"Field","name":{"kind":"Name","value":"matchedAt"}},{"kind":"Field","name":{"kind":"Name","value":"matchedSeasonId"}},{"kind":"Field","name":{"kind":"Name","value":"seasonByMatchedSeasonId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]} as unknown as DocumentNode<TorrentParseFieldsFragment, unknown>;
 export const LiveTaskFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"LiveTask"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"batchEntries"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"workflow"}},{"kind":"Field","name":{"kind":"Name","value":"legacyStage"}},{"kind":"Field","name":{"kind":"Name","value":"isFailed"}},{"kind":"Field","name":{"kind":"Name","value":"isCancelled"}},{"kind":"Field","name":{"kind":"Name","value":"failedReason"}},{"kind":"Field","name":{"kind":"Name","value":"qbtTorrentHash"}},{"kind":"Field","name":{"kind":"Name","value":"torrentTitle"}},{"kind":"Field","name":{"kind":"Name","value":"downloadPath"}},{"kind":"Field","name":{"kind":"Name","value":"importPath"}},{"kind":"Field","name":{"kind":"Name","value":"filePath"}},{"kind":"Field","name":{"kind":"Name","value":"nfoPath"}},{"kind":"Field","name":{"kind":"Name","value":"jellyfinEpisodeId"}}]}}]} as unknown as DocumentNode<LiveTaskFragment, unknown>;
 export const TaskVersionFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TaskVersion"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Task"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}}]}}]} as unknown as DocumentNode<TaskVersionFragment, unknown>;
 export const PreviewTorrentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"PreviewTorrent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"previewTorrent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"torrentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}},{"kind":"Field","name":{"kind":"Name","value":"size"}}]}}]}}]}}]} as unknown as DocumentNode<PreviewTorrentMutation, PreviewTorrentMutationVariables>;
@@ -5086,4 +5522,5 @@ export const GetSeasonsStatusDocument = {"kind":"Document","definitions":[{"kind
 export const ListTorrentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListTorrents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentsOrderBy"}}}},"defaultValue":{"kind":"ListValue","values":[]}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TorrentFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allTorrents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderBy"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"torrentParseFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}},...TorrentFieldsFragmentDoc.definitions,...TorrentParseFieldsFragmentDoc.definitions]} as unknown as DocumentNode<ListTorrentsQuery, ListTorrentsQueryVariables>;
 export const SyncTorrentHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncTorrentHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncTorrentHistory"}}]}}]} as unknown as DocumentNode<SyncTorrentHistoryMutation, SyncTorrentHistoryMutationVariables>;
 export const TorrentHistorySyncStateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TorrentHistorySyncState"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"torrentHistorySyncState"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"running"}},{"kind":"Field","name":{"kind":"Name","value":"added"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<TorrentHistorySyncStateQuery, TorrentHistorySyncStateQueryVariables>;
+export const CancelTorrentSeasonMatchDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CancelTorrentSeasonMatch"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cancelTorrentSeasonMatch"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"torrentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"torrentId"}}}]}]}}]} as unknown as DocumentNode<CancelTorrentSeasonMatchMutation, CancelTorrentSeasonMatchMutationVariables>;
 export const GetConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetConfig"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jellyfin"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lania"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publicHost"}}]}},{"kind":"Field","name":{"kind":"Name","value":"features"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lania"}}]}},{"kind":"Field","name":{"kind":"Name","value":"env"}}]}}]}}]} as unknown as DocumentNode<GetConfigQuery, GetConfigQueryVariables>;

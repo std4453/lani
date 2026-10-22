@@ -48,6 +48,8 @@ jobs:
         with:
           path: common/temp/pnpm-store
           key: ${{ runner.os }}-node22-pnpm-${{ hashFiles('rush.json', 'common/config/rush/pnpm-lock.yaml') }}
+      - name: Test image planning
+        run: node --test .github/scripts/release-plan.test.cjs
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
       - name: Build test dependencies
@@ -70,6 +72,9 @@ jobs:
           python3 libs/db/tests/nyaa-metadata-migration.py
           python3 libs/db/tests/season-aliases-migration.py
           python3 libs/db/tests/torrent-retention-migration.py
+          python3 libs/db/tests/torrent-matching-migration.py
+      - name: Test all-in-one startup
+        run: node --test apps/all-in-one/wait-matcher.test.cjs
       - name: Test workflow
         working-directory: libs/workflow
         run: node ../../common/scripts/install-run-rushx.js test --runInBand

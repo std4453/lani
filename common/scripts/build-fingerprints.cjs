@@ -8,7 +8,7 @@ const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const manifestPath = "build-manifest.json";
 const scriptPath = "common/scripts/build-fingerprints.cjs";
-const apps = ["admin", "api-server", "data-server", "gateway", "db"];
+const apps = ["admin", "api-server", "data-server", "gateway", "db", "anime-matcher"];
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const git = (args, options = {}) =>
   execFileSync("git", args, {

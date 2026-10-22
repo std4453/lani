@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "featureProfile": "semantic",
+  "rerankers": [
+    "qwen-0.6b"
+  ],
+  "head": "time_no_count",
+  "threshold": 0.5,
+  "tree": {
+    "file": "static-semantic.txt.gz",
+    "sha256": "992ab11e49a7274f602e1bf987244fcca3e96baf957402f39ac518de42252b63",
+    "featureCount": 36
+  },
+  "trainingScope": "all-adaptive-dev",
+  "calibrationStatus": "no_feasible_threshold"
+}

@@ -1,3 +1,7 @@
+import {
+  matchingEnabled,
+  updateWithTorrentMatching,
+} from '@/torrent-match/producer';
 import { PrismaService } from '@/common/prisma.service';
 import {
   EpisodeType,
@@ -293,7 +297,17 @@ export class ParseTorrentService {
           : d[column] ?? null,
       ),
     ]);
-    await this.prisma.$executeRaw(sqlTemplate, ...parameters);
+    if (!matchingEnabled()) {
+      await this.prisma.$executeRaw(sqlTemplate, ...parameters);
+      return;
+    }
+    await this.prisma.$transaction((tx) =>
+      updateWithTorrentMatching(
+        tx,
+        data.map(({ id }) => id),
+        () => tx.$executeRaw(sqlTemplate, ...parameters),
+      ),
+    );
   }
 
   private async updateTorrentsMany(updates: ParsedTorrentUpdate[]) {

@@ -11,9 +11,9 @@ function getEnvironment(prefix) {
 const apps = [
   {
     name: "api-server",
-    script: "npm",
+    script: "/deploy/apps/all-in-one/start-api.sh",
+    interpreter: "bash",
     cwd: "/deploy/apps/api-server",
-    args: "run start:prod",
     env: {
       PORT: 8082,
       ...getEnvironment('API_SERVER_'),
@@ -62,5 +62,28 @@ const apps = [
     autorestart: true,
   }
 ];
+
+if (process.env.LANI_LOCAL_MATCHER === "true") {
+  const mode = process.env.ANIME_MATCHER_MODE || "lexical";
+  if (!["lexical", "semantic"].includes(mode)) {
+    throw new Error("Invalid ANIME_MATCHER_MODE");
+  }
+  apps.unshift({
+    name: "anime-matcher",
+    script: "python3",
+    interpreter: "none",
+    args: [
+      "-m",
+      "lani_anime_matcher.worker",
+      "--http",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8090",
+      ...(mode === "semantic" ? ["--semantic"] : []),
+    ],
+    autorestart: true,
+  });
+}
 
 module.exports = apps;
