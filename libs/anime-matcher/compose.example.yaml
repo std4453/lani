@@ -1,0 +1,17 @@
+services:
+  anime-matcher:
+    build:
+      context: .
+      args:
+        SEMANTIC: "false"
+    ports:
+      - "127.0.0.1:8090:8090"
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 4g
+    cpus: 4
+    # CPU 语义模式：内存先设为 8g，构建参数改为 true，启用下面两项。
+    # 先通过 lani-anime-models --model-dir ./models 下载并校验模型。
+    # command: ["--semantic"]
+    # volumes: ["./models:/models:ro"]

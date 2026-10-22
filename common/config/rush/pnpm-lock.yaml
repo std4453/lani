@@ -145,6 +145,9 @@ importers:
       '@rush-temp/all-in-one':
         specifier: file:./projects/all-in-one.tgz
         version: file:projects/all-in-one.tgz
+      '@rush-temp/anime-matcher':
+        specifier: file:./projects/anime-matcher.tgz
+        version: file:projects/anime-matcher.tgz
       '@rush-temp/api-server':
         specifier: file:./projects/api-server.tgz
         version: file:projects/api-server.tgz(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@babel/core@7.29.7)(@sentry/hub@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(babel-jest@27.5.1(@babel/core@7.29.7))(chokidar@3.6.0)(encoding@0.1.13)(loader-utils@3.3.1)(node-notifier@8.0.2)(rxjs@7.8.2)(webpack@5.107.2)
@@ -2953,6 +2956,10 @@ packages:
 
   '@rush-temp/all-in-one@file:projects/all-in-one.tgz':
     resolution: {integrity: sha512-jcbG10zQMXCRk8BLlFVnMMZcn1gxzq7MdhqCLRvohnmwCfSsr7Wqh5q6Muq9xftAdkxcj00UuNPOycXpR22H4Q==, tarball: file:projects/all-in-one.tgz}
+    version: 0.0.0
+
+  '@rush-temp/anime-matcher@file:projects/anime-matcher.tgz':
+    resolution: {integrity: sha512-aZDA6sRQh7B1/w0YQXLjtJgDN7GSQUNuSk+hhxpGZUejUuzB1Q+4vDNnlkkrPQa7fLBuMBPD3K4CUfuoLglWrw==, tarball: file:projects/anime-matcher.tgz}
     version: 0.0.0
 
   '@rush-temp/api-server@file:projects/api-server.tgz':
@@ -18033,6 +18040,11 @@ snapshots:
       - zen-observable
 
   '@rush-temp/all-in-one@file:projects/all-in-one.tgz': {}
+
+  '@rush-temp/anime-matcher@file:projects/anime-matcher.tgz':
+    dependencies:
+      '@types/node': 17.0.45
+      typescript: 4.7.4
 
   '@rush-temp/api-server@file:projects/api-server.tgz(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@babel/core@7.29.7)(@sentry/hub@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(babel-jest@27.5.1(@babel/core@7.29.7))(chokidar@3.6.0)(encoding@0.1.13)(loader-utils@3.3.1)(node-notifier@8.0.2)(rxjs@7.8.2)(webpack@5.107.2)':
     dependencies:

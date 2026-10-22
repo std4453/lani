@@ -405,6 +405,10 @@
       "projectFolder": "libs/db"
     },
     {
+      "packageName": "@lani/anime-matcher",
+      "projectFolder": "libs/anime-matcher"
+    },
+    {
       "packageName": "@lani/parse-nyaa",
       "projectFolder": "libs/parse-nyaa"
     },
