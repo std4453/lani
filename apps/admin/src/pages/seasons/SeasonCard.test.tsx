@@ -36,10 +36,53 @@ const season = (count = 12): CardSeasonFieldsFragment => ({
         numbering: { type: 'episode', number: String(i + 1) },
         jellyfinEpisodeId: null,
         airTime: '2020-01-01T00:00:00Z',
-        latestTask: { nodes: [] },
+        tasks: { edges: [] },
       },
     })),
   },
+});
+
+test('uses the dynamic current-step title, with a fallback color for a new atom', () => {
+  const value = season(1);
+  value.mainEpisodes.edges[0].node!.tasks.edges.push({
+    node: {
+      id: 7,
+      type: 'DOWNLOAD' as import('@/generated/types').TaskType,
+      statusSummary: {
+        version: 2,
+        workflow: {
+          status: 'running',
+          currentStepId: 'custom',
+          steps: [
+            {
+              id: 'next',
+              atom: 'importFile',
+              title: '后续步骤',
+              status: 'pending',
+            },
+            {
+              id: 'custom',
+              atom: 'futureAtom',
+              title: '动态新增步骤',
+              status: 'running',
+            },
+          ],
+        },
+      },
+    },
+  });
+  act(() => {
+    ReactDOM.render(
+      <SeasonCard season={value} openEpisode={jest.fn()} />,
+      container,
+    );
+  });
+  expect(
+    container.querySelector('button')?.getAttribute('aria-label'),
+  ).toContain('动态新增步骤');
+  expect(container.querySelector('button')?.getAttribute('data-tone')).toBe(
+    'blue',
+  );
 });
 
 test('opens an episode without navigating, with grey missing tags when unmonitored', () => {

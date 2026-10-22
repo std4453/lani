@@ -34,8 +34,7 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
-import { useTaskStates } from '@/utils/useTaskStates';
-import { useApolloPoll } from '@/utils/useApolloPoll';
+import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
 import {
   AppstoreOutlined,
@@ -49,14 +48,7 @@ import { Button, message, Popconfirm, Space, Tooltip, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
 import TestRoutingTitle from './TestRoutingTitle';
@@ -155,6 +147,7 @@ function SeasonStatusTag({
     <div>
       <DownloadStatusTag
         status={episodeStatus.status}
+        label={episodeStatus.label}
         taskId={episodeStatus.taskId}
         taskType={episodeStatus.taskType}
         openTaskDetails={openTaskDetails}
@@ -691,49 +684,29 @@ async function querySeasons(
 }
 
 function useSeasonsStatus(seasonIds: number[]) {
-  // useQuery会检测variables变化触发新请求，如果now一直变化会一直触发，不受
-  // pollInterval控制，因此这里把now做成不变的，仅当：
-  // - 每分钟
-  // - 每次seasonIds变化
-  // 时更新
   const nowRef = useRef(new Date());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      nowRef.current = new Date();
-    }, 60 * 1000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
   const lastSeasonIdsRef = useRef(seasonIds);
   if (seasonIds !== lastSeasonIdsRef.current) {
     nowRef.current = new Date();
   }
   lastSeasonIdsRef.current = seasonIds;
 
-  const { data, startPolling, stopPolling, refetch } = useQuery(
-    GetSeasonsStatusDocument,
-    {
-      skip: !seasonIds.length,
-      variables: {
-        seasonIds,
-        now: nowRef.current,
-      },
+  const { data, loading, refetch } = useQuery(GetSeasonsStatusDocument, {
+    skip: !seasonIds.length,
+    variables: {
+      seasonIds,
+      now: nowRef.current,
     },
-  );
-  const taskIds = (extractNode(data?.allSeasons) ?? []).flatMap(
-    (season) =>
-      extractNode(season.latestEpisode?.tasks)?.map((task) => task.id) ?? [],
-  );
-  useTaskStates(taskIds, !!seasonIds.length);
-  useApolloPoll({
-    startPolling,
-    stopPolling,
-    refetch: () => {
+  });
+  useEpisodeStatusPolling({
+    episodes: (extractNode(data?.allSeasons) ?? []).flatMap((season) =>
+      season.latestEpisode ? [season.latestEpisode] : [],
+    ),
+    loading,
+    refresh: () => {
       nowRef.current = new Date();
       return refetch({ seasonIds, now: nowRef.current });
     },
-    pollInterval: 30000,
     enabled: !!seasonIds.length,
   });
   return useMemo(() => {

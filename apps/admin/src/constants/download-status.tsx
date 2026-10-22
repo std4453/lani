@@ -1,4 +1,4 @@
-import { TaskDisplayStatus, taskDisplayStatus } from '@lani/workflow';
+import { AtomType } from '@lani/workflow';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import {
   LegacyTaskStage,
@@ -11,7 +11,12 @@ import { Tag, TagProps } from 'antd';
 import dayjs from 'dayjs';
 
 export type EpisodeStatus =
-  | TaskDisplayStatus
+  | AtomType
+  | 'RUNNING'
+  | 'AVAILABLE'
+  | 'DOWNLOAD_FAILED'
+  | 'CANCELLED'
+  | 'CANCELLING'
   | 'UNKNOWN'
   | 'NOT_AIRED'
   | 'DATE_UNKNOWN'
@@ -31,44 +36,11 @@ export const LEGACY_EPISODE_STATUS: Record<LegacyTaskStage, EpisodeStatus> = {
   [LegacyTaskStage.Unavailable]: 'UNKNOWN',
 };
 
-export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
-  status: EpisodeStatus;
-  taskId?: number;
-  taskType?: TaskType;
-} {
-  const task = extractNode(episode.tasks)?.[0];
-  if (episode.jellyfinEpisodeId) {
-    return { status: 'AVAILABLE' };
-  } else if (task) {
-    return {
-      status: taskDisplayStatus(task),
-      taskId: task.id,
-      taskType: task.type,
-    };
-  } else {
-    if (episode.airTime) {
-      const now = dayjs();
-      const startDownloadTime = dayjs(episode.airTime);
-      const resourceMissingTime = startDownloadTime.add(12, 'h');
-      if (startDownloadTime.isBefore(now)) {
-        if (now.isBefore(resourceMissingTime)) {
-          return { status: 'RESOURCE_WAITING' };
-        } else {
-          return { status: 'RESOURCE_MISSING' };
-        }
-      } else {
-        return { status: 'NOT_AIRED' };
-      }
-    } else {
-      return { status: 'DATE_UNKNOWN' };
-    }
-  }
-}
-
 export const EPISODE_STATUS_TAGS: Record<
   EpisodeStatus,
   Pick<TagProps, 'children' | 'color'>
 > = {
+  RUNNING: { children: '进行中', color: 'blue' },
   AVAILABLE: {
     children: '可用',
     color: 'green',
@@ -125,13 +97,83 @@ export const EPISODE_STATUS_TAGS: Record<
   },
 };
 
+export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
+  status: EpisodeStatus;
+  taskId?: number;
+  taskType?: TaskType;
+  label?: string;
+} {
+  const task = extractNode(episode.tasks)?.[0];
+  if (episode.jellyfinEpisodeId) {
+    return { status: 'AVAILABLE' };
+  } else if (task) {
+    const summary = task.statusSummary;
+    const workflow = summary?.workflow;
+    const step = workflow?.steps.find(
+      ({ id }) => id === workflow.currentStepId,
+    );
+    let status: EpisodeStatus = 'UNKNOWN';
+    let label: string | undefined;
+    if (workflow) {
+      if (workflow.status === 'running') {
+        // 步骤标题来自流程快照；未知 atom 仍可显示，颜色回退为进行中。
+        status =
+          step &&
+          Object.prototype.hasOwnProperty.call(EPISODE_STATUS_TAGS, step.atom)
+            ? (step.atom as EpisodeStatus)
+            : 'RUNNING';
+        label = step?.title;
+      } else {
+        status =
+          (
+            {
+              succeeded: 'AVAILABLE',
+              failed: 'DOWNLOAD_FAILED',
+              cancelled: 'CANCELLED',
+              cancelling: 'CANCELLING',
+            } as Record<string, EpisodeStatus>
+          )[workflow.status] ?? 'UNKNOWN';
+        if (step && status !== 'AVAILABLE')
+          label = `${step.title} · ${EPISODE_STATUS_TAGS[status].children}`;
+      }
+    } else if (summary?.legacy) {
+      const legacy = summary.legacy;
+      status = legacy.isCancelled
+        ? 'CANCELLED'
+        : legacy.isFailed || legacy.stage !== LegacyTaskStage.Available
+        ? 'DOWNLOAD_FAILED'
+        : 'AVAILABLE';
+    }
+    return { status, label, taskId: task.id, taskType: task.type };
+  } else {
+    if (episode.airTime) {
+      const now = dayjs();
+      const startDownloadTime = dayjs(episode.airTime);
+      const resourceMissingTime = startDownloadTime.add(12, 'h');
+      if (startDownloadTime.isBefore(now)) {
+        if (now.isBefore(resourceMissingTime)) {
+          return { status: 'RESOURCE_WAITING' };
+        } else {
+          return { status: 'RESOURCE_MISSING' };
+        }
+      } else {
+        return { status: 'NOT_AIRED' };
+      }
+    } else {
+      return { status: 'DATE_UNKNOWN' };
+    }
+  }
+}
+
 export function DownloadStatusTag({
   status,
   taskId,
   taskType,
   openTaskDetails,
+  label,
 }: {
   status: EpisodeStatus;
+  label?: string;
   taskId?: number;
   taskType?: TaskType;
   openTaskDetails?: ReturnType<typeof useTaskDetailsDialog>[2];
@@ -157,7 +199,7 @@ export function DownloadStatusTag({
         }}
         icon={showDialog ? <SelectOutlined /> : null}
       >
-        {children}
+        {label ?? children}
       </Tag>
     );
   } else {

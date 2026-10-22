@@ -1,6 +1,7 @@
 import { PrismaService } from '@/common/prisma.service';
 import { getIdFromNodeId } from '@/utils/graphile';
-import { taskDisplayStatus, TaskDisplayStatus } from '@lani/workflow';
+import { summarizeWorkflow } from '@lani/workflow';
+import { TaskStatusSummary } from './task-summary.model';
 import { Logger } from '@nestjs/common';
 import {
   Context,
@@ -28,36 +29,46 @@ export class TaskStatusResolver {
   private readonly logger = new Logger(TaskStatusResolver.name);
   private readonly loaders = new WeakMap<
     object,
-    DataLoader<number, TaskDisplayStatus | null>
+    DataLoader<number, TaskStatusSummary | null>
   >();
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @ResolveField(() => String, { nullable: true })
+  @ResolveField(() => TaskStatusSummary, { nullable: true })
   statusSummary(@Parent() { nodeId }: Task, @Context() context: object) {
     let loader = this.loaders.get(context);
     if (!loader) {
       // Federation 只携带任务 ID；同一请求中的摘要合并为一次数据库查询。
-      loader = new DataLoader<number, TaskDisplayStatus | null>(async (ids) => {
+      loader = new DataLoader<number, TaskStatusSummary | null>(async (ids) => {
         const tasks = await this.prisma.task.findMany({
           where: { id: { in: [...ids] } },
           select: {
             id: true,
+            version: true,
             workflow: true,
             legacyStage: true,
             isFailed: true,
             isCancelled: true,
           },
         });
-        const summaries = new Map<number, TaskDisplayStatus | null>(
+        const summaries = new Map<number, TaskStatusSummary>(
           tasks.map((task) => {
+            const summary: TaskStatusSummary = { version: task.version };
             try {
-              return [task.id, taskDisplayStatus(task)];
+              if (task.workflow) {
+                summary.workflow = summarizeWorkflow(task.workflow);
+              } else {
+                summary.legacy = {
+                  stage: task.legacyStage,
+                  isFailed: task.isFailed,
+                  isCancelled: task.isCancelled,
+                };
+              }
             } catch {
               // 单个损坏的流程只影响该任务，不让整批卡片的摘要一起失败。
               this.logger.warn(`Invalid workflow for task ${task.id}`);
-              return [task.id, null];
             }
+            return [task.id, summary];
           }),
         );
         return ids.map((id) => summaries.get(id) ?? null);

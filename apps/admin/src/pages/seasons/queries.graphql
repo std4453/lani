@@ -8,16 +8,9 @@ fragment cardSeasonFields on Season {
   mainEpisodes {
     edges {
       node {
-        id
         title
         numbering
-        airTime
-        jellyfinEpisodeId
-        latestTask: tasksByEpisodeId(first: 1, orderBy: ID_DESC) {
-          nodes {
-            statusSummary
-          }
-        }
+        ...episodeStatusFields
       }
     }
   }

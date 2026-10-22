@@ -1,7 +1,7 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { ListSeasonCardsDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
-import { useApolloPoll } from '@/utils/useApolloPoll';
+import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
 import { ListToolBar } from '@ant-design/pro-table';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -9,7 +9,11 @@ import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
 import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { CARD_PAGE_SIZE, cardQueryVariables } from './card-layout';
+import {
+  CARD_PAGE_SIZE,
+  cardQueryVariables,
+  selectEpisodeWindow,
+} from './card-layout';
 import SeasonCard from './SeasonCard';
 import styles from './SeasonCards.module.less';
 
@@ -34,14 +38,25 @@ export default function SeasonCards({
   useEffect(() => cancelSearch, [cancelSearch]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dialog, , openEpisode] = useEpisodeDetailsDialog();
-  const { data, loading, error, refetch } = useQuery(ListSeasonCardsDocument, {
+  const {
+    data,
+    loading,
+    error,
+    refetch: refresh,
+  } = useQuery(ListSeasonCardsDocument, {
     variables: cardQueryVariables(page, keyword),
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
   const seasons = extractNode(data?.allSeasons) ?? [];
   const total = data?.allSeasons?.totalCount;
-  useApolloPoll({ refetch, pollInterval: 30000 });
+  const { refetch } = useEpisodeStatusPolling({
+    episodes: seasons.flatMap((season) =>
+      selectEpisodeWindow(extractNode(season.mainEpisodes) ?? []),
+    ),
+    refresh,
+    loading,
+  });
   useEffect(() => {
     if (
       total !== undefined &&

@@ -42,3 +42,10 @@ export interface Workflow {
   };
 }
 export type AtomRegistry = Record<AtomType, { wants: Wants }>;
+
+/** 供列表展示使用，不包含 checkpoint、路径或错误详情。 */
+export interface WorkflowSummary {
+  status: WorkflowStatus;
+  currentStepId: string;
+  steps: Pick<WorkflowStep, "id" | "atom" | "title" | "status">[];
+}

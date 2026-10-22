@@ -26,8 +26,7 @@ import { useManualDownloadMagnetDialog } from '@/pages/season/components/manual-
 import { useConfig } from '@/store/config';
 import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
-import { useTaskStates } from '@/utils/useTaskStates';
-import { useApolloPoll } from '@/utils/useApolloPoll';
+import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import { useAsyncButton } from '@/utils/useAsyncButton';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
@@ -77,6 +76,7 @@ function EpisodeStatusTag({
     <div>
       <DownloadStatusTag
         status={mergedEpisode.taskStatus}
+        label={mergedEpisode.taskLabel}
         taskId={mergedEpisode.taskId}
         taskType={mergedEpisode.taskType}
         openTaskDetails={openTaskDetails}
@@ -351,24 +351,20 @@ export function useEpisodeStatus(episodes: Episode[]) {
     () => episodes.map((episode) => episode.id),
     [episodes],
   );
-  const { data, refetch, startPolling, stopPolling } = useQuery(
-    GetEpisodesStatusDocument,
-    {
-      skip: !episodeIds.length,
-      variables: {
-        episodeIds,
-      },
+  const {
+    data,
+    loading,
+    refetch: refresh,
+  } = useQuery(GetEpisodesStatusDocument, {
+    skip: !episodeIds.length,
+    variables: {
+      episodeIds,
     },
-  );
-  const taskIds = (extractNode(data?.allEpisodes) ?? []).flatMap(
-    (episode) => extractNode(episode.tasks)?.map((task) => task.id) ?? [],
-  );
-  useTaskStates(taskIds);
-  useApolloPoll({
-    pollInterval: 30000,
-    startPolling,
-    stopPolling,
-    refetch,
+  });
+  const { refetch } = useEpisodeStatusPolling({
+    episodes: extractNode(data?.allEpisodes) ?? episodes,
+    refresh,
+    loading,
     enabled: !!episodeIds.length,
   });
   const result = useMemo(() => {
@@ -378,9 +374,10 @@ export function useEpisodeStatus(episodes: Episode[]) {
     }
     const episodesStatusMap: Record<number, EpisodeStatusFields> = {};
     for (const item of episodesStatus) {
-      const { status, taskId, taskType } = calcEpisodeStatus(item);
+      const { status, label, taskId, taskType } = calcEpisodeStatus(item);
       episodesStatusMap[item.id] = {
         taskStatus: status,
+        taskLabel: label,
         taskId,
         taskType,
       };

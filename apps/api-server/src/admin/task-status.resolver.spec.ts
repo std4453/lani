@@ -18,14 +18,16 @@ class ProbeResolver {
   }
 }
 
-const query =
-  'query($rows: [_Any!]!) { _entities(representations: $rows) { ... on Task { statusSummary alias: statusSummary } } }';
+const summaryFields =
+  'version workflow { status currentStepId steps { id atom title status } } legacy { stage isFailed isCancelled }';
+const query = `query($rows: [_Any!]!) { _entities(representations: $rows) { ... on Task { statusSummary { ${summaryFields} } alias: statusSummary { ${summaryFields} } } } }`;
 const entity = (id: number) => ({
   __typename: 'Task',
   nodeId: Buffer.from(JSON.stringify(['download_jobs', id])).toString('base64'),
 });
 const row = (id: number) => ({
   id,
+  version: 1,
   workflow: null,
   legacyStage: 'AVAILABLE',
   isFailed: false,
@@ -79,7 +81,7 @@ describe('Task status Federation HTTP resolver', () => {
     return response.data;
   }
 
-  it('exposes only a nullable status string and requires only the entity key', async () => {
+  it('exposes a structured summary and requires only the entity key', async () => {
     const response = await http.post('/graphql', {
       query: '{ _service { sdl } }',
     });
@@ -94,7 +96,10 @@ describe('Task status Federation HTTP resolver', () => {
     ]);
     expect(
       task.fields?.find((f) => f.name.value === 'statusSummary')?.type,
-    ).toMatchObject({ kind: 'NamedType', name: { value: 'String' } });
+    ).toMatchObject({
+      kind: 'NamedType',
+      name: { value: 'TaskStatusSummary' },
+    });
     expect(sdl).toContain('@key(fields: "nodeId")');
     expect(findMany).not.toHaveBeenCalled();
   });
@@ -106,8 +111,30 @@ describe('Task status Federation HTTP resolver', () => {
     expect(result.errors).toBeUndefined();
     expect(result.data._entities).toEqual(
       [...ids, 1, 101].map((id) => ({
-        statusSummary: id === 101 ? null : 'AVAILABLE',
-        alias: id === 101 ? null : 'AVAILABLE',
+        statusSummary:
+          id === 101
+            ? null
+            : {
+                version: 1,
+                workflow: null,
+                legacy: {
+                  stage: 'AVAILABLE',
+                  isFailed: false,
+                  isCancelled: false,
+                },
+              },
+        alias:
+          id === 101
+            ? null
+            : {
+                version: 1,
+                workflow: null,
+                legacy: {
+                  stage: 'AVAILABLE',
+                  isFailed: false,
+                  isCancelled: false,
+                },
+              },
       })),
     );
     expect(findMany).toHaveBeenCalledTimes(1);
@@ -115,6 +142,7 @@ describe('Task status Federation HTTP resolver', () => {
       where: { id: { in: [...ids, 101] } },
       select: {
         id: true,
+        version: true,
         workflow: true,
         legacyStage: true,
         isFailed: true,
@@ -123,7 +151,7 @@ describe('Task status Federation HTTP resolver', () => {
     });
   });
 
-  it('does not expose workflow or detail payloads and refreshes on the next request', async () => {
+  it('exposes step metadata without execution details and refreshes on the next request', async () => {
     const workflow = {
       schemaVersion: 1,
       definitionVersion: 1,
@@ -144,14 +172,26 @@ describe('Task status Federation HTTP resolver', () => {
     findMany
       .mockResolvedValueOnce([{ ...row(1), workflow }])
       .mockResolvedValueOnce([
-        { ...row(1), workflow: { ...workflow, status: 'failed' } },
+        { ...row(1), version: 2, workflow: { ...workflow, status: 'failed' } },
       ]);
-    expect((await execute([1])).data._entities).toEqual([
-      { statusSummary: 'download', alias: 'download' },
-    ]);
-    expect((await execute([1])).data._entities).toEqual([
-      { statusSummary: 'DOWNLOAD_FAILED', alias: 'DOWNLOAD_FAILED' },
-    ]);
+    const running = (await execute([1])).data._entities[0].statusSummary;
+    expect(running).toEqual({
+      version: 1,
+      legacy: null,
+      workflow: {
+        status: 'running',
+        currentStepId: 'step',
+        steps: [
+          { id: 'step', atom: 'download', title: '下载中', status: 'running' },
+        ],
+      },
+    });
+    const failed = (await execute([1])).data._entities[0].statusSummary;
+    expect(failed).toMatchObject({
+      version: 2,
+      workflow: { status: 'failed' },
+    });
+    expect(JSON.stringify(running)).not.toMatch(/checkpoint|createdAt|attempt/);
     expect(findMany).toHaveBeenCalledTimes(2);
   });
 
@@ -169,8 +209,22 @@ describe('Task status Federation HTTP resolver', () => {
     const result = await execute([1, 2]);
     expect(result.errors).toBeUndefined();
     expect(result.data._entities).toEqual([
-      { statusSummary: null, alias: null },
-      { statusSummary: 'AVAILABLE', alias: 'AVAILABLE' },
+      {
+        statusSummary: { version: 1, workflow: null, legacy: null },
+        alias: { version: 1, workflow: null, legacy: null },
+      },
+      {
+        statusSummary: {
+          version: 1,
+          workflow: null,
+          legacy: { stage: 'AVAILABLE', isFailed: false, isCancelled: false },
+        },
+        alias: {
+          version: 1,
+          workflow: null,
+          legacy: { stage: 'AVAILABLE', isFailed: false, isCancelled: false },
+        },
+      },
     ]);
     expect(findMany).toHaveBeenCalledTimes(1);
   });

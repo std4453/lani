@@ -4,6 +4,7 @@ import type {
   StepDefinition,
   Workflow,
   WorkflowStep,
+  WorkflowSummary,
 } from "./types";
 import { parseWorkflow } from "./schema";
 
@@ -70,38 +71,19 @@ export function currentStep(workflow: Workflow): WorkflowStep {
   if (!step) throw new Error("任务当前步骤无效");
   return step;
 }
-export type TaskDisplayStatus =
-  | AtomType
-  | "AVAILABLE"
-  | "DOWNLOAD_FAILED"
-  | "CANCELLED"
-  | "CANCELLING";
-
-// 列表和轻量摘要共用同一状态规则，避免传输完整流程后在客户端重复推导。
-export function taskDisplayStatus(task: {
-  workflow?: unknown;
-  legacyStage: string;
-  isFailed: boolean;
-  isCancelled: boolean;
-}): TaskDisplayStatus {
-  if (task.workflow) {
-    const workflow = parseWorkflow(task.workflow);
-    return workflow.status === "running"
-      ? currentStep(workflow).atom
-      : (
-          {
-            succeeded: "AVAILABLE",
-            failed: "DOWNLOAD_FAILED",
-            cancelled: "CANCELLED",
-            cancelling: "CANCELLING",
-          } as const
-        )[workflow.status];
-  }
-  return task.isCancelled
-    ? "CANCELLED"
-    : task.isFailed || task.legacyStage !== "AVAILABLE"
-    ? "DOWNLOAD_FAILED"
-    : "AVAILABLE";
+/** 展示摘要保留动态流程结构，仅剔除执行数据。 */
+export function summarizeWorkflow(value: unknown): WorkflowSummary {
+  const workflow = parseWorkflow(value);
+  return {
+    status: workflow.status,
+    currentStepId: workflow.currentStepId,
+    steps: workflow.steps.map(({ id, atom, title, status }) => ({
+      id,
+      atom,
+      title,
+      status,
+    })),
+  };
 }
 
 export function isActive(workflow: Workflow): boolean {
