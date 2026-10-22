@@ -1,0 +1,53 @@
+@import '~@/styles/index.less';
+
+.listToolbar() {
+  :global(.ant-pro-table-list-toolbar-container) {
+    min-height: 64px;
+    align-items: center;
+  }
+  @media @mobile {
+    :global {
+      .ant-pro-table-list-toolbar-container {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 16px 8px;
+      }
+
+      .ant-pro-table-list-toolbar-left {
+        grid-column: 1;
+        grid-row: 1;
+        margin-bottom: 0;
+      }
+
+      .ant-pro-table-list-toolbar-title {
+        white-space: nowrap;
+      }
+
+      // 展平右侧 Space，让搜索框和操作区与标题共享同一个网格。
+      .ant-pro-table-list-toolbar-right {
+        display: contents;
+
+        > .ant-space-item {
+          grid-column: 2;
+          justify-self: end;
+          max-width: 100%;
+          min-width: 0;
+        }
+      }
+
+      .ant-pro-table-list-toolbar-search .ant-input-search {
+        max-width: 100%;
+      }
+    }
+  }
+}
+
+// 有搜索框时，其后的操作区独占下一行；无搜索框时与标题同行。
+.listToolbarWithSearch() {
+  @media @mobile {
+    :global(.ant-pro-table-list-toolbar-right
+        > .ant-space-item:not(:first-child)) {
+      grid-column: ~'1 / -1';
+    }
+  }
+}
