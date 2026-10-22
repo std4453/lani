@@ -55,7 +55,7 @@
     "@sentry/react": "~6.17.8",
     "dayjs": "~1.10.7",
     "@ant-design/pro-descriptions": "~1.10.60",
-    "pretty-bytes": "~6.0.0",
+    "pretty-bytes": "~6.1.1",
     "qs": "~6.10.3",
     "@types/qs": "~6.9.7",
     "@reduxjs/toolkit": "~1.8.1",
