@@ -1,16 +1,16 @@
-import { BackgroundQueueService } from '@/background-queue/index.service';
-import { HttpRequestError } from '@/common/axios.service';
+import { QueueConsumer } from '@/background-queue/consumer.decorator';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { QBittorrentService } from '@/download-client/QBittorrentService';
 import { QBTTorrent } from '@/download-client/types';
-import { TaskService } from '@/task/index.service';
+import { DownloadJobService } from '@/download-job/index.service';
 import { enqueueJob } from '@/background-queue/producer';
-import { QueueJob } from '@/background-queue/types';
+import { QueueHandler, QueueJob } from '@/background-queue/types';
 import { TorrentRetentionPayload, validateRetentionPayload } from './payload';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
+import { inspect } from 'util';
 import {
   RETENTION_BATCH_SIZE,
   RETENTION_QUEUE,
@@ -20,36 +20,22 @@ import {
 
 @Injectable()
 @Resolver()
-export class TorrentRetentionService implements OnModuleInit {
+@QueueConsumer(RETENTION_QUEUE)
+export class TorrentRetentionService
+  implements QueueHandler<TorrentRetentionPayload>
+{
   private readonly logger = new Logger(TorrentRetentionService.name);
   private readonly policy = config.downloadClient.qbittorrent.retention;
   private scanning?: Promise<number>;
 
-  private errorDetails(error: unknown) {
-    // 不记录 message、请求或任意异常对象，避免上游错误夹带凭据。
-    if (error instanceof HttpRequestError) {
-      const status = Number.isInteger(error.status) ? error.status : 'unknown';
-      const code =
-        typeof error.code === 'string' && /^[A-Z0-9_]{1,40}$/.test(error.code)
-          ? error.code
-          : 'unknown';
-      return `type=HttpRequestError, status=${status}, code=${code}`;
-    }
-    return `type=${error instanceof Error ? 'Error' : typeof error}`;
-  }
-
   constructor(
     private prisma: PrismaService,
     private qbt: QBittorrentService,
-    private queue: BackgroundQueueService,
-    private tasks: TaskService,
+    private downloads: DownloadJobService,
   ) {}
 
-  onModuleInit() {
-    this.queue.register<TorrentRetentionPayload>(RETENTION_QUEUE, {
-      enabled: this.policy.enabled,
-      execute: (job) => this.execute(job),
-    });
+  get enabled() {
+    return this.policy.enabled;
   }
 
   @Cron('0 0 */6 * * *')
@@ -58,7 +44,7 @@ export class TorrentRetentionService implements OnModuleInit {
       await this.scanTorrentRetention();
     } catch (error) {
       this.logger.warn(
-        `Torrent retention scan failed; waiting for next scan; ${this.errorDetails(
+        `Torrent retention scan failed; waiting for next scan; ${inspect(
           error,
         )}`,
       );
@@ -77,7 +63,10 @@ export class TorrentRetentionService implements OnModuleInit {
 
   private eligible(
     torrent: QBTTorrent,
-    { owned, active }: Awaited<ReturnType<TaskService['getTorrentOwnership']>>,
+    {
+      owned,
+      active,
+    }: Awaited<ReturnType<DownloadJobService['getTorrentOwnership']>>,
   ) {
     const identities = torrentIdentities(torrent);
     return (
@@ -95,7 +84,7 @@ export class TorrentRetentionService implements OnModuleInit {
       })
     )
       return 0;
-    const ownership = await this.tasks.getTorrentOwnership();
+    const ownership = await this.downloads.getTorrentOwnership();
     if (!ownership.owned.size) return 0;
     // 与 DownloadAtom 的 30 秒轮询分开；低频全列表查询避免历史 hash 形成超长 URL。
     const torrents = await this.qbt.listTorrents();
@@ -119,7 +108,7 @@ export class TorrentRetentionService implements OnModuleInit {
     return hashes.length;
   }
 
-  private async execute(job: QueueJob<TorrentRetentionPayload>) {
+  async execute(job: QueueJob<TorrentRetentionPayload>) {
     const payload = job.payload;
     validateRetentionPayload(payload);
     const hashes = [
@@ -133,7 +122,7 @@ export class TorrentRetentionService implements OnModuleInit {
       const batch = hashes.slice(offset, offset + RETENTION_BATCH_SIZE);
       try {
         // 队列可能在重启后恢复；按最新归属、状态、时间重新判断，避免删除陈旧候选。
-        const ownership = await this.tasks.getTorrentOwnership();
+        const ownership = await this.downloads.getTorrentOwnership();
         const current = await this.qbt.listTorrents({ hashes: batch });
         const selected = [
           ...new Set(
@@ -158,7 +147,7 @@ export class TorrentRetentionService implements OnModuleInit {
         this.logger.warn(
           `Torrent retention batch failed: hashes=${batch.join(
             ',',
-          )}; waiting for next scan; ${this.errorDetails(error)}`,
+          )}; waiting for next scan; ${inspect(error)}`,
         );
       }
     }

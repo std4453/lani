@@ -1,7 +1,7 @@
 import { BackgroundQueueModule } from '@/background-queue/index.module';
 import { CommonModule } from '@/common/index.module';
 import { DownloadClientModule } from '@/download-client/DownloadClientModule';
-import { TaskModule } from '@/task/index.module';
+import { DownloadJobModule } from '@/download-job/index.module';
 import { Module } from '@nestjs/common';
 import { TorrentRetentionService } from './index.service';
 
@@ -10,7 +10,7 @@ import { TorrentRetentionService } from './index.service';
     CommonModule,
     DownloadClientModule,
     BackgroundQueueModule,
-    TaskModule,
+    DownloadJobModule,
   ],
   providers: [TorrentRetentionService],
 })

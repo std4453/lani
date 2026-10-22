@@ -15,7 +15,7 @@ downloadClient:
       afterSeeding: 30d
 ```
 
-省略 retention 时默认关闭；两个时长的默认值分别为 7d、30d，使用 [parse-duration](https://github.com/jkroso/parse-duration) 的英文单位及组合格式（如 `1 hour 20 minutes`），要求显式单位、不超过 100 个字符，并能换算为正整数秒，毫秒值也须在安全整数范围。无法解析或不满足数值约束会阻止启动。更改配置后重启 API；一期没有前端入口。
+省略 retention 时默认关闭；两个时长的默认值分别为 7d、30d，使用 [parse-duration](https://github.com/jkroso/parse-duration) 的英文单位及组合格式（如 `1 hour 20 minutes`），直接按秒解析并要求结果大于零；支持小数秒，无单位数字按秒解释。无法解析或结果不大于零会阻止启动。更改配置后重启 API；一期没有前端入口。
 
 ## 状态与时间
 
@@ -27,7 +27,7 @@ qBittorrent 没有独立的“达到分享率后停止时间”。两种规则�
 
 每 6 小时检查一次，不启动即扫描。管理员可通过现有 Gateway 鉴权调用 `mutation { scanTorrentRetention }`，返回入队候选数；配置关闭或已有任务时返回 0。此 mutation 只检查和入队，不同步执行删除。扫描与 DownloadAtom 的短周期刷新分开，避免历史种子增加下载进度轮询开销。
 
-复用 [PR #84](https://github.com/std4453/lani/pull/84) 的[单实例后台队列](../background-queue/README.md)，单次扫描合并为一个持久化任务，新输入写入 `version: 1`；无版本的历史输入按 v1 兼容，未知版本失败保留。任务归属及活跃使用由 `TaskService.getTorrentOwnership()` 提供，清理模块不读取任务内部状态。队列不并行消费同一通道，不为清理注册重试策略。执行时每批重新查询归属、下载器状态和时间，最多 100 个 hash，串行调用 `/torrents/delete`，固定 `deleteFiles=false`。成功日志表示下载器接受请求，不表示文件被移除。已删除种子在重启恢复时自然跳过。
+复用 [PR #84](https://github.com/std4453/lani/pull/84) 的[单实例后台队列](../background-queue/README.md)，单次扫描合并为一个持久化任务，新输入写入 `version: 1`；无版本的历史输入按 v1 兼容，未知版本失败保留。任务归属及活跃使用由 `DownloadJobService.getTorrentOwnership()` 提供，清理模块不读取任务内部状态。队列不并行消费同一通道，不为清理注册重试策略。执行时每批重新查询归属、下载器状态和时间，最多 100 个 hash，串行调用 `/torrents/delete`，固定 `deleteFiles=false`。成功日志表示下载器接受请求，不表示文件被移除。已删除种子在重启恢复时自然跳过。
 
 单批查询或删除失败记录英文日志，继续后续批次，整轮结束后确认任务；不立即重试（删除请求的 401/403 也不重放）。失败候选仍存在时由下一次扫描重新入队。队列数据库故障或损坏 payload 使用通用失败屏障，需按队列文档检查恢复。关闭配置不会消费旧任务，再开启时执行前仍重新验证。仅支持单 API 消费实例。
 

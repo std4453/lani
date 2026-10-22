@@ -3,7 +3,6 @@ import { PrismaService } from '@/common/prisma.service';
 import { BackgroundQueueService } from './index.service';
 import { QueueHandler, QueueJob, QueueWaiting } from './types';
 import { enqueueJob } from './producer';
-import { retryJob } from './cli';
 import {
   validateRetentionPayload,
   TorrentRetentionPayload,
@@ -329,20 +328,6 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
       await db.backgroundJob.findUnique({ where: { id: job.id } }),
     ).toMatchObject({ status: 'failed', attempts: 2 });
     expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a']);
-  });
-
-  it('recovers only an explicitly selected failed revision through the maintenance command', async () => {
-    execute.mockRejectedValue(new Error('offline'));
-    const job = await enqueue('a', 1);
-    await queues.wake(name);
-    await enqueue('a', 2);
-    await expect(retryJob(db, job.id, 1)).rejects.toThrow('revision not found');
-    await retryJob(db, job.id, 2);
-    execute.mockImplementation(async () => async () => undefined);
-    await queues.wake(name);
-    expect(
-      await db.backgroundJob.findUnique({ where: { id: job.id } }),
-    ).toBeNull();
   });
 
   it('recovers interrupted work but does not lose a job on a failed result transaction', async () => {

@@ -15,6 +15,37 @@ import { LaniError } from '@/utils/error';
 export class DownloadJobService {
   private logger = new Logger(DownloadJobService.name);
   constructor(private prisma: PrismaService, private tasks: TaskService) {}
+  /** 已越过提交阶段的下载证明归属；同 hash 仍被未完成任务使用时暂不清理。 */
+  async getTorrentOwnership() {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        type: { in: ['DOWNLOAD', 'BATCH_DOWNLOAD'] },
+        qbtTorrentHash: { not: null },
+      },
+      select: {
+        qbtTorrentHash: true,
+        legacyStage: true,
+        isCancelled: true,
+        isFailed: true,
+      },
+    });
+    const owned = new Set<string>();
+    const active = new Set<string>();
+    for (const task of tasks) {
+      if (!task.qbtTorrentHash) continue;
+      const hash = task.qbtTorrentHash.toLowerCase();
+      if (!['UNAVAILABLE', 'DOWNLOAD_SUBMITTING'].includes(task.legacyStage))
+        owned.add(hash);
+      if (
+        task.legacyStage !== 'AVAILABLE' &&
+        !task.isCancelled &&
+        !task.isFailed
+      )
+        active.add(hash);
+    }
+    return { owned, active };
+  }
+
   @Mutation(() => Int)
   async downloadTorrentForEpisode(
     @Args('episodeId') episodeId: number,

@@ -2,22 +2,10 @@ import { bool, D, obj, opt, str, T } from '@lani/framework';
 
 import parseDuration from 'parse-duration';
 
-/** 使用 parse-duration 换算，保留正整数秒和安全数值范围约束。 */
+/** 使用 parse-duration 的解析语义，统一换算为正秒数。 */
 export function durationSeconds(value: string): number {
-  const units = value.replace(/e[+-]?\d+/gi, '');
-  if (value.length > 100 || !/[a-zμ]/i.test(units))
-    throw new Error('保留时长必须带时间单位且不超过 100 个字符');
-  const milliseconds = parseDuration(value);
-  const raw = milliseconds === null ? NaN : milliseconds / 1000;
-  const seconds = Math.round(raw);
-  // 库使用浮点换算，仅容许一个机器精度的误差（例如 1.1h）。
-  if (
-    !Number.isSafeInteger(Math.round(milliseconds ?? NaN)) ||
-    !Number.isSafeInteger(seconds) ||
-    Math.abs(raw - seconds) > Number.EPSILON * Math.abs(raw) ||
-    seconds <= 0
-  )
-    throw new Error('保留时长必须能换算为正的安全整数秒');
+  const seconds = parseDuration(value, 's');
+  if (seconds === null || !(seconds > 0)) throw new Error('保留时长必须大于零');
   return seconds;
 }
 

@@ -1,4 +1,4 @@
-import { TaskService } from './index.service';
+import { DownloadJobService } from './index.service';
 
 jest.mock('@/config', () => ({ __esModule: true, default: { jellyfin: {} } }));
 
@@ -28,16 +28,8 @@ it('exposes confirmed ownership and active usage without leaking task states', a
       task(d, 'DOWNLOADING', { isFailed: true }),
       task(null),
     ]);
-  const service = new TaskService(
+  const service = new DownloadJobService(
     { task: { findMany } } as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
     {} as any,
   );
   expect(await service.getTorrentOwnership()).toEqual({

@@ -3,7 +3,9 @@ import config from '@/config';
 import { RETENTION_QUEUE } from './policy';
 import { enqueueJob } from '@/background-queue/producer';
 jest.mock('@/background-queue/producer', () => ({ enqueueJob: jest.fn() }));
-jest.mock('@/task/index.service', () => ({ TaskService: class {} }));
+jest.mock('@/download-job/index.service', () => ({
+  DownloadJobService: class {},
+}));
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -38,10 +40,8 @@ function setup() {
       .fn()
       .mockResolvedValue({ owned: new Set([hash(1)]), active: new Set() }),
   };
-  const queue: any = { register: jest.fn() };
-  const service = new TorrentRetentionService(db, qbt, queue, tasks);
-  service.onModuleInit();
-  const handler = queue.register.mock.calls[0][1];
+  const service = new TorrentRetentionService(db, qbt, tasks);
+  const handler: any = service;
   return { db, qbt, tasks, service, handler };
 }
 
@@ -149,21 +149,25 @@ it('continues after a lookup failure and rejects malformed stored jobs', async (
   ).rejects.toThrow();
 });
 
-it('logs bounded HTTP diagnostics without leaking exception messages or request data', async () => {
+it('logs complete downloader and unexpected error diagnostics', async () => {
   const { Logger } = await import('@nestjs/common');
   const { HttpRequestError } = await import('@/common/axios.service');
   const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
   try {
     const { qbt, handler, service } = setup();
-    const error = new HttpRequestError('secret-token', 413, 'ERR_BAD_REQUEST');
+    const error = new HttpRequestError('HTTP 413', 413, 'ERR_BAD_REQUEST');
     qbt.deleteTorrentsKeepFiles.mockRejectedValue(error);
     await handler.execute({ payload: { hashes: [hash(1)] } });
-    qbt.listTorrents.mockRejectedValue(new Error('secret-token'));
+    qbt.listTorrents.mockRejectedValue(
+      new Error('Unexpected torrent response'),
+    );
     await service.poll();
     const messages = warn.mock.calls.map(([message]) => message).join('\n');
-    expect(messages).toContain('status=413, code=ERR_BAD_REQUEST');
-    expect(messages).toContain('type=Error');
-    expect(messages).not.toContain('secret-token');
+    expect(messages).toContain('HTTP 413');
+    expect(messages).toContain('status: 413');
+    expect(messages).toContain("code: 'ERR_BAD_REQUEST'");
+    expect(messages).toContain(error.stack!.split('\n')[1]);
+    expect(messages).toContain('Error: Unexpected torrent response');
   } finally {
     warn.mockRestore();
   }

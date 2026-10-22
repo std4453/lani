@@ -14,7 +14,23 @@
 
 生产者直接从 `producer.ts` 引入 `enqueueJob(tx, queueName, key, payload, availableAt?)`，在业务事务内调用，无需依赖消费者服务。payload 必须可 JSON 序列化。同 key 合并为最新输入、增加 revision 并保留首次排队位置；替换失败任务不解除失败屏障。事务回滚不会留下孤立工作。
 
-协议类型 `QueueHandler<TPayload>`、`QueueJob<TPayload>`、`QueueCommit`、`QueueRetry` 及 `QueueWaiting` 从 `types.ts` 引入；`index.service.ts` 负责消费、恢复和调度。处理器通过 `register<TPayload>(name, { enabled, ready?, execute, settled?, retry? })` 注册，`ready`／`execute` 的 `job.payload` 保持具体业务类型。数据库 JSON 在注册边界统一转换，业务按需校验格式。`ready` 返回 false 或执行抛 `QueueWaiting` 表示依赖等待，保留队头，不记为失败；`execute` 在事务外执行耗时工作，返回 `QueueCommit` 提交函数；该函数仅执行数据库写入，不能包含下载请求、文件操作等外部副作用。结果提交与删除当前 revision 的任务在同一事务；输入已被替换则整体回滚旧结果。`settled` 同步释放进程内资源，不能抛异常。
+协议类型 `QueueHandler<TPayload>`、`QueueJob<TPayload>`、`QueueCommit`、`QueueRetry` 及 `QueueWaiting` 从 `types.ts` 引入；`index.service.ts` 负责消费、恢复和调度。业务类实现 `QueueHandler<TPayload>`，添加 `@Injectable()` 和 `@QueueConsumer(queueName)` 并列入所属模块的 providers；队列模块通过 NestJS Discovery 自动发现单例处理器，在启动恢复前完成注册。请求作用域、瞬态处理器和重复通道名会阻止启动。处理器包含 `enabled`、`ready?`、`execute`、`settled?`、`retry?`，`ready`／`execute` 的 `job.payload` 保持具体业务类型。数据库 JSON 在注册边界统一转换，业务按需校验格式。`ready` 返回 false 或执行抛 `QueueWaiting` 表示依赖等待，保留队头，不记为失败；`execute` 在事务外执行耗时工作，返回 `QueueCommit` 提交函数；该函数仅执行数据库写入，不能包含下载请求、文件操作等外部副作用。结果提交与删除当前 revision 的任务在同一事务；输入已被替换则整体回滚旧结果。`settled` 同步释放进程内资源，不能抛异常。
+
+例如清理通道的注册方式如下，业务服务无需注入队列消费者或手动调用 register：
+
+```ts
+@Injectable()
+@QueueConsumer(RETENTION_QUEUE)
+export class TorrentRetentionService implements QueueHandler<TorrentRetentionPayload> {
+  get enabled() { return config.downloadClient.qbittorrent.retention.enabled; }
+  async execute(job: QueueJob<TorrentRetentionPayload>): Promise<QueueCommit> {
+    // 校验输入并执行可重放的外部工作。
+    return async (tx) => { /* 仅提交数据库写入 */ };
+  }
+}
+```
+
+`QueueConsumer` 从 `consumer.decorator.ts` 引入；所属模块需导入 `BackgroundQueueModule`。内部 `register<TPayload>` 仍统一处理类型边界和方法绑定，保留类实例的 this 与 getter。
 
 每个通道按 ID FIFO，每轮最多 50 条，每 5 秒检查一次，生产者可在事务提交后主动 wake。等待、延迟重试和失败的队头都会阻塞本通道后续任务，其他通道仍能独立执行和提交。仅支持单 API 消费实例；不提供租约或多副本抢占。重启恢复 running 为 pending，处理器必须容许重复执行；执行过的外部副作用可能因重启或提交回滚再次发生，业务需自行保证幂等。
 
@@ -24,11 +40,4 @@
 
 替换输入会给新 revision 单独计算尝试次数；若旧任务已 failed，保留失败信息直到运维显式恢复。数据库故障导致任务状态无法保存时，进程内停止该通道；修复数据库后重启 API，恢复未确认任务。
 
-不提供前端 GraphQL 管理接口。组件恢复后，在 API 包目录、使用其现有配置执行以下维护命令；命令只创建数据库客户端，不启动 Nest、下载恢复或定时任务：
-
-```bash
-node dist/background-queue/cli.js status
-node dist/background-queue/cli.js retry <job-id> <revision>
-```
-
-status 最多列出 100 个失败任务的编号、通道、revision、尝试次数及安全错误摘要，不打印 payload。retry 仅恢复所指定且 revision 仍一致的 failed 任务，重置尝试预算；运行中的消费者在下次检查继续。若是进程内存储故障屏障，仍需先重启 API。不要在组件仍故障时循环执行 retry。
+不提供独立维护 CLI 或前端 GraphQL 管理接口。失败任务保留在数据库，修复输入或代码后再由业务显式恢复。
