@@ -1,5 +1,4 @@
-import * as http from 'http';
-import * as https from 'https';
+import { LocalAxiosService } from '@/common/axios.service';
 import {
   CatalogSnapshot,
   MatchQuery,
@@ -19,7 +18,10 @@ export class MatcherTransport {
   private closed = false;
   private cancel?: () => void;
 
-  constructor(private options: TransportOptions) {
+  constructor(
+    private options: TransportOptions,
+    private http: LocalAxiosService,
+  ) {
     if (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0)
       throw new Error('Invalid matcher timeout');
     if (!/^https?:$/.test(new URL(options.endpoint).protocol))
@@ -111,69 +113,42 @@ export class MatcherTransport {
     return this.requestHttp(method, payload);
   }
 
-  private requestHttp(method: string, payload: object): Promise<unknown> {
-    const url = new URL(
-      `${this.options.endpoint.replace(/\/$/, '')}/v1/${
-        method === 'configure' ? 'catalog' : method
-      }`,
-    );
-    const body =
-      method === 'status' ? undefined : Buffer.from(JSON.stringify(payload));
-    if (body && body.length > MAX_BYTES)
-      return Promise.reject(new Error('Matcher request too large'));
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      const req = (url.protocol === 'https:' ? https : http).request(url, {
+  private async requestHttp(method: string, payload: object): Promise<unknown> {
+    const url = `${this.options.endpoint.replace(/\/$/, '')}/v1/${
+      method === 'configure' ? 'catalog' : method
+    }`;
+    const body = method === 'status' ? undefined : JSON.stringify(payload);
+    if (body && Buffer.byteLength(body) > MAX_BYTES)
+      throw new Error('Matcher request too large');
+    const controller = new AbortController();
+    this.cancel = () => controller.abort();
+    try {
+      const { data } = await this.http.request<string>({
+        url,
         method:
           method === 'status' ? 'GET' : method === 'configure' ? 'PUT' : 'POST',
-        headers: body
-          ? {
-              'content-type': 'application/json',
-              'content-length': body.length,
-            }
-          : {},
+        data: body,
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        timeout: this.options.timeoutMs,
+        signal: controller.signal,
+        // 内部服务不经过环境代理，也不跟随重定向重新发送请求。
+        proxy: false,
+        maxRedirects: 0,
+        maxBodyLength: MAX_BYTES,
+        maxContentLength: MAX_BYTES,
+        validateStatus: (status) => status === 200,
+        responseType: 'text',
+        // 协议层严格解析 JSON，HTTP 错误保留通用客户端的状态与错误码。
+        transformResponse: [(data) => data],
       });
-      const timer = setTimeout(
-        () => req.destroy(new Error('Matcher request timed out')),
-        this.options.timeoutMs,
-      );
-      this.cancel = () => req.destroy(new Error('Matcher transport closed'));
-      const finish = (error?: Error, value?: unknown) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        this.cancel = undefined;
-        if (error) reject(error);
-        else resolve(value);
-      };
-      req.on('error', () => finish(new Error('Matcher HTTP request failed')));
-      req.on('response', (res) => {
-        const chunks: Buffer[] = [];
-        let size = 0;
-        res.on('data', (chunk: Buffer) => {
-          size += chunk.length;
-          if (size > MAX_BYTES)
-            req.destroy(new Error('Matcher response too large'));
-          else chunks.push(chunk);
-        });
-        res.on('error', () =>
-          finish(new Error('Matcher HTTP response failed')),
-        );
-        res.on('end', () => {
-          if (res.statusCode !== 200)
-            return finish(new Error(`Matcher HTTP status ${res.statusCode}`));
-          try {
-            finish(
-              undefined,
-              JSON.parse(Buffer.concat(chunks).toString('utf8')),
-            );
-          } catch {
-            finish(new Error('Invalid matcher JSON'));
-          }
-        });
-      });
-      req.end(body);
-    });
+      try {
+        return JSON.parse(data);
+      } catch {
+        throw new Error('Invalid matcher JSON');
+      }
+    } finally {
+      this.cancel = undefined;
+    }
   }
 
   async close() {

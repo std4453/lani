@@ -1,3 +1,4 @@
+import { LocalAxiosService } from '@/common/axios.service';
 import { BackgroundQueueService } from '@/background-queue/index.service';
 import { enqueueJob } from '@/background-queue/producer';
 import { QueueCommit, QueueJob, QueueWaiting } from '@/background-queue/types';
@@ -97,13 +98,14 @@ export class TorrentMatchService
   constructor(
     private prisma: PrismaService,
     private queues: BackgroundQueueService,
+    private http: LocalAxiosService,
   ) {}
 
   onModuleInit() {
     const enabled = config.matching.enabled;
     if (enabled) {
       validatePolicy(config.matching);
-      this.transport = new MatcherTransport(config.matching);
+      this.transport = new MatcherTransport(config.matching, this.http);
     }
   }
 

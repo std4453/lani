@@ -66,7 +66,7 @@ it('运维接口默认只处理未识别记录，提交后唤醒消费者', asyn
       events.push('wake');
     }),
   };
-  const service = new TorrentMatchService(db as any, queues as any);
+  const service = new TorrentMatchService(db as any, queues as any, {} as any);
   expect(await service.enqueueBatch([1])).toBe(1);
   expect(tx.torrent.updateMany.mock.calls[0][0].where.matchStatus).toBeNull();
   expect(events).toEqual(['committed', 'wake']);
@@ -79,7 +79,7 @@ it('禁用、无效批次和事务失败均不会唤醒消费者', async () => {
     $transaction: jest.fn().mockRejectedValue(new Error('rollback')),
   };
   const queues = { wake: jest.fn() };
-  const service = new TorrentMatchService(db as any, queues as any);
+  const service = new TorrentMatchService(db as any, queues as any, {} as any);
   for (const ids of [[], [0], [-1], [1.5], Array(501).fill(1)]) {
     await expect(service.enqueueBatch(ids)).rejects.toThrow('有效种子 ID');
   }

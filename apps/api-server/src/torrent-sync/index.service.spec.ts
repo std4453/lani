@@ -78,3 +78,27 @@ describe('shared torrent ingestion', () => {
     );
   });
 });
+
+it('waits for the import lock before reading or writing torrents', async () => {
+  const { service, prisma } = setup();
+  let release!: () => void;
+  prisma.$executeRaw.mockReturnValue(
+    new Promise<void>((resolve) => {
+      release = resolve;
+    }),
+  );
+  const result = service.insert([item], TorrentChannel.MIKAN);
+  expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  release();
+  await expect(result).resolves.toBe(1);
+});
+
+it('does not import or enqueue when acquiring the lock fails', async () => {
+  const { service, prisma } = setup();
+  prisma.$executeRaw.mockRejectedValue(new Error('lock timeout'));
+  await expect(service.insert([item], TorrentChannel.MIKAN)).rejects.toThrow(
+    'lock timeout',
+  );
+  expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  expect(prisma.torrent.createMany).not.toHaveBeenCalled();
+});

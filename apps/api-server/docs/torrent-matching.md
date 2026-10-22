@@ -4,7 +4,7 @@ API 负责候选范围、目录生命周期、入队与结果提交；worker 只
 
 ## 写入与触发
 
-`TorrentSyncService.insert` 是 Mikan、Nyaa 的统一入库入口：事务内持有导入互斥锁，去重、创建种子、调用 `enqueueTorrentMatch` 一起提交。锁使用 PostgreSQL 内置事务 advisory lock，没有自定义数据库函数或触发器。PostGraphile 不提供 Torrent 的通用创建／更新 mutation，避免绕过 API 的业务边界；读取和现有下载业务不受影响。
+`TorrentSyncService.insert` 是 Mikan、Nyaa 的统一入库入口：事务内持有导入互斥锁，去重、创建种子、调用 `enqueueTorrentMatch` 一起提交。锁使用 PostgreSQL 内置事务 advisory lock，没有自定义数据库函数或触发器。加锁复用 `utils/advisory-lock.ts` 的 `acquireAdvisoryTransactionLock`，锁键保持不变，事务内后续操作必须使用同一个 `tx`。PostGraphile 不提供 Torrent 的通用创建／更新 mutation，避免绕过 API 的业务边界；读取和现有下载业务不受影响。
 
 重解析在同一事务里调用 `updateWithTorrentMatching`，按 ID 顺序锁定业务行，比较标题、发布时间、解析名称及剧集编号。只有这些输入发生变化才清空旧结果、置为 PENDING 并入队；字幕、解析版本、元数据抓取状态等变化不重新匹配。新增种子写入入口也须复用上述事务方法。直接 SQL 写入属于维护操作，不会隐式匹配。
 
@@ -51,3 +51,5 @@ worker 的目录缓存可丢弃。API 消费前查询版本，缓存缺失时上
 通过现有鉴权 Gateway 调用 `enqueueTorrentSeasonMatches(torrentIds: [Int!]!, rematch: Boolean = false): Int!`。每批 1–500 个正整数 ID，去重后在同一事务内标记 PENDING 并入队，返回实际入队数量；不存在的 ID 跳过。默认仅匹配状态为 NULL 的种子；`rematch: true` 可重跑已处理或待处理记录，但始终跳过用户取消关联的 DISMISSED。通用队列中已有的失败屏障不会被入队操作清除，需按通用队列机制处理失败。禁用匹配时调用报错且不写入。前端不调用此运维入口。
 
 独立部署时 matcher 使用独立 Deployment/Service，每个环境一份；API 不依赖 initContainer，不携带 Python 或模型权重。HTTP endpoint 由 `matching.endpoint` 配置。
+
+API 的 HTTP 传输复用 `LocalAxiosService`，覆盖匹配专用超时并在关闭时取消在途请求；保留 16 MiB 请求／响应上限，不经过环境代理、不跟随重定向、不自动重试。目录同步与协议校验仍由 `MatcherTransport` 负责。

@@ -1,3 +1,7 @@
+import {
+  acquireAdvisoryTransactionLock,
+  AdvisoryLockNamespace,
+} from '@/utils/advisory-lock';
 import { PrismaService } from '@/common/prisma.service';
 import { ParseTorrentService } from '@/parse-torrent/index.service';
 import { TorrentChannel } from '@lani/db';
@@ -27,7 +31,11 @@ export class TorrentSyncService {
     if (!unique.size) return 0;
     return this.prisma.$transaction(async (tx) => {
       // 所有来源共用此入口；串行化批量去重，确保只为本次实际新增的行入队。
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(1634625901, 1)`;
+      await acquireAdvisoryTransactionLock(
+        tx,
+        AdvisoryLockNamespace.TorrentSync,
+        1,
+      );
       const existing = await tx.torrent.findMany({
         where: { hash: { in: [...unique.keys()] } },
         select: { hash: true },

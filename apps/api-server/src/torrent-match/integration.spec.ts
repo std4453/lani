@@ -1,3 +1,4 @@
+import { LocalAxiosService } from '@/common/axios.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
 import { QueueExplorer } from '@/background-queue/explorer';
@@ -20,6 +21,7 @@ import { ParseTorrentService } from '@/parse-torrent/index.service';
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
+    network: { timeout: 1000 },
     postgresUrl: process.env.LANI_LIFECYCLE_TEST_DATABASE_URL,
     matching: {
       enabled: true,
@@ -77,6 +79,7 @@ suite('种子入库、目录等待与结果持久化', () => {
       imports: [DiscoveryModule],
       providers: [
         { provide: PrismaService, useValue: db },
+        LocalAxiosService,
         BackgroundQueueService,
         QueueExplorer,
         TorrentMatchService,
