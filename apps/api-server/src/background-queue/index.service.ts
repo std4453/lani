@@ -38,7 +38,13 @@ export class BackgroundQueueService
     // 持久化 JSON 的业务类型只在注册边界转换；格式校验由业务处理器负责。
     const ready = handler.ready?.bind(handler);
     this.handlers.set(name, {
-      ...handler,
+      get enabled() {
+        return handler.enabled;
+      },
+      get retry() {
+        return handler.retry;
+      },
+      settled: handler.settled?.bind(handler),
       ready: ready ? (job) => ready(job as QueueJob<TPayload>) : undefined,
       execute: (job) => handler.execute(job as QueueJob<TPayload>),
     });

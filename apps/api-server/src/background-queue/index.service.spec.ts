@@ -1,7 +1,7 @@
 import { PrismaClient } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
 import { BackgroundQueueService } from './index.service';
-import { QueueHandler, QueueWaiting } from './types';
+import { QueueHandler, QueueJob, QueueWaiting } from './types';
 import { enqueueJob } from './producer';
 import { retryJob } from './cli';
 import {
@@ -198,6 +198,55 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
       }
     },
   );
+
+  it('preserves class handler getters and method receivers at the JSON boundary', async () => {
+    const settled = jest.fn();
+    class Handler implements QueueHandler<{ value: number }> {
+      active = true;
+      busy = false;
+      get enabled() {
+        return this.active;
+      }
+      async ready(job: QueueJob<{ value: number }>) {
+        expect(this).toBe(handler);
+        return !this.busy && job.payload.value > 0;
+      }
+      async execute(job: QueueJob<{ value: number }>) {
+        expect(this).toBe(handler);
+        this.busy = true;
+        return async (tx) => {
+          await tx.backgroundJob.update({
+            where: { queueName_key: { queueName: output, key: output } },
+            data: { payload: job.payload },
+          });
+        };
+      }
+      settled() {
+        expect(this).toBe(handler);
+        this.busy = false;
+        settled();
+      }
+    }
+    const handler = new Handler();
+    await queues.onApplicationShutdown();
+    await create(handler);
+    await enqueue('a', 1);
+    await queues.wake(name);
+    expect(handler.busy).toBe(false);
+    expect(settled).toHaveBeenCalledTimes(1);
+    handler.active = false;
+    await enqueue('b', 2);
+    await queues.wake(name);
+    expect(settled).toHaveBeenCalledTimes(1);
+    handler.active = true;
+    await queues.wake(name);
+    expect(settled).toHaveBeenCalledTimes(2);
+    expect(
+      await db.backgroundJob.findUnique({
+        where: { queueName_key: { queueName: output, key: output } },
+      }),
+    ).toMatchObject({ payload: { value: 2 } });
+  });
 
   it('pauses on failure without retries, including across restart', async () => {
     execute.mockRejectedValue(new Error('component offline'));
