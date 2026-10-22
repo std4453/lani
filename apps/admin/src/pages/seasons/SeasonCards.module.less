@@ -47,6 +47,12 @@
   min-width: 0;
   justify-self: center;
   border-radius: var(--lani-radius);
+  &:hover {
+    border-color: var(--lani-divider);
+    .seasonLink {
+      color: var(--lani-primary);
+    }
+  }
 }
 .seasonLink {
   color: var(--lani-text);
@@ -55,9 +61,6 @@
     position: absolute;
     inset: 0;
     border-radius: var(--lani-radius);
-  }
-  &:hover {
-    color: var(--lani-primary);
   }
   &:focus-visible {
     outline: 2px solid var(--lani-primary);
@@ -96,9 +99,22 @@
   position: absolute;
   left: 6px;
   top: 6px;
+  display: flex;
+  align-items: center;
+  line-height: 20px;
   padding: 0 7px;
   border-radius: 999px;
   background: var(--lani-image-overlay);
+  &[data-monitoring='false'] {
+    background: var(--lani-image-overlay-muted);
+  }
+  :global(.ant-badge-status) {
+    display: inline-flex;
+    align-items: center;
+  }
+  :global(.ant-badge-status-dot) {
+    top: 0;
+  }
   :global(.ant-badge-status-text) {
     margin-left: 6px;
     color: var(--lani-image-text);
@@ -111,10 +127,10 @@
 .title {
   color: inherit;
   font-size: inherit;
-  font-weight: bold;
+  font-weight: 500;
   line-height: 24px;
   height: 48px;
-  margin: 6px 8px 10px;
+  margin: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

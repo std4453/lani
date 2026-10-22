@@ -48,7 +48,10 @@ export default function SeasonCard({
               {source ? '封面加载失败' : '暂无封面'}
             </span>
           )}
-          <span className={styles.monitoring}>
+          <span
+            className={styles.monitoring}
+            data-monitoring={season.isMonitoring}
+          >
             <Badge
               status={season.isMonitoring ? 'success' : 'default'}
               text={season.isMonitoring ? '追番中' : '未追番'}
