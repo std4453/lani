@@ -1,3 +1,7 @@
+jest.mock('@/config', () => ({
+  __esModule: true,
+  default: { matching: { enabled: false } },
+}));
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/parse-torrent/index.service', () => ({
   ParseTorrentService: class {},
@@ -14,12 +18,14 @@ const item = {
   publishDate: new Date(),
 };
 function setup(existing: string[] = []) {
-  const prisma = {
+  const prisma: any = {
+    $executeRaw: jest.fn(),
     torrent: {
       findMany: jest.fn().mockResolvedValue(existing.map((hash) => ({ hash }))),
       createMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
+  prisma.$transaction = (fn) => fn(prisma);
   const parser = {
     titleToCreateInput: jest
       .fn()

@@ -114,7 +114,8 @@ model Season {
   episodes         Episode[]
   episodesAutoSync Boolean        @default(true) @map("episodes_auto_sync")
 
-  laniaSync Boolean @default(false) @map("integrations_lania_sync")
+  laniaSync       Boolean   @default(false) @map("integrations_lania_sync")
+  matchedTorrents Torrent[] @relation("MatchedSeason")
 
   @@map("seasons")
   @@unique([jellyfinFolderId, directory])
@@ -170,9 +171,37 @@ model Torrent {
   subtitleHasJP       Boolean            @default(false) @map("subtitle_has_jp")
   subtitleType        String?            @map("subtitle_type")
 
+  matchedSeasonId Int?      @map("matched_season_id")
+  matchedSeason   Season?   @relation("MatchedSeason", fields: [matchedSeasonId], references: [id], onDelete: SetNull)
+  matchStatus     TorrentMatchStatus? @map("match_status")
+  matchDetails    Json?     @map("match_details")
+  matchedAt       DateTime? @map("matched_at") @db.Timestamptz(6)
+
   @@index([title, id, torrentLink], map: "torrent_title_idx")
+  @@index([matchedSeasonId])
+  @@index([matchStatus])
   @@map("torrents")
 }
+
+enum TorrentMatchStatus {
+  PENDING
+  MATCHED
+  NO_MATCH
+  UNSUPPORTED
+
+  @@map("torrent_match_status")
+}
+
+// 目录属于匹配模块；worker 只持有可丢弃的派生缓存。
+model TorrentMatchCatalog {
+  id    Int  @id @default(1)
+  state Json @default("{}")
+
+  @@map("torrent_match_catalog")
+}
+
+// 队列定义在 API 代码中，数据库仅保存未确认的工作。
+
 
 enum TaskType {
   DOWNLOAD

@@ -22,5 +22,12 @@ DATABASE_URL=`yq '.postgresUrl' merged.yaml`
 # Create bucket
 mkdir -p /storage/images
 
+# 内置 worker 独立由 PM2 管理；外部 endpoint 或关闭匹配时不启动。
+export LANI_LOCAL_MATCHER=false
+if [ "$(yq '.matching.enabled' merged.yaml)" = true ] && \
+   [ "$(yq '.matching.endpoint' merged.yaml)" = http://127.0.0.1:8090 ]; then
+    export LANI_LOCAL_MATCHER=true
+fi
+
 # Replace bash process
 exec pm2-runtime /deploy/apps/all-in-one/ecosystem.config.js
