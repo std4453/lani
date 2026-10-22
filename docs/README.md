@@ -1,41 +1,49 @@
-# Website
+# 文档站
 
-This website is built using [Docusaurus 2](https://docusaurus.io/), a modern static website generator.
+文档站使用 Docusaurus 2，源码位于 `docs/`，静态资源位于 `static/`，发布地址为 <https://std4453.github.io/lani/>。
 
-### Installation
+## 本地构建与预览
 
-```
-$ yarn
-```
+在仓库根目录使用 `.nvmrc` 指定的 Node.js 版本，并通过 Rush 安装锁定依赖：
 
-### Local Development
-
-```
-$ yarn start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-### Build
-
-```
-$ yarn build
+```bash
+nvm install
+nvm use
+node common/scripts/install-run-rush.js install
+node common/scripts/install-run-rush.js build --to @lani/docs
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+产物位于 `docs/build/`。构建完成后，在仓库根目录启动静态预览：
 
-### Deployment
-
-Using SSH:
-
-```
-$ USE_SSH=true yarn deploy
+```bash
+cd docs
+node ../common/scripts/install-run-rushx.js serve
 ```
 
-Not using SSH:
+开发时可在 `docs/` 下运行 `node ../common/scripts/install-run-rushx.js start`。文档站不需要启动 API、数据库或其他业务服务。
 
-```
-$ GIT_USER=<Your GitHub username> yarn deploy
+## GitHub Pages 发布
+
+[Docs workflow](../.github/workflows/docs.yaml) 独立管理文档构建与发布：
+
+- 目标为 `next` 的 PR 修改文档、此 workflow 或相关构建配置时，仅验证构建，不上传 Pages 发布产物、不取得发布权限。
+- `next` 分支对应文件发生变更时，构建并发布 `docs/build/`。
+- 手动触发必须选择 `next`；其他分支或标签会跳过构建与发布。没有可指定其他源码分支或 SHA 的输入。
+- 构建 job 只有仓库读取权限；发布 job 使用 `github-pages` environment，仅授予 `pages: write` 和 `id-token: write`，不检出或执行仓库代码。
+- 此 workflow 不构建应用镜像、不调用应用发布流水线或私有部署通知，不需要额外发布凭据。
+
+首次启用需要仓库管理员完成：
+
+1. 在 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，替换旧的 `gh-pages` 分支发布方式。
+2. 在 **Settings → Environments → github-pages** 中，将部署分支限制设为 **Selected branches and tags**，仅保留名为 `next` 的 **branch** 规则，移除旧的 `master`、`gh-pages` 和其他分支／标签规则；保留已有审批等保护设置。
+3. 将 workflow 合入 `next` 后，由对应 push 自动构建发布。在 Pages 发布记录和 Docs workflow 中检查结果。
+
+GitHub 要求手动触发的 workflow 同时存在于仓库默认分支。默认分支仍为 `master` 且没有此文件时，不能仅靠合入 `next` 获得手动入口；此时使用 `next` 的自动发布或重跑已有 Docs run。满足默认分支条件后，可执行：
+
+```bash
+gh workflow run docs.yaml --repo std4453/lani --ref next
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+该命令仅触发 Docs。不要用 `Default Pipeline` 或 `rushx devops` 发布文档，也不再使用本地 `docusaurus deploy` 推送 `gh-pages`。
+
+仓库其他 CI 有各自的触发条件：创建／更新 PR 仍可能运行应用构建和测试。仅验证文档时，在 PR 标题和当前提交消息中保留 `[skip-cd]` 可阻止自动 PR 应用部署通知，但不跳过构建和测试。**合入 `next` 仍会触发现有应用发布流程，`[skip-cd]` 对 `next` push 无效**；不能把合并文档 PR 当作只发布文档的操作。完整规则见 [CI/CD 指南](docs/ci-cd.md)。

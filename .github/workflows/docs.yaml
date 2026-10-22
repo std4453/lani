@@ -1,0 +1,76 @@
+name: Docs
+
+on:
+  pull_request:
+    branches: [next]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yaml"
+      - ".nvmrc"
+      - "rush.json"
+      - "common/config/rush/**"
+      - "common/scripts/install-run*.js"
+  push:
+    branches: [next]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yaml"
+      - ".nvmrc"
+      - "rush.json"
+      - "common/config/rush/**"
+      - "common/scripts/install-run*.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'pull_request' ||
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+       github.ref == 'refs/heads/next')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install dependencies
+        run: node common/scripts/install-run-rush.js install
+      - name: Build docs
+        run: node common/scripts/install-run-rush.js build --to @lani/docs
+      - name: Upload Pages artifact
+        if: >-
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          github.ref == 'refs/heads/next'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/build
+
+  deploy:
+    needs: build
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/next'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy docs to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
