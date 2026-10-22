@@ -8,7 +8,7 @@ import { ListToolBar } from '@ant-design/pro-table';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
-import { Alert, Button, Empty, Pagination, Spin, Tooltip } from 'antd';
+import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   CARD_PAGE_SIZE,
@@ -85,15 +85,17 @@ export default function SeasonCards({
             mobile
               ? []
               : [
-                  modeButton,
-                  <Tooltip key="reload" title="刷新">
-                    <Button
-                      type="text"
-                      aria-label="刷新"
-                      icon={<ReloadOutlined spin={loading} />}
-                      onClick={() => void refetch().catch(() => undefined)}
-                    />
-                  </Tooltip>,
+                  <Space key="view-actions">
+                    {modeButton}
+                    <Tooltip title="刷新">
+                      <Button
+                        type="text"
+                        aria-label="刷新"
+                        icon={<ReloadOutlined spin={loading} />}
+                        onClick={() => void refetch().catch(() => undefined)}
+                      />
+                    </Tooltip>
+                  </Space>,
                 ]
           }
         />

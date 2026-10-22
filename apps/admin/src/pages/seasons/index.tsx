@@ -870,15 +870,17 @@ export default withAntdSearch(function MetadataPage() {
             settings: mobile
               ? []
               : [
-                  modeButton,
-                  <Tooltip key="reload" title="刷新">
-                    <Button
-                      type="text"
-                      aria-label="刷新"
-                      icon={<ReloadOutlined />}
-                      onClick={() => void ref.current?.reload()}
-                    />
-                  </Tooltip>,
+                  <Space key="view-actions">
+                    {modeButton}
+                    <Tooltip title="刷新">
+                      <Button
+                        type="text"
+                        aria-label="刷新"
+                        icon={<ReloadOutlined />}
+                        onClick={() => void ref.current?.reload()}
+                      />
+                    </Tooltip>
+                  </Space>,
                 ],
           }}
           search={false}

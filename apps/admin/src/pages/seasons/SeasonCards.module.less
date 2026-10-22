@@ -46,6 +46,12 @@
   max-width: 184px;
   min-width: 0;
   justify-self: center;
+  transition: box-shadow var(--lani-motion-duration-slow);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: var(--lani-card-shadow);
+    }
+  }
   border: 1px solid var(--lani-divider);
   border-radius: var(--lani-radius);
   background: var(--lani-surface);
@@ -232,6 +238,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .card,
   .episodeButton {
     transition: none;
   }

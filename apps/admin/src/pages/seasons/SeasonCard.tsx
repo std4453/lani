@@ -5,7 +5,7 @@ import {
 import { CardSeasonFieldsFragment } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { extractNode } from '@/utils/graphql';
-import { Badge, Tooltip } from 'antd';
+import { Badge } from 'antd';
 import { useState } from 'react';
 import { Link } from 'umi';
 import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
@@ -59,21 +59,20 @@ export default function SeasonCard({
                   const number = formatNumbering(episode.numbering);
                   const label = `${number} · ${episode.title} · ${EPISODE_STATUS_TAGS[status].children}`;
                   return (
-                    <Tooltip key={episode.id} title={label}>
-                      <button
-                        type="button"
-                        className={styles.episodeButton}
-                        data-tone={
-                          episodeColor(status, season.isMonitoring) ?? 'gray'
-                        }
-                        data-fractional={number.includes('.')}
-                        data-wide={number.replace('.', '').length > 2}
-                        aria-label={label}
-                        onClick={() => openEpisode(episode.id)}
-                      >
-                        {number}
-                      </button>
-                    </Tooltip>
+                    <button
+                      key={episode.id}
+                      type="button"
+                      className={styles.episodeButton}
+                      data-tone={
+                        episodeColor(status, season.isMonitoring) ?? 'gray'
+                      }
+                      data-fractional={number.includes('.')}
+                      data-wide={number.replace('.', '').length > 2}
+                      aria-label={label}
+                      onClick={() => openEpisode(episode.id)}
+                    >
+                      {number}
+                    </button>
                   );
                 })}
               </div>
