@@ -14,6 +14,13 @@ fragment torrentFields on Torrent {
 fragment torrentParseFields on Torrent {
   organizationParts
   seasonTitleAliases
+  matchStatus
+  matchedAt
+  matchedSeasonId
+  seasonByMatchedSeasonId {
+    id
+    title
+  }
 }
 
 query ListTorrents(
@@ -52,4 +59,8 @@ query TorrentHistorySyncState($id: String!) {
     added
     error
   }
+}
+
+mutation CancelTorrentSeasonMatch($torrentId: Int!) {
+  cancelTorrentSeasonMatch(torrentId: $torrentId)
 }

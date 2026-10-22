@@ -31,8 +31,11 @@ worker 的目录缓存可丢弃。API 消费前查询版本，缓存缺失时上
 | MATCHED     | 得到季度匹配结果                                               |
 | NO_MATCH    | 服务明确拒答，正常完成；不需要业务判断拒答是否合理             |
 | UNSUPPORTED | 缺少可用解析名称，未调用模型                                   |
+| DISMISSED   | 用户主动取消关联；后续自动入队跳过该种子                       |
 
 `matchedSeasonId` 保存季度关联，`matchedAt` 保存完成时间。`matchDetails` 仅存输入／目录／模型版本、运行模式、原因和分数，不重复 status 或 seasonId；前端判断拒答只读 matchStatus。已匹配季度后来被删除时，外键置空，但保留历史判断为 MATCHED，不伪造为模型拒答。
+
+`cancelTorrentSeasonMatch(torrentId: Int!)` 在 API 事务中清空关联，写入 DISMISSED 和 `user_cancelled` 原因，并删除该种子的匹配任务。与生产者和结果提交保持相同锁顺序，在途结果无法覆盖取消操作。重复取消幂等；种子不存在则报错。前端只更新当前单元格及对应缓存，不重载种子列表。
 
 迁移 `20261026000000_torrent_matching` 复用通用任务表，创建目录检查点及种子匹配结果字段，不回填历史数据。先执行迁移，再启动启用匹配的 API。
 

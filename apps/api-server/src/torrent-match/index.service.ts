@@ -7,6 +7,7 @@ import { Prisma, Torrent, TorrentMatchStatus } from '@lani/db';
 import {
   Injectable,
   Logger,
+  NotFoundException,
   OnApplicationBootstrap,
   OnApplicationShutdown,
   OnModuleInit,
@@ -231,13 +232,14 @@ export class TorrentMatchService
     if (!this.observed || this.observationFailed || this.activating)
       return false;
     const { torrent, query } = await this.input(job);
-    if (!torrent || !query) return true;
+    if (!torrent || !query || torrent.matchStatus === 'DISMISSED') return true;
     return catalogReady(await this.currentCatalog(), query, config.matching);
   }
 
   async match(job: QueueJob<TorrentMatchPayload>): Promise<QueueCommit> {
     const { torrent, query } = await this.input(job);
-    if (!torrent) return async () => undefined;
+    if (!torrent || torrent.matchStatus === 'DISMISSED')
+      return async () => undefined;
     let matchedSeasonId: number | null = null;
     let matchStatus: TorrentMatchStatus = 'UNSUPPORTED';
     let result: Prisma.InputJsonValue = {
@@ -283,9 +285,9 @@ export class TorrentMatchService
             >`SELECT id FROM seasons WHERE id = ${matchedSeasonId} FOR KEY SHARE`;
       // 再按种子 -> 任务的顺序提交；删除的种子只确认任务。
       const existing = await tx.$queryRaw<
-        { id: number }[]
-      >`SELECT id FROM torrents WHERE id = ${torrent.id} FOR UPDATE`;
-      if (!existing.length) return;
+        { id: number; matchStatus: TorrentMatchStatus | null }[]
+      >`SELECT id, match_status AS "matchStatus" FROM torrents WHERE id = ${torrent.id} FOR UPDATE`;
+      if (!existing.length || existing[0].matchStatus === 'DISMISSED') return;
       await tx.torrent.update({
         where: { id: torrent.id },
         data: {
@@ -296,6 +298,28 @@ export class TorrentMatchService
         },
       });
     };
+  }
+
+  async cancelAssociation(torrentId: number): Promise<boolean> {
+    await this.prisma.$transaction(async (tx) => {
+      // 与入队、结果提交保持相同锁顺序；删除任务使在途结果无法确认。
+      const rows = await tx.$queryRaw<{ id: number }[]>`
+        SELECT id FROM torrents WHERE id = ${torrentId} FOR UPDATE`;
+      if (!rows.length) throw new NotFoundException('种子不存在');
+      await tx.torrent.update({
+        where: { id: torrentId },
+        data: {
+          matchedSeasonId: null,
+          matchStatus: 'DISMISSED',
+          matchDetails: { reason: 'user_cancelled' },
+          matchedAt: new Date(),
+        },
+      });
+      await tx.backgroundJob.deleteMany({
+        where: { queueName: MATCH_QUEUE, key: String(torrentId) },
+      });
+    });
+    return true;
   }
 
   settleCatalog() {

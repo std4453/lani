@@ -26,6 +26,7 @@ import useMobile from '@/utils/useMobile';
 import {
   ExportOutlined,
   HistoryOutlined,
+  InfoCircleOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
@@ -46,6 +47,7 @@ import prettyBytes from 'pretty-bytes';
 import { CSSProperties, useMemo, useRef, useEffect } from 'react';
 import styles from './index.module.less';
 import { syncTorrentHistory } from './history';
+import TorrentSeason from './TorrentSeason';
 import { handleError } from '@/utils/error';
 
 function chooseColor(text: string) {
@@ -163,33 +165,36 @@ function useColumns() {
           },
         },
         {
-          title: '剧集名称',
+          title: (
+            <>
+              季度{' '}
+              <Tooltip title="根据当前季度列表智能识别">
+                <InfoCircleOutlined aria-label="根据当前季度列表智能识别" />
+              </Tooltip>
+            </>
+          ),
           dataIndex: 'aliases',
           copyable: false,
           width: 272,
-          render: (_, r) => {
-            const aliases = r.seasonTitleAliases ?? [];
-            if (!aliases.length) {
-              return '-';
-            }
-            return (
-              <div className={styles.tagContainer}>
-                {aliases.map((alias, i) =>
-                  alias ? (
-                    <ColoredTag
-                      key={i}
-                      text={alias}
-                      onClick={() => {
-                        update({
-                          custom: { alias },
-                        });
-                      }}
-                    />
-                  ) : null,
-                )}
-              </div>
-            );
-          },
+          render: (_, r) => (
+            <TorrentSeason key={r.id} torrent={r}>
+              {r.seasonTitleAliases?.some(Boolean) ? (
+                <div className={styles.tagContainer}>
+                  {r.seasonTitleAliases.map((alias, i) =>
+                    alias ? (
+                      <ColoredTag
+                        key={i}
+                        text={alias}
+                        onClick={() => update({ custom: { alias } })}
+                      />
+                    ) : null,
+                  )}
+                </div>
+              ) : (
+                '-'
+              )}
+            </TorrentSeason>
+          ),
           stateKey: {
             custom: 'alias',
           },

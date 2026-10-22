@@ -215,6 +215,77 @@ suite('种子入库、目录等待与结果持久化', () => {
     );
   });
 
+  it('keeps manual cancellation through input changes and repeated cancellation', async () => {
+    const torrent = await insert();
+    await queues.wake(MATCH_QUEUE);
+    await expect(service.cancelAssociation(torrent.id)).resolves.toBe(true);
+    await expect(service.cancelAssociation(torrent.id)).resolves.toBe(true);
+    await update(torrent.id, { seasonTitleAliases: ['Updated alias'] });
+    await db.$transaction((tx) => enqueueTorrentMatch(tx, [torrent.id]));
+    await queues.wake(MATCH_QUEUE);
+    expect(match).toHaveBeenCalledTimes(1);
+    expect(
+      await db.torrent.findUnique({ where: { id: torrent.id } }),
+    ).toMatchObject({
+      matchedSeasonId: null,
+      matchStatus: 'DISMISSED',
+      matchDetails: { reason: 'user_cancelled' },
+    });
+    expect(
+      await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
+    ).toBe(0);
+  });
+
+  it('discards an in-flight result after cancellation and continues the next torrent', async () => {
+    const first = await insert();
+    const second = await insert();
+    let release!: () => void;
+    let entered!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = match.getMockImplementation()!;
+    match.mockImplementationOnce(async (...args) => {
+      entered();
+      await blocked;
+      return original(...args);
+    });
+    const consuming = queues.wake(MATCH_QUEUE);
+    await started;
+    try {
+      await service.cancelAssociation(first.id);
+    } finally {
+      release();
+    }
+    await consuming;
+    expect(
+      await db.torrent.findUnique({ where: { id: first.id } }),
+    ).toMatchObject({
+      matchedSeasonId: null,
+      matchStatus: 'DISMISSED',
+    });
+    expect(
+      await db.torrent.findUnique({ where: { id: second.id } }),
+    ).toMatchObject({
+      matchedSeasonId: seasonId,
+      matchStatus: 'MATCHED',
+    });
+    expect(
+      await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
+    ).toBe(0);
+  });
+
+  it('reports missing torrents without affecting other matching work', async () => {
+    const torrent = await insert();
+    await expect(service.cancelAssociation(-1)).rejects.toThrow('种子不存在');
+    expect(
+      await db.backgroundJob.count({ where: { key: String(torrent.id) } }),
+    ).toBe(1);
+  });
+
   it('retains old work while disabled without accepting or consuming new work', async () => {
     await insert();
     await module.close();

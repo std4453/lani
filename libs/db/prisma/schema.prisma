@@ -188,6 +188,7 @@ enum TorrentMatchStatus {
   MATCHED
   NO_MATCH
   UNSUPPORTED
+  DISMISSED
 
   @@map("torrent_match_status")
 }

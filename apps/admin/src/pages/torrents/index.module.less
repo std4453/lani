@@ -57,3 +57,37 @@
 .permalinkButton {
   margin-left: 4px;
 }
+
+.seasonCell {
+  display: inline-block;
+  max-width: 240px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  &:hover .cancelAssociation,
+  &:focus-within .cancelAssociation {
+    opacity: 1;
+  }
+}
+
+.cancelAssociation {
+  padding: 0;
+  margin-left: 4px;
+  height: auto;
+  opacity: 0;
+  transition: opacity 150ms ease;
+
+  &[data-loading='true'] {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    opacity: 1;
+  }
+}
+
+.dismissed {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}

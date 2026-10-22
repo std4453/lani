@@ -13,7 +13,10 @@ export async function enqueueTorrentMatch(
   for (const id of [...ids].sort((a, b) => a - b)) {
     // 与结果提交一致，先业务行、再任务行；事务回滚时两者一起撤销。
     const changed = await tx.torrent.updateMany({
-      where: { id },
+      where: {
+        id,
+        OR: [{ matchStatus: null }, { matchStatus: { not: 'DISMISSED' } }],
+      },
       data: {
         matchedSeasonId: null,
         matchStatus: 'PENDING',

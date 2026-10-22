@@ -6,7 +6,7 @@ CREATE TABLE torrent_match_catalog (
 );
 COMMENT ON TABLE torrent_match_catalog IS E'@omit';
 
-CREATE TYPE torrent_match_status AS ENUM ('PENDING', 'MATCHED', 'NO_MATCH', 'UNSUPPORTED');
+CREATE TYPE torrent_match_status AS ENUM ('PENDING', 'MATCHED', 'NO_MATCH', 'UNSUPPORTED', 'DISMISSED');
 ALTER TABLE torrents
   ADD COLUMN matched_season_id integer REFERENCES seasons(id) ON DELETE SET NULL,
   ADD COLUMN match_details jsonb,
