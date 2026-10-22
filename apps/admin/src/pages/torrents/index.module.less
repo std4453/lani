@@ -71,13 +71,23 @@
 }
 
 .cancelAssociation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   margin-left: 4px;
   height: auto;
-  vertical-align: middle;
+  // 与图标自身采用相同的文字基线偏移，避免 middle 对齐时按钮下沉。
+  vertical-align: -0.125em;
   line-height: 1;
   opacity: 0;
   transition: opacity 150ms ease;
+
+  // 加载图标多一层容器，统一用 flex 避免内联基线叠加。
+  :global(.anticon),
+  :global(.ant-btn-loading-icon) {
+    display: inline-flex;
+  }
 
   &[data-loading='true'] {
     opacity: 1;
