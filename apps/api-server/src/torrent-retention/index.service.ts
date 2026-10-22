@@ -4,7 +4,10 @@ import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { QBittorrentService } from '@/download-client/QBittorrentService';
 import { QBTTorrent } from '@/download-client/types';
-import { BackgroundJob } from '@lani/db';
+import { TaskService } from '@/task/index.service';
+import { enqueueJob } from '@/background-queue/producer';
+import { QueueJob } from '@/background-queue/types';
+import { TorrentRetentionPayload, validateRetentionPayload } from './payload';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import { Cron } from '@nestjs/schedule';
@@ -13,7 +16,6 @@ import {
   RETENTION_QUEUE,
   retentionDecision,
   torrentIdentities,
-  validHash,
 } from './policy';
 
 @Injectable()
@@ -40,10 +42,11 @@ export class TorrentRetentionService implements OnModuleInit {
     private prisma: PrismaService,
     private qbt: QBittorrentService,
     private queue: BackgroundQueueService,
+    private tasks: TaskService,
   ) {}
 
   onModuleInit() {
-    this.queue.register(RETENTION_QUEUE, {
+    this.queue.register<TorrentRetentionPayload>(RETENTION_QUEUE, {
       enabled: this.policy.enabled,
       execute: (job) => this.execute(job),
     });
@@ -72,43 +75,9 @@ export class TorrentRetentionService implements OnModuleInit {
     return this.scanning;
   }
 
-  /** 已越过提交阶段的下载证明归属；同 hash 仍被未完成任务使用时暂不清理。 */
-  private async ownedHashes() {
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        type: { in: ['DOWNLOAD', 'BATCH_DOWNLOAD'] },
-        qbtTorrentHash: { not: null },
-      },
-      select: {
-        qbtTorrentHash: true,
-        legacyStage: true,
-        isCancelled: true,
-        isFailed: true,
-      },
-    });
-    const owned = new Set<string>();
-    const active = new Set<string>();
-    for (const task of tasks) {
-      if (!validHash(task.qbtTorrentHash)) continue;
-      const hash = task.qbtTorrentHash.toLowerCase();
-      if (!['UNAVAILABLE', 'DOWNLOAD_SUBMITTING'].includes(task.legacyStage))
-        owned.add(hash);
-      if (
-        task.legacyStage !== 'AVAILABLE' &&
-        !task.isCancelled &&
-        !task.isFailed
-      )
-        active.add(hash);
-    }
-    return { owned, active };
-  }
-
   private eligible(
     torrent: QBTTorrent,
-    {
-      owned,
-      active,
-    }: Awaited<ReturnType<TorrentRetentionService['ownedHashes']>>,
+    { owned, active }: Awaited<ReturnType<TaskService['getTorrentOwnership']>>,
   ) {
     const identities = torrentIdentities(torrent);
     return (
@@ -126,7 +95,7 @@ export class TorrentRetentionService implements OnModuleInit {
       })
     )
       return 0;
-    const ownership = await this.ownedHashes();
+    const ownership = await this.tasks.getTorrentOwnership();
     if (!ownership.owned.size) return 0;
     // 与 DownloadAtom 的 30 秒轮询分开；低频全列表查询避免历史 hash 形成超长 URL。
     const torrents = await this.qbt.listTorrents();
@@ -138,7 +107,7 @@ export class TorrentRetentionService implements OnModuleInit {
     ];
     if (!hashes.length) return 0;
     await this.prisma.$transaction((tx) =>
-      this.queue.enqueue(tx, RETENTION_QUEUE, 'scan', { hashes }),
+      enqueueJob(tx, RETENTION_QUEUE, 'scan', { version: 1, hashes }),
     );
     for (const torrent of candidates) {
       const decision = retentionDecision(torrent, this.policy)!;
@@ -150,14 +119,11 @@ export class TorrentRetentionService implements OnModuleInit {
     return hashes.length;
   }
 
-  private async execute(job: BackgroundJob) {
-    const payload = job.payload as { hashes?: unknown };
-    if (!Array.isArray(payload?.hashes) || !payload.hashes.every(validHash))
-      throw new Error('种子清理任务内容无效');
+  private async execute(job: QueueJob<TorrentRetentionPayload>) {
+    const payload = job.payload;
+    validateRetentionPayload(payload);
     const hashes = [
-      ...new Set<string>(
-        payload.hashes.map((hash: string) => hash.toLowerCase()),
-      ),
+      ...new Set(payload.hashes.map((hash) => hash.toLowerCase())),
     ];
     for (
       let offset = 0;
@@ -167,7 +133,7 @@ export class TorrentRetentionService implements OnModuleInit {
       const batch = hashes.slice(offset, offset + RETENTION_BATCH_SIZE);
       try {
         // 队列可能在重启后恢复；按最新归属、状态、时间重新判断，避免删除陈旧候选。
-        const ownership = await this.ownedHashes();
+        const ownership = await this.tasks.getTorrentOwnership();
         const current = await this.qbt.listTorrents({ hashes: batch });
         const selected = [
           ...new Set(

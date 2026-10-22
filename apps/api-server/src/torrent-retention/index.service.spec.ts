@@ -1,6 +1,9 @@
 import { TorrentRetentionService } from './index.service';
 import config from '@/config';
 import { RETENTION_QUEUE } from './policy';
+import { enqueueJob } from '@/background-queue/producer';
+jest.mock('@/background-queue/producer', () => ({ enqueueJob: jest.fn() }));
+jest.mock('@/task/index.service', () => ({ TaskService: class {} }));
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -20,16 +23,8 @@ const torrent = (n: number) => ({
   completion_on: 1,
   added_on: 1,
 });
-const task = (n: number) => ({
-  qbtTorrentHash: hash(n),
-  legacyStage: 'AVAILABLE',
-  isCancelled: false,
-  isFailed: false,
-});
-
 function setup() {
   const db: any = {
-    task: { findMany: jest.fn().mockResolvedValue([task(1)]) },
     backgroundJob: { count: jest.fn().mockResolvedValue(0) },
     $transaction: jest.fn((fn) => fn(db)),
   };
@@ -37,11 +32,17 @@ function setup() {
     listTorrents: jest.fn().mockResolvedValue([torrent(1)]),
     deleteTorrentsKeepFiles: jest.fn(),
   };
-  const queue: any = { enqueue: jest.fn(), register: jest.fn() };
-  const service = new TorrentRetentionService(db, qbt, queue);
+  jest.mocked(enqueueJob).mockClear();
+  const tasks: any = {
+    getTorrentOwnership: jest
+      .fn()
+      .mockResolvedValue({ owned: new Set([hash(1)]), active: new Set() }),
+  };
+  const queue: any = { register: jest.fn() };
+  const service = new TorrentRetentionService(db, qbt, queue, tasks);
   service.onModuleInit();
   const handler = queue.register.mock.calls[0][1];
-  return { db, qbt, queue, service, handler };
+  return { db, qbt, tasks, service, handler };
 }
 
 afterEach(() => {
@@ -55,36 +56,34 @@ it('does nothing while disabled, including debug mutation', async () => {
   expect(qbt.listTorrents).not.toHaveBeenCalled();
 });
 it('only enqueues owned completed candidates, without deleting in the scanner', async () => {
-  const { service, qbt, queue } = setup();
+  const { service, qbt } = setup();
   qbt.listTorrents.mockResolvedValue([torrent(1), torrent(2)]);
   expect(await service.scanTorrentRetention()).toBe(1);
-  expect(queue.enqueue).toHaveBeenCalledWith(
+  expect(enqueueJob).toHaveBeenCalledWith(
     expect.anything(),
     RETENTION_QUEUE,
     'scan',
-    { hashes: [hash(1)] },
+    { version: 1, hashes: [hash(1)] },
   );
   expect(qbt.deleteTorrentsKeepFiles).not.toHaveBeenCalled();
 });
 it('coalesces concurrent scans and does not replace outstanding work', async () => {
-  const { service, db, queue } = setup();
+  const { service, db } = setup();
   await Promise.all([
     service.scanTorrentRetention(),
     service.scanTorrentRetention(),
   ]);
-  expect(queue.enqueue).toHaveBeenCalledTimes(1);
+  expect(enqueueJob).toHaveBeenCalledTimes(1);
   db.backgroundJob.count.mockResolvedValue(1);
   expect(await service.scanTorrentRetention()).toBe(0);
-  expect(queue.enqueue).toHaveBeenCalledTimes(1);
+  expect(enqueueJob).toHaveBeenCalledTimes(1);
 });
-it('protects reused active tasks and unconfirmed submissions; recognizes hybrid hashes', async () => {
-  const { service, db, qbt } = setup();
-  db.task.findMany.mockResolvedValue([
-    task(1),
-    { ...task(1), legacyStage: 'DOWNLOADING' },
-    { ...task(2), legacyStage: 'DOWNLOAD_SUBMITTING', isFailed: true },
-    task(3),
-  ]);
+it('uses task ownership and protects active hybrid identities', async () => {
+  const { service, tasks, qbt } = setup();
+  tasks.getTorrentOwnership.mockResolvedValue({
+    owned: new Set([hash(1), hash(3)]),
+    active: new Set([hash(1)]),
+  });
   qbt.listTorrents.mockResolvedValue([
     torrent(1),
     torrent(2),
@@ -93,8 +92,11 @@ it('protects reused active tasks and unconfirmed submissions; recognizes hybrid 
   expect(await service.scanTorrentRetention()).toBe(1);
 });
 it('revalidates ownership, state and time immediately before deletion', async () => {
-  const { db, qbt, handler } = setup();
-  db.task.findMany.mockResolvedValue([task(1), task(2), task(3)]);
+  const { tasks, qbt, handler } = setup();
+  tasks.getTorrentOwnership.mockResolvedValue({
+    owned: new Set([1, 2, 3].map(hash)),
+    active: new Set(),
+  });
   qbt.listTorrents.mockResolvedValue([
     torrent(1),
     { ...torrent(2), state: 'downloading' },
@@ -107,9 +109,12 @@ it('revalidates ownership, state and time immediately before deletion', async ()
   expect(qbt.deleteTorrentsKeepFiles).toHaveBeenCalledWith([hash(1)]);
 });
 it('splits batches serially, continues after failure and never retries a failed batch', async () => {
-  const { db, qbt, handler } = setup();
+  const { tasks, qbt, handler } = setup();
   const ids = Array.from({ length: 201 }, (_, n) => n + 1);
-  db.task.findMany.mockResolvedValue(ids.map(task));
+  tasks.getTorrentOwnership.mockResolvedValue({
+    owned: new Set(ids.map(hash)),
+    active: new Set(),
+  });
   qbt.listTorrents.mockImplementation(async ({ hashes }) =>
     hashes.map((h) => torrent(parseInt(h, 16))),
   );
@@ -162,4 +167,26 @@ it('logs bounded HTTP diagnostics without leaking exception messages or request 
   } finally {
     warn.mockRestore();
   }
+});
+
+it.each([undefined, 1])(
+  'accepts persisted payload version %s',
+  async (version) => {
+    const { qbt, handler } = setup();
+    await handler.execute({
+      payload: {
+        ...(version === undefined ? {} : { version }),
+        hashes: [hash(1)],
+      },
+    });
+    expect(qbt.deleteTorrentsKeepFiles).toHaveBeenCalledWith([hash(1)]);
+  },
+);
+it('rejects an unknown payload version before contacting the downloader', async () => {
+  const { qbt, handler } = setup();
+  await expect(
+    handler.execute({ payload: { version: 2, hashes: [hash(1)] } }),
+  ).rejects.toThrow('不支持的种子清理任务版本');
+  expect(qbt.listTorrents).not.toHaveBeenCalled();
+  expect(qbt.deleteTorrentsKeepFiles).not.toHaveBeenCalled();
 });

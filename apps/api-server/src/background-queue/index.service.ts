@@ -1,5 +1,5 @@
 import { PrismaService } from '@/common/prisma.service';
-import { BackgroundJob, Prisma } from '@lani/db';
+import { QueueHandler, QueueJob, QueueWaiting } from './types';
 import {
   Injectable,
   Logger,
@@ -8,19 +8,7 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-export type QueueCommit = (tx: Prisma.TransactionClient) => Promise<void>;
-export interface QueueHandler {
-  enabled: boolean;
-  /** 默认只尝试一次；需自动重试的处理器显式声明有限次数和间隔。 */
-  retry?: { maxAttempts: number; delayMs: number };
-  ready?(job: BackgroundJob): Promise<boolean>;
-  execute(job: BackgroundJob): Promise<QueueCommit>;
-  /** 执行和提交结束后释放进程内资源，不能抛出异常。 */
-  settled?(): void;
-}
 class SupersededJob extends Error {}
-/** 依赖尚未就绪，保留队头；这不是执行失败。 */
-export class QueueWaiting extends Error {}
 
 /** 单实例 FIFO 调度；数据库只保存工作及检查点，不提供分布式消费协议。 */
 @Injectable()
@@ -28,7 +16,7 @@ export class BackgroundQueueService
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
   private readonly logger = new Logger(BackgroundQueueService.name);
-  private readonly handlers = new Map<string, QueueHandler>();
+  private readonly handlers = new Map<string, QueueHandler<unknown>>();
   private readonly running = new Map<string, Promise<void>>();
   private readonly storageFaults = new Set<string>();
   private started = false;
@@ -37,7 +25,7 @@ export class BackgroundQueueService
 
   constructor(private prisma: PrismaService) {}
 
-  register(name: string, handler: QueueHandler) {
+  register<TPayload>(name: string, handler: QueueHandler<TPayload>) {
     if (this.handlers.has(name)) throw new Error(`Duplicate queue ${name}`);
     if (
       handler.retry &&
@@ -47,7 +35,13 @@ export class BackgroundQueueService
         handler.retry.delayMs < 1000)
     )
       throw new Error('Invalid queue retry policy');
-    this.handlers.set(name, handler);
+    // 持久化 JSON 的业务类型只在注册边界转换；格式校验由业务处理器负责。
+    const ready = handler.ready?.bind(handler);
+    this.handlers.set(name, {
+      ...handler,
+      ready: ready ? (job) => ready(job as QueueJob<TPayload>) : undefined,
+      execute: (job) => handler.execute(job as QueueJob<TPayload>),
+    });
   }
 
   onApplicationBootstrap() {
@@ -68,16 +62,6 @@ export class BackgroundQueueService
       });
     }
     this.started = true;
-  }
-
-  async enqueue(
-    tx: Prisma.TransactionClient,
-    queueName: string,
-    key: string,
-    payload: Prisma.InputJsonValue,
-    availableAt = new Date(),
-  ) {
-    return enqueueJob(tx, queueName, key, payload, availableAt);
   }
 
   @Cron('*/5 * * * * *')
@@ -105,7 +89,7 @@ export class BackgroundQueueService
     return task;
   }
 
-  private async drain(name: string, handler: QueueHandler) {
+  private async drain(name: string, handler: QueueHandler<unknown>) {
     for (let count = 0; count < 50 && !this.stopped; count++) {
       const job = await this.prisma.backgroundJob.findFirst({
         where: { queueName: name },
@@ -190,24 +174,4 @@ export class BackgroundQueueService
     this.stopped = true;
     await Promise.all(this.running.values());
   }
-}
-
-/** 必须使用生产者的事务；替换输入不会解除已有失败屏障。 */
-export async function enqueueJob(
-  tx: Prisma.TransactionClient,
-  queueName: string,
-  key: string,
-  payload: Prisma.InputJsonValue,
-  availableAt = new Date(),
-) {
-  const job = await tx.backgroundJob.upsert({
-    where: { queueName_key: { queueName, key } },
-    create: { queueName, key, payload, availableAt },
-    update: { payload, availableAt, revision: { increment: 1 } },
-  });
-  await tx.backgroundJob.updateMany({
-    where: { id: job.id, status: { not: 'failed' } },
-    data: { status: 'pending', attempts: 0, failedAt: null, lastError: null },
-  });
-  return job;
 }

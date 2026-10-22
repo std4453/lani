@@ -1,7 +1,13 @@
 import { PrismaClient } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
-import { BackgroundQueueService, QueueHandler } from './index.service';
+import { BackgroundQueueService } from './index.service';
+import { QueueHandler, QueueWaiting } from './types';
+import { enqueueJob } from './producer';
 import { retryJob } from './cli';
+import {
+  validateRetentionPayload,
+  TorrentRetentionPayload,
+} from '@/torrent-retention/payload';
 
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -17,7 +23,8 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   let ready: boolean;
   const name = 'queue-regression';
   const output = 'queue-regression-output';
-  const create = async (handler?: QueueHandler) => {
+  const other = 'queue-regression-other';
+  const create = async (handler?: QueueHandler<{ value: number }>) => {
     queues = new BackgroundQueueService(db as unknown as PrismaService);
     queues.register(
       name,
@@ -27,7 +34,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     return queues;
   };
   const enqueue = (key: string, value: number) =>
-    db.$transaction((tx) => queues.enqueue(tx, name, key, { value }));
+    db.$transaction((tx) => enqueueJob(tx, name, key, { value }));
   beforeAll(async () => {
     const target = new URL(url!);
     if (
@@ -40,7 +47,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   });
   beforeEach(async () => {
     await db.backgroundJob.deleteMany({
-      where: { queueName: { in: [name, output] } },
+      where: { queueName: { in: [name, output, other] } },
     });
     await db.backgroundJob.create({
       data: { queueName: output, key: output, payload: {} },
@@ -57,7 +64,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   afterEach(async () => {
     await queues.onApplicationShutdown();
     await db.backgroundJob.deleteMany({
-      where: { queueName: { in: [name, output] } },
+      where: { queueName: { in: [name, output, other] } },
     });
   });
   afterAll(async () => {
@@ -67,7 +74,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   it('rolls back enqueue with the producer transaction', async () => {
     await expect(
       db.$transaction(async (tx) => {
-        await queues.enqueue(tx, name, 'a', {});
+        await enqueueJob(tx, name, 'a', {});
         throw new Error('rollback');
       }),
     ).rejects.toThrow('rollback');
@@ -97,6 +104,100 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
       0,
     );
   });
+
+  it.each(['failed', 'ready', 'waiting'])(
+    'keeps another channel independent of a %s head',
+    async (barrier) => {
+      if (barrier === 'ready') ready = false;
+      else
+        execute.mockRejectedValue(
+          barrier === 'waiting' ? new QueueWaiting() : new Error('offline'),
+        );
+      const head = await enqueue('a', 1);
+      await enqueue('b', 2);
+      const independent = jest.fn();
+      queues.register<{ value: number }>(other, {
+        enabled: true,
+        ready: async (job) => job.payload.value === 42,
+        execute: async (job) => {
+          independent(job.payload.value);
+          return async (tx) => {
+            await tx.backgroundJob.update({
+              where: { queueName_key: { queueName: output, key: output } },
+              data: { payload: { value: job.payload.value } },
+            });
+          };
+        },
+      });
+      await db.$transaction((tx) => enqueueJob(tx, other, 'a', { value: 42 }));
+      await queues.tick();
+      expect(independent).toHaveBeenCalledWith(42);
+      expect(
+        await db.backgroundJob.count({ where: { queueName: other } }),
+      ).toBe(0);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: { queueName_key: { queueName: output, key: output } },
+        }),
+      ).toMatchObject({ payload: { value: 42 } });
+      expect(await db.backgroundJob.count({ where: { queueName: name } })).toBe(
+        2,
+      );
+      expect(
+        await db.backgroundJob.findUnique({ where: { id: head.id } }),
+      ).toMatchObject({
+        status: barrier === 'failed' ? 'failed' : 'pending',
+        attempts: barrier === 'failed' ? 1 : 0,
+      });
+      expect(execute).toHaveBeenCalledTimes(barrier === 'ready' ? 0 : 1);
+    },
+  );
+
+  it.each([undefined, 1, 2])(
+    'persists retention format version %s with business compatibility checks',
+    async (version) => {
+      const effect = jest.fn();
+      queues.register<TorrentRetentionPayload>(other, {
+        enabled: true,
+        execute: async ({ payload }) => {
+          validateRetentionPayload(payload);
+          effect(payload.hashes);
+          return async () => undefined;
+        },
+      });
+      const payload = {
+        ...(version === undefined ? {} : { version }),
+        hashes: ['a'.repeat(40)],
+      };
+      const job = await db.$transaction((tx) =>
+        enqueueJob(tx, other, 'scan', payload),
+      );
+      await queues.wake(other);
+      const persisted = await db.backgroundJob.findUnique({
+        where: { id: job.id },
+      });
+      if (version === 2) {
+        expect(persisted).toMatchObject({
+          status: 'failed',
+          payload,
+          attempts: 1,
+        });
+        expect(effect).not.toHaveBeenCalled();
+        await queues.onApplicationShutdown();
+        queues = new BackgroundQueueService(db as unknown as PrismaService);
+        queues.register(other, { enabled: true, execute: effect });
+        await queues.initialize();
+        await queues.wake(other);
+        expect(effect).not.toHaveBeenCalled();
+        expect(
+          await db.backgroundJob.findUnique({ where: { id: job.id } }),
+        ).toMatchObject({ status: 'failed', payload });
+      } else {
+        expect(effect).toHaveBeenCalledWith(payload.hashes);
+        expect(persisted).toBeNull();
+      }
+    },
+  );
 
   it('pauses on failure without retries, including across restart', async () => {
     execute.mockRejectedValue(new Error('component offline'));
