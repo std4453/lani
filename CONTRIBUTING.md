@@ -1,109 +1,29 @@
-# 提交与分支指南
+# 贡献指南
 
-本指南适用于本仓库新建的工作分支、提交和 PR。现有历史提交及分支无需为此重写或重命名。
+修改前阅读 [AGENTS.md](AGENTS.md) 中的代码与文档规范，按[本地开发说明](development/local-development.md)准备环境。普通开发和测试使用自己隔离的依赖；只编写用户手册时，按[文档站贡献说明](docs/CONTRIBUTING.md)构建即可。
 
-## 提交规范
+## 分支与提交
 
-手工创建的提交必须遵循 [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)。本仓库约定如下：
-
-```text
-<type>[(<scope>)][!]: <description>
-
-[正文]
-
-[页脚]
-```
-
-方括号表示可选部分，不应写入实际提交信息。冒号后保留一个空格。
-
-`type` 使用下表中的小写值；分支的类型也从同一张表选择。
-
-| 类型 | 用途 |
-| --- | --- |
-| `feat` | 新功能 |
-| `fix` | 缺陷修复 |
-| `docs` | 文档变更 |
-| `refactor` | 不改变外部行为的代码重构 |
-| `perf` | 性能改进 |
-| `test` | 测试新增或调整 |
-| `build` | 构建系统或依赖变更 |
-| `ci` | 持续集成、自动化流水线变更 |
-| `style` | 不影响语义的格式调整 |
-| `chore` | 其他维护工作 |
-| `revert` | 撤销已有提交 |
-
-- `scope` 可省略；涉及单个包时优先填写包目录名，例如 `admin`、`api-server`、`gateway`、`data-server`、`all-in-one`、`db`、`framework`、`parse-torrent-title`、`cli` 或 `docs`。跨包变更可省略 scope。
-- `description` 优先使用简体中文，简洁说明具体改动，避免 `update`、`fix bug` 等无法说明内容的标题。其他语言约定见 [AGENTS.md 的语言约定](AGENTS.md#语言约定)。
-- 不兼容变更必须使用 `!` 或 `BREAKING CHANGE:` 标记，并说明影响和迁移方式；本仓库推荐同时使用两者。
-- 正文和页脚各自与前一部分空一行。撤销提交使用 `revert` 类型，并在正文或页脚注明被撤销的提交 SHA。
-- 一个提交围绕一个明确目的组织；Git/GitHub 自动生成的 merge commit 信息不受上述格式限制。
-
-示例（不代表实际变更）：
-
-```text
-feat(admin): 添加季度筛选
-fix(api-server): 修复下载路径拼接
-docs: 补充提交与分支规范
-ci: 调整构建缓存
-```
-
-不兼容变更示例：
-
-```text
-feat(api-server)!: 移除旧版下载接口
-
-统一使用新版下载接口，避免维护两套协议。
-
-BREAKING CHANGE: 删除旧版下载接口，调用方需迁移到新版接口。
-```
-
-## 分支命名
-
-工作分支使用 `<type>/<description>`。
-
-- `type` 使用上表中的类型，反映分支的主要目的。
-- `description` 使用小写英文字母、数字和单个连字符组成的 kebab-case；以字母或数字开头、结尾，不使用空格、下划线、中文或额外的 `/`。
-- 描述应说明具体任务，可加入包名或 issue 编号，例如 `fix/123-api-download-path`。
-- `master`、`next` 是长期分支，不适用工作分支格式。新工作默认从最新的 `origin/next` 创建，并向 `next` 提交 PR；如任务明确指定其他目标，则以该目标为准。
-
-有效示例：
-
-```text
-feat/admin-season-filter
-fix/api-download-path
-docs/commit-branch-guide
-```
-
-`feature/foo`（类型不在表中）、`fix/Download_Path`（大小写及下划线）、`codex/update`（缺少类型）不符合本仓库约定。
-
-创建分支前确认工作区状态，再执行：
+从最新 `origin/next` 创建 `<type>/<description>` 工作分支，向 `next` 提交 PR。description 使用小写英文字母、数字及单个连字符，例如 `fix/api-download-path`。已有分支无需重命名。
 
 ```bash
 git fetch origin
-git switch -c docs/commit-branch-guide origin/next
+git switch -c docs/documentation-layout origin/next
 ```
 
-## PR 与提交前检查
+提交主题及 PR 标题遵循 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)：
 
-- 向 `next` 合入要求分支 **up to date**，目标分支保持 **linear history**。这不等于强制使用 rebase 同步工作分支：可以 merge `origin/next` 或 rebase 到最新 next，再更新 manifest 并通过检查；最终以 squash/rebase merge 合入，保持 next 历史线性，不改写已发布历史。
-- PR 标题遵循与提交相同的 Conventional Commits 格式；使用 squash merge 时，最终提交信息也必须符合规范。
-- PR 描述应说明改动目的、影响的包、验证命令及结果；涉及配置或 Prisma 迁移时说明操作要求，UI 变更附截图。
-- 检查分支名、提交信息及 PR 目标分支，执行 `git diff --check`，并运行与改动相关的测试或构建。仅文档变更无需运行应用测试。
-- 通过 `git diff --cached` 确认提交内容，不提交凭据、本机私有指南或生成的私有上下文。
+```text
+<type>[(<scope>)][!]: <description>
+```
 
-## PR 测试部署
+类型使用 `feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`style`、`chore` 或 `revert`。单包改动优先以包目录名作为 scope，描述优先使用简体中文，例如 `fix(api-server): 修复下载路径拼接`。不兼容变更使用 `!` 或 `BREAKING CHANGE:` 并说明迁移方式；正文和页脚各空一行。撤销提交在正文或页脚记录原 SHA。自动生成的 merge commit 信息沿用 Git 格式。
 
-自动测试部署与 `[skip-cd]` 规则见 [CI/CD 指南](docs/docs/ci-cd.md)。
+## 提交与检查
 
-## 构建 manifest 与提交 hook
+一个提交围绕一个明确目的组织。先运行改动相关的验证，再暂存文件并检查 `git diff --cached`，确认范围、凭据和私有信息。文档变更检查链接、命令及 `git diff --check`；行为变更的回归要求见 [AGENTS.md](AGENTS.md#构建测试与开发)。
 
-执行正常依赖安装 `node common/scripts/install-run-rush.js install` 时，Rush 会把 `common/git-hooks/pre-commit` 和 `common/git-hooks/pre-push` 安装到 Git hooks 目录，不需要另装 hook 管理器。Git clone 本身不会执行安装。
-
-pre-push 检查本次推送的所有引用；源分支或目标分支以 `codex/` 开头时阻断推送，输出「分支名需要遵循 Conventional Commit，禁止使用 `codex/` 作为分支名」。该检查允许删除远端旧分支，不限制同名前缀的标签，也不会因为当前检出的分支而误拦截其他分支的推送。使用自定义 hooks 时，应在现有 pre-push 中调用 `sh common/git-hooks/pre-push "$@"` 并传递原始标准输入和退出状态；多个检查需要读取输入时，应先保存输入再分别传入。
-
-Rush 安装依赖时会配置仓库 hooks；已有个人 hook 的维护者请先自行备份、整合。如果使用自定义 `core.hooksPath`，在现有 pre-commit 中调用 `node common/scripts/build-fingerprints.cjs generate --staged`，安装依赖时使用 `--bypass-policy` 跳过 Rush hook 安装。linked worktree 默认共享 Git hooks；仓库 hook 从当前工作树执行，旧分支没有生成器时跳过。需要独立配置时，可自行使用 `git config --worktree core.hooksPath common/git-hooks`（要求已开启 `extensions.worktreeConfig`）。
-
-先暂存本次源码再提交。hook 只生成并暂存 `build-manifest.json`，不改变其他文件的部分暂存；manifest 有人工未暂存修改或冲突时会报错，不覆盖内容。
+正常 `rush install` 会安装 `common/git-hooks/pre-commit` 和 `pre-push`。pre-commit 按暂存区生成并暂存 `build-manifest.json`，保持其他文件的部分暂存；manifest 存在人工未暂存修改或冲突时会停止。跳过 hook 或同步分支后，使用下列命令生成、检查：
 
 ```bash
 node common/scripts/build-fingerprints.cjs generate --staged
@@ -111,18 +31,21 @@ node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"
 node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)" --app admin
 ```
 
-`manifest-check` 是 PR 的轻量一致性检查，用于发现忘记生成、跳过 hook 和 rebase 后的过期数据。CI 不自动提交修复。`next` 采用 squash/rebase 合入，避免改写已发布历史；维护者可在 GitHub 设置中将该检查设为必需检查，不需要额外运维脚本。
+pre-push 拦截以 `codex/` 开头的源分支或目标分支，允许删除该前缀的旧远端分支。已有个人 hooks 时先备份并整合：自定义 pre-commit 调用 `generate --staged`；自定义 pre-push 调用 `sh common/git-hooks/pre-push "$@"`，传递原始标准输入和退出状态，多个检查读取输入时先保存再分别传入。自定义 `core.hooksPath` 的安装使用 `--bypass-policy`，避免 Rush 覆盖个人 hooks。
 
-fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；排除根目录指定文档、`.github/README.md`、`docs/`、`.github/workflows/docs.yaml`、hook 和 manifest 检查 workflow；包内 README、文档和配置示例仍属于输入，修改它们也可能改变镜像 fingerprint。文档 workflow 与文档目录均只属于文档站，不参与应用镜像计算。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
+linked worktree 默认共享 hooks，脚本从当前工作树执行。确需独立配置时，在已开启 `extensions.worktreeConfig` 的仓库使用 `git config --worktree core.hooksPath common/git-hooks`。其余命名规范通过自查和 PR 审查执行。
 
-自动 PR／push 仅修改 `docs/**` 和文档 workflow 时，应用构建、应用测试及部署通知会跳过，manifest 校验与隔离规则回归测试仍运行。混合变更和手动应用发布保留原流程，具体范围见 [CI/CD 指南](docs/docs/ci-cd.md#文档构建与发布)。修改 fingerprint 或 CI 隔离规则本身仍属于共享构建输入，会更新应用 fingerprint；不要据此宣称首次引入规则的 PR 也是纯文档变更。
+## PR 与 CI
 
-算法 v2 按项目截取 pnpm 9 workspace 锁文件：包含应用依赖闭包中的 importer，以及递归可达的 package 元数据和 snapshot（包括开发依赖、可选依赖与实际解析的 peer 实例）。不再把整个锁文件作为所有镜像的共同输入；安装设置、overrides 和 pnpmfile 校验和等全局配置仍共同参与。`explain` 中以 `pnpm-lock.yaml#` 开头的条目表示选中的锁文件片段。计算只读取 Git 暂存区或指定提交，不依赖 `node_modules`、网络或预先生成的 Rush 缓存；遇到不支持的锁文件布局或缺失的依赖节点会报错。
+PR 说明目的、影响的包、验证命令及结果；涉及配置或 Prisma migration 时说明操作要求，UI 变更附截图。单个 PR 的数据库变更须符合 [migration 合并规则](AGENTS.md#数据库-migration)。
 
-`@lani/anime-matcher` 的 Python 源码、`pyproject.toml`、安装脚本和版本化模型清单/权重都按包目录纳入 fingerprint，无需由 pnpm 管理 Python 依赖。独立 matcher 镜像不因其他包独有的 npm 依赖变化而失效。Python 当前没有传递依赖锁文件；fingerprint 覆盖提交的构建输入，不代表探测远端依赖或模型文件的实时内容。升级 fingerprint 算法会一次性改变所有镜像标识。
+CI 的使用顺序如下：
 
-主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
+1. 检查 manifest 一致性及受影响的构建、测试结果。`[skip-cd]` 不跳过测试或镜像构建。
+2. 同仓库、目标为 `next` 的 PR 通常会在构建成功后通知测试部署。文档整理等无需部署的 PR，在标题加入 `[skip-cd]`；它持续阻止自动 PR 部署通知，直到移除。修改标题本身不触发发布，手动 dispatch 会忽略此标记。
+3. 失败后按原因修复；需要重跑发布流程时选择 **Re-run all jobs**，由流水线重新规划并复用已完成镜像。构建或通知成功后，还需查看部署结果。
+4. 合入前与最新 `origin/next` 同步并通过检查。工作分支可 merge 或 rebase 同步，最终使用 squash/rebase merge 保持 `next` 的线性历史，保留已发布历史。
 
-不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。所需镜像全部可用后会通知部署，包括全部复用的情况；实际部署范围由目标 manifest 与环境成功基线决定。
+仅当完整变更范围非空且全部位于 `docs/**` 或 `.github/workflows/docs.yaml` 时，自动 PR/push 才跳过应用构建、测试和部署通知；manifest 与隔离规则检查仍运行。根目录和包内文档不属于此范围。`next` push 的应用部署通知不受 `[skip-cd]` 影响。
 
-除上述 `codex/` 推送检查外，其余提交及分支规范通过自查和 PR 审查执行，不新增 commitlint。
+完整事件、权限、手动入口及镜像构建约束见 [CI/CD 说明](development/ci-cd.md)。文档站独立通过 GitHub Pages 发布，操作见[文档站贡献说明](docs/CONTRIBUTING.md)。

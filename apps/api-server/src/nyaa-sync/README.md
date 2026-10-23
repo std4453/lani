@@ -1,44 +1,7 @@
-# Nyaa 元数据同步实现
+# Nyaa 元数据刷新
 
-RSS 按英文、非英文、RAW 三类每 5 分钟同步，在第 0、20、40 秒执行。详情、RSS 和历史列表共用进程内串行请求队列，间隔至少 1 秒；`torrents.nyaa.qps` 可以设得更低。任意请求收到 403/429 后，共享客户端暂停 15 分钟，队列中的请求不继续访问 Nyaa。当前按单实例 API 设计，队列及暂停状态不跨实例共享。
+服务会自动补抓近期 Nyaa 种子的字幕元数据。管理员可通过鉴权 GraphQL 提交 `refreshNyaaMetadata(ids: [Int!]!)`，使用数据库 Torrent ID，每次 1–100 条；手动指定的旧种子也可刷新。
 
-## 内存队列
+接口返回新入队数量，重复 ID 合并，记录不存在或来源非 NYAA 时整次请求失败。任务复用自动抓取的限速与退避，成功后才替换结果；通过 metadataFetchedAt、metadataStatus 和 metadataError 查看最终状态。手动刷新队列只在内存中保存，重启后需重新提交。
 
-每分钟分页扫描最近 30 天的 NYAA `pending` / `failed` 记录并去重入队，每批最多处理 40 个到期任务。初次启动和重启使用同一加载流程，失败行也重新入队。分页避免前面的失败记录阻塞后面的新记录；不依赖标题是否包含 Multi-Sub。
-
-每个任务最多请求 3 次，失败后在内存中退避 1、2 分钟；限流时至少等待 15 分钟。中间过程不写数据库。成功时只保存最终解析结果；重试耗尽后只写 `failed` 和失败原因，本次进程不再自动入队。数据库保存失败时保留待写结果，下次只重试保存，不重复抓取。暂停期间请求正常排队；关闭模块时取消等待计时器和在途请求，并拒绝后续任务。
-
-持久字段与来源无关，由 `channel` 标识来源：
-
-- `metadata`：解析版本、`known` / `none` / `unknown`、字幕信息及证据。
-- `metadataFetchedAt`：上次成功时间。
-- `metadataStatus`：`pending` / `parsed` / `failed`。
-- `metadataError`：重试耗尽的失败原因，成功后清空。
-
-HTML、提取的描述和文件列表仅存在于内存，不写入数据库。重新抓取失败保留旧解析结果和成功时间。页面抓取成功但语言未知属于 `parsed`，不重复请求；标题解析继续保存在 `parseResult`。API 的 `TorrentSubtitleResolver` 使用 Federation `@requires` 取得标题解析、旧字段和最终 metadata，并合并字幕信息。Gateway 在原有列表查询中读取这些字段，不逐行查询数据库；保持现有 `subtitleInfo` 字段和 UI 查询不变。Data Server 无需业务插件，数据库也不提供字幕兼容函数。页面未知时保留标题；标题具体语言优先于页面“无字幕”；简繁体证据替代笼统的 `zh`。
-
-## 手动刷新
-
-仅提供鉴权 GraphQL mutation，不增加前端入口：
-
-```graphql
-mutation RefreshNyaa($ids: [Int!]!) {
-  refreshNyaaMetadata(ids: $ids)
-}
-```
-
-`ids` 使用数据库 `Torrent.id`（不是 Nyaa 页面编号或 `displayId`），每次 1–100 条；重复 ID 合并，不存在或非 NYAA 的记录会使整个请求失败。返回新入队数量，0 表示请求的记录已经在队列中。已成功或本次运行已失败的记录可再次入队，手动指定的旧种子不受自动扫描的 30 天限制。
-
-任务在下一次分钟调度中优先于自动补抓处理，复用同一请求队列、限速、暂停和有限退避。重复提交不重置在途任务的重试次数或等待时间。刷新中不写数据库、不清空旧结果；通过 `metadataFetchedAt`、`metadataStatus`、`metadataError` 查看最终结果。队列只保存在内存，重启后手动刷新意图不保留；自动扫描仍只加载最近 30 天未处理和失败的记录。
-
-## 解析与验证
-
-纯解析器和固定语料位于 [`@lani/parse-nyaa`](../../../../libs/parse-nyaa/README.md)。运行时不调用 AI，不读取评论、外部 MediaInfo 链接、图片或种子内容。扩展结构规则时同步验证精确率与召回率，不用解析器输出反向修改 ground truth。
-
-在 API 包运行 `node ../../common/scripts/install-run-rushx.js test --runInBand nyaa-sync admin/torrent-subtitle`；在仓库根运行 `python3 libs/db/tests/nyaa-metadata-migration.py` 验证迁移、锁范围及真实 Federation 查询，需要先构建 API，并提供本机 `initdb`、`pg_ctl`、`psql`。测试只用临时 Unix socket PostgreSQL，不访问共享服务。
-
-## 迁移
-
-本需求仅包含 `20261021000000_torrent_metadata` 一个迁移，面向尚未应用本需求的数据库：新增四个 metadata 字段，并移除由 API resolver 接管的 `torrents_subtitle_info` 函数。
-
-迁移在短事务内完成结构变更，不扫描更新已有种子、不创建索引、不验证新增约束。先执行迁移，再启动新版 API/Data Server。PR 开发阶段测试数据库的修正独立处理，不放入正式迁移。
+限流、恢复与证据合并的原因见[同步设计](DESIGN.md)。

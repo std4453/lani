@@ -2,7 +2,7 @@
 
 ## 开始工作前
 
-先阅读本文件；启动本地服务前阅读 [开发指南](docs/docs/development.md)。如果当前分支存在 `CONTRIBUTING.md`，还应阅读其中的提交与分支规范。
+先阅读本文件和[贡献指南](CONTRIBUTING.md)；启动本地服务前阅读[本地开发说明](development/local-development.md)。
 
 ### 私有补充与 Git worktree
 
@@ -42,7 +42,7 @@
 - `cd libs/parse-torrent-title && rushx test`：运行解析器 Jest 测试。
 - `cd apps/api-server && rushx test`：运行 API Jest 测试；`No tests found` 不是测试通过。
 
-`rush install` 自动安装 `common/git-hooks/pre-commit` 和 `common/git-hooks/pre-push`；自定义 hook 或 worktree 的接入方式见 CONTRIBUTING.md。pre-push 拦截以 `codex/` 开头的源分支或目标分支，允许删除远端旧分支。先暂存源码再提交，pre-commit 按暂存区生成并暂存 `build-manifest.json`；不要手工编辑 fingerprint。需要补生成时运行 `node common/scripts/build-fingerprints.cjs generate --staged`。跳过 hook 或 rebase 后检查 manifest CI。`next` 使用 squash/rebase 合入，不改写已发布历史。
+提交 hook、分支命名、PR 和 CI 使用规则统一见[贡献指南](CONTRIBUTING.md)。修改构建输入或依赖关系时，阅读[构建指纹设计](common/scripts/BUILD_MANIFEST.md)，由生成器更新 manifest，不手工编辑 fingerprint。
 
 修改依赖后执行 `rush update`，同步 `common/config/rush/pnpm-lock.yaml`。行为变更应增加 `*.test.ts` 或 `*.spec.ts` 回归测试并覆盖失败路径。按变更范围验证；仅文档变更检查链接、命令和差异即可。
 
@@ -58,6 +58,18 @@
 
 配置下载匹配规则时，用实际资源标题验证 SQL `LIKE` pattern，核对同一季、同一集及解析出的 `episodeIndex`，确认 `剧集 index + offset = 资源 episodeIndex`，避免误匹配其他季度或合集。具体选源偏好由任务要求或私有补充提供。
 
+## 文档规范
+
+文档按读者和用途组织，同一规则保留一个权威入口，通过链接衔接：
+
+- `README.md` 面向仓库或包的使用者，介绍用途、使用方法和阅读入口。
+- `CONTRIBUTING.md` 面向贡献者，说明分支、提交、PR、验证及 CI 的使用流程；较长的操作说明可链接到专题文档。
+- `AGENTS.md` 面向负责开发的 AI，记录代码规范、开发注意事项和操作边界。包内专有规则放在该包的 `AGENTS.md`。
+- 代码附近的设计笔记说明模块职责、关键约束及不易从代码看出的设计原因。保留必要的技术细节，省略可直接从代码确认的字段、函数、常量及逐步实现复述。
+- `docs/` 的站点正文是用户手册，覆盖平台使用、注意事项及普通用户适用的部署方案。贡献流程和内部实现说明放在站点正文之外。
+
+先说明目的和背景，再按使用或理解顺序展开，让读者能顺着文档建立完整思路。文字力求精简，优先直接说明行为和原因；仅在边界明显违背常识、容易导致错误推断时使用否定句强调，避免反复使用“……，不是……”的对照。变更时同步修正链接，删除重复或过时的说明，保留仍影响兼容性和数据安全的约束。
+
 ## 语言约定
 
 - README、项目文档和手写业务注释使用简体中文。
@@ -66,15 +78,9 @@
 - 提交主题和 PR 标题遵循 Conventional Commits，`type`、`scope` 使用英文，描述优先使用简体中文。
 - 技术名称和代码标识符保留原文；生成代码、第三方代码和模板不强制翻译。
 
-## 风格、提交与分支
+## 代码风格
 
 TypeScript 使用两个空格缩进。格式化以文件所在目录向上找到的最近一份 Prettier 配置为准，不用根目录配置覆盖包内配置。根目录 `.prettierrc.json` 使用分号、双引号、ES5 尾随逗号及箭头参数括号；`apps/api-server/.prettierrc` 使用单引号和 `trailingComma: all`。修改代码时沿用所属包的配置，避免整文件无关格式变更。组件和类使用 `PascalCase`，函数与 Hook 使用 `camelCase`，包目录使用小写 kebab-case。
-
-提交主题和 PR 标题遵循 Conventional Commits：`<type>[(<scope>)][!]: <description>`。类型使用小写 `feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`style`、`chore` 或 `revert`；单包改动优先以包目录名作为 scope。不兼容变更使用 `!` 或 `BREAKING CHANGE:` 并说明迁移方式；自动生成的 merge commit 信息除外。
-
-工作分支使用 `<type>/<description>`。description 使用小写英文字母、数字及单个连字符组成的 kebab-case。长期分支及已有分支无需重命名。除任务明确指定外，从最新的 `origin/next` 创建分支，PR 目标为 `next`。
-
-提交前检查分支名、提交主题和 `git diff --cached`，确保只包含任务相关文件且没有隐私信息。PR 说明影响的包、验证命令及结果、配置或 Prisma 迁移；UI 变更附截图。
 
 ## CI/CD 与操作边界
 

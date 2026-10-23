@@ -4,13 +4,13 @@
 
 ## 独立测试
 
-构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为 `next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway、Admin 的单元测试，以及使用一次性 PostgreSQL 14 service 的数据库集成测试；不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。本机对应命令见[开发指南](development.md#单元测试)。
+构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为 `next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway、Admin 的单元测试，以及使用一次性 PostgreSQL 14 service 的数据库集成测试；不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。本机对应命令见[开发指南](local-development.md#单元测试)。
 
 自动 PR 和 push 若为下文定义的纯文档变更，`test.yaml` 仅执行范围检查，跳过应用测试 job，因而不会构建应用测试依赖或启动数据库 service。manifest 校验和文档隔离规则测试仍运行。
 
 ## 文档构建与发布
 
-`docs.yaml` 单独安装和构建 `@lani/docs`；PR 只验证构建，只有 `next` push 或选择 `next` 的手动运行可发布 GitHub Pages。首次启用与本地预览步骤见[文档站说明](https://github.com/std4453/lani/blob/next/docs/README.md)。
+`docs.yaml` 单独安装和构建 `@lani/docs`；PR 只验证构建，只有 `next` push 或选择 `next` 的手动运行可发布 GitHub Pages。首次启用与本地预览步骤见[文档站说明](../docs/CONTRIBUTING.md)。
 
 纯文档变更指非空的完整变更范围内，每个路径均位于 `docs/**` 或为 `.github/workflows/docs.yaml`。这些路径不参与应用 fingerprint。`default_pipeline.yaml` 和 `test.yaml` 在任何应用构建前检查范围：PR 比较 merge base 到 head，push 比较事件的 before 到 after；读取完整 Git diff，重命名按删除和新增分别核对，避免遗漏被移入文档目录的应用源码。
 
@@ -46,4 +46,4 @@ CLI 支持 `--environment` 和 `--ref`，部署始终对齐完整 manifest。`--
 
 构建或通知成功不代表部署成功，还需检查部署仓库的发布结果。通知失败时可完整重跑 workflow，已有 fingerprint 镜像会复用。
 
-向 `next` 合入前要求分支 up to date，最终使用 squash/rebase merge 保持线性历史；同步工作分支允许 merge 或 rebase。提交、hook 和 manifest 规则见[贡献指南](https://github.com/std4453/lani/blob/next/CONTRIBUTING.md)。
+向 `next` 合入前要求分支 up to date，最终使用 squash/rebase merge 保持线性历史；同步工作分支允许 merge 或 rebase。提交、hook 和 manifest 规则见[贡献指南](../CONTRIBUTING.md)。

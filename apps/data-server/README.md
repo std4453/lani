@@ -1,5 +1,3 @@
 # `@lani/data-server`
 
-## 依赖
-
-`postgraphile@4.12.8` 依赖了 `graphql@15.8.0`，而 `graphql` 不允许同时使用多个不同版本，因此项目中的 `graphql` 依赖必须被锁定。
+将 PostgreSQL schema 通过 PostGraphile 暴露为 GraphQL subgraph，由 Gateway 组合后供客户端访问。开发配置与启动步骤见[本地开发说明](../../development/local-development.md)。
