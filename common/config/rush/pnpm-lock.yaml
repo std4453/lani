@@ -11,7 +11,9 @@ pnpmfileChecksum: kjiy455cgchvlc7orvc57y6wr4
 
 importers:
 
-  .:
+  .: {}
+
+  ../../apps/admin:
     dependencies:
       '@ant-design/icons':
         specifier: ^4.7.0
@@ -31,39 +33,91 @@ importers:
       '@apollo/client':
         specifier: ~3.5.7
         version: 3.5.10(graphql-ws@5.16.2(graphql@15.8.0))(graphql@15.8.0)(react@17.0.2)(subscriptions-transport-ws@0.11.0(graphql@15.8.0))
-      '@apollo/gateway':
-        specifier: ^0.46.0
-        version: 0.46.0(encoding@0.1.13)(graphql@15.8.0)
-      '@apollo/subgraph':
-        specifier: ~0.3.3
-        version: 0.3.3(graphql@15.8.0)
-      '@ctrl/torrent-file':
-        specifier: 4.5.2
-        version: 4.5.2
-      '@docusaurus/core':
-        specifier: 2.4.3
-        version: 2.4.3(@docusaurus/types@2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
-      '@docusaurus/module-type-aliases':
-        specifier: 2.4.3
-        version: 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@docusaurus/preset-classic':
-        specifier: 2.4.3
-        version: 2.4.3(@algolia/client-search@5.54.1)(@types/react@17.0.93)(encoding@0.1.13)(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
-      '@docusaurus/types':
-        specifier: 2.4.3
-        version: 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@graphile-contrib/pg-omit-archived':
-        specifier: ~2.1.0
-        version: 2.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(postgraphile@4.12.12)
-      '@graphile-contrib/pg-order-by-related':
-        specifier: ~1.0.0-beta.6
-        version: 1.0.0
-      '@graphile-contrib/pg-simplify-inflector':
-        specifier: ~6.1.0
-        version: 6.1.0
-      '@graphile/federation':
+      '@graphql-typed-document-node/core':
+        specifier: ~3.1.1
+        version: 3.1.2(graphql@15.8.0)
+      '@lani/parse-torrent-title':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/parse-torrent-title
+      '@lani/workflow':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/workflow
+      '@reduxjs/toolkit':
+        specifier: ~1.8.1
+        version: 1.8.6(react-redux@8.0.7)(react@17.0.2)
+      '@sentry/react':
+        specifier: ~6.17.8
+        version: 6.17.9(react@17.0.2)
+      '@types/history':
+        specifier: 2.0.45
+        version: 2.0.45
+      '@types/qs':
+        specifier: ~6.9.7
+        version: 6.9.18
+      '@umijs/route-utils':
+        specifier: ~2.0.4
+        version: 2.0.5
+      ahooks:
+        specifier: ~3.1.9
+        version: 3.1.14(react@17.0.2)
+      antd:
+        specifier: ~4.24.8
+        version: 4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      axios:
+        specifier: ~0.26.0
+        version: 0.26.1
+      clsx:
+        specifier: ~1.1.1
+        version: 1.1.1
+      dayjs:
+        specifier: ~1.10.7
+        version: 1.10.8
+      hsluv:
         specifier: ~0.1.0
-        version: 0.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(graphql@15.8.0)
+        version: 0.1.0
+      lodash:
+        specifier: ~4.17.21
+        version: 4.17.23
+      md5:
+        specifier: ~2.3.0
+        version: 2.3.0
+      oidc-client-ts:
+        specifier: ~2.0.5
+        version: 2.0.6
+      oidc-react:
+        specifier: ~1.5.1
+        version: 1.5.1(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      pretty-bytes:
+        specifier: ~6.0.0
+        version: 6.0.0
+      qs:
+        specifier: ~6.10.3
+        version: 6.10.7
+      react:
+        specifier: ~17.0.2
+        version: 17.0.2
+      react-dom:
+        specifier: ~17.0.2
+        version: 17.0.2(react@17.0.2)
+      react-redux:
+        specifier: ~8.0.1
+        version: 8.0.7(@reduxjs/toolkit@1.8.6)(@types/react-dom@17.0.26(@types/react@17.0.93))(@types/react@17.0.93)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(redux@4.2.1)
+      redux:
+        specifier: ~4.2.0
+        version: 4.2.1
+      redux-thunk:
+        specifier: ~2.4.1
+        version: 2.4.2(redux@4.2.1)
+      store2:
+        specifier: ~2.14.2
+        version: 2.14.4
+      umi:
+        specifier: ~3.5.43
+        version: 3.5.43(react-router@5.3.4(react@17.0.2))
+      virtualizedtableforantd4:
+        specifier: ~1.3.1
+        version: 1.3.2(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+    devDependencies:
       '@graphql-codegen/cli':
         specifier: ~2.4.0
         version: 2.4.0(@babel/core@7.29.7)(@types/node@17.0.45)(encoding@0.1.13)(graphql@15.8.0)
@@ -76,24 +130,108 @@ importers:
       '@graphql-codegen/typescript-operations':
         specifier: ~2.2.2
         version: 2.2.4(encoding@0.1.13)(graphql@15.8.0)
-      '@graphql-typed-document-node/core':
-        specifier: ~3.1.1
-        version: 3.1.2(graphql@15.8.0)
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@rushstack/eslint-config':
+        specifier: ~2.5.1
+        version: 2.5.4(eslint@7.32.0)(typescript@4.7.4)
+      '@types/jest':
+        specifier: 27.4.1
+        version: 27.4.1
+      '@types/lodash':
+        specifier: ~4.14.178
+        version: 4.14.202
+      '@types/md5':
+        specifier: ~2.3.2
+        version: 2.3.6
+      '@types/react':
+        specifier: ~17.0.38
+        version: 17.0.93
+      '@types/react-dom':
+        specifier: ^17.0.0
+        version: 17.0.26(@types/react@17.0.93)
+      '@umijs/plugin-esbuild':
+        specifier: ~1.4.2
+        version: 1.4.2(umi@3.5.43(react-router@5.3.4(react@17.0.2)))(webpack@5.107.2)
+      '@umijs/preset-react':
+        specifier: ~1.8.32
+        version: 1.8.32(@ant-design/icons@4.8.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@ant-design/pro-layout@6.38.22(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@types/react@17.0.93)(dva-core@2.0.4(redux@4.2.1))(react-dom@17.0.2(react@17.0.2))(react-router@5.3.4(react@17.0.2))(react@17.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(umi@3.5.43(react-router@5.3.4(react@17.0.2)))
+      eslint:
+        specifier: ^7.32.0
+        version: 7.32.0
+      eslint-plugin-react-hooks:
+        specifier: ~4.3.0
+        version: 4.3.0(eslint@7.32.0)
+      jest:
+        specifier: ^27.2.5
+        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      prettier:
+        specifier: ~2.5.1
+        version: 2.5.1
+      ts-jest:
+        specifier: ^27.0.3
+        version: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+
+  ../../apps/all-in-one:
+    devDependencies:
+      '@lani/admin':
+        specifier: workspace:~1.0.0
+        version: link:../admin
+      '@lani/anime-matcher':
+        specifier: workspace:~0.1.0
+        version: link:../../libs/anime-matcher
+      '@lani/api-server':
+        specifier: workspace:~1.0.0
+        version: link:../api-server
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@lani/data-server':
+        specifier: workspace:~1.0.0
+        version: link:../data-server
+      '@lani/db':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/db
+      '@lani/gateway':
+        specifier: workspace:~1.0.0
+        version: link:../gateway
+
+  ../../apps/api-server:
+    dependencies:
+      '@apollo/subgraph':
+        specifier: ~0.3.3
+        version: 0.3.3(graphql@15.8.0)
+      '@ctrl/torrent-file':
+        specifier: 4.5.2
+        version: 4.5.2
+      '@lani/db':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/db
+      '@lani/framework':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/framework
+      '@lani/parse-nyaa':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/parse-nyaa
+      '@lani/parse-torrent-title':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/parse-torrent-title
+      '@lani/workflow':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/workflow
       '@larksuiteoapi/allcore':
         specifier: ~1.0.14
         version: 1.0.14(encoding@0.1.13)
-      '@mdx-js/react':
-        specifier: ~1.6.22
-        version: 1.6.22(react@17.0.2)
       '@nestjs/apollo':
         specifier: ~10.0.7
-        version: 10.0.22(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/graphql@10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14))(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(graphql@15.8.0)
+        version: 10.0.22(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/graphql@10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14))(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(graphql@15.8.0)
       '@nestjs/axios':
         specifier: ~0.0.7
         version: 0.0.8(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      '@nestjs/cli':
-        specifier: ^8.0.0
-        version: 8.2.8
       '@nestjs/common':
         specifier: ^8.0.0
         version: 8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -115,165 +253,15 @@ importers:
       '@nestjs/schedule':
         specifier: ~1.0.2
         version: 1.0.2(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(reflect-metadata@0.1.14)
-      '@nestjs/schematics':
-        specifier: ^8.0.0
-        version: 8.0.11(chokidar@3.6.0)(typescript@4.7.4)
-      '@nestjs/testing':
-        specifier: ^8.0.0
-        version: 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/platform-express@8.4.7)
       '@ntegral/nestjs-sentry':
         specifier: ~3.0.7
-        version: 3.0.7(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@sentry/hub@6.19.7)(@sentry/node@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)(rimraf@3.0.2)(rxjs@7.8.2)
-      '@oclif/core':
-        specifier: ^1
-        version: 1.26.2
-      '@oclif/plugin-help':
-        specifier: ^5
-        version: 5.2.20(@types/node@17.0.45)(typescript@4.7.4)
-      '@oclif/plugin-plugins':
-        specifier: ^2.0.1
-        version: 2.4.7(@types/node@17.0.45)(typescript@4.7.4)
-      '@prisma/client':
-        specifier: ~3.15.0
-        version: 3.15.2(prisma@3.15.2)
-      '@reduxjs/toolkit':
-        specifier: ~1.8.1
-        version: 1.8.6(react-redux@8.0.7)(react@17.0.2)
-      '@rush-temp/admin':
-        specifier: file:./projects/admin.tgz
-        version: file:projects/admin.tgz(@babel/core@7.29.7)(@types/node@17.0.45)(babel-jest@27.5.1(@babel/core@7.29.7))(dva-core@2.0.4(redux@4.2.1))(encoding@0.1.13)(graphql-ws@5.16.2(graphql@15.8.0))(graphql@15.8.0)(node-notifier@8.0.2)(rc-field-form@1.38.2(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-router@5.3.4(react@17.0.2))(subscriptions-transport-ws@0.11.0(graphql@15.8.0))(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(webpack@5.107.2)
-      '@rush-temp/all-in-one':
-        specifier: file:./projects/all-in-one.tgz
-        version: file:projects/all-in-one.tgz
-      '@rush-temp/anime-matcher':
-        specifier: file:./projects/anime-matcher.tgz
-        version: file:projects/anime-matcher.tgz
-      '@rush-temp/api-server':
-        specifier: file:./projects/api-server.tgz
-        version: file:projects/api-server.tgz(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@babel/core@7.29.7)(@sentry/hub@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(babel-jest@27.5.1(@babel/core@7.29.7))(chokidar@3.6.0)(encoding@0.1.13)(loader-utils@3.3.1)(node-notifier@8.0.2)(rxjs@7.8.2)(webpack@5.107.2)
-      '@rush-temp/cli':
-        specifier: file:./projects/cli.tgz
-        version: file:projects/cli.tgz(encoding@0.1.13)(mem-fs@2.3.0)
-      '@rush-temp/data-server':
-        specifier: file:./projects/data-server.tgz
-        version: file:projects/data-server.tgz(@types/node@17.0.45)(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))
-      '@rush-temp/db':
-        specifier: file:./projects/db.tgz
-        version: file:projects/db.tgz
-      '@rush-temp/docs':
-        specifier: file:./projects/docs.tgz
-        version: file:projects/docs.tgz(@algolia/client-search@5.54.1)(@types/react@17.0.93)(encoding@0.1.13)(eslint@7.32.0)
-      '@rush-temp/framework':
-        specifier: file:./projects/framework.tgz
-        version: file:projects/framework.tgz
-      '@rush-temp/gateway':
-        specifier: file:./projects/gateway.tgz
-        version: file:projects/gateway.tgz(encoding@0.1.13)
-      '@rush-temp/parse-nyaa':
-        specifier: file:./projects/parse-nyaa.tgz
-        version: file:projects/parse-nyaa.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      '@rush-temp/parse-torrent-title':
-        specifier: file:./projects/parse-torrent-title.tgz
-        version: file:projects/parse-torrent-title.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      '@rush-temp/workflow':
-        specifier: file:./projects/workflow.tgz
-        version: file:projects/workflow.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      '@rushstack/eslint-config':
-        specifier: ~2.5.1
-        version: 2.5.4(eslint@7.32.0)(typescript@4.7.4)
+        version: 3.0.7(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@sentry/hub@6.19.7)(@sentry/node@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)(rimraf@3.0.2)(rxjs@7.8.2)
       '@sentry/node':
         specifier: ~6.19.2
         version: 6.19.7
-      '@sentry/react':
-        specifier: ~6.17.8
-        version: 6.17.9(react@17.0.2)
       '@sentry/types':
         specifier: ~6.19.2
         version: 6.19.7
-      '@tsconfig/docusaurus':
-        specifier: ~1.0.5
-        version: 1.0.7
-      '@types/cookie':
-        specifier: ~0.4.1
-        version: 0.4.1
-      '@types/cron':
-        specifier: ~1.7.3
-        version: 1.7.3
-      '@types/express':
-        specifier: 4.17.14
-        version: 4.17.14
-      '@types/history':
-        specifier: 2.0.45
-        version: 2.0.45
-      '@types/inquirer':
-        specifier: ~8.2.1
-        version: 8.2.13
-      '@types/jest':
-        specifier: 27.4.1
-        version: 27.4.1
-      '@types/jmespath':
-        specifier: ~0.15.0
-        version: 0.15.2
-      '@types/js-yaml':
-        specifier: ~4.0.5
-        version: 4.0.9
-      '@types/koa':
-        specifier: ~2.13.4
-        version: 2.13.12
-      '@types/lodash':
-        specifier: ~4.14.178
-        version: 4.14.202
-      '@types/magnet-uri':
-        specifier: ~5.1.3
-        version: 5.1.5
-      '@types/md5':
-        specifier: ~2.3.2
-        version: 2.3.6
-      '@types/node':
-        specifier: ~17.0.4
-        version: 17.0.45
-      '@types/qs':
-        specifier: ~6.9.7
-        version: 6.9.18
-      '@types/react':
-        specifier: ~17.0.38
-        version: 17.0.93
-      '@types/react-dom':
-        specifier: ^17.0.0
-        version: 17.0.26(@types/react@17.0.93)
-      '@types/supertest':
-        specifier: ^2.0.11
-        version: 2.0.16
-      '@types/xml2js':
-        specifier: ~0.4.9
-        version: 0.4.14
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.0.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@7.32.0)(typescript@4.7.4))(eslint@7.32.0)(typescript@4.7.4)
-      '@typescript-eslint/parser':
-        specifier: ^5.0.0
-        version: 5.62.0(eslint@7.32.0)(typescript@4.7.4)
-      '@umijs/plugin-esbuild':
-        specifier: ~1.4.2
-        version: 1.4.2(umi@3.5.43(react-router@5.3.4(react@17.0.2)))(webpack@5.107.2)
-      '@umijs/preset-react':
-        specifier: ~1.8.32
-        version: 1.8.32(@ant-design/icons@4.8.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@ant-design/pro-layout@6.38.22(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@types/react@17.0.93)(dva-core@2.0.4(redux@4.2.1))(react-dom@17.0.2(react@17.0.2))(react-router@5.3.4(react@17.0.2))(react@17.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(umi@3.5.43(react-router@5.3.4(react@17.0.2)))
-      '@umijs/route-utils':
-        specifier: ~2.0.4
-        version: 2.0.5
-      ahooks:
-        specifier: ~3.1.9
-        version: 3.1.14(react@17.0.2)
-      antd:
-        specifier: ~4.24.8
-        version: 4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      apollo-server-core:
-        specifier: ~3.10.2
-        version: 3.10.4(encoding@0.1.13)(graphql@15.8.0)
-      apollo-server-express:
-        specifier: ~3.10.2
-        version: 3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0)
       aws-sdk:
         specifier: ~2.1152.0
         version: 2.1152.0
@@ -289,9 +277,6 @@ importers:
       class-validator:
         specifier: ~0.13.2
         version: 0.13.2
-      clsx:
-        specifier: ~1.1.1
-        version: 1.1.1
       cookie:
         specifier: ~0.4.2
         version: 0.4.2
@@ -301,171 +286,106 @@ importers:
       dayjs:
         specifier: ~1.10.7
         version: 1.10.8
-      eslint:
-        specifier: ^7.32.0
-        version: 7.32.0
-      eslint-config-oclif:
-        specifier: ^4
-        version: 4.0.0(eslint@7.32.0)
-      eslint-config-oclif-typescript:
-        specifier: ^1.0.2
-        version: 1.0.3(eslint@7.32.0)(typescript@4.7.4)
-      eslint-config-prettier:
-        specifier: ^8.3.0
-        version: 8.10.2(eslint@7.32.0)
-      eslint-plugin-prettier:
-        specifier: ^4.0.0
-        version: 4.2.5(eslint-config-prettier@8.10.2(eslint@7.32.0))(eslint@7.32.0)(prettier@2.5.1)
-      eslint-plugin-react-hooks:
-        specifier: ~4.3.0
-        version: 4.3.0(eslint@7.32.0)
-      execa:
-        specifier: ~6
-        version: 6.1.0
-      express:
-        specifier: ~4.18.1
-        version: 4.18.3
-      express-openid-connect:
-        specifier: ~3.4.0
-        version: 3.4.0(express@4.18.3)
       form-data:
         specifier: ~4.0.0
         version: 4.0.6
-      globby:
-        specifier: ^11
-        version: 11.1.0
-      graphile-build:
-        specifier: ~4.12.2
-        version: 4.12.3(graphql@15.8.0)
       graphql:
         specifier: 15.8.0
         version: 15.8.0
-      handlebars:
-        specifier: ~4.7.7
-        version: 4.7.9
-      hsluv:
-        specifier: ~0.1.0
-        version: 0.1.0
       https-proxy-agent:
         specifier: ~5.0.0
         version: 5.0.1
-      inclusion:
-        specifier: ~1.0.1
-        version: 1.0.1
-      inquirer:
-        specifier: ~8.2.2
-        version: 8.2.7(@types/node@17.0.45)
-      jest:
-        specifier: ^27.2.5
-        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      jmespath:
-        specifier: ~0.16.0
-        version: 0.16.0
       joi:
         specifier: ~17.6.0
         version: 17.6.4
-      jose:
-        specifier: ~4.6.0
-        version: 4.6.2
-      js-yaml:
-        specifier: ~4.1.0
-        version: 4.1.1
-      json-schema-to-typescript:
-        specifier: ~10.1.5
-        version: 10.1.5
-      jsonschema:
-        specifier: ~1.4.0
-        version: 1.4.1
-      kleur:
-        specifier: ~4.1.4
-        version: 4.1.5
-      koa:
-        specifier: ~2.13.4
-        version: 2.13.4
-      lodash:
-        specifier: ~4.17.21
-        version: 4.17.23
       magnet-uri:
         specifier: ~6.2.0
         version: 6.2.0
       md5:
         specifier: ~2.3.0
         version: 2.3.0
-      nodemon:
-        specifier: ~2.0.15
-        version: 2.0.22
-      oclif:
-        specifier: ^2.0.0-main.10
-        version: 2.7.0(@types/node@17.0.45)(encoding@0.1.13)(mem-fs@2.3.0)(typescript@4.7.4)
-      octokit:
-        specifier: ~1.7.1
-        version: 1.7.2(encoding@0.1.13)
-      oidc-client-ts:
-        specifier: ~2.0.5
-        version: 2.0.6
-      oidc-react:
-        specifier: ~1.5.1
-        version: 1.5.1(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      openapi-typescript-codegen:
-        specifier: ~0.20.1
-        version: 0.20.1
       parse-duration:
         specifier: ~2.1.9
         version: 2.1.9
-      postgraphile:
-        specifier: ~4.12.9
-        version: 4.12.12
-      postgraphile-plugin-connection-filter:
-        specifier: ~2.2.2
-        version: 2.2.2
-      prettier:
-        specifier: ~2.5.1
-        version: 2.5.1
-      pretty-bytes:
-        specifier: ~6.0.0
-        version: 6.0.0
-      prism-react-renderer:
-        specifier: ~1.3.5
-        version: 1.3.5(react@17.0.2)
-      prisma:
-        specifier: ~3.15.0
-        version: 3.15.2
       qs:
         specifier: ~6.10.3
         version: 6.10.7
-      react:
-        specifier: ~17.0.2
-        version: 17.0.2
-      react-dom:
-        specifier: ~17.0.2
-        version: 17.0.2(react@17.0.2)
-      react-redux:
-        specifier: ~8.0.1
-        version: 8.0.7(@reduxjs/toolkit@1.8.6)(@types/react-dom@17.0.26(@types/react@17.0.93))(@types/react@17.0.93)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(redux@4.2.1)
-      redux:
-        specifier: ~4.2.0
-        version: 4.2.1
-      redux-thunk:
-        specifier: ~2.4.1
-        version: 2.4.2(redux@4.2.1)
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14
       rimraf:
         specifier: ^3.0.2
         version: 3.0.2
-      shx:
-        specifier: ^0.3.3
-        version: 0.3.4
-      simple-git:
-        specifier: ~2.48.0
-        version: 2.48.0
+      xml2js:
+        specifier: ~0.4.23
+        version: 0.4.23
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@nestjs/cli':
+        specifier: ^8.0.0
+        version: 8.2.8
+      '@nestjs/schematics':
+        specifier: ^8.0.0
+        version: 8.0.11(chokidar@3.6.0)(typescript@4.7.4)
+      '@nestjs/testing':
+        specifier: ^8.0.0
+        version: 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/platform-express@8.4.7)
+      '@types/cookie':
+        specifier: ~0.4.1
+        version: 0.4.1
+      '@types/cron':
+        specifier: ~1.7.3
+        version: 1.7.3
+      '@types/express':
+        specifier: 4.17.14
+        version: 4.17.14
+      '@types/jest':
+        specifier: 27.4.1
+        version: 27.4.1
+      '@types/magnet-uri':
+        specifier: ~5.1.3
+        version: 5.1.5
+      '@types/md5':
+        specifier: ~2.3.2
+        version: 2.3.6
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      '@types/supertest':
+        specifier: ^2.0.11
+        version: 2.0.16
+      '@types/xml2js':
+        specifier: ~0.4.9
+        version: 0.4.14
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.0.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@7.32.0)(typescript@4.7.4))(eslint@7.32.0)(typescript@4.7.4)
+      '@typescript-eslint/parser':
+        specifier: ^5.0.0
+        version: 5.62.0(eslint@7.32.0)(typescript@4.7.4)
+      eslint:
+        specifier: ^7.32.0
+        version: 7.32.0
+      eslint-config-prettier:
+        specifier: ^8.3.0
+        version: 8.10.2(eslint@7.32.0)
+      eslint-plugin-prettier:
+        specifier: ^4.0.0
+        version: 4.2.5(eslint-config-prettier@8.10.2(eslint@7.32.0))(eslint@7.32.0)(prettier@2.5.1)
+      jest:
+        specifier: ^27.2.5
+        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      openapi-typescript-codegen:
+        specifier: ~0.20.1
+        version: 0.20.1
+      prettier:
+        specifier: ~2.5.1
+        version: 2.5.1
       source-map-support:
         specifier: ^0.5.20
         version: 0.5.21
-      store2:
-        specifier: ~2.14.2
-        version: 2.14.4
       supertest:
         specifier: ^6.1.3
         version: 6.3.4
@@ -481,27 +401,387 @@ importers:
       tsconfig-paths:
         specifier: ^3.10.1
         version: 3.15.0
-      tslib:
-        specifier: ^2.3.1
-        version: 2.8.1
-      ttypescript:
-        specifier: ~1.5.15
-        version: 1.5.15(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+
+  ../../apps/data-server:
+    dependencies:
+      '@graphile-contrib/pg-omit-archived':
+        specifier: ~2.1.0
+        version: 2.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(postgraphile@4.12.12)
+      '@graphile-contrib/pg-order-by-related':
+        specifier: ~1.0.0-beta.6
+        version: 1.0.0
+      '@graphile-contrib/pg-simplify-inflector':
+        specifier: ~6.1.0
+        version: 6.1.0
+      '@graphile/federation':
+        specifier: ~0.1.0
+        version: 0.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(graphql@15.8.0)
+      '@lani/framework':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/framework
+      graphql:
+        specifier: 15.8.0
+        version: 15.8.0
+      joi:
+        specifier: ~17.6.0
+        version: 17.6.4
+      koa:
+        specifier: ~2.13.4
+        version: 2.13.4
+      postgraphile:
+        specifier: ~4.12.9
+        version: 4.12.12
+      postgraphile-plugin-connection-filter:
+        specifier: ~2.2.2
+        version: 2.2.2
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/koa':
+        specifier: ~2.13.4
+        version: 2.13.12
+      graphile-build:
+        specifier: ~4.12.2
+        version: 4.12.3(graphql@15.8.0)
+      ts-node:
+        specifier: ^10.2.1
+        version: 10.9.2(@types/node@17.0.45)(typescript@4.7.4)
       typescript:
         specifier: ~4.7.4
         version: 4.7.4
       typescript-transform-paths:
         specifier: ~3.5.6
         version: 3.5.6(typescript@4.7.4)
-      umi:
-        specifier: ~3.5.43
-        version: 3.5.43(react-router@5.3.4(react@17.0.2))
-      virtualizedtableforantd4:
-        specifier: ~1.3.1
-        version: 1.3.2(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      xml2js:
-        specifier: ~0.4.23
-        version: 0.4.23
+
+  ../../apps/gateway:
+    dependencies:
+      '@apollo/gateway':
+        specifier: ^0.46.0
+        version: 0.46.0(encoding@0.1.13)(graphql@15.8.0)
+      '@lani/framework':
+        specifier: workspace:~1.0.0
+        version: link:../../libs/framework
+      apollo-server-core:
+        specifier: ~3.10.2
+        version: 3.10.4(encoding@0.1.13)(graphql@15.8.0)
+      apollo-server-express:
+        specifier: ~3.10.2
+        version: 3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0)
+      axios:
+        specifier: ~0.26.0
+        version: 0.26.1
+      express:
+        specifier: ~4.18.1
+        version: 4.18.3
+      express-openid-connect:
+        specifier: ~3.4.0
+        version: 3.4.0(express@4.18.3)
+      graphql:
+        specifier: 15.8.0
+        version: 15.8.0
+      jmespath:
+        specifier: ~0.16.0
+        version: 0.16.0
+      joi:
+        specifier: ~17.6.0
+        version: 17.6.4
+      jose:
+        specifier: ~4.6.0
+        version: 4.6.2
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/express':
+        specifier: 4.17.14
+        version: 4.17.14
+      '@types/jmespath':
+        specifier: ~0.15.0
+        version: 0.15.2
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
+
+  ../../docs:
+    dependencies:
+      '@docusaurus/core':
+        specifier: 2.4.3
+        version: 2.4.3(@docusaurus/types@2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
+      '@docusaurus/preset-classic':
+        specifier: 2.4.3
+        version: 2.4.3(@algolia/client-search@5.54.1)(@types/react@17.0.93)(encoding@0.1.13)(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
+      '@mdx-js/react':
+        specifier: ~1.6.22
+        version: 1.6.22(react@17.0.2)
+      clsx:
+        specifier: ~1.1.1
+        version: 1.1.1
+      prism-react-renderer:
+        specifier: ~1.3.5
+        version: 1.3.5(react@17.0.2)
+      react:
+        specifier: ~17.0.2
+        version: 17.0.2
+      react-dom:
+        specifier: ~17.0.2
+        version: 17.0.2(react@17.0.2)
+    devDependencies:
+      '@docusaurus/module-type-aliases':
+        specifier: 2.4.3
+        version: 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      '@docusaurus/types':
+        specifier: 2.4.3
+        version: 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      '@tsconfig/docusaurus':
+        specifier: ~1.0.5
+        version: 1.0.7
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+
+  ../../libs/anime-matcher:
+    devDependencies:
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+
+  ../../libs/db:
+    dependencies:
+      '@prisma/client':
+        specifier: ~3.15.0
+        version: 3.15.2(prisma@3.15.2)
+      prisma:
+        specifier: ~3.15.0
+        version: 3.15.2
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
+
+  ../../libs/framework:
+    dependencies:
+      joi:
+        specifier: ~17.6.0
+        version: 17.6.4
+      js-yaml:
+        specifier: ~4.1.0
+        version: 4.1.1
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/js-yaml':
+        specifier: ~4.0.5
+        version: 4.0.9
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
+
+  ../../libs/parse-nyaa:
+    dependencies:
+      '@lani/parse-torrent-title':
+        specifier: workspace:~1.0.0
+        version: link:../parse-torrent-title
+      cheerio:
+        specifier: 1.0.0-rc.12
+        version: 1.0.0-rc.12
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/jest':
+        specifier: 27.4.1
+        version: 27.4.1
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      jest:
+        specifier: ^27.2.5
+        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      ts-jest:
+        specifier: ^27.0.3
+        version: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
+
+  ../../libs/parse-torrent-title:
+    dependencies:
+      joi:
+        specifier: ~17.6.0
+        version: 17.6.4
+      js-yaml:
+        specifier: ~4.1.0
+        version: 4.1.1
+    devDependencies:
+      '@lani/cli':
+        specifier: workspace:~1.0.0
+        version: link:../../tools/cli
+      '@types/jest':
+        specifier: 27.4.1
+        version: 27.4.1
+      '@types/js-yaml':
+        specifier: ~4.0.5
+        version: 4.0.9
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      jest:
+        specifier: ^27.2.5
+        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      ts-jest:
+        specifier: ^27.0.3
+        version: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
+
+  ../../libs/workflow:
+    dependencies:
+      joi:
+        specifier: ~17.6.0
+        version: 17.6.4
+    devDependencies:
+      '@types/jest':
+        specifier: 27.4.1
+        version: 27.4.1
+      jest:
+        specifier: ^27.2.5
+        version: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
+      ts-jest:
+        specifier: ^27.0.3
+        version: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+
+  ../../tools/cli:
+    dependencies:
+      '@oclif/core':
+        specifier: ^1
+        version: 1.26.2
+      '@oclif/plugin-help':
+        specifier: ^5
+        version: 5.2.20(@types/node@17.0.45)(typescript@4.7.4)
+      '@oclif/plugin-plugins':
+        specifier: ^2.0.1
+        version: 2.4.7(@types/node@17.0.45)(typescript@4.7.4)
+      execa:
+        specifier: ~6
+        version: 6.1.0
+      handlebars:
+        specifier: ~4.7.7
+        version: 4.7.9
+      inclusion:
+        specifier: ~1.0.1
+        version: 1.0.1
+      inquirer:
+        specifier: ~8.2.2
+        version: 8.2.7(@types/node@17.0.45)
+      js-yaml:
+        specifier: ~4.1.0
+        version: 4.1.1
+      jsonschema:
+        specifier: ~1.4.0
+        version: 1.4.1
+      kleur:
+        specifier: ~4.1.4
+        version: 4.1.5
+      lodash:
+        specifier: ~4.17.21
+        version: 4.17.23
+      nodemon:
+        specifier: ~2.0.15
+        version: 2.0.22
+      octokit:
+        specifier: ~1.7.1
+        version: 1.7.2(encoding@0.1.13)
+      simple-git:
+        specifier: ~2.48.0
+        version: 2.48.0
+      ttypescript:
+        specifier: ~1.5.15
+        version: 1.5.15(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(typescript@4.7.4)
+      typescript:
+        specifier: ~4.7.4
+        version: 4.7.4
+    devDependencies:
+      '@types/inquirer':
+        specifier: ~8.2.1
+        version: 8.2.13
+      '@types/js-yaml':
+        specifier: ~4.0.5
+        version: 4.0.9
+      '@types/lodash':
+        specifier: ~4.14.178
+        version: 4.14.202
+      '@types/node':
+        specifier: ~17.0.4
+        version: 17.0.45
+      eslint:
+        specifier: ^7.32.0
+        version: 7.32.0
+      eslint-config-oclif:
+        specifier: ^4
+        version: 4.0.0(eslint@7.32.0)
+      eslint-config-oclif-typescript:
+        specifier: ^1.0.2
+        version: 1.0.3(eslint@7.32.0)(typescript@4.7.4)
+      globby:
+        specifier: ^11
+        version: 11.1.0
+      json-schema-to-typescript:
+        specifier: ~10.1.5
+        version: 10.1.5
+      oclif:
+        specifier: ^2.0.0-main.10
+        version: 2.7.0(@types/node@17.0.45)(encoding@0.1.13)(mem-fs@2.3.0)(typescript@4.7.4)
+      shx:
+        specifier: ^0.3.3
+        version: 0.3.4
+      ts-node:
+        specifier: ^10.2.1
+        version: 10.9.2(@types/node@17.0.45)(typescript@4.7.4)
+      tslib:
+        specifier: ^2.3.1
+        version: 2.8.1
+      typescript-transform-paths:
+        specifier: ~3.5.6
+        version: 3.5.6(typescript@4.7.4)
 
 packages:
 
@@ -2950,58 +3230,6 @@ packages:
   '@repeaterjs/repeater@3.1.0':
     resolution: {integrity: sha512-TaoVksZRSx2KWYYpyLQtMQXXeS98VsgZImzW65xmiVgbYhXLk+aEsmzPLirqVuE4/XuUapH2iMtxUzaBNDzdSQ==}
 
-  '@rush-temp/admin@file:projects/admin.tgz':
-    resolution: {integrity: sha512-n09bkyenGsbpGGBKVtmEJh2U+ErWrvEog7QyT0KTwoWkKRs7Ams6Q3IxMEB4StNpu+zgcnPB4vYTBCrRfd4ZSQ==, tarball: file:projects/admin.tgz}
-    version: 0.0.0
-
-  '@rush-temp/all-in-one@file:projects/all-in-one.tgz':
-    resolution: {integrity: sha512-jcbG10zQMXCRk8BLlFVnMMZcn1gxzq7MdhqCLRvohnmwCfSsr7Wqh5q6Muq9xftAdkxcj00UuNPOycXpR22H4Q==, tarball: file:projects/all-in-one.tgz}
-    version: 0.0.0
-
-  '@rush-temp/anime-matcher@file:projects/anime-matcher.tgz':
-    resolution: {integrity: sha512-aZDA6sRQh7B1/w0YQXLjtJgDN7GSQUNuSk+hhxpGZUejUuzB1Q+4vDNnlkkrPQa7fLBuMBPD3K4CUfuoLglWrw==, tarball: file:projects/anime-matcher.tgz}
-    version: 0.0.0
-
-  '@rush-temp/api-server@file:projects/api-server.tgz':
-    resolution: {integrity: sha512-NFJ3hFxsFookx4St41zUltSA5SAkO/eQh3NfAsdqWzoDXOxTV4GRwBT+O2xWKiSN6Gqz3w69mLgsLueBoHYOKw==, tarball: file:projects/api-server.tgz}
-    version: 0.0.0
-
-  '@rush-temp/cli@file:projects/cli.tgz':
-    resolution: {integrity: sha512-4lK7NlSEMXturvwGym/AHa3l5IcpGQyuBFUSYLfp4bZscaVkttvgsVbUNwg2IAiOtkKU7sg905cJtj/MAle5Aw==, tarball: file:projects/cli.tgz}
-    version: 0.0.0
-
-  '@rush-temp/data-server@file:projects/data-server.tgz':
-    resolution: {integrity: sha512-jAdescL6H3PLBCty+LL39YlK8dbqv8kJt+oP2zVEw+ojerML+DkowMo+4RiAdDgl0hI78YlsWtl46cDErJHIYg==, tarball: file:projects/data-server.tgz}
-    version: 0.0.0
-
-  '@rush-temp/db@file:projects/db.tgz':
-    resolution: {integrity: sha512-y876rLEM2GBMRzFxRVyJwXTHf4+MBFBjQfaiPTsSID88SJxLzKG/HidCFgj8dhSA+vx1ec2kOdkrUfFDWY4z4g==, tarball: file:projects/db.tgz}
-    version: 0.0.0
-
-  '@rush-temp/docs@file:projects/docs.tgz':
-    resolution: {integrity: sha512-dzO4/Cgcn3OP5r6QCBO1iQkGWjEupy+BCR7Cugm0gZ/iRYakJQOOlO4Okc88CkTV+1xofFs/Zdi4MdE2JIAi9g==, tarball: file:projects/docs.tgz}
-    version: 0.0.0
-
-  '@rush-temp/framework@file:projects/framework.tgz':
-    resolution: {integrity: sha512-D7Tflt/LBhvCjlZ7fFPxpD4/6q3jVaDg78nY7wjvmSG/swuiwjpdk6gsqwDbIeWki2i47KPHqioTWXFTe6KHHA==, tarball: file:projects/framework.tgz}
-    version: 0.0.0
-
-  '@rush-temp/gateway@file:projects/gateway.tgz':
-    resolution: {integrity: sha512-LWKqGIEQtlIh01b245fN1g0zXRbea7g+o5HyC7/9vEAWjy8cUnn5XR+84tWXASG6sQzV3vwIxiSRsXWAb4mFQw==, tarball: file:projects/gateway.tgz}
-    version: 0.0.0
-
-  '@rush-temp/parse-nyaa@file:projects/parse-nyaa.tgz':
-    resolution: {integrity: sha512-UbYkVbWT4pBm1WAJoY8Y3eTXq1Izo5ONKwagXLETXqiRS4+gi6KH8KNba3PDTHnFfe9htbjHlcvQOpTE06OIsw==, tarball: file:projects/parse-nyaa.tgz}
-    version: 0.0.0
-
-  '@rush-temp/parse-torrent-title@file:projects/parse-torrent-title.tgz':
-    resolution: {integrity: sha512-EH3U2Ar9I7jRkKfWWse/urkelxDY6rnkmgTC6p3ZlrljS5/Oh5RZ39OXAXsJpPk9NK6iX0F1kYEJH5oUo2MTdA==, tarball: file:projects/parse-torrent-title.tgz}
-    version: 0.0.0
-
-  '@rush-temp/workflow@file:projects/workflow.tgz':
-    resolution: {integrity: sha512-RLK2DUi85GTrgpnxzE2nKc7easY6YJVWipY6B2Bg8E2btNFGVemIkBlVKc8FVSEArcH4HnrOYl5ksxvdsR2O7Q==, tarball: file:projects/workflow.tgz}
-    version: 0.0.0
-
   '@rushstack/eslint-config@2.5.4':
     resolution: {integrity: sha512-URJ2FVRW9I67LKl6Xw9z10CZE7lE3K9z65LQfJiby8zRiOFW9w7OmnwwhEUy8fZomIFL3ua6nT+M5RRFPrppQg==}
     peerDependencies:
@@ -3336,9 +3564,6 @@ packages:
 
   '@types/express@4.17.14':
     resolution: {integrity: sha512-TEbt+vaPFQ+xpxFLFssxUDXj5cWCxZJjIcB7Yg0k0GMHGtgtQgpvx/MUQUeAkNbA9AAGrwkAsoeItdTgS7FMyg==}
-
-  '@types/express@4.17.25':
-    resolution: {integrity: sha512-dVd04UKsfpINUnK0yBoYHDF3xu7xVH4BuDotC/xGuycx4CgbP48X/KF/586bcObxT0HENHXEU8Nqtu6NR+eKhw==}
 
   '@types/glob@7.2.0':
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
@@ -14935,7 +15160,7 @@ snapshots:
       '@docusaurus/utils': 2.4.3(@docusaurus/types@2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(postcss@8.5.15)
       '@mdx-js/mdx': 1.6.22
       escape-html: 1.0.3
-      file-loader: 6.2.0(webpack@5.107.2)
+      file-loader: 6.2.0(webpack@5.107.2(postcss@8.5.15))
       fs-extra: 10.1.0
       image-size: 1.2.1
       mdast-util-to-string: 2.0.0
@@ -14946,7 +15171,7 @@ snapshots:
       tslib: 2.8.1
       unified: 9.2.2
       unist-util-visit: 2.0.3
-      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.107.2))(webpack@5.107.2)
+      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.107.2(postcss@8.5.15)))(webpack@5.107.2(postcss@8.5.15))
       webpack: 5.107.2(postcss@8.5.15)
     transitivePeerDependencies:
       - '@docusaurus/types'
@@ -15929,7 +16154,7 @@ snapshots:
       '@docusaurus/logger': 2.4.3
       '@svgr/webpack': 6.5.1
       escape-string-regexp: 4.0.0
-      file-loader: 6.2.0(webpack@5.107.2)
+      file-loader: 6.2.0(webpack@5.107.2(postcss@8.5.15))
       fs-extra: 10.1.0
       github-slugger: 1.5.0
       globby: 11.1.0
@@ -15940,7 +16165,7 @@ snapshots:
       resolve-pathname: 3.0.0
       shelljs: 0.8.5
       tslib: 2.8.1
-      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.107.2))(webpack@5.107.2)
+      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.107.2(postcss@8.5.15)))(webpack@5.107.2(postcss@8.5.15))
       webpack: 5.107.2(postcss@8.5.15)
     optionalDependencies:
       '@docusaurus/types': 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
@@ -17054,7 +17279,7 @@ snapshots:
 
   '@microsoft/tsdoc@0.14.2': {}
 
-  '@nestjs/apollo@10.0.22(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/graphql@10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14))(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(graphql@15.8.0)':
+  '@nestjs/apollo@10.0.22(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/graphql@10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14))(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(graphql@15.8.0)':
     dependencies:
       '@nestjs/common': 8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
       '@nestjs/core': 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/platform-express@8.4.7)(encoding@0.1.13)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -17064,7 +17289,6 @@ snapshots:
       lodash.omit: 4.5.0
       tslib: 2.4.0
     optionalDependencies:
-      '@apollo/gateway': 0.46.0(encoding@0.1.13)(graphql@15.8.0)
       apollo-server-core: 3.10.4(encoding@0.1.13)(graphql@15.8.0)
       apollo-server-express: 3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0)
 
@@ -17193,7 +17417,7 @@ snapshots:
       - class-validator
       - utf-8-validate
 
-  '@nestjs/graphql@9.1.2(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)':
+  '@nestjs/graphql@9.1.2(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)':
     dependencies:
       '@graphql-tools/merge': 6.2.5(graphql@15.8.0)
       '@graphql-tools/schema': 7.1.5(graphql@15.8.0)
@@ -17215,7 +17439,6 @@ snapshots:
       ws: 8.3.0
     optionalDependencies:
       '@apollo/federation': 0.33.9(encoding@0.1.13)(graphql@15.8.0)
-      '@apollo/gateway': 0.46.0(encoding@0.1.13)(graphql@15.8.0)
       '@apollo/subgraph': 0.3.3(graphql@15.8.0)
       apollo-server-core: 3.10.4(encoding@0.1.13)(graphql@15.8.0)
       apollo-server-express: 3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0)
@@ -17454,7 +17677,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@ntegral/nestjs-sentry@3.0.7(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@sentry/hub@6.19.7)(@sentry/node@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)(rimraf@3.0.2)(rxjs@7.8.2)':
+  '@ntegral/nestjs-sentry@3.0.7(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@sentry/hub@6.19.7)(@sentry/node@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)(rimraf@3.0.2)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
       '@nestjs/core': 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/platform-express@8.4.7)(encoding@0.1.13)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -17464,7 +17687,7 @@ snapshots:
       rimraf: 3.0.2
       rxjs: 7.8.2
     optionalDependencies:
-      '@nestjs/graphql': 9.1.2(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)
+      '@nestjs/graphql': 9.1.2(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)
     transitivePeerDependencies:
       - '@apollo/federation'
       - '@apollo/gateway'
@@ -17962,397 +18185,6 @@ snapshots:
 
   '@repeaterjs/repeater@3.1.0': {}
 
-  '@rush-temp/admin@file:projects/admin.tgz(@babel/core@7.29.7)(@types/node@17.0.45)(babel-jest@27.5.1(@babel/core@7.29.7))(dva-core@2.0.4(redux@4.2.1))(encoding@0.1.13)(graphql-ws@5.16.2(graphql@15.8.0))(graphql@15.8.0)(node-notifier@8.0.2)(rc-field-form@1.38.2(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-router@5.3.4(react@17.0.2))(subscriptions-transport-ws@0.11.0(graphql@15.8.0))(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(webpack@5.107.2)':
-    dependencies:
-      '@ant-design/icons': 4.8.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@ant-design/pro-descriptions': 1.10.74(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(rc-field-form@1.38.2(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@ant-design/pro-form': 1.61.1(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(rc-field-form@1.38.2(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@ant-design/pro-layout': 6.38.22(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@ant-design/pro-table': 2.62.8(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(rc-field-form@1.38.2(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@apollo/client': 3.5.10(graphql-ws@5.16.2(graphql@15.8.0))(graphql@15.8.0)(react@17.0.2)(subscriptions-transport-ws@0.11.0(graphql@15.8.0))
-      '@graphql-codegen/cli': 2.4.0(@babel/core@7.29.7)(@types/node@17.0.45)(encoding@0.1.13)(graphql@15.8.0)
-      '@graphql-codegen/typed-document-node': 2.2.14(encoding@0.1.13)(graphql@15.8.0)
-      '@graphql-codegen/typescript': 2.4.11(encoding@0.1.13)(graphql@15.8.0)
-      '@graphql-codegen/typescript-operations': 2.2.4(encoding@0.1.13)(graphql@15.8.0)
-      '@graphql-typed-document-node/core': 3.1.2(graphql@15.8.0)
-      '@reduxjs/toolkit': 1.8.6(react-redux@8.0.7)(react@17.0.2)
-      '@rushstack/eslint-config': 2.5.4(eslint@7.32.0)(typescript@4.7.4)
-      '@sentry/react': 6.17.9(react@17.0.2)
-      '@types/history': 2.0.45
-      '@types/jest': 27.4.1
-      '@types/lodash': 4.14.202
-      '@types/md5': 2.3.6
-      '@types/qs': 6.9.18
-      '@types/react': 17.0.93
-      '@types/react-dom': 17.0.26(@types/react@17.0.93)
-      '@umijs/plugin-esbuild': 1.4.2(umi@3.5.43(react-router@5.3.4(react@17.0.2)))(webpack@5.107.2)
-      '@umijs/preset-react': 1.8.32(@ant-design/icons@4.8.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@ant-design/pro-layout@6.38.22(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(@types/react@17.0.93)(dva-core@2.0.4(redux@4.2.1))(react-dom@17.0.2(react@17.0.2))(react-router@5.3.4(react@17.0.2))(react@17.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(umi@3.5.43(react-router@5.3.4(react@17.0.2)))
-      '@umijs/route-utils': 2.0.5
-      ahooks: 3.1.14(react@17.0.2)
-      antd: 4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      axios: 0.26.1
-      clsx: 1.1.1
-      dayjs: 1.10.8
-      eslint: 7.32.0
-      eslint-plugin-react-hooks: 4.3.0(eslint@7.32.0)
-      hsluv: 0.1.0
-      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      lodash: 4.17.23
-      md5: 2.3.0
-      oidc-client-ts: 2.0.6
-      oidc-react: 1.5.1(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      prettier: 2.5.1
-      pretty-bytes: 6.0.0
-      qs: 6.10.7
-      react: 17.0.2
-      react-dom: 17.0.2(react@17.0.2)
-      react-redux: 8.0.7(@reduxjs/toolkit@1.8.6)(@types/react-dom@17.0.26(@types/react@17.0.93))(@types/react@17.0.93)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(redux@4.2.1)
-      redux: 4.2.1
-      redux-thunk: 2.4.2(redux@4.2.1)
-      store2: 2.14.4
-      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
-      typescript: 4.7.4
-      umi: 3.5.43(react-router@5.3.4(react@17.0.2))
-      virtualizedtableforantd4: 1.3.2(antd@4.24.16(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - cosmiconfig-toml-loader
-      - debug
-      - dva-core
-      - encoding
-      - esbuild
-      - graphql
-      - graphql-ws
-      - node-notifier
-      - rc-field-form
-      - react-native
-      - react-router
-      - redbox-react
-      - subscriptions-transport-ws
-      - supports-color
-      - ts-node
-      - utf-8-validate
-      - webpack
-      - zen-observable
-
-  '@rush-temp/all-in-one@file:projects/all-in-one.tgz': {}
-
-  '@rush-temp/anime-matcher@file:projects/anime-matcher.tgz':
-    dependencies:
-      '@types/node': 17.0.45
-      typescript: 4.7.4
-
-  '@rush-temp/api-server@file:projects/api-server.tgz(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@babel/core@7.29.7)(@sentry/hub@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(babel-jest@27.5.1(@babel/core@7.29.7))(chokidar@3.6.0)(encoding@0.1.13)(loader-utils@3.3.1)(node-notifier@8.0.2)(rxjs@7.8.2)(webpack@5.107.2)':
-    dependencies:
-      '@apollo/subgraph': 0.3.3(graphql@15.8.0)
-      '@ctrl/torrent-file': 4.5.2
-      '@larksuiteoapi/allcore': 1.0.14(encoding@0.1.13)
-      '@nestjs/apollo': 10.0.22(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/graphql@10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14))(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(graphql@15.8.0)
-      '@nestjs/axios': 0.0.8(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      '@nestjs/cli': 8.2.8
-      '@nestjs/common': 8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      '@nestjs/config': 1.2.1(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      '@nestjs/core': 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/platform-express@8.4.7)(encoding@0.1.13)(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      '@nestjs/event-emitter': 1.1.1(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(reflect-metadata@0.1.14)
-      '@nestjs/graphql': 10.0.22(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)
-      '@nestjs/platform-express': 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)
-      '@nestjs/schedule': 1.0.2(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(reflect-metadata@0.1.14)
-      '@nestjs/schematics': 8.0.11(chokidar@3.6.0)(typescript@4.7.4)
-      '@nestjs/testing': 8.4.7(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@nestjs/platform-express@8.4.7)
-      '@ntegral/nestjs-sentry': 3.0.7(@apollo/federation@0.33.9(encoding@0.1.13)(graphql@15.8.0))(@apollo/gateway@0.46.0(encoding@0.1.13)(graphql@15.8.0))(@apollo/subgraph@0.3.3(graphql@15.8.0))(@nestjs/common@8.4.7(class-transformer@0.5.1)(class-validator@0.13.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@8.4.7)(@sentry/hub@6.19.7)(@sentry/node@6.19.7)(apollo-server-core@3.10.4(encoding@0.1.13)(graphql@15.8.0))(apollo-server-express@3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0))(class-transformer@0.5.1)(class-validator@0.13.2)(graphql@15.8.0)(reflect-metadata@0.1.14)(rimraf@3.0.2)(rxjs@7.8.2)
-      '@sentry/node': 6.19.7
-      '@sentry/types': 6.19.7
-      '@types/cookie': 0.4.1
-      '@types/cron': 1.7.3
-      '@types/express': 4.17.14
-      '@types/jest': 27.4.1
-      '@types/magnet-uri': 5.1.5
-      '@types/md5': 2.3.6
-      '@types/node': 17.0.45
-      '@types/supertest': 2.0.16
-      '@types/xml2js': 0.4.14
-      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@7.32.0)(typescript@4.7.4))(eslint@7.32.0)(typescript@4.7.4)
-      '@typescript-eslint/parser': 5.62.0(eslint@7.32.0)(typescript@4.7.4)
-      aws-sdk: 2.1152.0
-      axios: 0.26.1
-      cheerio: 1.0.0-rc.12
-      class-transformer: 0.5.1
-      class-validator: 0.13.2
-      cookie: 0.4.2
-      dataloader: 2.2.3
-      dayjs: 1.10.8
-      eslint: 7.32.0
-      eslint-config-prettier: 8.10.2(eslint@7.32.0)
-      eslint-plugin-prettier: 4.2.5(eslint-config-prettier@8.10.2(eslint@7.32.0))(eslint@7.32.0)(prettier@2.5.1)
-      form-data: 4.0.6
-      graphql: 15.8.0
-      https-proxy-agent: 5.0.1
-      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      joi: 17.6.4
-      magnet-uri: 6.2.0
-      md5: 2.3.0
-      openapi-typescript-codegen: 0.20.1
-      parse-duration: 2.1.9
-      prettier: 2.5.1
-      qs: 6.10.7
-      reflect-metadata: 0.1.14
-      rimraf: 3.0.2
-      source-map-support: 0.5.21
-      supertest: 6.3.4
-      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
-      ts-loader: 9.6.0(loader-utils@3.3.1)(typescript@4.7.4)(webpack@5.107.2)
-      ts-node: 10.9.2(@types/node@17.0.45)(typescript@4.7.4)
-      tsconfig-paths: 3.15.0
-      typescript: 4.7.4
-      xml2js: 0.4.23
-    transitivePeerDependencies:
-      - '@apollo/federation'
-      - '@apollo/gateway'
-      - '@babel/core'
-      - '@minify-html/node'
-      - '@nestjs/microservices'
-      - '@nestjs/websockets'
-      - '@sentry/hub'
-      - '@swc/core'
-      - '@swc/css'
-      - '@swc/html'
-      - '@swc/wasm'
-      - apollo-server-core
-      - apollo-server-express
-      - apollo-server-fastify
-      - babel-jest
-      - bufferutil
-      - cache-manager
-      - canvas
-      - chokidar
-      - clean-css
-      - cssnano
-      - csso
-      - debug
-      - encoding
-      - esbuild
-      - html-minifier-terser
-      - lightningcss
-      - loader-utils
-      - node-notifier
-      - postcss
-      - rxjs
-      - supports-color
-      - ts-morph
-      - uglify-js
-      - utf-8-validate
-      - vue-template-compiler
-      - webpack
-      - webpack-cli
-
-  '@rush-temp/cli@file:projects/cli.tgz(encoding@0.1.13)(mem-fs@2.3.0)':
-    dependencies:
-      '@oclif/core': 1.26.2
-      '@oclif/plugin-help': 5.2.20(@types/node@17.0.45)(typescript@4.7.4)
-      '@oclif/plugin-plugins': 2.4.7(@types/node@17.0.45)(typescript@4.7.4)
-      '@types/inquirer': 8.2.13
-      '@types/js-yaml': 4.0.9
-      '@types/lodash': 4.14.202
-      '@types/node': 17.0.45
-      eslint: 7.32.0
-      eslint-config-oclif: 4.0.0(eslint@7.32.0)
-      eslint-config-oclif-typescript: 1.0.3(eslint@7.32.0)(typescript@4.7.4)
-      execa: 6.1.0
-      globby: 11.1.0
-      handlebars: 4.7.9
-      inclusion: 1.0.1
-      inquirer: 8.2.7(@types/node@17.0.45)
-      js-yaml: 4.1.1
-      json-schema-to-typescript: 10.1.5
-      jsonschema: 1.4.1
-      kleur: 4.1.5
-      lodash: 4.17.23
-      nodemon: 2.0.22
-      oclif: 2.7.0(@types/node@17.0.45)(encoding@0.1.13)(mem-fs@2.3.0)(typescript@4.7.4)
-      octokit: 1.7.2(encoding@0.1.13)
-      shx: 0.3.4
-      simple-git: 2.48.0
-      ts-node: 10.9.2(@types/node@17.0.45)(typescript@4.7.4)
-      tslib: 2.8.1
-      ttypescript: 1.5.15(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))(typescript@4.7.4)
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - encoding
-      - mem-fs
-      - supports-color
-
-  '@rush-temp/data-server@file:projects/data-server.tgz(@types/node@17.0.45)(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))':
-    dependencies:
-      '@graphile-contrib/pg-omit-archived': 2.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(postgraphile@4.12.12)
-      '@graphile-contrib/pg-order-by-related': 1.0.0
-      '@graphile-contrib/pg-simplify-inflector': 6.1.0
-      '@graphile/federation': 0.1.0(graphile-build-pg@4.12.3(graphql@15.8.0)(pg@8.21.0))(graphile-build@4.12.3(graphql@15.8.0))(graphql@15.8.0)
-      '@types/koa': 2.13.12
-      graphile-build: 4.12.3(graphql@15.8.0)
-      graphql: 15.8.0
-      joi: 17.6.4
-      koa: 2.13.4
-      postgraphile: 4.12.12
-      postgraphile-plugin-connection-filter: 2.2.2
-      ts-node: 10.9.2(@types/node@17.0.45)(typescript@4.7.4)
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - bufferutil
-      - graphile-build-pg
-      - pg-native
-      - supports-color
-      - utf-8-validate
-
-  '@rush-temp/db@file:projects/db.tgz':
-    dependencies:
-      '@prisma/client': 3.15.2(prisma@3.15.2)
-      '@types/node': 17.0.45
-      prisma: 3.15.2
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-
-  '@rush-temp/docs@file:projects/docs.tgz(@algolia/client-search@5.54.1)(@types/react@17.0.93)(encoding@0.1.13)(eslint@7.32.0)':
-    dependencies:
-      '@docusaurus/core': 2.4.3(@docusaurus/types@2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2))(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
-      '@docusaurus/module-type-aliases': 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@docusaurus/preset-classic': 2.4.3(@algolia/client-search@5.54.1)(@types/react@17.0.93)(encoding@0.1.13)(eslint@7.32.0)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)(typescript@4.7.4)
-      '@docusaurus/types': 2.4.3(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      '@mdx-js/react': 1.6.22(react@17.0.2)
-      '@tsconfig/docusaurus': 1.0.7
-      clsx: 1.1.1
-      prism-react-renderer: 1.3.5(react@17.0.2)
-      react: 17.0.2
-      react-dom: 17.0.2(react@17.0.2)
-      typescript: 4.7.4
-    transitivePeerDependencies:
-      - '@algolia/client-search'
-      - '@minify-html/node'
-      - '@parcel/css'
-      - '@rspack/core'
-      - '@swc/core'
-      - '@swc/css'
-      - '@swc/html'
-      - '@types/react'
-      - bufferutil
-      - clean-css
-      - cssnano
-      - csso
-      - debug
-      - encoding
-      - esbuild
-      - eslint
-      - html-minifier-terser
-      - lightningcss
-      - postcss
-      - search-insights
-      - supports-color
-      - uglify-js
-      - utf-8-validate
-      - vue-template-compiler
-      - webpack-cli
-
-  '@rush-temp/framework@file:projects/framework.tgz':
-    dependencies:
-      '@types/js-yaml': 4.0.9
-      '@types/node': 17.0.45
-      joi: 17.6.4
-      js-yaml: 4.1.1
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-
-  '@rush-temp/gateway@file:projects/gateway.tgz(encoding@0.1.13)':
-    dependencies:
-      '@apollo/gateway': 0.46.0(encoding@0.1.13)(graphql@15.8.0)
-      '@types/express': 4.17.14
-      '@types/jmespath': 0.15.2
-      '@types/node': 17.0.45
-      apollo-server-core: 3.10.4(encoding@0.1.13)(graphql@15.8.0)
-      apollo-server-express: 3.10.4(encoding@0.1.13)(express@4.18.3)(graphql@15.8.0)
-      axios: 0.26.1
-      express: 4.18.3
-      express-openid-connect: 3.4.0(express@4.18.3)
-      graphql: 15.8.0
-      jmespath: 0.16.0
-      joi: 17.6.4
-      jose: 4.6.2
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-    transitivePeerDependencies:
-      - debug
-      - encoding
-      - supports-color
-
-  '@rush-temp/parse-nyaa@file:projects/parse-nyaa.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))':
-    dependencies:
-      '@types/jest': 27.4.1
-      '@types/node': 17.0.45
-      cheerio: 1.0.0-rc.12
-      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - esbuild
-      - node-notifier
-      - supports-color
-      - ts-node
-      - utf-8-validate
-
-  '@rush-temp/parse-torrent-title@file:projects/parse-torrent-title.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))':
-    dependencies:
-      '@types/jest': 27.4.1
-      '@types/js-yaml': 4.0.9
-      '@types/node': 17.0.45
-      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      joi: 17.6.4
-      js-yaml: 4.1.1
-      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
-      typescript: 4.7.4
-      typescript-transform-paths: 3.5.6(typescript@4.7.4)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - esbuild
-      - node-notifier
-      - supports-color
-      - ts-node
-      - utf-8-validate
-
-  '@rush-temp/workflow@file:projects/workflow.tgz(@babel/core@7.29.7)(babel-jest@27.5.1(@babel/core@7.29.7))(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))':
-    dependencies:
-      '@types/jest': 27.4.1
-      jest: 27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4))
-      joi: 17.6.4
-      ts-jest: 27.1.5(@babel/core@7.29.7)(@types/jest@27.4.1)(babel-jest@27.5.1(@babel/core@7.29.7))(jest@27.5.1(node-notifier@8.0.2)(ts-node@10.9.2(@types/node@17.0.45)(typescript@4.7.4)))(typescript@4.7.4)
-      typescript: 4.7.4
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - esbuild
-      - node-notifier
-      - supports-color
-      - ts-node
-      - utf-8-validate
-
   '@rushstack/eslint-config@2.5.4(eslint@7.32.0)(typescript@4.7.4)':
     dependencies:
       '@rushstack/eslint-patch': 1.1.3
@@ -18722,7 +18554,7 @@ snapshots:
   '@types/cookies@0.9.2':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/express': 4.17.25
+      '@types/express': 4.17.14
       '@types/keygrip': 1.0.6
       '@types/node': 17.0.45
 
@@ -18775,13 +18607,6 @@ snapshots:
       '@types/express-serve-static-core': 4.19.8
       '@types/qs': 6.9.18
       '@types/serve-static': 2.2.0
-
-  '@types/express@4.17.25':
-    dependencies:
-      '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 4.19.8
-      '@types/qs': 6.9.18
-      '@types/serve-static': 1.15.10
 
   '@types/glob@7.2.0':
     dependencies:
@@ -23123,6 +22948,12 @@ snapshots:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
       webpack: 5.107.2(clean-css@5.3.3)(cssnano@5.1.15(postcss@8.5.15))(html-minifier-terser@6.1.0)(postcss@8.5.15)
+
+  file-loader@6.2.0(webpack@5.107.2(postcss@8.5.15)):
+    dependencies:
+      loader-utils: 2.0.4
+      schema-utils: 3.3.0
+      webpack: 5.107.2(postcss@8.5.15)
 
   file-loader@6.2.0(webpack@5.107.2):
     dependencies:
@@ -29902,15 +29733,23 @@ snapshots:
       html-minifier-terser: 6.1.0
       postcss: 8.5.15
 
-  terser-webpack-plugin@5.6.1(postcss@8.5.15)(webpack@5.107.2):
+  terser-webpack-plugin@5.6.1(postcss@8.5.15)(webpack@5.107.2(postcss@8.5.15)):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      jest-worker: 27.5.1
+      schema-utils: 4.3.3
+      terser: 5.48.0
+      webpack: 5.107.2(postcss@8.5.15)
+    optionalDependencies:
+      postcss: 8.5.15
+
+  terser-webpack-plugin@5.6.1(webpack@5.107.2):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
       webpack: 5.107.2
-    optionalDependencies:
-      postcss: 8.5.15
 
   terser-webpack-plugin@5.6.1(webpack@5.73.0):
     dependencies:
@@ -30470,6 +30309,15 @@ snapshots:
     optionalDependencies:
       file-loader: 6.2.0(webpack@5.105.4(clean-css@5.3.3)(cssnano@5.1.15(postcss@8.5.15))(html-minifier-terser@6.1.0)(postcss@8.5.15))
 
+  url-loader@4.1.1(file-loader@6.2.0(webpack@5.107.2(postcss@8.5.15)))(webpack@5.107.2(postcss@8.5.15)):
+    dependencies:
+      loader-utils: 2.0.4
+      mime-types: 2.1.35
+      schema-utils: 3.3.0
+      webpack: 5.107.2(postcss@8.5.15)
+    optionalDependencies:
+      file-loader: 6.2.0(webpack@5.107.2(postcss@8.5.15))
+
   url-loader@4.1.1(file-loader@6.2.0(webpack@5.107.2))(webpack@5.107.2):
     dependencies:
       loader-utils: 2.0.4
@@ -30859,7 +30707,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.1(postcss@8.5.15)(webpack@5.107.2)
+      terser-webpack-plugin: 5.6.1(webpack@5.107.2)
       watchpack: 2.5.2
       webpack-sources: 3.5.0
     transitivePeerDependencies:
@@ -30937,7 +30785,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.1(postcss@8.5.15)(webpack@5.107.2)
+      terser-webpack-plugin: 5.6.1(postcss@8.5.15)(webpack@5.107.2(postcss@8.5.15))
       watchpack: 2.5.2
       webpack-sources: 3.5.0
     transitivePeerDependencies:
