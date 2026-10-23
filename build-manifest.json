@@ -3,22 +3,22 @@
   "algorithmVersion": 2,
   "images": {
     "admin": {
-      "fingerprint": "48e52f58378daeb1bec15c8dc2a0ed63347a1c3a7750e3651b9b2ec490b6d057"
+      "fingerprint": "52daa55bd8bd41d2fd87bec058aeb660bd51d8f7f185d193f0b7dceeab067b9e"
     },
     "api-server": {
-      "fingerprint": "bf2f18c18f9b565e0f09f7c400c669398abf8e203397c482ee3d943087f3025c"
+      "fingerprint": "226d968ea99729ec375c16cbead4f5016d8a0b00d9365e2b75f41e6e83dcf5e8"
     },
     "data-server": {
-      "fingerprint": "04fd0662f69c6667b99368491c9035e15274e5f28ca666d90ff83a10c8542951"
+      "fingerprint": "595e54a8a67002a1234b87cef5a73ae0376cd9b116568228ae0c984e394fafb9"
     },
     "gateway": {
-      "fingerprint": "74117a27b7b506b25298e55d30b4a3bbade96dcc5ddc1a924dff7c39d2630dcc"
+      "fingerprint": "2a4f5dc1121483db70322778634017967b05e3c9b6fa0b0cfd866d73a8ea6272"
     },
     "db": {
-      "fingerprint": "a2db2e3236a68ecb6b1f2422a1d503d32986f891f1865f5deb79efa458d5b444"
+      "fingerprint": "4496c875b05807cf82a3fb049072111f29ddf0da0b2d99240f0b81a1a87a6249"
     },
     "anime-matcher": {
-      "fingerprint": "c76509c2b52f45062e43a6973e8fd22f2a5539e7dcb63727493c36e2103deb58"
+      "fingerprint": "524c75cf47d12828aab460c14ccec75d3643fa909b741be7231d484c7ba2f8dd"
     }
   }
 }
