@@ -212,3 +212,38 @@ test.each(['loading', 'error'])(
     expect(pagination().current).toBe(2);
   },
 );
+
+test.each(['  星海  ', '   '])(
+  'uses the same trimmed search in both modes: %j',
+  async (keyword) => {
+    jest.useFakeTimers();
+    toggle();
+    search(keyword);
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+    toggle();
+    expect(tableSearch().value).toBe(keyword);
+    await act(async () => {
+      await mockTable.request!({ current: 1, pageSize: 30 }, {}, {});
+    });
+    const variables = mockQuery.mock.calls.slice(-1)[0][0].variables;
+    expect(variables.filter).toEqual(
+      keyword.trim()
+        ? { title: { includesInsensitive: keyword.trim() } }
+        : undefined,
+    );
+  },
+);
+
+test('keeps the page when only the surrounding search whitespace changes', () => {
+  act(() => {
+    tableSearch().onChange({ target: { value: '  测试  ' } });
+  });
+  toggle();
+  expect(url()).toEqual({ p: '2', s: '30', q: '测试' });
+  expect(container.querySelector('input')?.value).toBe('  测试  ');
+  toggle();
+  expect(pagination().current).toBe(2);
+  expect(tableSearch().value).toBe('  测试  ');
+});

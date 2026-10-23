@@ -520,11 +520,12 @@ async function querySeasons(
   },
 ) {
   const now = new Date();
+  const titleKeyword = keyword?.trim();
   const filter: SeasonFilter = {
-    ...(keyword
+    ...(titleKeyword
       ? {
           title: {
-            includesInsensitive: keyword,
+            includesInsensitive: titleKeyword,
           },
         }
       : undefined),
@@ -750,7 +751,7 @@ export default withAntdSearch(function MetadataPage() {
       ...stateRef.current,
       current,
       pageSize: 30,
-      keyword,
+      keyword: keyword.trim(),
       search: {},
       filter: {},
       custom: {},
@@ -763,7 +764,7 @@ export default withAntdSearch(function MetadataPage() {
       hash: '',
       search: qs.stringify(
         encodeAntdSearch(
-          { current, pageSize: state.pageSize, keyword },
+          { current, pageSize: state.pageSize, keyword: state.keyword },
           state.sort,
           state.filter,
           state.custom,
@@ -796,7 +797,7 @@ export default withAntdSearch(function MetadataPage() {
         onClick={() => {
           const next = !cardMode;
           syncViewSearch(
-            searchText === stateRef.current.keyword
+            searchText.trim() === stateRef.current.keyword.trim()
               ? stateRef.current.current ?? 1
               : 1,
             searchText,
