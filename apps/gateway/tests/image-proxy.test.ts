@@ -316,3 +316,103 @@ test("validates configured storage URLs", () => {
     assert.throws(() => createImageProxy(upstream), /imageProxy.upstream/);
   }
 });
+
+test("reuses upstream connections across completed responses and bounds cold bursts", async () => {
+  const ports = new Set<number>();
+  let active = 0;
+  let peak = 0;
+  await fixture(
+    (req, res) => {
+      ports.add(req.socket.remotePort!);
+      peak = Math.max(peak, ++active);
+      setTimeout(() => {
+        active--;
+        res.end("image");
+      }, 10);
+    },
+    async (origin) => {
+      for (let i = 0; i < 3; i++) {
+        assert.equal((await request(origin)).body.toString(), "image");
+      }
+      assert.equal(
+        ports.size,
+        1,
+        "completed responses should keep the connection"
+      );
+      const results = await Promise.all(
+        Array.from({ length: 30 }, () => request(origin))
+      );
+      assert.ok(
+        results.every((r) => r.status === 200 && r.body.toString() === "image")
+      );
+      assert.equal(peak, 4);
+      assert.equal(ports.size, 4);
+      await request(origin);
+      assert.equal(
+        ports.size,
+        4,
+        "warm requests should not open new connections"
+      );
+    }
+  );
+});
+
+test("times out queued requests and leaves the connection pool usable", async () => {
+  await fixture(
+    (req, res) => {
+      if (req.url === "/images/healthy") res.end("ok");
+    },
+    async (origin) => {
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () => request(origin))
+      );
+      assert.ok(
+        results.every(
+          (r) => r.status === 504 && r.headers["cache-control"] === "no-store"
+        )
+      );
+      assert.equal(
+        (await request(origin, "/storage/healthy")).body.toString(),
+        "ok"
+      );
+    },
+    100
+  );
+});
+
+test("removes disconnected browsers from the upstream connection queue", async () => {
+  const pending: http.ServerResponse[] = [];
+  let full!: () => void;
+  const occupied = new Promise<void>((resolve) => {
+    full = resolve;
+  });
+  let queuedReachedStorage = false;
+  await fixture(
+    (req, res) => {
+      if (req.url === "/images/queued") queuedReachedStorage = true;
+      if (req.url === "/images/hold") {
+        pending.push(res);
+        if (pending.length === 4) full();
+      } else res.end("ok");
+    },
+    async (origin) => {
+      const held = Promise.all(
+        Array.from({ length: 4 }, () => request(origin, "/storage/hold"))
+      );
+      await occupied;
+      await new Promise<void>((resolve, reject) => {
+        const req = http.get(`${origin}/storage/queued`, { agent: false });
+        req.on("error", (error: NodeJS.ErrnoException) => {
+          if (error.code === "ECONNRESET") resolve();
+          else reject(error);
+        });
+        req.on("finish", () => setTimeout(() => req.destroy(), 20));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      pending.forEach((res) => res.end("image"));
+      await held;
+      assert.equal((await request(origin, "/storage/healthy")).status, 200);
+      assert.equal(queuedReachedStorage, false);
+    }
+  );
+});
