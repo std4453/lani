@@ -1,3 +1,10 @@
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(customParseFormat);
+dayjs.extend(utc);
+
 interface Entry {
   src: string;
   expiresAt: number;
@@ -13,15 +20,11 @@ export function imageSource(src: string) {
   let expiresAt = Number(query.get('Expires')) * 1000;
   const date = query.get('X-Amz-Date');
   const duration = Number(query.get('X-Amz-Expires'));
-  if (date && /^\d{8}T\d{6}Z$/.test(date) && duration > 0) {
+  if (date && duration > 0) {
+    // AWS SigV4 使用 UTC 基本格式：yyyyMMdd'T'HHmmss'Z'。
+    // https://docs.aws.amazon.com/AmazonS3/latest/developerguide/sigv4-query-string-auth.html
     expiresAt =
-      Date.parse(
-        date.replace(
-          /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/,
-          '$1-$2-$3T$4:$5:$6Z',
-        ),
-      ) +
-      duration * 1000;
+      dayjs.utc(date, 'YYYYMMDD[T]HHmmss[Z]', true).valueOf() + duration * 1000;
   }
   // 保留 versionId 等内容参数；签名、响应缓存日期不是图片身份。
   for (const key of [...query.keys()]) {
@@ -32,12 +35,10 @@ export function imageSource(src: string) {
       query.delete(key);
   }
   query.sort();
-  const backend =
-    document.cookie.match(/(?:^|;\s*)lani_backend=([^;]*)/)?.[1] ?? '';
-  return { key: `${backend}:${url.href}`, expiresAt };
+  return { key: url.href, expiresAt };
 }
 
-export function cachedImageUrl(src: string, now = Date.now()) {
+export function cachedImageUrl(src: string, now: number = Date.now()) {
   const { key, expiresAt } = imageSource(src);
   const entry = sources.get(key);
   if (entry && entry.expiresAt > now + EXPIRY_MARGIN) {

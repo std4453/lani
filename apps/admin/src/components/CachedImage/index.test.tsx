@@ -18,15 +18,10 @@ afterEach(() => {
   });
   container.remove();
 });
-const render = (src: string, reload = jest.fn()) =>
+const render = (src: string) =>
   act(() => {
     ReactDOM.render(
-      <CachedImage
-        src={src}
-        reload={reload}
-        alt="cover"
-        fallback={<span>failed</span>}
-      />,
+      <CachedImage src={src} alt="cover" fallback={<span>failed</span>} />,
       container,
     );
   });
@@ -69,56 +64,47 @@ it('parses v4 signing dates and isolates object versions', () => {
   );
 });
 
-it('bounds the shared cache and isolates backend selection', () => {
+it('does not cache malformed or invalid v4 signing dates', () => {
+  for (const date of ['20260230T010203Z', '20261024T250203Z', 'not-a-date']) {
+    const first = `/storage/p.jpg?X-Amz-Date=${date}&X-Amz-Expires=3600&X-Amz-Signature=a`;
+    const next = first.replace('Signature=a', 'Signature=b');
+    expect(imageSource(first).expiresAt).toBeNaN();
+    expect(cachedImageUrl(first, 0)).toBe(first);
+    expect(cachedImageUrl(next, 0)).toBe(next);
+  }
+});
+
+it('bounds the shared cache', () => {
   const first = url('first');
   cachedImageUrl(first);
   for (let index = 0; index < 512; index++)
     cachedImageUrl(url('new', `${index}.jpg`));
-  expect(cachedImageUrl(url('after-eviction'))).toBe(url('after-eviction'));
-  document.cookie = 'lani_backend=offline';
-  try {
-    expect(cachedImageUrl(url('offline'))).toBe(url('offline'));
-  } finally {
-    document.cookie = 'lani_backend=; Max-Age=0';
-  }
+  const next = url('after-eviction');
+  expect(cachedImageUrl(next)).toBe(next);
 });
 
-it('retries a failed URL once through the existing query callback', async () => {
-  const reload = jest.fn().mockResolvedValue(url('fresh'));
-  render(url('old'), reload);
-  await act(async () => {
-    Simulate.error(container.querySelector('img')!);
-  });
-  expect(reload).toHaveBeenCalledTimes(1);
-  expect(container.querySelector('img')!.getAttribute('src')).toBe(
-    url('fresh'),
-  );
-  await act(async () => {
-    Simulate.error(container.querySelector('img')!);
-  });
-  expect(reload).toHaveBeenCalledTimes(1);
+it('uses the latest upstream URL when the cached URL fails', () => {
+  const first = url('first');
+  const latest = url('latest');
+  render(first);
+  render(latest);
+  expect(container.querySelector('img')!.getAttribute('src')).toBe(first);
+  act(() => Simulate.error(container.querySelector('img')!));
+  expect(container.querySelector('img')!.getAttribute('src')).toBe(latest);
+  act(() => Simulate.error(container.querySelector('img')!));
+  expect(container.textContent).toBe('failed');
+  render(latest);
   expect(container.textContent).toBe('failed');
 });
 
-it('ignores a retry that completes after unmounting', async () => {
-  let done!: (src: string) => void;
-  render(
-    url('old'),
-    jest.fn(
-      () =>
-        new Promise<string>((resolve) => {
-          done = resolve;
-        }),
-    ),
-  );
-  act(() => {
-    Simulate.error(container.querySelector('img')!);
-  });
-  act(() => {
-    ReactDOM.unmountComponentAtNode(container);
-  });
-  await act(async () => {
-    done(url('late'));
-  });
-  expect(container.innerHTML).toBe('');
+it('waits for new upstream data after failure without retaining the failed URL', () => {
+  const first = url('first');
+  render(first);
+  act(() => Simulate.error(container.querySelector('img')!));
+  expect(container.textContent).toBe('failed');
+  render(first);
+  expect(container.querySelector('img')).toBeNull();
+  const latest = url('latest');
+  render(latest);
+  expect(container.querySelector('img')!.getAttribute('src')).toBe(latest);
 });

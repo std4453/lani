@@ -32,11 +32,11 @@ export class ImageThumbnailService implements QueueHandler<Payload> {
   constructor(private prisma: PrismaService, private s3: S3Service) {}
 
   async path(
-    image: Pick<Image, 'cosPath' | 'thumbnailPath' | 'thumbnailFailedPath'>,
+    image: Pick<Image, 'cosPath' | 'thumbnailPath' | 'thumbnailFailedAt'>,
   ) {
     const target = thumbnailKey(image.cosPath);
     if (image.thumbnailPath === target) return target;
-    if (image.thumbnailFailedPath !== target) {
+    if (!image.thumbnailFailedAt) {
       try {
         await this.prisma.$transaction((tx) => this.enqueue(tx, image.cosPath));
       } catch {
@@ -89,11 +89,7 @@ export class ImageThumbnailService implements QueueHandler<Payload> {
       where: { cosPath: source },
     });
     // 重启或请求与提交交错时可能再次入队；已完成的对象无需重复转码。
-    if (
-      !image ||
-      image.thumbnailPath === target ||
-      image.thumbnailFailedPath === target
-    ) {
+    if (!image || image.thumbnailPath === target || image.thumbnailFailedAt) {
       return async () => {
         // 无业务数据需要更新，队列仍须提交并删除这条重复任务。
       };
@@ -121,19 +117,19 @@ export class ImageThumbnailService implements QueueHandler<Payload> {
       return async (tx: Prisma.TransactionClient) => {
         await tx.image.updateMany({
           where: { cosPath: source },
-          data: { thumbnailPath: target, thumbnailFailedPath: null },
+          data: { thumbnailPath: target, thumbnailFailedAt: null },
         });
       };
     } catch {
       if (job.attempts + 1 < this.retry.maxAttempts) {
         throw new Error('Image thumbnail generation failed');
       }
-      // 坏图只终止自身的派生任务，不阻塞其他图片；升级规格后可重新尝试。
+      // 坏图只终止自身的派生任务，不阻塞其他图片。
       this.logger.warn(`Image thumbnail exhausted retries at job ${job.id}`);
       return async (tx: Prisma.TransactionClient) => {
         await tx.image.updateMany({
           where: { cosPath: source },
-          data: { thumbnailFailedPath: target },
+          data: { thumbnailFailedAt: new Date() },
         });
       };
     }

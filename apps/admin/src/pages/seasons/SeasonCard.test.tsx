@@ -7,11 +7,6 @@ jest.mock('umi', () => ({
   ),
 }));
 jest.mock('@/components/TaskDetailsDialog', () => ({}));
-jest.mock('@apollo/client', () => ({
-  useApolloClient: () => ({
-    query: jest.fn().mockRejectedValue(new Error('unavailable')),
-  }),
-}));
 import ReactDOM from 'react-dom';
 import { act, Simulate } from 'react-dom/test-utils';
 import { CardSeasonFieldsFragment } from '@/generated/types';

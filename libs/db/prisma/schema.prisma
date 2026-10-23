@@ -56,7 +56,7 @@ model Image {
   cosPath   String @map("cos_path")
   hash      String
   thumbnailPath       String? @map("thumbnail_path")
-  thumbnailFailedPath String? @map("thumbnail_failed_path")
+  thumbnailFailedAt   DateTime? @map("thumbnail_failed_at") @db.Timestamptz(6)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

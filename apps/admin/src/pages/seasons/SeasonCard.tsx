@@ -2,14 +2,10 @@ import {
   calcEpisodeStatus,
   EPISODE_STATUS_TAGS,
 } from '@/constants/download-status';
-import {
-  CardSeasonFieldsFragment,
-  ReloadCardImageDocument,
-} from '@/generated/types';
+import { CardSeasonFieldsFragment } from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { extractNode } from '@/utils/graphql';
 import { Badge, Card } from 'antd';
-import { useApolloClient } from '@apollo/client';
 import CachedImage from '@/components/CachedImage';
 import { Link } from 'umi';
 import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
@@ -23,7 +19,6 @@ export default function SeasonCard({
   openEpisode: (episodeId: number) => void;
 }) {
   const source = season.poster?.downloadPath;
-  const client = useApolloClient();
   const episodes = selectEpisodeWindow(extractNode(season.mainEpisodes) ?? []);
   const rows = episodeRows(episodes);
 
@@ -45,14 +40,6 @@ export default function SeasonCard({
               src={source}
               alt=""
               loading="lazy"
-              reload={async () => {
-                const { data } = await client.query({
-                  query: ReloadCardImageDocument,
-                  variables: { id: season.poster!.id },
-                  fetchPolicy: 'network-only',
-                });
-                return data.imageById?.downloadPath;
-              }}
               fallback={
                 <span className={styles.placeholder}>封面加载失败</span>
               }

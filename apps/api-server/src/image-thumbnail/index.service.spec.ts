@@ -18,7 +18,7 @@ function setup() {
   const image = {
     cosPath: 'original.jpg',
     thumbnailPath: null,
-    thumbnailFailedPath: null,
+    thumbnailFailedAt: null,
   };
   const prisma = {
     image: {
@@ -59,15 +59,15 @@ it('enqueues missing thumbnails without waiting for generation and leaves existi
   );
 });
 
-it('returns ready thumbnails and does not enqueue terminal failures of the current preset', async () => {
+it('returns ready thumbnails and does not enqueue terminal failures until explicitly reset', async () => {
   const { image, prisma, service } = setup();
   const target = thumbnailKey(image.cosPath);
   expect(await service.path({ ...image, thumbnailPath: target })).toBe(target);
-  expect(await service.path({ ...image, thumbnailFailedPath: target })).toBe(
+  expect(await service.path({ ...image, thumbnailFailedAt: new Date() })).toBe(
     image.cosPath,
   );
   expect(prisma.$transaction).not.toHaveBeenCalled();
-  await service.path({ ...image, thumbnailFailedPath: 'previous-preset' });
+  await service.path({ ...image, thumbnailFailedAt: null });
   expect(prisma.$transaction).toHaveBeenCalledTimes(1);
 });
 
@@ -102,7 +102,7 @@ it('generates a real 384px WebP and only publishes its path after upload', async
   await commit(prisma as any);
   expect(prisma.image.updateMany).toHaveBeenCalledWith({
     where: { cosPath: image.cosPath },
-    data: { thumbnailPath: upload.Key, thumbnailFailedPath: null },
+    data: { thumbnailPath: upload.Key, thumbnailFailedAt: null },
   });
 });
 
@@ -119,7 +119,7 @@ it('retries corrupt input then commits failure so the queue can process the next
   await commit(prisma as any);
   expect(prisma.image.updateMany).toHaveBeenCalledWith({
     where: { cosPath: image.cosPath },
-    data: { thumbnailFailedPath: thumbnailKey(image.cosPath) },
+    data: { thumbnailFailedAt: expect.any(Date) },
   });
   expect(s3.putObject).not.toHaveBeenCalled();
 });
@@ -155,12 +155,17 @@ it('aborts oversized inputs without uploading anything', async () => {
   expect(s3.putObject).not.toHaveBeenCalled();
 });
 
-it('skips deleted sources and previously completed jobs', async () => {
+it('skips deleted sources, completed jobs and terminal failures', async () => {
   const { service, s3, job, prisma, image } = setup();
   prisma.image.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
     ...image,
     thumbnailPath: thumbnailKey(image.cosPath),
   });
+  prisma.image.findFirst.mockResolvedValueOnce({
+    ...image,
+    thumbnailFailedAt: new Date(),
+  });
+  await service.execute(job);
   await service.execute(job);
   await service.execute(job);
   expect(s3.getObject).not.toHaveBeenCalled();
