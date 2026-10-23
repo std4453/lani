@@ -33,9 +33,14 @@ import { useAppSelector } from '@/store/hooks';
 import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
-import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
+import {
+  useAntdSearchContext,
+  useAntdSearchProps,
+  withAntdSearch,
+} from '@/utils/search/hooks';
 import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
+import { encodeAntdSearch } from '@/utils/search/encode';
 import {
   AppstoreOutlined,
   PlusOutlined,
@@ -54,6 +59,7 @@ import styles from './index.module.less';
 import TestRoutingTitle from './TestRoutingTitle';
 import SeasonCards from './SeasonCards';
 import store from 'store2';
+import qs from 'qs';
 
 type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
 
@@ -737,6 +743,35 @@ export default withAntdSearch(function MetadataPage() {
   const history = useHistory();
   const mobile = useMobile();
 
+  const { stateRef, update, setObservedState } = useAntdSearchContext();
+  const [searchText, setSearchText] = useState(stateRef.current.keyword);
+  const syncViewSearch = (current: number, keyword: string) => {
+    const state = {
+      ...stateRef.current,
+      current,
+      pageSize: 30,
+      keyword,
+      search: {},
+      filter: {},
+      custom: {},
+    };
+    stateRef.current = state;
+    update({ current });
+    setObservedState(state);
+    history.replace({
+      pathname: history.location.pathname,
+      hash: '',
+      search: qs.stringify(
+        encodeAntdSearch(
+          { current, pageSize: state.pageSize, keyword },
+          state.sort,
+          state.filter,
+          state.custom,
+        ),
+      ),
+    });
+  };
+
   const [cardMode, setCardMode] = useState(() => {
     try {
       return store.get('lani:metadata-view') === 'cards';
@@ -760,6 +795,12 @@ export default withAntdSearch(function MetadataPage() {
         icon={cardMode ? <AppstoreOutlined /> : <UnorderedListOutlined />}
         onClick={() => {
           const next = !cardMode;
+          syncViewSearch(
+            searchText === stateRef.current.keyword
+              ? stateRef.current.current ?? 1
+              : 1,
+            searchText,
+          );
           setCardMode(next);
           try {
             store.set('lani:metadata-view', next ? 'cards' : 'list');
@@ -784,6 +825,7 @@ export default withAntdSearch(function MetadataPage() {
     },
     {
       hasKeyword: true,
+      keywordState: [searchText, setSearchText],
       pagination: {
         pageSize: 30,
       },
@@ -834,7 +876,17 @@ export default withAntdSearch(function MetadataPage() {
     <SeasonsStatusContext.Provider value={seasonsStatus}>
       <PageTitle title="元数据" />
       {cardMode ? (
-        <SeasonCards title={title} actions={actions} modeButton={modeButton} />
+        <SeasonCards
+          title={title}
+          actions={actions}
+          modeButton={modeButton}
+          page={stateRef.current.current ?? 1}
+          keyword={stateRef.current.keyword}
+          searchText={searchText}
+          setSearchText={setSearchText}
+          onSearch={(keyword) => syncViewSearch(1, keyword)}
+          setPage={(page) => syncViewSearch(page, stateRef.current.keyword)}
+        />
       ) : (
         <MainTable<RowType>
           columns={columns}
