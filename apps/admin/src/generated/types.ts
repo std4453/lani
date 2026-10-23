@@ -1034,7 +1034,7 @@ export type Image = Node & {
 
 
 export type ImageDownloadPathArgs = {
-  thumbnail?: Scalars['Boolean'];
+  thumbnail?: InputMaybe<Scalars['Boolean']>;
 };
 
 
