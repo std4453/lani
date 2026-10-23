@@ -6,10 +6,4 @@
 
 真实语料、独立 ground truth、采集方法及已知漏报见 [语料说明](src/fixtures/subtitles/README.md)。测试只读固定样本，不访问 Nyaa。
 
-在本包执行：
-
-```bash
-node ../../common/scripts/install-run-rushx.js test --runInBand
-```
-
-扩大语料时保留原始相关片段与独立标注，同时检查精确率、召回率与未知分类；有限样本的准确率不能代表整个站点或未来格式。
+规则维护与验证见 [AGENTS.md](AGENTS.md)。

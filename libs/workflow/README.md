@@ -1,16 +1,5 @@
-# 任务流程协议
+# `@lani/workflow`
 
-API 与 Admin 共享任务流程的 TypeScript 类型及 Joi 结构校验，不依赖 NestJS、Prisma 或 React。内部快照只检查版本、字段形状和当前步骤引用；定义唯一性及依赖关系在 `buildWorkflowSnapshot` 中检查。每个 atom 的检查点类型与 schema 放在 `src/atoms` 对应文件，由注册表组合。
+API 与 Admin 共享的任务流程类型、Joi 校验和列表摘要工具。定义按步骤顺序组织；依赖 wants 的外层数组表示 AND，内层数组表示 OR，所有前置条件须在当前步骤之前满足。
 
-任务保存创建时的有序流程快照。步骤数量、标识和顺序由后端定义；原子声明 `wants`，外层数组表示 AND，每个内层数组表示 OR。所有前置条件必须在该步骤之前满足。当前产物按原子类型保存在任务列中，因此同一流程不能重复使用同一原子类型。
-
-`schemaVersion` 表示协议版本，`definitionVersion` 表示流程定义版本，任务行的 `version` 用于并发更新。取消意图一旦记录不可清除；取消失败使用普通失败状态，统一重试入口根据取消意图继续清理。旧任务的流程为 NULL，不转换为此协议。
-
-列表展示使用 `summarizeWorkflow` 生成的结构化摘要：保留流程状态、当前步骤 ID，以及按原顺序排列的步骤 ID、atom、标题和状态，排除 checkpoint、路径、时间记录及错误详情。摘要是快照的字段投影，不把动态流程折叠为固定业务阶段；前端按实际步骤标题展示，未知 atom 使用通用颜色。API 的 `Task.statusSummary` 使用 `TaskSummary` JSON 标量，与 `Workflow` 一样映射到共享 TypeScript 类型，将任务版本与流程摘要一起返回；旧任务使用单独的 `legacy` 信息，不伪造流程。
-
-Admin 的元数据卡片、元数据列表和季度剧集列表共用摘要 fragment 与轮询：每 30 秒发现新任务，每 3 秒只刷新当前展示范围内的活跃任务摘要，隐藏或离线时暂停。JSON 摘要按任务版本整体替换缓存，不归一化内部步骤；完整任务数据在打开详情弹框后加载。
-
-```bash
-rushx build
-rushx test --runInBand
-```
+使用时由 `buildWorkflowSnapshot` 校验定义并生成快照，列表调用 `summarizeWorkflow` 获取结构化摘要。版本和恢复语义见[设计笔记](DESIGN.md)。

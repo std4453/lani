@@ -149,14 +149,11 @@ function calculate(tree) {
   }
   const excluded = (file) =>
     file === manifestPath ||
-    [
-      "README.md",
-      "AGENTS.md",
-      "CLAUDE.md",
-      "CONTRIBUTING.md",
-      "LICENSE",
-      ".github/README.md",
-    ].includes(file) ||
+    file === "LICENSE" ||
+    // 文档位置可随读者归属调整；文档目录中的截图等附件也排除。
+    /\.(md|mdx|markdown)$/i.test(file) ||
+    /(^|\/)docs\//.test(file) ||
+    file.startsWith("development/") ||
     isDocsPath(file) ||
     file.startsWith("common/git-hooks/") ||
     file === ".github/workflows/manifest-check.yaml";
