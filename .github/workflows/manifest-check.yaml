@@ -19,3 +19,5 @@ jobs:
           node-version: "22.23.2"
       - name: Validate the complete candidate tree
         run: node common/scripts/build-fingerprints.cjs check --ref "$(git rev-parse HEAD)"
+      - name: Test docs isolation and fingerprints
+        run: node --test common/scripts/docs-only.test.cjs common/scripts/build-fingerprints.test.cjs

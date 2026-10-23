@@ -6,9 +6,19 @@
 
 构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为 `next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway、Admin 的单元测试，以及使用一次性 PostgreSQL 14 service 的数据库集成测试；不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。本机对应命令见[开发指南](development.md#单元测试)。
 
+自动 PR 和 push 若为下文定义的纯文档变更，`test.yaml` 仅执行范围检查，跳过应用测试 job，因而不会构建应用测试依赖或启动数据库 service。manifest 校验和文档隔离规则测试仍运行。
+
+## 文档构建与发布
+
+`docs.yaml` 单独安装和构建 `@lani/docs`；PR 只验证构建，只有 `next` push 或选择 `next` 的手动运行可发布 GitHub Pages。首次启用与本地预览步骤见[文档站说明](https://github.com/std4453/lani/blob/next/docs/README.md)。
+
+纯文档变更指非空的完整变更范围内，每个路径均位于 `docs/**` 或为 `.github/workflows/docs.yaml`。这些路径不参与应用 fingerprint。`default_pipeline.yaml` 和 `test.yaml` 在任何应用构建前检查范围：PR 比较 merge base 到 head，push 比较事件的 before 到 after；读取完整 Git diff，重命名按删除和新增分别核对，避免遗漏被移入文档目录的应用源码。
+
+纯文档变更跳过应用测试、镜像规划、普通应用与 matcher 镜像构建，以及所有应用部署通知，不需要 `[skip-cd]`。混合变更、共享锁文件／配置变化、空 diff 或新建分支仍保留应用流程；缺失历史或非法 SHA 会报错，不会被误判为纯文档。手动运行应用 workflow 不执行自动跳过规则。
+
 ## 镜像构建
 
-`default_pipeline.yaml` 为 `next` push 和同仓库、目标为 `next` 的 PR 构建完整的已提交 manifest。PR 使用 head SHA，只构建缺失的 fingerprint 镜像；全部镜像复用时仍发送部署通知。未合并的 fork PR 仅执行独立的 manifest 检查和测试，不通过此流程发布镜像。
+通过变更范围检查后，`default_pipeline.yaml` 为 `next` push 和同仓库、目标为 `next` 的 PR 构建完整的已提交 manifest。PR 使用 head SHA，只构建缺失的 fingerprint 镜像；全部镜像复用时仍发送部署通知。未合并的 fork PR 仅执行独立的 manifest 检查和测试，不通过此流程发布镜像。
 
 后端、all-in-one 和 Prisma 迁移镜像使用 `node:22-bullseye-slim`。Prisma 3.15.2 的 Linux 引擎链接系统 OpenSSL，Bullseye 使用 `debian-openssl-1.1.x`；不要根据 Node 自带的 OpenSSL 3.x 修改该目标。API 和迁移镜像显式安装 OpenSSL 与 CA 证书，迁移镜像在构建时准备引擎。Bullseye 已归档，需要安装系统包的镜像使用 Debian 官方归档源，保留软件包签名验证。
 
@@ -16,11 +26,11 @@ all-in-one 的 MinIO 官方二进制下载地址已失效，改为在独立 Go �
 
 ## 自动部署通知
 
-同仓库、目标为 `next` 的未合并 PR 默认在构建完成后通知测试部署。通知要求 PR 仍打开、作者为仓库所有者或拥有 write/maintain/admin 权限，且当前 head SHA 未改变。
+除纯文档变更外，同仓库、目标为 `next` 的未合并 PR 默认在构建完成后通知测试部署。通知要求 PR 仍打开、作者为仓库所有者或拥有 write/maintain/admin 权限，且当前 head SHA 未改变。
 
 如果当前 head 提交的完整消息或最新 PR 标题含大小写敏感的 `[skip-cd]`，自动 PR 通知会成功跳过，并在 workflow 摘要中说明原因。提交标记只作用于该 head，标题标记持续有效，直到移除。它们不跳过构建、manifest 校验、镜像准备或测试。仅编辑标题不会触发部署；下一次提交或 **Re-run all jobs** 才会重新检查最新标题和 head，已经发出的通知不会被取消。
 
-`next` push 始终通知 online。流程查询与该 SHA 精确关联的 PR：只有恰好一个已合并 PR 属于本仓库、目标为 `next` 且 merge SHA 等于该 push SHA 时，才额外通知 offline/next 并携带 `mergedPr`；匹配不唯一时失败，不猜测目标。直接 push 只通知 online。构建只执行一次，online 与 offline 通知独立执行。已合并的 fork PR 同样适用，此时提交已经进入受信的 `next` 历史，并经过祖先关系校验。
+除纯文档变更外，`next` push 通知 online。流程查询与该 SHA 精确关联的 PR：只有恰好一个已合并 PR 属于本仓库、目标为 `next` 且 merge SHA 等于该 push SHA 时，才额外通知 offline/next 并携带 `mergedPr`；匹配不唯一时失败，不猜测目标。直接 push 只通知 online。构建只执行一次，online 与 offline 通知独立执行。已合并的 fork PR 同样适用，此时提交已经进入受信的 `next` 历史，并经过祖先关系校验。
 
 跳过标记仅影响合并前的自动 PR 通知；`next` push 不扫描合并提交消息中的标记。`scope:ui` 选择共享测试环境的数据准备策略，不限制目标 manifest 的镜像部署范围。
 

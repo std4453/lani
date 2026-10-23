@@ -113,7 +113,9 @@ node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)"
 
 `manifest-check` 是 PR 的轻量一致性检查，用于发现忘记生成、跳过 hook 和 rebase 后的过期数据。CI 不自动提交修复。`next` 采用 squash/rebase 合入，避免改写已发布历史；维护者可在 GitHub 设置中将该检查设为必需检查，不需要额外运维脚本。
 
-fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；排除根目录指定文档、`.github/README.md`、`docs/`、hook 和 manifest 检查 workflow；包内 README、文档和配置示例仍属于输入，修改它们也可能改变镜像 fingerprint。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
+fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；排除根目录指定文档、`.github/README.md`、`docs/`、`.github/workflows/docs.yaml`、hook 和 manifest 检查 workflow；包内 README、文档和配置示例仍属于输入，修改它们也可能改变镜像 fingerprint。文档 workflow 与文档目录均只属于文档站，不参与应用镜像计算。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
+
+自动 PR／push 仅修改 `docs/**` 和文档 workflow 时，应用构建、应用测试及部署通知会跳过，manifest 校验与隔离规则回归测试仍运行。混合变更和手动应用发布保留原流程，具体范围见 [CI/CD 指南](docs/docs/ci-cd.md#文档构建与发布)。修改 fingerprint 或 CI 隔离规则本身仍属于共享构建输入，会更新应用 fingerprint；不要据此宣称首次引入规则的 PR 也是纯文档变更。
 
 算法 v2 按项目截取 pnpm 9 workspace 锁文件：包含应用依赖闭包中的 importer，以及递归可达的 package 元数据和 snapshot（包括开发依赖、可选依赖与实际解析的 peer 实例）。不再把整个锁文件作为所有镜像的共同输入；安装设置、overrides 和 pnpmfile 校验和等全局配置仍共同参与。`explain` 中以 `pnpm-lock.yaml#` 开头的条目表示选中的锁文件片段。计算只读取 Git 暂存区或指定提交，不依赖 `node_modules`、网络或预先生成的 Rush 缓存；遇到不支持的锁文件布局或缺失的依赖节点会报错。
 
