@@ -3,7 +3,8 @@ fragment cardSeasonFields on Season {
   title
   isMonitoring
   poster: imageByPosterImageId {
-    ...displayImageFields
+    id
+    downloadPath(thumbnail: true)
   }
   mainEpisodes {
     edges {

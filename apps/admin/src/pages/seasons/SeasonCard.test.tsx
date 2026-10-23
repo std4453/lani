@@ -176,7 +176,7 @@ test('renders a fractional main episode and opens its details, excluding special
   expect(container.textContent).not.toContain('SP');
 });
 
-test('replaces failed posters and retries when the signed URL changes', () => {
+test('replaces failed posters and retries when the image changes', async () => {
   const value = {
     ...season(0),
     poster: { id: 1, downloadPath: '/broken.jpg' },
@@ -187,7 +187,9 @@ test('replaces failed posters and retries when the signed URL changes', () => {
       container,
     );
   });
-  act(() => Simulate.error(container.querySelector('img')!));
+  await act(async () => {
+    Simulate.error(container.querySelector('img')!);
+  });
   expect(container.querySelector('img')).toBeNull();
   expect(container.textContent).toContain('封面加载失败');
   value.poster.downloadPath = '/fresh.jpg';

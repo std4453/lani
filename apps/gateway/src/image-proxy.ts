@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import http from "http";
 import https from "https";
+import { imageCacheControl } from "./image-cache";
 
 const requestHeaders = [
   "if-none-match",
@@ -141,7 +142,14 @@ export function createImageProxy(
         if (value !== undefined) res.setHeader(header, value);
       }
       res.setHeader("X-Content-Type-Options", "nosniff");
-      if (status >= 400) res.setHeader("Cache-Control", "no-store");
+      // 不让对象的历史缓存元数据覆盖应用策略；失败响应仍不可缓存。
+      res.setHeader(
+        "Cache-Control",
+        status === 200 || status === 206 || status === 304
+          ? imageCacheControl(req.url)
+          : "no-store"
+      );
+      res.removeHeader("Expires");
       response.pipe(res);
     });
     upstreamRequest.end();

@@ -1,5 +1,18 @@
 import { Prisma } from '@lani/db';
 
+/** 缺失时才入队；已有任务（包括正在执行或失败的任务）保持不变。 */
+export async function enqueueJobIfAbsent(
+  tx: Prisma.TransactionClient,
+  queueName: string,
+  key: string,
+  payload: Prisma.InputJsonValue,
+) {
+  return tx.backgroundJob.createMany({
+    data: [{ queueName, key, payload }],
+    skipDuplicates: true,
+  });
+}
+
 /** 必须使用生产者的事务；替换输入不会解除已有失败屏障。 */
 export async function enqueueJob(
   tx: Prisma.TransactionClient,
