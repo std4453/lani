@@ -38,8 +38,9 @@ jellyfin:
   apiToken: your_api_token
   dummyUserId: dummy_user_id
 
-lani:
-  moveStrategy: hardLinkOrMove
+mediaPool:
+  root: /data/pool
+  painfullyAcceptCrossDeviceCopy: false
 ```
 
 ### 准备目录
@@ -48,6 +49,7 @@ lani:
 
 1. 将上述配置文件放在 `/srv/lani/config.yaml`
 2. 创建空目录 `/srv/lani/storage`
+3. 在已有媒体卷内准备 `pool`、`downloads` 和 `library` 目录，将共同父目录挂载为 `/data`，并按路径映射配置下载器与 Jellyfin
 
 ### 启动一体机容器
 
@@ -60,6 +62,7 @@ sudo docker run --detach \
   --restart always \
   --volume /srv/lani/config.yaml:/config/config.yaml \
   --volume /srv/lani/storage:/storage \
+  --volume /srv/media:/data \
   ghcr.io/std4453/lani-all-in-one
 ```
 

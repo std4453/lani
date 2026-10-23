@@ -11,6 +11,7 @@ export { FileIdentity, FileCheckpoint } from "./import-file";
 export interface AtomCheckpoint {
   submission?: SubmissionCheckpoint;
   file?: FileCheckpoint;
+  mediaVersionId?: number;
   refreshStartedAt?: string;
   episodePublished?: boolean;
   publicationClaimed?: boolean;
@@ -27,7 +28,11 @@ export const atomSchemas = {
   download: {},
   findVideoFile: {},
   findImportFiles: {},
-  importFile: { ...publicationCheckpointSchema, file: fileCheckpointSchema },
+  importFile: {
+    ...publicationCheckpointSchema,
+    file: fileCheckpointSchema,
+    mediaVersionId: Joi.number().integer().positive(),
+  },
   writeMetadata: publicationCheckpointSchema,
   refreshPlayer: {
     ...publicationCheckpointSchema,

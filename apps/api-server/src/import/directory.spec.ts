@@ -42,6 +42,24 @@ function atomContext(): AtomContext {
   return context;
 }
 
+// 此处只验证目录选择与元数据兼容；真实入池、替换和恢复由媒体池集成测试覆盖。
+function mediaPoolStub() {
+  let files: Array<{ source: string; target: string }> = [];
+  return {
+    register: jest.fn(async (input) => {
+      files = input.files;
+      return 1;
+    }),
+    publish: jest.fn(async () => {
+      for (const file of files) {
+        await fs.mkdir(path.dirname(file.target), { recursive: true });
+        await fs.link(file.source, file.target);
+      }
+      return files[0].target;
+    }),
+  } as any;
+}
+
 it('下载和导入共用原子，将视频写入记录的目录', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lani-import-'));
   try {
@@ -64,7 +82,7 @@ it('下载和导入共用原子，将视频写入记录的目录', async () => {
       },
     };
     const target = (
-      await new ImportFileAtom(prisma as any).run(
+      await new ImportFileAtom(prisma as any, mediaPoolStub()).run(
         1,
         {
           episodeId: 1,
@@ -126,7 +144,11 @@ it('共用原子导入后可重复同步季度元数据', async () => {
       } as any;
       Object.assign(
         input,
-        await new ImportFileAtom(prisma as any).run(1, input, atomContext()),
+        await new ImportFileAtom(prisma as any, mediaPoolStub()).run(
+          1,
+          input,
+          atomContext(),
+        ),
       );
       await new WriteMetadataAtom(prisma as any).run(1, input, atomContext());
     }

@@ -1,3 +1,4 @@
+import { MediaPoolService } from '@/media-pool/media-pool.service';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { Module } from '@nestjs/common';
 import { CommonModule } from '@/common/index.module';
@@ -16,6 +17,7 @@ import { PlayerRefreshService } from './atoms/refresh/player-refresh.service';
 @Module({
   imports: [CommonModule, DownloadClientModule],
   providers: [
+    MediaPoolService,
     TaskService,
     TaskStore,
     SubmitDownloadAtom,

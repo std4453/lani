@@ -43,6 +43,9 @@ model Episode {
   season                Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   singleTasks           Task[] @relation("download_jobsToepisodes")
   taskEpisodes          TaskEpisode[]
+  currentVersionId      Int? @unique @map("current_version_id")
+  currentVersion        EpisodeVersion? @relation("CurrentEpisodeVersion", fields: [currentVersionId, id], references: [id, episodeId], onDelete: NoAction, onUpdate: NoAction)
+  mediaVersions         EpisodeVersion[] @relation("EpisodeVersions")
 
   @@unique([seasonId, index])
   @@unique([seasonId, episodeType, episodeNumber])
@@ -377,4 +380,60 @@ model BackgroundJob {
   @@unique([queueName, key])
   @@index([queueName, id])
   @@map("background_jobs")
+}
+
+// 媒体池文件按内容寻址；只登记下载目录和播放器两个外部位置。
+model MediaAsset {
+  hash               String @id
+  size               BigInt
+  poolPath           String @unique @map("pool_path")
+  poolIdentity       Json @map("pool_identity")
+  downloadPath       String? @unique @map("download_path")
+  downloadMode       String? @map("download_mode")
+  downloadIdentity   Json? @map("download_identity")
+  jellyfinPath       String? @unique @map("jellyfin_path")
+  jellyfinMode       String? @map("jellyfin_mode")
+  jellyfinIdentity   Json? @map("jellyfin_identity")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  files              EpisodeVersionFile[]
+
+  @@map("media_assets")
+}
+
+model EpisodeVersion {
+  id                 Int @id @default(autoincrement())
+  episodeId          Int @map("episode_id")
+  number             Int
+  operationKey       String @unique @map("operation_key")
+  source             String
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  episode            Episode @relation("EpisodeVersions", fields: [episodeId], references: [id], onDelete: Restrict)
+  currentEpisode     Episode? @relation("CurrentEpisodeVersion")
+  files              EpisodeVersionFile[]
+
+  @@unique([id, episodeId], map: "episode_versions_id_episode_key")
+  @@unique([episodeId, number])
+  @@map("episode_versions")
+}
+
+model EpisodeVersionFile {
+  versionId          Int @map("version_id")
+  assetHash          String @map("asset_hash")
+  targetPath         String @map("target_path")
+  role               String
+  version            EpisodeVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  asset              MediaAsset @relation(fields: [assetHash], references: [hash], onDelete: Restrict)
+
+  @@id([versionId, assetHash])
+  @@unique([versionId, targetPath])
+  @@map("episode_version_files")
+}
+
+// 文件系统和数据库不能共用事务，恢复记录必须先于目标文件变化持久化。
+model MediaPublication {
+  episodeId          Int @id @map("episode_id")
+  journal            Json
+  committed          Boolean @default(false)
+
+  @@map("media_publications")
 }
