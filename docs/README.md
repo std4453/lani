@@ -9,7 +9,7 @@
 ```bash
 nvm install
 nvm use
-node common/scripts/install-run-rush.js install
+node common/scripts/install-run-rush.js install --to @lani/docs
 node common/scripts/install-run-rush.js build --to @lani/docs
 ```
 
@@ -46,4 +46,6 @@ gh workflow run docs.yaml --repo std4453/lani --ref next
 
 该命令仅触发 Docs。不要用 `Default Pipeline` 或 `rushx devops` 发布文档，也不再使用本地 `docusaurus deploy` 推送 `gh-pages`。
 
-仓库其他 CI 有各自的触发条件：创建／更新 PR 仍可能运行应用构建和测试。仅验证文档时，在 PR 标题和当前提交消息中保留 `[skip-cd]` 可阻止自动 PR 应用部署通知，但不跳过构建和测试。**合入 `next` 仍会触发现有应用发布流程，`[skip-cd]` 对 `next` push 无效**；不能把合并文档 PR 当作只发布文档的操作。完整规则见 [CI/CD 指南](docs/ci-cd.md)。
+自动 PR 和 `next` push 的变更全部位于 `docs/**` 或 `.github/workflows/docs.yaml` 时，应用发布与应用测试 workflow 只执行轻量的范围检查，跳过应用测试、应用镜像构建（包括 matcher）和部署通知；这些路径也不参与任何应用 fingerprint。manifest 校验及隔离规则回归测试仍运行。Docs 仅安装和构建 `@lani/docs`。
+
+混合业务源码、共享锁文件或其他构建配置的变更不属于纯文档变更，仍执行应用流程。手动触发应用 workflow 是明确的应用操作，不受上述自动跳过规则影响。PR 标题或提交中的 `[skip-cd]` 仍可单独阻止自动 PR 应用部署通知，但对非纯文档的 `next` push 无效。修改隔离规则本身会改变共享构建输入，不能视作纯文档变更。完整规则见 [CI/CD 指南](docs/ci-cd.md)。

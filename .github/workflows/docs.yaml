@@ -46,7 +46,7 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
-        run: node common/scripts/install-run-rush.js install
+        run: node common/scripts/install-run-rush.js install --to @lani/docs
       - name: Build docs
         run: node common/scripts/install-run-rush.js build --to @lani/docs
       - name: Upload Pages artifact

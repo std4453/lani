@@ -7,6 +7,7 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { readLock } = require("./pnpm-fingerprint.cjs");
+const { isDocsPath } = require("./docs-only.cjs");
 const manifestPath = "build-manifest.json";
 const scriptPath = "common/scripts/build-fingerprints.cjs";
 const lockPath = "common/config/rush/pnpm-lock.yaml";
@@ -156,7 +157,7 @@ function calculate(tree) {
       "LICENSE",
       ".github/README.md",
     ].includes(file) ||
-    file.startsWith("docs/") ||
+    isDocsPath(file) ||
     file.startsWith("common/git-hooks/") ||
     file === ".github/workflows/manifest-check.yaml";
   const owner = (file) =>
@@ -245,7 +246,11 @@ function generate() {
     throw new Error(
       "Untracked manifest exists; inspect and stage it before generating"
     );
-  for (const script of [scriptPath, "common/scripts/pnpm-fingerprint.cjs"])
+  for (const script of [
+    scriptPath,
+    "common/scripts/pnpm-fingerprint.cjs",
+    "common/scripts/docs-only.cjs",
+  ])
     if (tree.read(script) !== fs.readFileSync(path.join(root, script), "utf8"))
       throw new Error("Stage fingerprint script changes before generating");
   const content = JSON.stringify(calculate(tree).manifest, null, 2) + "\n";
