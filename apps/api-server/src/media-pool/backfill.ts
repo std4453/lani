@@ -33,6 +33,7 @@ export async function applyBackfill(
     throw new Error('回填清单包含重复剧集');
   for (const entry of entries) {
     const episode = await db.episode.findUnique({
+      rejectOnNotFound: false,
       where: { id: entry.episodeId },
     });
     if (!episode || episode.jellyfinEpisodeId !== entry.jellyfinEpisodeId)

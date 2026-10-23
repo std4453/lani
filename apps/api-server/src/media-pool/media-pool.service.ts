@@ -55,6 +55,7 @@ export class MediaPool {
 
   private async recover(episodeId: number) {
     const operation = await this.db.mediaPublication.findUnique({
+      rejectOnNotFound: false,
       where: { episodeId },
     });
     if (!operation) return;
@@ -73,6 +74,7 @@ export class MediaPool {
     return this.exclusive(async () => {
       await this.recover(input.episodeId);
       const existing = await this.db.episodeVersion.findUnique({
+        rejectOnNotFound: false,
         where: { operationKey: input.operationKey },
       });
       if (existing) {
@@ -120,11 +122,13 @@ export class MediaPool {
       const commit = async (tx: Prisma.TransactionClient) => {
         await lockEpisode(tx, input.episodeId);
         const duplicate = await tx.episodeVersion.findUnique({
+          rejectOnNotFound: false,
           where: { operationKey: input.operationKey },
         });
         if (duplicate) return duplicate.id;
         for (const { asset } of imported) {
           const saved = await tx.mediaAsset.findUnique({
+            rejectOnNotFound: false,
             where: { hash: asset.hash },
           });
           if (
@@ -198,6 +202,7 @@ export class MediaPool {
         await this.recover(input.episodeId);
         const version = await this.version(versionId);
         const episode = await this.db.episode.findUnique({
+          rejectOnNotFound: false,
           where: { id: input.episodeId },
         });
         if (!episode) throw new Error('剧集不存在');
@@ -252,6 +257,7 @@ export class MediaPool {
 
   private async version(id: number) {
     const version = await this.db.episodeVersion.findUnique({
+      rejectOnNotFound: false,
       where: { id },
       include: { files: { include: { asset: true } } },
     });
@@ -279,6 +285,7 @@ export class MediaPool {
     await this.recover(episodeId);
     await context?.assertActive();
     const episode = await this.db.episode.findUnique({
+      rejectOnNotFound: false,
       where: { id: episodeId },
     });
     if (!episode) throw new Error('剧集不存在');
@@ -364,7 +371,10 @@ export class MediaPool {
     } catch (error) {
       // 创建结果未知时保留文件；恢复器按数据库记录决定后续行为。
       if (
-        !(await this.db.mediaPublication.findUnique({ where: { episodeId } }))
+        !(await this.db.mediaPublication.findUnique({
+          rejectOnNotFound: false,
+          where: { episodeId },
+        }))
       )
         await cleanupPublication(journal);
       throw error;
@@ -375,6 +385,7 @@ export class MediaPool {
       const commit = async (tx: Prisma.TransactionClient) => {
         await lockEpisode(tx, episodeId);
         const current = await tx.episode.findUnique({
+          rejectOnNotFound: false,
           where: { id: episodeId },
         });
         if (current?.currentVersionId !== episode.currentVersionId)

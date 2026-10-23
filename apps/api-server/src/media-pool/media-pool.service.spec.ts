@@ -71,7 +71,10 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       !parsed.pathname.endsWith('_test')
     )
       throw new Error('Isolated localhost *_test database required');
-    db = new PrismaClient({ datasources: { db: { url: url! } } });
+    db = new PrismaClient({
+      datasources: { db: { url: url! } },
+      rejectOnNotFound: { findUnique: true },
+    });
   });
   beforeEach(async () => {
     active = true;
