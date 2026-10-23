@@ -52,3 +52,5 @@ common/deploy/
 启动必须挂载 `/config/config.yaml`。脚本将该文件覆盖合并到 [`defaults.yaml`](defaults.yaml)，把结果复制到三个后端的 `config.yaml`，再使用合并配置中的 `postgresUrl` 执行 `npm run migrate:deploy`。迁移失败会终止启动；启动脚本不负责数据库备份。持久化对象存储使用 `/storage`。
 
 这是独立自托管容器的启动方式；维护者按 manifest 发布多个独立应用的 CI/CD 入口见 [工作流说明](../../.github/README.md)。
+
+季度匹配默认使用独立运行的内置词法服务，不下载神经模型权重。语义依赖的源码构建开关、外部 worker 配置见[种子季度匹配部署](../../docs/docs/torrent-matching.md)。

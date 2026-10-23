@@ -1,3 +1,7 @@
+jest.mock('@/config', () => ({
+  __esModule: true,
+  default: { matching: { enabled: false } },
+}));
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/parse-torrent/index.service', () => ({
   ParseTorrentService: class {},
@@ -14,12 +18,14 @@ const item = {
   publishDate: new Date(),
 };
 function setup(existing: string[] = []) {
-  const prisma = {
+  const prisma: any = {
+    $executeRaw: jest.fn(),
     torrent: {
       findMany: jest.fn().mockResolvedValue(existing.map((hash) => ({ hash }))),
       createMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
+  prisma.$transaction = (fn) => fn(prisma);
   const parser = {
     titleToCreateInput: jest
       .fn()
@@ -71,4 +77,28 @@ describe('shared torrent ingestion', () => {
       'detail',
     );
   });
+});
+
+it('waits for the import lock before reading or writing torrents', async () => {
+  const { service, prisma } = setup();
+  let release!: () => void;
+  prisma.$executeRaw.mockReturnValue(
+    new Promise<void>((resolve) => {
+      release = resolve;
+    }),
+  );
+  const result = service.insert([item], TorrentChannel.MIKAN);
+  expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  release();
+  await expect(result).resolves.toBe(1);
+});
+
+it('does not import or enqueue when acquiring the lock fails', async () => {
+  const { service, prisma } = setup();
+  prisma.$executeRaw.mockRejectedValue(new Error('lock timeout'));
+  await expect(service.insert([item], TorrentChannel.MIKAN)).rejects.toThrow(
+    'lock timeout',
+  );
+  expect(prisma.torrent.findMany).not.toHaveBeenCalled();
+  expect(prisma.torrent.createMany).not.toHaveBeenCalled();
 });

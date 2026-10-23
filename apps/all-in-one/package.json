@@ -8,17 +8,20 @@
     "manifest": "lani-cli manifest"
   },
   "devDependencies": {
-    "@lani/cli": "~1.0.0",
-    "@lani/admin": "~1.0.0",
-    "@lani/api-server": "~1.0.0",
-    "@lani/data-server": "~1.0.0",
-    "@lani/gateway": "~1.0.0",
-    "@lani/db": "~1.0.0"
+    "@lani/anime-matcher": "workspace:~0.1.0",
+    "@lani/cli": "workspace:~1.0.0",
+    "@lani/admin": "workspace:~1.0.0",
+    "@lani/api-server": "workspace:~1.0.0",
+    "@lani/data-server": "workspace:~1.0.0",
+    "@lani/gateway": "workspace:~1.0.0",
+    "@lani/db": "workspace:~1.0.0"
   },
   "files": [
     "/nginx.conf",
     "/start.sh",
     "/ecosystem.config.js",
-    "/defaults.yaml"
+    "/defaults.yaml",
+    "/start-api.sh",
+    "/wait-matcher.cjs"
   ]
 }

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lani-anime-matcher"
+version = "0.1.0"
+description = "Anime season matching with caller-supplied Bangumi aliases"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy==2.4.6", "scipy==1.17.1", "scikit-learn==1.9.1",
+  "rapidfuzz==3.14.6", "lightgbm==4.7.0", "opencc-python-reimplemented==0.1.7",
+]
+
+[project.optional-dependencies]
+semantic = [
+  "onnxruntime==1.31.0", "tokenizers==0.22.2", "pykakasi==2.3.0",
+  "transformers==4.57.6", "torch==2.14.1",
+]
+
+[project.scripts]
+lani-anime-matcher = "lani_anime_matcher.worker:main"
+lani-anime-models = "lani_anime_matcher.models:main"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.setuptools.package-data]
+lani_anime_matcher = ["assets/*"]

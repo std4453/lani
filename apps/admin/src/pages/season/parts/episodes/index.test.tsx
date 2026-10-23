@@ -3,7 +3,9 @@ jest.mock('@apollo/client', () => ({
   ...jest.requireActual('@apollo/client'),
   useQuery: () => ({ data, refetch: jest.fn() }),
 }));
-jest.mock('@/utils/useTaskStates', () => ({ useTaskStates: jest.fn() }));
+jest.mock('@/utils/useEpisodeStatusPolling', () => ({
+  useEpisodeStatusPolling: () => ({ refetch: jest.fn() }),
+}));
 jest.mock('@/utils/useApolloPoll', () => ({ useApolloPoll: jest.fn() }));
 jest.mock('@/components/SearchTorrentDialog', () => ({}));
 jest.mock('@/store/config', () => ({}));
@@ -13,7 +15,7 @@ jest.mock('umi', () => ({ Link: () => null }));
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
-import { LegacyTaskStage, TaskType } from '@/generated/types';
+import { TaskType } from '@/generated/types';
 import { DownloadStatusTag } from '@/constants/download-status';
 import { Episode } from '../../help';
 import { useEpisodeStatus } from './index';
@@ -33,6 +35,7 @@ it.each([
     return state ? (
       <DownloadStatusTag
         status={state.taskStatus}
+        label={state.taskLabel}
         taskId={state.taskId}
         taskType={state.taskType}
         openTaskDetails={open}
@@ -58,27 +61,21 @@ it.each([
                     node: {
                       id: 42,
                       type,
-                      workflow: {
-                        schemaVersion: 1,
-                        definitionVersion: 1,
-                        createdAt: '2026-10-16T00:00:00Z',
-                        status: 'running',
-                        currentStepId: 'import',
-                        steps: [
-                          {
-                            id: 'import',
-                            atom: 'importFile',
-                            title: '导入文件',
-                            status: 'running',
-                            attempt: 1,
-                            checkpoint: {},
-                          },
-                        ],
+                      statusSummary: {
+                        version: 0,
+                        workflow: {
+                          status: 'running',
+                          currentStepId: 'import',
+                          steps: [
+                            {
+                              id: 'import',
+                              atom: 'importFile',
+                              title: '导入文件',
+                              status: 'running',
+                            },
+                          ],
+                        },
                       },
-                      version: 0,
-                      legacyStage: LegacyTaskStage.Importing,
-                      isFailed: false,
-                      isCancelled: false,
                     },
                   },
                 ],
@@ -93,6 +90,7 @@ it.each([
     });
     const tag = container.querySelector('.ant-tag');
     expect(tag).not.toBeNull();
+    expect(tag!.textContent).toBe('导入文件');
     act(() => {
       tag!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });

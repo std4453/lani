@@ -36,6 +36,7 @@ type RawEpisode = NonNullable<
 
 export interface EpisodeStatusFields {
   taskStatus: EpisodeStatus;
+  taskLabel?: string;
   taskId?: number;
   taskType?: TaskType;
 }
@@ -44,10 +45,11 @@ export type Episode = Omit<RawEpisode, 'tasksByEpisodeId'> &
   EpisodeStatusFields;
 
 export function mapEpisode(episode: RawEpisode): Episode {
-  const { status, taskId, taskType } = calcEpisodeStatus(episode);
+  const { status, label, taskId, taskType } = calcEpisodeStatus(episode);
   return {
     ...episode,
     taskStatus: status,
+    taskLabel: label,
     taskId,
     taskType,
   };

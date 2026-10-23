@@ -115,6 +115,10 @@ node common/scripts/build-fingerprints.cjs explain --ref "$(git rev-parse HEAD)"
 
 fingerprint 包含应用、Rush 本地依赖和部署包含关系、锁文件、构建脚本及配置；排除根目录指定文档、`.github/README.md`、`docs/`、hook 和 manifest 检查 workflow；包内 README、文档和配置示例仍属于输入，修改它们也可能改变镜像 fingerprint。跨项目源码输入（包括符号链接的目标）必须在依赖关系中声明，不能从未声明的项目偷偷读取文件。修改依赖或构建方式时用 `explain` 核对输入范围。
 
+算法 v2 按项目截取 pnpm 9 workspace 锁文件：包含应用依赖闭包中的 importer，以及递归可达的 package 元数据和 snapshot（包括开发依赖、可选依赖与实际解析的 peer 实例）。不再把整个锁文件作为所有镜像的共同输入；安装设置、overrides 和 pnpmfile 校验和等全局配置仍共同参与。`explain` 中以 `pnpm-lock.yaml#` 开头的条目表示选中的锁文件片段。计算只读取 Git 暂存区或指定提交，不依赖 `node_modules`、网络或预先生成的 Rush 缓存；遇到不支持的锁文件布局或缺失的依赖节点会报错。
+
+`@lani/anime-matcher` 的 Python 源码、`pyproject.toml`、安装脚本和版本化模型清单/权重都按包目录纳入 fingerprint，无需由 pnpm 管理 Python 依赖。独立 matcher 镜像不因其他包独有的 npm 依赖变化而失效。Python 当前没有传递依赖锁文件；fingerprint 覆盖提交的构建输入，不代表探测远端依赖或模型文件的实时内容。升级 fingerprint 算法会一次性改变所有镜像标识。
+
 主流水线排队执行；仅缺失的 `fp-<fingerprint>` 镜像进入原有构建流程。镜像使用标准 OCI labels 记录实际构建 SHA、fingerprint 和 run/attempt。GHCR 写权限只给维护者和受信的构建流程；这些标签用于追溯，不是加密签名证明。
 
 不要手动覆盖 fingerprint 标签；需要刷新基础镜像等外部输入时，修改 Dockerfile/构建配置产生新 fingerprint。失败后使用 **Re-run all jobs** 重新规划，避免仅重跑旧构建 job 覆盖已有标签。所需镜像全部可用后会通知部署，包括全部复用的情况；实际部署范围由目标 manifest 与环境成功基线决定。

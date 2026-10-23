@@ -1,0 +1,17 @@
+*
+!Dockerfile
+!pyproject.toml
+!MANIFEST.in
+!README.md
+!NOTICE.md
+!PROTOCOL.md
+!INTEGRATION.md
+!REPORT.md
+!python/
+!python/**
+python/**/__pycache__/
+python/*.egg-info/
+!docker/
+!docker/**
+!licenses/
+!licenses/**

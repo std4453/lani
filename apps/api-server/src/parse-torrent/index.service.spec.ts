@@ -10,6 +10,10 @@ import parseTorrentTitle, {
   parseTorrentNames,
 } from '@lani/parse-torrent-title';
 
+jest.mock('@/config', () => ({
+  __esModule: true,
+  default: { matching: { enabled: false } },
+}));
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock(
   '@lani/db',

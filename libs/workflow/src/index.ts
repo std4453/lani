@@ -4,6 +4,7 @@ import type {
   StepDefinition,
   Workflow,
   WorkflowStep,
+  WorkflowSummary,
 } from "./types";
 import { parseWorkflow } from "./schema";
 
@@ -70,6 +71,21 @@ export function currentStep(workflow: Workflow): WorkflowStep {
   if (!step) throw new Error("任务当前步骤无效");
   return step;
 }
+/** 展示摘要保留动态流程结构，仅剔除执行数据。 */
+export function summarizeWorkflow(value: unknown): WorkflowSummary {
+  const workflow = parseWorkflow(value);
+  return {
+    status: workflow.status,
+    currentStepId: workflow.currentStepId,
+    steps: workflow.steps.map(({ id, atom, title, status }) => ({
+      id,
+      atom,
+      title,
+      status,
+    })),
+  };
+}
+
 export function isActive(workflow: Workflow): boolean {
   return workflow.status === "running" || workflow.status === "cancelling";
 }

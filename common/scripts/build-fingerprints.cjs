@@ -6,9 +6,19 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
+const { readLock } = require("./pnpm-fingerprint.cjs");
 const manifestPath = "build-manifest.json";
 const scriptPath = "common/scripts/build-fingerprints.cjs";
-const apps = ["admin", "api-server", "data-server", "gateway", "db"];
+const lockPath = "common/config/rush/pnpm-lock.yaml";
+const algorithmVersion = 2;
+const apps = [
+  "admin",
+  "api-server",
+  "data-server",
+  "gateway",
+  "db",
+  "anime-matcher",
+];
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const git = (args, options = {}) =>
   execFileSync("git", args, {
@@ -87,6 +97,7 @@ function snapshot(ref) {
 }
 
 function calculate(tree) {
+  const selectDependencies = readLock(tree.read(lockPath));
   const rush = jsonc(tree.read("rush.json"));
   if (!Array.isArray(rush.projects))
     throw new Error("Missing Rush project graph");
@@ -151,7 +162,7 @@ function calculate(tree) {
   const owner = (file) =>
     [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0];
   const global = [...tree.entries.keys()].filter(
-    (file) => !excluded(file) && !owner(file)
+    (file) => file !== lockPath && !excluded(file) && !owner(file)
   );
   const details = {},
     images = {};
@@ -177,9 +188,18 @@ function calculate(tree) {
         tree.entries.get(file).mode,
         tree.entries.get(file).oid,
       ]);
+    const dependencies = selectDependencies(
+      [...closure].map((name) => projects.get(name).folder)
+    );
+    for (const [key, value] of dependencies)
+      inputs.push([
+        `${lockPath}#${key}`,
+        tree.entries.get(lockPath).mode,
+        sha256(value),
+      ]);
     const fingerprint = sha256(
       JSON.stringify({
-        algorithmVersion: 1,
+        algorithmVersion,
         platform: "linux/amd64",
         app,
         inputs,
@@ -188,7 +208,7 @@ function calculate(tree) {
     images[app] = { fingerprint };
     details[app] = { fingerprint, projects: [...closure].sort(), inputs };
   }
-  return { manifest: { version: 1, algorithmVersion: 1, images }, details };
+  return { manifest: { version: 1, algorithmVersion, images }, details };
 }
 
 function check(ref) {
@@ -225,8 +245,9 @@ function generate() {
     throw new Error(
       "Untracked manifest exists; inspect and stage it before generating"
     );
-  if (tree.read(scriptPath) !== fs.readFileSync(__filename, "utf8"))
-    throw new Error("Stage fingerprint script changes before generating");
+  for (const script of [scriptPath, "common/scripts/pnpm-fingerprint.cjs"])
+    if (tree.read(script) !== fs.readFileSync(path.join(root, script), "utf8"))
+      throw new Error("Stage fingerprint script changes before generating");
   const content = JSON.stringify(calculate(tree).manifest, null, 2) + "\n";
   const oid = git(["hash-object", "-w", "--stdin"], { input: content }).trim();
   // Only this generated path is updated; partial staging of every other path is preserved.

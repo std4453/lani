@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "featureProfile": "lexical",
+  "rerankers": [],
+  "head": "time_no_count",
+  "threshold": 0.5,
+  "tree": {
+    "file": "static-lexical.txt.gz",
+    "sha256": "05fb139b2d0fbe653aa314013fe5d867bd27ddbcd1d5a2f1b91ae3235337f2a2",
+    "featureCount": 29
+  },
+  "trainingScope": "all-adaptive-dev",
+  "calibrationStatus": "no_feasible_threshold"
+}

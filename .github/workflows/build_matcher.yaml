@@ -1,0 +1,86 @@
+name: Build matcher variant
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      fingerprint:
+        type: string
+        required: true
+      variant:
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.2"
+      - name: Validate identity
+        id: identity
+        env:
+          VARIANT: ${{ inputs.variant }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const {execFileSync} = require('child_process');
+          const revision = execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+          const {manifest} = require('./common/scripts/build-fingerprints.cjs').check(revision);
+          const variant = process.env.VARIANT;
+          if (!['lexical','semantic-cpu','semantic-cu126'].includes(variant) ||
+              manifest.images['anime-matcher'].fingerprint !== process.env.FINGERPRINT)
+            throw new Error('Invalid matcher artifact identity');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `revision=${revision}\nmodels=${variant !== 'lexical'}\n`);
+          JS
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push variant
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: libs/anime-matcher
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            VARIANT=${{ inputs.variant }}
+            WITH_MODELS=${{ steps.identity.outputs.models }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.identity.outputs.revision }}
+            dev.lani.fingerprint=${{ inputs.fingerprint }}
+            dev.lani.variant=${{ inputs.variant }}
+            dev.lani.build-run=${{ github.run_id }}
+            dev.lani.build-attempt=${{ github.run_attempt }}
+          tags: ghcr.io/${{ github.repository_owner }}/lani-anime-matcher:fp-${{ inputs.fingerprint }}-${{ inputs.variant }}
+          cache-from: type=gha,scope=matcher-${{ inputs.variant }}
+          cache-to: type=gha,mode=max,scope=matcher-${{ inputs.variant }}
+      - name: Verify shipped image offline (CUDA variant uses explicit CPU)
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/lani-anime-matcher@${{ steps.build.outputs.digest }}
+          VARIANT: ${{ inputs.variant }}
+        run: |
+          docker run --rm --network none --entrypoint python \
+            -v "$PWD/libs/anime-matcher/docker:/validation:ro" \
+            "$IMAGE" /validation/verify-image.py "$VARIANT"
+      - name: Record artifact
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VARIANT: ${{ inputs.variant }}
+          FINGERPRINT: ${{ inputs.fingerprint }}
+        run: |
+          printf 'Matcher: `%s`, fingerprint: `%s`, digest: `%s`\n' "$VARIANT" "$FINGERPRINT" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"

@@ -43,6 +43,7 @@ jobs:
     outputs:
       revision: ${{ steps.plan.outputs.revision }}
       matrix: ${{ steps.plan.outputs.matrix }}
+      matcherMatrix: ${{ steps.plan.outputs.matcherMatrix }}
       ref: ${{ steps.source.outputs.ref }}
       environment: ${{ steps.source.outputs.environment }}
       notifyTargets: ${{ steps.source.outputs.notifyTargets }}
@@ -124,12 +125,26 @@ jobs:
       ref: ${{ needs.plan.outputs.revision }}
       app: ${{ format('@lani/{0}', matrix.app) }}
       fingerprint: ${{ matrix.fingerprint }}
+  matcher-images:
+    needs: plan
+    if: needs.plan.outputs.matcherMatrix != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matcherMatrix) }}
+    uses: ./.github/workflows/build_matcher.yaml
+    with:
+      ref: ${{ needs.plan.outputs.revision }}
+      fingerprint: ${{ matrix.fingerprint }}
+      variant: ${{ matrix.variant }}
   notify:
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' &&
       (needs.images.result == 'success' ||
-      (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) }}
-    needs: [plan, images]
+      (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) &&
+      (needs.matcher-images.result == 'success' ||
+      (needs.plan.outputs.matcherMatrix == '[]' && needs.matcher-images.result == 'skipped')) }}
+    needs: [plan, images, matcher-images]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

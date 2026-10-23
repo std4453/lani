@@ -8,6 +8,8 @@
 
 工具链使用 Rush 5.181.0、pnpm 9.15.9，锁文件格式为 pnpm 9。不要使用旧版 pnpm 更新锁文件。文档站使用 Docusaurus 2.4.3；`common/config/rush/pnpm-config.json` 将其 Webpack 固定为 5.105.4，避开旧进度插件与 5.106 起参数校验的不兼容。
 
+依赖安装使用 pnpm workspace 模式，由 Rush 生成 `common/temp/pnpm-workspace.yaml`，无需在根目录手工维护 workspace 文件。本地 `@lani/*` 依赖使用 `workspace:` 协议；`rush install` 会同时完成安装和项目链接，不再拆分执行 `install --no-link` 与 `rush link`。切换到包含新锁文件的分支后，运行 `node common/scripts/install-run-rush.js install` 更新本工作区的安装状态，无需再次执行 `update --full`。
+
 TypeScript 保持在 4.7.4，以兼容现有 Nest GraphQL 编译插件；4.8 起的 AST 接口变更需要单独评估插件升级。`@types/node` 保留在现有 17.x 类型系列，它只决定类型检查，不改变实际使用的 Node.js 22 运行时。
 
 在仓库根目录运行：

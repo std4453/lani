@@ -1,0 +1,3 @@
+*.gz binary
+*.xz binary
+*.npz binary

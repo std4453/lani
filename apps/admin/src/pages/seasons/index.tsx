@@ -34,27 +34,26 @@ import { handleError } from '@/utils/error';
 import { ExtractNode, extractNode } from '@/utils/graphql';
 import { TableColumns, useProColumns } from '@/utils/search';
 import { useAntdSearchProps, withAntdSearch } from '@/utils/search/hooks';
-import { useTaskStates } from '@/utils/useTaskStates';
-import { useApolloPoll } from '@/utils/useApolloPoll';
+import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
-import { PlusOutlined } from '@ant-design/icons';
+import {
+  AppstoreOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient, useQuery } from '@apollo/client';
-import { Button, message, Popconfirm, Space, Typography } from 'antd';
+import { Button, message, Popconfirm, Space, Tooltip, Typography } from 'antd';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'umi';
 import styles from './index.module.less';
 import TestRoutingTitle from './TestRoutingTitle';
+import SeasonCards from './SeasonCards';
+import store from 'store2';
 
 type RowType = ExtractNode<ListSeasonsQuery['allSeasons']>;
 
@@ -148,6 +147,7 @@ function SeasonStatusTag({
     <div>
       <DownloadStatusTag
         status={episodeStatus.status}
+        label={episodeStatus.label}
         taskId={episodeStatus.taskId}
         taskType={episodeStatus.taskType}
         openTaskDetails={openTaskDetails}
@@ -158,11 +158,15 @@ function SeasonStatusTag({
 
 function useColumns({
   openTaskDetails,
+  enabled,
 }: {
   openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
+  enabled: boolean;
 }) {
   const history = useHistory();
-  const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument);
+  const { data: optionsData } = useQuery(GetMetadataPageOptionsDocument, {
+    skip: !enabled,
+  });
   const semesterOptions = useMemo(
     (): ColumnFilterItem[] =>
       (optionsData?.getAvailableSemesters ?? []).map((yearAndSemester) => ({
@@ -680,49 +684,29 @@ async function querySeasons(
 }
 
 function useSeasonsStatus(seasonIds: number[]) {
-  // useQuery会检测variables变化触发新请求，如果now一直变化会一直触发，不受
-  // pollInterval控制，因此这里把now做成不变的，仅当：
-  // - 每分钟
-  // - 每次seasonIds变化
-  // 时更新
   const nowRef = useRef(new Date());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      nowRef.current = new Date();
-    }, 60 * 1000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
   const lastSeasonIdsRef = useRef(seasonIds);
   if (seasonIds !== lastSeasonIdsRef.current) {
     nowRef.current = new Date();
   }
   lastSeasonIdsRef.current = seasonIds;
 
-  const { data, startPolling, stopPolling, refetch } = useQuery(
-    GetSeasonsStatusDocument,
-    {
-      skip: !seasonIds.length,
-      variables: {
-        seasonIds,
-        now: nowRef.current,
-      },
+  const { data, loading, refetch } = useQuery(GetSeasonsStatusDocument, {
+    skip: !seasonIds.length,
+    variables: {
+      seasonIds,
+      now: nowRef.current,
     },
-  );
-  const taskIds = (extractNode(data?.allSeasons) ?? []).flatMap(
-    (season) =>
-      extractNode(season.latestEpisode?.tasks)?.map((task) => task.id) ?? [],
-  );
-  useTaskStates(taskIds);
-  useApolloPoll({
-    startPolling,
-    stopPolling,
-    refetch: () => {
+  });
+  useEpisodeStatusPolling({
+    episodes: (extractNode(data?.allSeasons) ?? []).flatMap((season) =>
+      season.latestEpisode ? [season.latestEpisode] : [],
+    ),
+    loading,
+    refresh: () => {
       nowRef.current = new Date();
       return refetch({ seasonIds, now: nowRef.current });
     },
-    pollInterval: 30000,
     enabled: !!seasonIds.length,
   });
   return useMemo(() => {
@@ -745,7 +729,6 @@ export default withAntdSearch(function MetadataPage() {
   );
 
   const [taskDetailsDialog, , openTaskDetails] = useTaskDetailsDialog();
-  const columns = useColumns({ openTaskDetails });
 
   const ref = useRef<ActionType>();
   const [createSeasonDialog, , openCreateAnime] = useCreateSeasonDialog();
@@ -754,8 +737,39 @@ export default withAntdSearch(function MetadataPage() {
   const history = useHistory();
   const mobile = useMobile();
 
+  const [cardMode, setCardMode] = useState(() => {
+    try {
+      return store.get('lani:metadata-view') === 'cards';
+    } catch {
+      return false;
+    }
+  });
+  const columns = useColumns({ openTaskDetails, enabled: !cardMode });
   const [seasonIds, setSeasonIds] = useState<number[]>([]);
-  const seasonsStatus = useSeasonsStatus(seasonIds);
+  const inactiveSeasonIds = useMemo(() => [], []);
+  const seasonsStatus = useSeasonsStatus(
+    cardMode ? inactiveSeasonIds : seasonIds,
+  );
+  const modeLabel = cardMode ? '卡片模式' : '列表模式';
+  const modeButton = (
+    <Tooltip key="view-mode" title={modeLabel}>
+      <Button
+        type="text"
+        aria-label={modeLabel}
+        aria-pressed={cardMode}
+        icon={cardMode ? <AppstoreOutlined /> : <UnorderedListOutlined />}
+        onClick={() => {
+          const next = !cardMode;
+          setCardMode(next);
+          try {
+            store.set('lani:metadata-view', next ? 'cards' : 'list');
+          } catch {
+            /* 存储不可用时，仍允许在当前页面切换。 */
+          }
+        }}
+      />
+    </Tooltip>
+  );
 
   const props = useAntdSearchProps(
     async ({ search, sort, filter, current, keyword, pageSize }) => {
@@ -776,61 +790,84 @@ export default withAntdSearch(function MetadataPage() {
     },
   );
 
+  const actions = [
+    <Button
+      key={0}
+      type="primary"
+      onClick={async () => {
+        const result = await openAddFromBangumi();
+        if (result.type === 'success') {
+          history.push(`/season/${result.output.id}`);
+        }
+      }}
+      icon={<img src={IconPath.bangumiIcon} className={styles.buttonIcon} />}
+    >
+      从Bangumi新建
+    </Button>,
+    <Button
+      key={1}
+      type="primary"
+      ghost
+      icon={<PlusOutlined />}
+      onClick={async () => {
+        const result = await openCreateAnime();
+        if (result.type === 'success') {
+          history.push(`/season/${result.output.id}`);
+        }
+      }}
+    >
+      {mobile ? '新建' : '手动新建'}
+    </Button>,
+  ];
+
+  const title = (
+    <TableTitle>
+      {testRoutingEnabled ? (
+        <TestRoutingTitle>元数据</TestRoutingTitle>
+      ) : (
+        '元数据'
+      )}
+    </TableTitle>
+  );
+
   return (
     <SeasonsStatusContext.Provider value={seasonsStatus}>
       <PageTitle title="元数据" />
-      <MainTable<RowType>
-        columns={columns}
-        rowKey="id"
-        {...props}
-        headerTitle={
-          <TableTitle>
-            {testRoutingEnabled ? (
-              <TestRoutingTitle>元数据</TestRoutingTitle>
-            ) : (
-              '元数据'
-            )}
-          </TableTitle>
-        }
-        actionRef={ref}
-        toolBarRender={() => [
-          <Button
-            key={0}
-            type="primary"
-            onClick={async () => {
-              const result = await openAddFromBangumi();
-              if (result.type === 'success') {
-                history.push(`/season/${result.output.id}`);
-              }
-            }}
-            icon={
-              <img src={IconPath.bangumiIcon} className={styles.buttonIcon} />
-            }
-          >
-            从Bangumi新建
-          </Button>,
-          <Button
-            key={1}
-            type="primary"
-            ghost
-            icon={<PlusOutlined />}
-            onClick={async () => {
-              const result = await openCreateAnime();
-              if (result.type === 'success') {
-                history.push(`/season/${result.output.id}`);
-              }
-            }}
-          >
-            手动新建
-          </Button>,
-        ]}
-        search={false}
-        defaultSize={mobile ? 'middle' : 'large'}
-        scroll={{
-          x: 1440,
-        }}
-        className={styles.root}
-      />
+      {cardMode ? (
+        <SeasonCards title={title} actions={actions} modeButton={modeButton} />
+      ) : (
+        <MainTable<RowType>
+          columns={columns}
+          rowKey="id"
+          {...props}
+          headerTitle={title}
+          actionRef={ref}
+          toolBarRender={() => (mobile ? [modeButton, ...actions] : actions)}
+          toolbar={{
+            settings: mobile
+              ? []
+              : [
+                  <Space key="view-actions">
+                    {modeButton}
+                    <Tooltip title="刷新">
+                      <Button
+                        type="text"
+                        aria-label="刷新"
+                        icon={<ReloadOutlined />}
+                        onClick={() => void ref.current?.reload()}
+                      />
+                    </Tooltip>
+                  </Space>,
+                ],
+          }}
+          search={false}
+          defaultSize={mobile ? 'middle' : 'large'}
+          scroll={{
+            x: 1440,
+          }}
+          className={styles.root}
+        />
+      )}
       {createSeasonDialog}
       {addFromBangumiDialog}
       {taskDetailsDialog}

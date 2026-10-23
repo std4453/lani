@@ -9,6 +9,11 @@ s3:
   publicHost: /api/storage/images/
   proxyEnabled: true
 
+# 默认词法推理，不含神经模型权重；配置可切换外部 worker 或关闭匹配。
+matching:
+  enabled: true
+  endpoint: http://127.0.0.1:8090
+
 imageProxy:
   upstream: http://127.0.0.1:9000/images/
 
