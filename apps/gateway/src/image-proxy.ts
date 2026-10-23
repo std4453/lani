@@ -45,6 +45,14 @@ export function createImageProxy(
   const basePath = target?.pathname.endsWith("/")
     ? target.pathname
     : `${target?.pathname}/`;
+  const transport = target?.protocol === "https:" ? https : http;
+  // 复用少量长连接，避免卡片冷加载同时向存储发起大量 TLS 握手。
+  const agent = new transport.Agent({
+    keepAlive: true,
+    maxSockets: 4,
+    maxFreeSockets: 4,
+    timeout: 60_000,
+  });
 
   return (req, res) => {
     const fail = (status: number, message: string) => {
@@ -101,11 +109,11 @@ export function createImageProxy(
       if (req.headers[header] !== undefined)
         headers[header] = req.headers[header];
     }
-    const transport = target.protocol === "https:" ? https : http;
     const upstreamRequest = transport.request(target, {
       method: req.method,
       path: `${basePath}${key}${query}`,
       headers,
+      agent,
     });
     let upstreamResponse: http.IncomingMessage | undefined;
     const timer = setTimeout(() => {
@@ -118,7 +126,11 @@ export function createImageProxy(
       upstreamRequest.destroy();
       upstreamResponse?.destroy();
     };
-    res.once("close", cleanup);
+    res.once("close", () => {
+      clearTimeout(timer);
+      // 正常完成时让 Agent 回收连接；客户端中断时才销毁上游请求。
+      if (!res.writableFinished) cleanup();
+    });
     upstreamRequest.once("error", () => {
       clearTimeout(timer);
       fail(502, "Image storage request failed");
