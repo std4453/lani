@@ -5,7 +5,6 @@ jest.mock('@/config', () => ({
   default: { s3: { bucket: 'images' } },
 }));
 
-import { Readable } from 'stream';
 import sharp from 'sharp';
 import {
   ImageThumbnailService,
@@ -85,8 +84,7 @@ it('generates a real 384px WebP and only publishes its path after upload', async
     .jpeg()
     .toBuffer();
   s3.getObject.mockReturnValue({
-    createReadStream: () => Readable.from([input]),
-    abort: jest.fn(),
+    promise: jest.fn().mockResolvedValue({ Body: input }),
   });
   const commit = await service.execute(job);
   expect(prisma.image.updateMany).not.toHaveBeenCalled();
@@ -109,8 +107,7 @@ it('generates a real 384px WebP and only publishes its path after upload', async
 it('retries corrupt input then commits failure so the queue can process the next image', async () => {
   const { service, s3, job, prisma, image } = setup();
   s3.getObject.mockImplementation(() => ({
-    createReadStream: () => Readable.from([Buffer.from('bad image')]),
-    abort: jest.fn(),
+    promise: jest.fn().mockResolvedValue({ Body: Buffer.from('bad image') }),
   }));
   await expect(service.execute(job)).rejects.toThrow(
     'Image thumbnail generation failed',
@@ -132,8 +129,7 @@ it('does not publish a thumbnail when storage upload fails', async () => {
     .png()
     .toBuffer();
   s3.getObject.mockReturnValue({
-    createReadStream: () => Readable.from([input]),
-    abort: jest.fn(),
+    promise: jest.fn().mockResolvedValue({ Body: input }),
   });
   s3.putObject.mockReturnValue({
     promise: () => Promise.reject(new Error('storage unavailable')),
@@ -143,16 +139,51 @@ it('does not publish a thumbnail when storage upload fails', async () => {
   expect(prisma.image.updateMany).not.toHaveBeenCalled();
 });
 
-it('aborts oversized inputs without uploading anything', async () => {
-  const { service, s3, job } = setup();
-  const abort = jest.fn();
+it('retries failed storage reads without uploading or publishing a thumbnail', async () => {
+  const { service, s3, job, prisma } = setup();
   s3.getObject.mockReturnValue({
-    createReadStream: () => Readable.from([Buffer.alloc(10 * 1024 * 1024 + 1)]),
-    abort,
+    promise: jest.fn().mockRejectedValue(new Error('storage unavailable')),
   });
-  await expect(service.execute(job)).rejects.toThrow();
-  expect(abort).toHaveBeenCalled();
+  await expect(service.execute(job)).rejects.toThrow(
+    'Image thumbnail generation failed',
+  );
   expect(s3.putObject).not.toHaveBeenCalled();
+  expect(prisma.image.updateMany).not.toHaveBeenCalled();
+});
+
+it.each([undefined, 'not a buffer'])(
+  'rejects an invalid storage body: %s',
+  async (Body) => {
+    const { service, s3, job } = setup();
+    s3.getObject.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({ Body }),
+    });
+    await expect(service.execute(job)).rejects.toThrow(
+      'Image thumbnail generation failed',
+    );
+    expect(s3.putObject).not.toHaveBeenCalled();
+  },
+);
+
+it('generates thumbnails above the former 40 megapixel and 10 MiB limits', async () => {
+  const { service, s3, job } = setup();
+  const input = await sharp({
+    create: { width: 7000, height: 6000, channels: 3, background: 'red' },
+  })
+    .jpeg()
+    .toBuffer();
+  s3.getObject.mockReturnValue({
+    promise: jest.fn().mockResolvedValue({
+      Body: Buffer.concat([input, Buffer.alloc(10 * 1024 * 1024)]),
+    }),
+  });
+  await service.execute(job);
+  expect(
+    await sharp(s3.putObject.mock.calls[0][0].Body).metadata(),
+  ).toMatchObject({
+    width: 384,
+    format: 'webp',
+  });
 });
 
 it('skips deleted sources, completed jobs and terminal failures', async () => {

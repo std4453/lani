@@ -10,7 +10,6 @@ import { createHash } from 'crypto';
 import sharp from 'sharp';
 
 export const THUMBNAIL_QUEUE = 'image-thumbnail';
-const MAX_BYTES = 10 * 1024 * 1024;
 const TIMEOUT_MS = 30_000;
 
 export function thumbnailKey(source: string) {
@@ -53,35 +52,6 @@ export class ImageThumbnailService implements QueueHandler<Payload> {
     });
   }
 
-  private read(source: string): Promise<Buffer> {
-    const request = this.s3.getObject({
-      Bucket: config.s3.bucket,
-      Key: source,
-    });
-    const stream = request.createReadStream();
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      let size = 0;
-      const fail = () => {
-        clearTimeout(timer);
-        reject(new Error('Unable to read thumbnail source'));
-        stream.destroy();
-        request.abort();
-      };
-      const timer = setTimeout(fail, TIMEOUT_MS);
-      stream.on('data', (chunk: Buffer) => {
-        size += chunk.length;
-        if (size > MAX_BYTES) fail();
-        else chunks.push(chunk);
-      });
-      stream.once('error', fail);
-      stream.once('end', () => {
-        clearTimeout(timer);
-        resolve(Buffer.concat(chunks));
-      });
-    });
-  }
-
   async execute(job: QueueJob<Payload>) {
     const { source } = job.payload;
     const target = thumbnailKey(source);
@@ -95,8 +65,13 @@ export class ImageThumbnailService implements QueueHandler<Payload> {
       };
     }
     try {
-      const input = await this.read(source);
-      const output = await sharp(input, { limitInputPixels: 40_000_000 })
+      const { Body: input } = await this.s3
+        .getObject({ Bucket: config.s3.bucket, Key: source })
+        .promise();
+      if (!Buffer.isBuffer(input)) {
+        throw new Error('GetObject returns non-buffer result');
+      }
+      const output = await sharp(input)
         .rotate()
         .resize({ width: 384, withoutEnlargement: true })
         .webp({ quality: 78 })
