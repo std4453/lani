@@ -549,7 +549,7 @@ async function querySeasons(
             in: folder,
           },
         }
-      : keyword
+      : titleKeyword
       ? undefined // 精确查找时，不过滤媒体库
       : {
           // 未选择且非精确查找时，隐藏默认不展示的媒体库

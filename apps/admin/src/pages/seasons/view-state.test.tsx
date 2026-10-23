@@ -231,7 +231,9 @@ test.each(['  星海  ', '   '])(
     expect(variables.filter).toEqual(
       keyword.trim()
         ? { title: { includesInsensitive: keyword.trim() } }
-        : undefined,
+        : {
+            jellyfinFolderByJellyfinFolderId: { isHidden: { equalTo: false } },
+          },
     );
   },
 );
