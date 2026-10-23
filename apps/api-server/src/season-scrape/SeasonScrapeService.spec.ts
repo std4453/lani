@@ -2,6 +2,9 @@ import { SeasonScrapeService } from './SeasonScrapeService';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/common/s3.service', () => ({ S3Service: class {} }));
+jest.mock('@/image-thumbnail/index.service', () => ({
+  ImageThumbnailService: class {},
+}));
 jest.mock('@/common/axios.service', () => ({ GlobalAxiosService: class {} }));
 jest.mock('@/season-emit/index.service', () => ({
   SeasonEmitService: class {},
@@ -28,6 +31,7 @@ it('uses explicit metadata sync to rewrite manual seasons without fetching exter
     prisma as any,
     {} as any,
     {} as any,
+    { path: jest.fn() } as any,
   );
   await service.syncMetadata(season);
   expect(emit.writeSeasonMetadata).toHaveBeenCalledWith(season);
@@ -56,6 +60,7 @@ function setup(infoSource: string) {
     prisma as any,
     {} as any,
     {} as any,
+    { path: jest.fn() } as any,
   );
   return { season, fetch, emit, prisma, service };
 }

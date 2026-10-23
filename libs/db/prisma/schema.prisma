@@ -55,6 +55,8 @@ model Image {
   sourceUrl String @unique @map("source_url")
   cosPath   String @map("cos_path")
   hash      String
+  thumbnailPath       String? @map("thumbnail_path")
+  thumbnailFailedPath String? @map("thumbnail_failed_path")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

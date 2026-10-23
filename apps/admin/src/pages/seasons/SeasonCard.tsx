@@ -2,11 +2,15 @@ import {
   calcEpisodeStatus,
   EPISODE_STATUS_TAGS,
 } from '@/constants/download-status';
-import { CardSeasonFieldsFragment } from '@/generated/types';
+import {
+  CardSeasonFieldsFragment,
+  ReloadCardImageDocument,
+} from '@/generated/types';
 import { formatNumbering } from '@/utils/episode';
 import { extractNode } from '@/utils/graphql';
 import { Badge, Card } from 'antd';
-import { useState } from 'react';
+import { useApolloClient } from '@apollo/client';
+import CachedImage from '@/components/CachedImage';
 import { Link } from 'umi';
 import { episodeColor, episodeRows, selectEpisodeWindow } from './card-layout';
 import styles from './SeasonCards.module.less';
@@ -19,7 +23,7 @@ export default function SeasonCard({
   openEpisode: (episodeId: number) => void;
 }) {
   const source = season.poster?.downloadPath;
-  const [failedSource, setFailedSource] = useState<string>();
+  const client = useApolloClient();
   const episodes = selectEpisodeWindow(extractNode(season.mainEpisodes) ?? []);
   const rows = episodeRows(episodes);
 
@@ -36,17 +40,25 @@ export default function SeasonCard({
           to={`/season/${season.id}`}
           aria-label={season.title}
         >
-          {source && source !== failedSource ? (
-            <img
+          {source ? (
+            <CachedImage
               src={source}
               alt=""
               loading="lazy"
-              onError={() => setFailedSource(source)}
+              reload={async () => {
+                const { data } = await client.query({
+                  query: ReloadCardImageDocument,
+                  variables: { id: season.poster!.id },
+                  fetchPolicy: 'network-only',
+                });
+                return data.imageById?.downloadPath;
+              }}
+              fallback={
+                <span className={styles.placeholder}>封面加载失败</span>
+              }
             />
           ) : (
-            <span className={styles.placeholder}>
-              {source ? '封面加载失败' : '暂无封面'}
-            </span>
+            <span className={styles.placeholder}>暂无封面</span>
           )}
           <span
             className={styles.monitoring}

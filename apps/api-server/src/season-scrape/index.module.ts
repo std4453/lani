@@ -8,9 +8,11 @@ import { SkyhookModule } from '@/season-scrape/skyhook/index.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BangumiDataService } from './bangumi-data/BangumiDataService';
+import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
 
 @Module({
   imports: [
+    ImageThumbnailModule,
     SkyhookModule,
     BangumiModule,
     CommonModule,

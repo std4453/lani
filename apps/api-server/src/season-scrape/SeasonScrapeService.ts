@@ -10,6 +10,7 @@ import { SeasonImageKey, SeasonWithImages } from '@/types/entities';
 import { Image, MetadataSource, Prisma } from '@lani/db';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import md5 from 'md5';
+import { ImageThumbnailService } from '@/image-thumbnail/index.service';
 
 @Injectable()
 export class SeasonScrapeService {
@@ -22,6 +23,7 @@ export class SeasonScrapeService {
     private prisma: PrismaService,
     private global: GlobalAxiosService,
     private s3: S3Service,
+    private thumbnails: ImageThumbnailService,
   ) {}
 
   async syncMetadata({
@@ -129,6 +131,8 @@ export class SeasonScrapeService {
       },
     });
 
+    if (newSeason.posterImage)
+      await this.thumbnails.path(newSeason.posterImage);
     await this.seasonEmitService.writeSeasonMetadata(newSeason);
   }
 

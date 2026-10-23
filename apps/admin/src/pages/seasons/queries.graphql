@@ -1,9 +1,17 @@
+query ReloadCardImage($id: Int!) {
+  imageById(id: $id) {
+    id
+    downloadPath(thumbnail: true)
+  }
+}
+
 fragment cardSeasonFields on Season {
   id
   title
   isMonitoring
   poster: imageByPosterImageId {
-    ...displayImageFields
+    id
+    downloadPath(thumbnail: true)
   }
   mainEpisodes {
     edges {

@@ -87,6 +87,41 @@ test("missing upstream returns non-cacheable 503 without breaking other routes",
   }
 });
 
+test("overrides upstream no-store only after successful signed reads, including 304", async () => {
+  const expires = Math.floor(Date.now() / 1000) + 3600;
+  await fixture(
+    (req, res) => {
+      res.writeHead(req.headers["if-none-match"] ? 304 : 200, {
+        "Cache-Control": "no-store",
+        ETag: '"image-v1"',
+        Expires: "Thu, 01 Jan 1970 00:00:00 GMT",
+      });
+      res.end("image");
+    },
+    async (origin) => {
+      for (const headers of [{}, { "If-None-Match": '"image-v1"' }]) {
+        const result = await request(
+          origin,
+          `/storage/poster.jpg?Expires=${expires}&Signature=signed`,
+          "GET",
+          headers
+        );
+        assert.equal(result.status, Object.keys(headers).length ? 304 : 200);
+        assert.match(
+          String(result.headers["cache-control"]),
+          /^private, max-age=\d+$/
+        );
+        const age = Number(
+          String(result.headers["cache-control"]).split("=")[1]
+        );
+        assert.ok(age > 3500 && age <= 3600);
+        assert.equal(result.headers.expires, undefined);
+        assert.equal(result.headers.etag, '"image-v1"');
+      }
+    }
+  );
+});
+
 test("preserves encoded key, raw signature, upstream Host and image bytes; strips browser credentials", async () => {
   let seen: http.IncomingMessage;
   const bytes = Buffer.from([0, 255, 1, 128]);
@@ -115,7 +150,7 @@ test("preserves encoded key, raw signature, upstream Host and image bytes; strip
       assert.equal(seen!.headers.cookie, undefined);
       assert.deepEqual(result.body, bytes);
       assert.equal(result.headers.etag, '"version-1"');
-      assert.equal(result.headers["cache-control"], "private, max-age=60");
+      assert.equal(result.headers["cache-control"], "no-store");
       assert.equal(result.headers["content-type"], "image/png");
       assert.equal(result.headers["set-cookie"], undefined);
     }

@@ -61,7 +61,8 @@
     "@ctrl/torrent-file": "4.5.2",
     "magnet-uri": "~6.2.0",
     "@lani/parse-nyaa": "workspace:~1.0.0",
-    "parse-duration": "~2.1.9"
+    "parse-duration": "~2.1.9",
+    "sharp": "~0.35.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -100,6 +101,7 @@
       "ts"
     ],
     "rootDir": "src",
+    "resolver": "<rootDir>/../test/resolver.cjs",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

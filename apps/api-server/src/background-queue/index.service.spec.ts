@@ -2,7 +2,7 @@ import { PrismaClient } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
 import { BackgroundQueueService } from './index.service';
 import { QueueHandler, QueueJob, QueueWaiting } from './types';
-import { enqueueJob } from './producer';
+import { enqueueJob, enqueueJobIfAbsent } from './producer';
 import {
   validateRetentionPayload,
   TorrentRetentionPayload,
@@ -34,6 +34,36 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   };
   const enqueue = (key: string, value: number) =>
     db.$transaction((tx) => enqueueJob(tx, name, key, { value }));
+  it('并发的缺失入队只保留一个任务，重复请求不打断正在执行的任务', async () => {
+    await Promise.all(
+      Array.from({ length: 8 }, () =>
+        db.$transaction((tx) =>
+          enqueueJobIfAbsent(tx, name, 'thumbnail', { value: 1 }),
+        ),
+      ),
+    );
+    expect(await db.backgroundJob.count({ where: { queueName: name } })).toBe(
+      1,
+    );
+    const job = await db.backgroundJob.findFirst({
+      where: { queueName: name },
+    });
+    await db.backgroundJob.update({
+      where: { id: job!.id },
+      data: { status: 'running', attempts: 1 },
+    });
+    await db.$transaction((tx) =>
+      enqueueJobIfAbsent(tx, name, 'thumbnail', { value: 2 }),
+    );
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: job!.id } }),
+    ).toMatchObject({
+      status: 'running',
+      attempts: 1,
+      revision: job!.revision,
+      payload: { value: 1 },
+    });
+  });
   beforeAll(async () => {
     const target = new URL(url!);
     if (

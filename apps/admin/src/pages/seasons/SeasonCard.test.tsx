@@ -7,6 +7,11 @@ jest.mock('umi', () => ({
   ),
 }));
 jest.mock('@/components/TaskDetailsDialog', () => ({}));
+jest.mock('@apollo/client', () => ({
+  useApolloClient: () => ({
+    query: jest.fn().mockRejectedValue(new Error('unavailable')),
+  }),
+}));
 import ReactDOM from 'react-dom';
 import { act, Simulate } from 'react-dom/test-utils';
 import { CardSeasonFieldsFragment } from '@/generated/types';
@@ -176,7 +181,7 @@ test('renders a fractional main episode and opens its details, excluding special
   expect(container.textContent).not.toContain('SP');
 });
 
-test('replaces failed posters and retries when the signed URL changes', () => {
+test('replaces failed posters and retries when the image changes', async () => {
   const value = {
     ...season(0),
     poster: { id: 1, downloadPath: '/broken.jpg' },
@@ -187,7 +192,9 @@ test('replaces failed posters and retries when the signed URL changes', () => {
       container,
     );
   });
-  act(() => Simulate.error(container.querySelector('img')!));
+  await act(async () => {
+    Simulate.error(container.querySelector('img')!);
+  });
   expect(container.querySelector('img')).toBeNull();
   expect(container.textContent).toContain('封面加载失败');
   value.poster.downloadPath = '/fresh.jpg';

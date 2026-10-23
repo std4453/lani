@@ -10,9 +10,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DownloadClientModule } from '@/download-client/DownloadClientModule';
 import { FilesResolver } from '@/admin/files.resolver';
+import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
 
 @Module({
   imports: [
+    ImageThumbnailModule,
     CommonModule,
     ConfigModule,
     DownloadJobModule,
