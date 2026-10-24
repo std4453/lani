@@ -121,6 +121,21 @@ function setup(patch: any = {}) {
   };
 }
 
+it('仅记录目录的历史季度改名失败后仍按旧位置重试', async () => {
+  const { write, state } = setup({ title: 'new', directory: 'old' });
+  await fs.mkdir(path.join(root, 'old'));
+  await fs.writeFile(path.join(root, 'old', 'video.mkv'), 'video');
+  await fs.mkdir(path.join(root, 'new'));
+  await expect(write()).rejects.toThrow('目标季度目录已存在');
+  expect(state().lastWriteDirectory).toBe('old');
+  await fs.rmdir(path.join(root, 'new'));
+  await write();
+  expect(await fs.readFile(path.join(root, 'new', 'video.mkv'), 'utf8')).toBe(
+    'video',
+  );
+  expect(state().lastWriteDirectory).toBe('new');
+});
+
 it('writes new seasons into a single safe directory and preserves the displayed slash', async () => {
   const { write, state } = setup();
   await write();

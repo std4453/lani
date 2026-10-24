@@ -1,6 +1,5 @@
 import { parseWorkflow } from '@lani/workflow';
 import { WriteGate } from '@/application-state/write-gate';
-import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
   DownloadProgress,
@@ -261,9 +260,6 @@ export class AdminResolver {
         },
         data: {
           ...seasonPatch,
-          ...(seasonPatch.title !== undefined
-            ? { directory: sanitizeSeasonDirectory(seasonPatch.title) }
-            : {}),
           yearAndSemesterCanonical: ((yearAndSemester?: string) => {
             if (!yearAndSemester) {
               return undefined;
