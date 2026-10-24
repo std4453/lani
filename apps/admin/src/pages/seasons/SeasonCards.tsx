@@ -78,6 +78,16 @@ export default function SeasonCards({
       setPage(Math.max(1, Math.ceil(total / CARD_PAGE_SIZE)));
     }
   }, [total, page, loading, error, setPage]);
+  const refreshButton = (
+    <Tooltip key="refresh" title="刷新">
+      <Button
+        type="text"
+        aria-label="刷新"
+        icon={<ReloadOutlined spin={loading} />}
+        onClick={() => void refetch().catch(() => undefined)}
+      />
+    </Tooltip>
+  );
 
   return (
     <div className={styles.root}>
@@ -96,21 +106,14 @@ export default function SeasonCards({
               onSearch(value);
             },
           }}
-          actions={mobile ? [modeButton, ...actions] : actions}
+          actions={mobile ? [modeButton, refreshButton, ...actions] : actions}
           settings={
             mobile
               ? []
               : [
                   <Space key="view-actions">
                     {modeButton}
-                    <Tooltip title="刷新">
-                      <Button
-                        type="text"
-                        aria-label="刷新"
-                        icon={<ReloadOutlined spin={loading} />}
-                        onClick={() => void refetch().catch(() => undefined)}
-                      />
-                    </Tooltip>
+                    {refreshButton}
                   </Space>,
                 ]
           }
