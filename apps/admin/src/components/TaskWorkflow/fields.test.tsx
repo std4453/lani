@@ -83,4 +83,18 @@ test('file list tooltip belongs to the count, leaving the copy control independe
     '.ant-tooltip:not(.ant-tooltip-hidden)',
   );
   expect(visible?.textContent).toBe('/demo/1.mkv/demo/2.mkv');
+  await act(async () => {
+    Simulate.mouseLeave(count);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+  expect(count.tabIndex).toBe(0);
+  await act(async () => {
+    count.focus();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+  expect(document.activeElement).toBe(count);
+  expect(
+    document.querySelector('.ant-tooltip:not(.ant-tooltip-hidden)')
+      ?.textContent,
+  ).toBe('/demo/1.mkv/demo/2.mkv');
 });

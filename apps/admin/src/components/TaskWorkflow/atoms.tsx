@@ -26,12 +26,15 @@ function Paths({
     <Field label={label}>
       <Typography.Text copyable={text ? { text } : false}>
         <Tooltip
+          trigger={['hover', 'focus']}
           overlayClassName={styles.pathsTooltip}
           title={paths.map((path, index) => (
             <div key={index}>{path}</div>
           ))}
         >
-          <span>{paths.length} 个文件</span>
+          <span tabIndex={0} className={styles.pathsCount}>
+            {paths.length} 个文件
+          </span>
         </Tooltip>
       </Typography.Text>
     </Field>
