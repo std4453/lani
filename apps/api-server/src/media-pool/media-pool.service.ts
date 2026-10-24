@@ -277,6 +277,37 @@ export class MediaPool {
     return this.exclusive(() => this.switchVersion(episodeId, null, context));
   }
 
+  /** 删除季度沿用可恢复的撤下流程，原件与下载源仍保留。 */
+  deleteSeason(seasonId: number, deleteFiles: () => Promise<void>) {
+    return this.exclusive(async () => {
+      const busy = await this.db.$queryRaw<{ id: number }[]>`
+        SELECT t.id FROM download_jobs t
+        WHERE t.workflow->>'status' IN ('running', 'cancelling', 'failed')
+          AND (EXISTS (SELECT 1 FROM episodes e
+            WHERE e.id=t.episode_id AND e.season_id=${seasonId})
+            OR EXISTS (SELECT 1 FROM task_episodes te JOIN episodes e ON e.id=te.episode_id
+              WHERE te.task_id=t.id AND e.season_id=${seasonId}))
+        LIMIT 1`;
+      if (busy.length)
+        throw new Error('季度仍有进行中或失败的任务，请先取消任务再删除');
+      const episodes = await this.db.episode.findMany({ where: { seasonId } });
+      for (const episode of episodes) {
+        await this.recover(episode.id);
+        if (episode.currentVersionId)
+          await this.switchVersion(episode.id, null);
+      }
+      // 文件或刷新失败时保留版本记录，重新删除可继续完成。
+      await deleteFiles();
+      await this.db.$transaction(async (tx) => {
+        for (const episode of episodes) await lockEpisode(tx, episode.id);
+        await tx.episodeVersion.deleteMany({
+          where: { episode: { seasonId } },
+        });
+        await tx.season.delete({ where: { id: seasonId } });
+      });
+    });
+  }
+
   private async switchVersion(
     episodeId: number,
     versionId: number | null,

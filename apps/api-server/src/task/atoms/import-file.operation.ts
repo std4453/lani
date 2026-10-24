@@ -10,6 +10,10 @@ export async function fileIdentity(
   try {
     const stat = await fs.stat(filename);
     if (!stat.isFile()) throw new Error('目标路径不是普通文件');
+    if (!Number.isSafeInteger(stat.dev) || !Number.isSafeInteger(stat.ino))
+      throw new Error(
+        '文件系统设备或 inode 超出安全整数范围，无法确认文件身份',
+      );
     return {
       dev: stat.dev,
       ino: stat.ino,

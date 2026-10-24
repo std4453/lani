@@ -14,6 +14,10 @@ export async function identity(
     const stat = await fs.lstat(filename);
     if (!stat.isFile())
       throw new Error('媒体路径必须是普通文件，不能使用符号链接');
+    if (!Number.isSafeInteger(stat.dev) || !Number.isSafeInteger(stat.ino))
+      throw new Error(
+        '文件系统设备或 inode 超出安全整数范围，无法确认文件身份',
+      );
     return {
       dev: stat.dev,
       ino: stat.ino,

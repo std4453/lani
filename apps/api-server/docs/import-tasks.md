@@ -42,7 +42,7 @@
 
 GraphQL 的原单集字段继续来自 Task，批量输入与产物读取 `batchEntries`；`taskEpisodesByTaskId` 只提供剧集关联。`tasksByEpisodeId` 反向查询覆盖下载及全部导入任务，单集目标的原生反向查询命名为 `singleTasksByEpisodeId`。`importSingle`、`importMultiple` 返回创建的任务 ID，调用方通过详情和状态轮询观察执行结果。
 
-发布时需停止旧 API worker 后迁移，并同时更新 API、Data Server 和 Admin；批量导入的新字段与接口需要前后端一起更新。本次没有新增运行配置。
+发布时需停止旧 API worker 后迁移，并同时更新 API、Data Server 和 Admin；批量导入的新字段与接口需要前后端一起更新。媒体池迁移 `20261028000000_media_pool` 还要求配置 `mediaPool.root`，默认与下载目录及媒体库位于同一挂载卷。保持 API worker 停止，按[媒体池设计](../src/media-pool/DESIGN.md#发布准备与历史回填)完成历史回填。旧 `lani.moveStrategy` 不再控制新媒体导入；缺少媒体版本关联的历史失败任务需重新创建。
 
 ## 验证
 

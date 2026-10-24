@@ -620,7 +620,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const download = await createImportTask();
     await expect(
       claimEpisodePublication(download.id, await contextFor(download.id)),
-    ).rejects.toThrow('其他任务正在发布或已发布');
+    ).rejects.toThrow('其他任务正在发布，或发布失败后尚未处理');
     await prisma.episode.delete({ where: { id: otherEpisode.id } });
     expect(
       batchImportEntries((await store.read(task.id)).input.batchEntries)[1],

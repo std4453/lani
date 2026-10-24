@@ -59,7 +59,9 @@ async function checkPublication(
             AND step->'checkpoint'->'entries'->(entry->>'id')->>'publicationClaimed'='true'))
     LIMIT 1`;
   if (other.length)
-    throw new Error('同一剧集的其他任务正在发布或已发布，无法继续');
+    throw new Error(
+      '同一剧集的其他任务正在发布，或发布失败后尚未处理，无法继续',
+    );
 }
 
 /** 竞争检查与占用标记在同一个持有剧集锁的事务中提交。 */

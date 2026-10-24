@@ -1,5 +1,6 @@
 import { PrismaClient } from '@lani/db';
 import path from 'path';
+import { createHash } from 'crypto';
 import { digest, canonical } from './files';
 import { MediaPool, VersionInput } from './media-pool.service';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
@@ -46,9 +47,20 @@ export async function applyBackfill(
       if ((await inspectBackfillFile(file.path, file.role)).hash !== file.hash)
         throw new Error('回填文件内容已变化，请重新生成清单');
     }
+    const fingerprint = createHash('sha256')
+      .update(
+        JSON.stringify(
+          entry.files
+            .map((file) =>
+              JSON.stringify([path.resolve(file.path), file.hash, file.role]),
+            )
+            .sort(),
+        ),
+      )
+      .digest('hex');
     const input: VersionInput = {
       episodeId: entry.episodeId,
-      operationKey: `backfill:${entry.episodeId}:${entry.jellyfinEpisodeId}`,
+      operationKey: `backfill:${entry.episodeId}:${entry.jellyfinEpisodeId}:${fingerprint}`,
       source: 'unknown',
       files: entry.files.map((file) => ({
         source: file.path,

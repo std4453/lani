@@ -105,7 +105,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     jest.restoreAllMocks();
     await db.task.deleteMany({ where: { episodeId } });
     await db.mediaPublication.deleteMany({ where: { episodeId } });
-    await db.episode.update({
+    await db.episode.updateMany({
       where: { id: episodeId },
       data: { currentVersionId: null },
     });
@@ -113,7 +113,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await db.mediaAsset.deleteMany({
       where: { poolPath: { startsWith: root } },
     });
-    await db.season.delete({ where: { id: seasonId } });
+    await db.season.deleteMany({ where: { id: seasonId } });
     await db.jellyfinFolder.delete({ where: { id: folderId } });
     await fs.rm(root, { recursive: true, force: true });
   });
@@ -302,6 +302,106 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await expect(
       pool.register({ ...second, operationKey: 'third' }),
     ).rejects.toThrow('其他下载目录位置');
+  });
+  it('回填登记后失败，修改清单可以采用新文件集合；顺序不改变幂等键', async () => {
+    const legacy = await input('legacy');
+    await db.episode.update({
+      where: { id: episodeId },
+      data: { jellyfinEpisodeId: 'legacy-item' },
+    });
+    const entry = {
+      episodeId,
+      jellyfinEpisodeId: 'legacy-item',
+      files: await Promise.all(
+        legacy.files.map((file) => inspectBackfillFile(file.source, file.role)),
+      ),
+    };
+    const read = jest.spyOn(pool as any, 'version');
+    read.mockRejectedValueOnce(new Error('Database read failed'));
+    await expect(applyBackfill(db, pool, [entry])).rejects.toThrow(
+      'Database read failed',
+    );
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
+    // 同一清单换序后重试仍使用登记过的版本。
+    read.mockRejectedValueOnce(new Error('Database read failed'));
+    await expect(
+      applyBackfill(db, pool, [
+        { ...entry, files: [...entry.files].reverse() },
+      ]),
+    ).rejects.toThrow();
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
+    await fs.unlink(entry.files[1].path);
+    const repaired = { ...entry, files: [entry.files[0]] };
+    await applyBackfill(db, pool, [repaired]);
+    await applyBackfill(db, pool, [repaired]);
+    const adopted = await db.episodeVersion.findUnique({
+      where: { id: (await current())! },
+      include: { files: true },
+    });
+    expect(adopted!.number).toBe(2);
+    expect(adopted!.files.map((file) => file.targetPath)).toEqual([
+      entry.files[0].path,
+    ]);
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(2);
+  });
+  it('删除含历史版本的季度，撤下目标并保留池原件和下载源', async () => {
+    const first = await input('first');
+    await pool.publish(await pool.register(first), context());
+    const second = await input('second', 'mp4', false);
+    await pool.publish(await pool.register(second), context());
+    const remove = jest.fn(async () => {
+      expect(await current()).toBeNull();
+      expect(await identity(second.files[0].target)).toBeUndefined();
+    });
+    await pool.deleteSeason(seasonId, remove);
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(0);
+    const assets = await db.mediaAsset.findMany({
+      where: { poolPath: { startsWith: root } },
+    });
+    expect(assets).toHaveLength(3);
+    for (const asset of assets) {
+      expect(asset.jellyfinPath).toBeNull();
+      expect(await identity(asset.poolPath)).toBeDefined();
+      expect(await identity(asset.downloadPath!)).toBeDefined();
+    }
+  });
+  it('删除季度的文件清理失败保留版本记录，重试可以完成', async () => {
+    const first = await input('first');
+    await pool.publish(await pool.register(first), context());
+    await expect(
+      pool.deleteSeason(seasonId, async () => {
+        throw new Error('Refresh failed');
+      }),
+    ).rejects.toThrow('Refresh failed');
+    expect(await current()).toBeNull();
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
+    await pool.deleteSeason(seasonId, async () => undefined);
+    expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
+  });
+  it('季度有活动任务时删除在文件变动前失败', async () => {
+    const first = await input('first', 'mkv', false);
+    const version = await pool.register(first);
+    await pool.publish(version, context());
+    await db.task.create({
+      data: {
+        type: 'IMPORT',
+        legacyStage: 'IMPORTING',
+        episodeId,
+        workflow: { status: 'running' },
+        episodes: { create: { episodeId } },
+      },
+    });
+    const remove = jest.fn();
+    await expect(pool.deleteSeason(seasonId, remove)).rejects.toThrow(
+      '先取消任务',
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(await current()).toBe(version);
+    expect(await fs.readFile(first.files[0].target, 'utf8')).toBe(
+      'content-first',
+    );
   });
   it('真实任务事务保存版本检查点，源文件消失后恢复不重复入池或改目标', async () => {
     const selected = await input('atom', 'mkv', false);

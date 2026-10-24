@@ -178,7 +178,7 @@ it('发布区段冲突时同一事务内拒绝关联更新', async () => {
     query.join('').includes('SELECT t.id') ? ([{ id: 99 }] as never) : [],
   );
   await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
-    '其他任务正在发布或已发布',
+    '其他任务正在发布，或发布失败后尚未处理',
   );
   expect(test.episode.updateMany).not.toHaveBeenCalled();
   expect(test.emit).not.toHaveBeenCalled();

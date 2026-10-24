@@ -58,4 +58,4 @@ mediaPool:
 
 默认遇到跨卷操作会报错并保留旧版本。确需跨卷时显式开启 `painfullyAcceptCrossDeviceCopy`，启动日志会提示复制较慢、占用额外空间且无法保证跨卷原子性。权限和空间不足等错误仍会失败。旧 `lani.moveStrategy` 配置继续可解析，但新媒体导入统一采用上述规则。
 
-升级已有媒体库时，需先备份并暂停 API，在迁移完成后按[媒体回填说明](https://github.com/std4453/lani/blob/next/apps/api-server/src/media-pool/DESIGN.md#发布准备与历史回填)登记历史文件，再恢复服务。回填前已可用剧集仍可播放，但暂时不能替换。
+升级已有媒体库时，需先备份并暂停 API，在迁移完成后登记历史文件，再恢复服务。回填前已可用剧集仍可播放，但暂时不能替换。一体机用户按[升级与媒体回填](../deployment/docker-all-in-one#升级与媒体回填)操作；其他部署方式可参考[媒体回填说明](https://github.com/std4453/lani/blob/next/apps/api-server/src/media-pool/DESIGN.md#发布准备与历史回填)。

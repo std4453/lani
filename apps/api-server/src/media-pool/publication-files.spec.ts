@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { digest, identity, importToPool, linkOrCopy } from './files';
+import { fileIdentity } from '@/task/atoms/import-file.operation';
 import {
   applyPublication,
   cleanupPublication,
@@ -40,6 +41,25 @@ it('拒绝空文件和符号链接', async () => {
   await expect(
     importToPool(path.join(root, 'pool'), path.join(root, 'link'), false),
   ).rejects.toThrow('符号链接');
+});
+it('超出安全整数范围的 inode 拒绝登记，避免舍入后误认文件', async () => {
+  const source = await file('video.mkv');
+  const stat = await fs.stat(source);
+  jest.spyOn(fs, 'lstat').mockResolvedValue({
+    ...stat,
+    isFile: () => true,
+    ino: Number.MAX_SAFE_INTEGER + 1,
+  } as never);
+  jest.spyOn(fs, 'stat').mockResolvedValue({
+    ...stat,
+    isFile: () => true,
+    ino: Number.MAX_SAFE_INTEGER + 1,
+  } as never);
+  await expect(identity(source)).rejects.toThrow('安全整数范围');
+  await expect(fileIdentity(source)).rejects.toThrow('安全整数范围');
+  await expect(
+    importToPool(path.join(root, 'pool'), source, false),
+  ).rejects.toThrow('安全整数范围');
 });
 it('只有明确接受 EXDEV 才复制，其他文件错误不降级', async () => {
   const source = await file('source');
