@@ -8,7 +8,7 @@ import { ReloadOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
 import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import {
   CARD_PAGE_SIZE,
   cardQueryVariables,
@@ -21,20 +21,27 @@ export default function SeasonCards({
   title,
   actions,
   modeButton,
+  page,
+  keyword,
+  searchText,
+  setSearchText,
+  onSearch,
+  setPage,
 }: {
   title: ReactNode;
   actions: ReactNode[];
   modeButton: ReactNode;
+  page: number;
+  keyword: string;
+  searchText: string;
+  setSearchText: (value: string) => void;
+  onSearch: (value: string) => void;
+  setPage: (page: number) => void;
 }) {
   const mobile = useMobile();
-  const [searchText, setSearchText] = useState('');
-  const [{ page, keyword }, setSearch] = useState({ page: 1, keyword: '' });
-  const setPage = (next: number) =>
-    setSearch((value) => ({ ...value, page: next }));
-  const { run: search, cancel: cancelSearch } = useDebounceFn(
-    (value: string) => setSearch({ page: 1, keyword: value.trim() }),
-    { wait: 300 },
-  );
+  const { run: search, cancel: cancelSearch } = useDebounceFn(onSearch, {
+    wait: 300,
+  });
   useEffect(() => cancelSearch, [cancelSearch]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dialog, , openEpisode] = useEpisodeDetailsDialog();
@@ -59,12 +66,14 @@ export default function SeasonCards({
   });
   useEffect(() => {
     if (
+      !loading &&
+      !error &&
       total !== undefined &&
       page > Math.max(1, Math.ceil(total / CARD_PAGE_SIZE))
     ) {
       setPage(Math.max(1, Math.ceil(total / CARD_PAGE_SIZE)));
     }
-  }, [total, page]);
+  }, [total, page, loading, error, setPage]);
 
   return (
     <div className={styles.root}>
@@ -80,7 +89,7 @@ export default function SeasonCards({
             },
             onSearch: (value) => {
               cancelSearch();
-              setSearch({ page: 1, keyword: value.trim() });
+              onSearch(value);
             },
           }}
           actions={mobile ? [modeButton, ...actions] : actions}

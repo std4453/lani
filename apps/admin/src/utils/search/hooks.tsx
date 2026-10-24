@@ -51,6 +51,7 @@ export function useAntdSearchProps<
   query: (state: AntdTableState) => Promise<Partial<RequestData<RowType>>>,
   {
     hasKeyword = false,
+    keywordState,
     pagination: {
       defaultPageSize = 30,
       defaultCurrent = 1,
@@ -58,14 +59,15 @@ export function useAntdSearchProps<
     } = {},
   }: {
     hasKeyword?: boolean;
+    keywordState?: [string, (keyword: string) => void];
     pagination?: Partial<TablePaginationConfig>;
   } = {},
 ): Partial<ProTableProps<RowType, Search>> {
   const { stateRef, revision, update, setObservedState } =
     useAntdSearchContext();
-  const [keywordImmediate, setKeywordImmediate] = useState(
-    stateRef.current.keyword,
-  );
+  const internalKeywordState = useState(stateRef.current.keyword);
+  const [keywordImmediate, setKeywordImmediate] =
+    keywordState ?? internalKeywordState;
 
   const history = useHistory();
 
@@ -114,27 +116,32 @@ export function useAntdSearchProps<
       try {
         return await query(newState);
       } finally {
-        const search = {
-          ...newState.search,
-          keyword: newState.keyword,
-          current: newState.current,
-          pageSize: newState.pageSize,
-        };
-        history.replace({
-          pathname: history.location.pathname,
-          // SSO 回跳的时候会用 fragment 模式，会添加 hash，然后在处理之后替换成空
-          // 由于 react 机制，这里拿到的 history.hash 是替换之前的，因此又会跳回有
-          // hash 的状态，不符合预期
-          // 由于这个页面并非通用，也没有用到 hash 的地方，简单置空就行
-          hash: '',
-          query: encodeAntdSearch(
-            search,
-            newState.sort,
-            newState.filter,
-            newState.custom,
-          ),
-        });
-        setObservedState(newState);
+        // 视图切换或新请求已经更新状态时，丢弃旧请求的 URL 和筛选回填。
+        if (stateRef.current === newState) {
+          const search = {
+            ...newState.search,
+            keyword: newState.keyword,
+            current: newState.current,
+            pageSize: newState.pageSize,
+          };
+          history.replace({
+            pathname: history.location.pathname,
+            // SSO 回跳的时候会用 fragment 模式，会添加 hash，然后在处理之后替换成空
+            // 由于 react 机制，这里拿到的 history.hash 是替换之前的，因此又会跳回有
+            // hash 的状态，不符合预期
+            // 由于这个页面并非通用，也没有用到 hash 的地方，简单置空就行
+            hash: '',
+            search: qs.stringify(
+              encodeAntdSearch(
+                search,
+                newState.sort,
+                newState.filter,
+                newState.custom,
+              ),
+            ),
+          });
+          setObservedState(newState);
+        }
       }
     },
   );
