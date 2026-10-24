@@ -53,6 +53,7 @@ import qs from 'qs';
 import { act, Simulate } from 'react-dom/test-utils';
 import { ProTableProps } from '@ant-design/pro-table';
 import MetadataPage from './index';
+import { handleError } from '@/utils/error';
 
 let container: HTMLDivElement;
 beforeAll(() => {
@@ -248,4 +249,14 @@ test('keeps the page when only the surrounding search whitespace changes', () =>
   toggle();
   expect(pagination().current).toBe(2);
   expect(tableSearch().value).toBe('  测试  ');
+});
+
+test('reports card loading failures with a toast instead of a persistent alert', () => {
+  const error = new Error('offline');
+  jest.mocked(handleError).mockClear();
+  mockCardQuery.error = error;
+  toggle();
+  expect(handleError).toHaveBeenCalledWith(error, '季度列表获取失败');
+  expect(container.querySelector('.ant-alert')).toBeNull();
+  expect(container.textContent).not.toContain('暂无季度');
 });

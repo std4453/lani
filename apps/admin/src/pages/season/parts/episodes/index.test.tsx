@@ -18,7 +18,7 @@ import { act } from 'react-dom/test-utils';
 import { TaskType } from '@/generated/types';
 import { DownloadStatusTag } from '@/constants/download-status';
 import { Episode } from '../../help';
-import { useEpisodeStatus } from './index';
+import { EpisodeStatusTag, useEpisodeStatus } from './index';
 
 it.each([
   TaskType.Download,
@@ -95,6 +95,39 @@ it.each([
       tag!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(open).toHaveBeenCalledWith({ taskId: 42, taskType: type });
+  } finally {
+    act(() => {
+      ReactDOM.unmountComponentAtNode(container);
+    });
+  }
+});
+
+it.each([
+  TaskType.Download,
+  TaskType.Import,
+  TaskType.BatchImport,
+  TaskType.BatchDownload,
+])('季度下载状态通过剧集入口预选 %s 任务', (taskType) => {
+  const open = jest.fn();
+  const container = document.createElement('div');
+  try {
+    act(() => {
+      ReactDOM.render(
+        <EpisodeStatusTag
+          episode={
+            { id: 7, taskId: 42, taskType, taskStatus: 'RUNNING' } as Episode
+          }
+          openEpisodeDetails={open}
+        />,
+        container,
+      );
+    });
+    act(() => {
+      container
+        .querySelector('.ant-tag')!
+        .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(open).toHaveBeenCalledWith({ episodeId: 7, taskId: 42 });
   } finally {
     act(() => {
       ReactDOM.unmountComponentAtNode(container);

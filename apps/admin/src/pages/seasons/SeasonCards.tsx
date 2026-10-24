@@ -1,13 +1,14 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { ListSeasonCardsDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
+import { handleError } from '@/utils/error';
 import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
 import { ListToolBar } from '@ant-design/pro-table';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
-import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
+import { Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef } from 'react';
 import {
   CARD_PAGE_SIZE,
@@ -56,6 +57,9 @@ export default function SeasonCards({
     notifyOnNetworkStatusChange: true,
   });
   const seasons = extractNode(data?.allSeasons) ?? [];
+  useEffect(() => {
+    if (error) handleError(error, '季度列表获取失败');
+  }, [error]);
   const total = data?.allSeasons?.totalCount;
   const { refetch } = useEpisodeStatusPolling({
     episodes: seasons.flatMap((season) =>
@@ -113,21 +117,6 @@ export default function SeasonCards({
         />
       </div>
       <div className={styles.content} ref={scrollRef}>
-        {error && (
-          <Alert
-            type="error"
-            showIcon
-            message="季度列表获取失败"
-            action={
-              <Button
-                size="small"
-                onClick={() => void refetch().catch(() => undefined)}
-              >
-                重试
-              </Button>
-            }
-          />
-        )}
         <Spin spinning={loading && !data}>
           <div className={styles.grid}>
             {seasons.map((season) => (

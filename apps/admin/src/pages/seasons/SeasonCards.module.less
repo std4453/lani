@@ -24,9 +24,6 @@
   @media @pc {
     overflow: auto;
   }
-  :global(.ant-alert) {
-    margin-bottom: 16px;
-  }
   :global(.ant-spin-nested-loading) {
     min-height: 160px;
   }
@@ -47,15 +44,21 @@
   min-width: 0;
   justify-self: center;
   border-radius: var(--lani-radius);
-  &:hover {
-    border-color: var(--lani-divider);
-    .seasonLink {
-      color: var(--lani-primary);
+  transition: box-shadow 300ms;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      border-color: var(--lani-primary);
+      .poster img {
+        transform: scale(1.05);
+      }
     }
   }
 }
 .seasonLink {
   color: var(--lani-text);
+  &:hover {
+    color: var(--lani-text);
+  }
   &::after {
     content: '';
     position: absolute;
@@ -85,6 +88,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 300ms ease;
   }
 }
 .placeholder {
@@ -173,11 +177,14 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
   // 灰色状态沿用追番胶囊的黑底白字，并进一步淡化文字和背景。
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.64);
   cursor: pointer;
   pointer-events: auto;
   transition: transform 120ms;
+  &[data-tone='gray'] {
+    opacity: 0.5;
+  }
   &[data-wide='true'] {
     width: auto;
   }
@@ -219,6 +226,7 @@
   }
   @media (hover: hover) and (pointer: fine) {
     &:hover {
+      opacity: 1;
       transform: scale(1.16);
       z-index: 2;
     }
@@ -231,6 +239,17 @@
   flex-shrink: 0;
 }
 @media @mobile {
+  .episodeButton::after {
+    content: '';
+    position: absolute;
+    inset: -2.5px -1px;
+  }
+  .episodeRow:first-child .episodeButton::after {
+    top: -8px;
+  }
+  .episodeRow:last-child .episodeButton::after {
+    bottom: -8px;
+  }
   .content {
     padding: 0 16px;
   }
@@ -241,6 +260,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .card,
+  .poster img,
   .episodeButton {
     transition: none;
   }
