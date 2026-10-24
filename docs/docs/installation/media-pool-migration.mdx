@@ -69,7 +69,7 @@ mediaPool:
 
 1. 暂停相关读写，保存配置和数据库备份，确认目标空间足够。跨文件系统必须实际读取和写入全部内容，耗时取决于媒体量和磁盘速度。
 2. 将下载目录和媒体库分别复制到独立、尚未被应用扫描的目标目录，例如 `rsync -aH --info=progress2 /old/downloads/ /new/media/downloads/` 和 `rsync -aH --info=progress2 /old/library/ /new/media/library/`。按实际位置替换两个源目录，若源端分处不同文件系统，需要为两份内容都预留空间。路径末尾斜杠影响复制布局，执行前核对；不要加入删除源文件或自动删除目标的选项。
-3. 保持两个源目录不再写入，分别核对文件数量、大小及内容；执行 `rsync -aHnc /old/downloads/ /new/media/downloads/` 和 `rsync -aHnc /old/library/ /new/media/library/`，确认均无内容差异。校验本身也会读取完整数据。失败时修正并续传，源文件仍可用于回退。
+3. 保持两个源目录不再写入，分别核对文件数量、大小及内容；执行 `rsync -aHnci /old/downloads/ /new/media/downloads/` 和 `rsync -aHnci /old/library/ /new/media/library/`。两条命令均成功退出且没有输出，才表示没有待同步差异；有输出时逐项核对并同步列出的内容或属性变化。校验本身也会读取完整数据。失败时修正并续传，源文件仍可用于回退。
 4. 两份目录均校验通过后，创建 `/new/media/pool`，将 lani 挂载改为 `/new/media:/data`，qBittorrent 改为 `/new/media/downloads:/downloads`，Jellyfin 改为 `/new/media/library:/media`，保持两个外部应用的容器内路径不变，并使用上面的 lani 路径映射。进行样本播放和下载器文件检查；失败时停止写入并恢复原挂载与配置。确认新布局稳定后再安排源文件的清理；不要为了腾空间提前删除唯一完整副本。
 
 ## 必须改变外部应用路径时
