@@ -24,16 +24,19 @@ function Paths({
   const text = paths.join('\n');
   return (
     <Field label={label}>
-      <Tooltip
-        overlayClassName={styles.pathsTooltip}
-        title={paths.map((path, index) => (
-          <div key={index}>{path}</div>
-        ))}
-      >
-        <Typography.Text copyable={text ? { text } : false}>
-          {paths.length} 个文件
-        </Typography.Text>
-      </Tooltip>
+      <Typography.Text copyable={text ? { text } : false}>
+        <Tooltip
+          trigger={['hover', 'focus']}
+          overlayClassName={styles.pathsTooltip}
+          title={paths.map((path, index) => (
+            <div key={index}>{path}</div>
+          ))}
+        >
+          <span tabIndex={0} className={styles.pathsCount}>
+            {paths.length} 个文件
+          </span>
+        </Tooltip>
+      </Typography.Text>
     </Field>
   );
 }

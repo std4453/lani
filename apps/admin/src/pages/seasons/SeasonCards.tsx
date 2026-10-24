@@ -1,13 +1,14 @@
 import { useEpisodeDetailsDialog } from '@/components/EpisodeDetailsDialog';
 import { ListSeasonCardsDocument } from '@/generated/types';
 import { extractNode } from '@/utils/graphql';
+import { handleError } from '@/utils/error';
 import { useEpisodeStatusPolling } from '@/utils/useEpisodeStatusPolling';
 import useMobile from '@/utils/useMobile';
 import { ListToolBar } from '@ant-design/pro-table';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { useQuery } from '@apollo/client';
-import { Alert, Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
+import { Button, Empty, Pagination, Space, Spin, Tooltip } from 'antd';
 import { ReactNode, useEffect, useRef } from 'react';
 import {
   CARD_PAGE_SIZE,
@@ -56,6 +57,9 @@ export default function SeasonCards({
     notifyOnNetworkStatusChange: true,
   });
   const seasons = extractNode(data?.allSeasons) ?? [];
+  useEffect(() => {
+    if (error) handleError(error, '季度列表获取失败');
+  }, [error]);
   const total = data?.allSeasons?.totalCount;
   const { refetch } = useEpisodeStatusPolling({
     episodes: seasons.flatMap((season) =>
@@ -74,6 +78,16 @@ export default function SeasonCards({
       setPage(Math.max(1, Math.ceil(total / CARD_PAGE_SIZE)));
     }
   }, [total, page, loading, error, setPage]);
+  const refreshButton = (
+    <Tooltip key="refresh" title="刷新">
+      <Button
+        type="text"
+        aria-label="刷新"
+        icon={<ReloadOutlined spin={loading} />}
+        onClick={() => void refetch().catch(() => undefined)}
+      />
+    </Tooltip>
+  );
 
   return (
     <div className={styles.root}>
@@ -92,42 +106,20 @@ export default function SeasonCards({
               onSearch(value);
             },
           }}
-          actions={mobile ? [modeButton, ...actions] : actions}
+          actions={mobile ? [modeButton, refreshButton, ...actions] : actions}
           settings={
             mobile
               ? []
               : [
                   <Space key="view-actions">
                     {modeButton}
-                    <Tooltip title="刷新">
-                      <Button
-                        type="text"
-                        aria-label="刷新"
-                        icon={<ReloadOutlined spin={loading} />}
-                        onClick={() => void refetch().catch(() => undefined)}
-                      />
-                    </Tooltip>
+                    {refreshButton}
                   </Space>,
                 ]
           }
         />
       </div>
       <div className={styles.content} ref={scrollRef}>
-        {error && (
-          <Alert
-            type="error"
-            showIcon
-            message="季度列表获取失败"
-            action={
-              <Button
-                size="small"
-                onClick={() => void refetch().catch(() => undefined)}
-              >
-                重试
-              </Button>
-            }
-          />
-        )}
         <Spin spinning={loading && !data}>
           <div className={styles.grid}>
             {seasons.map((season) => (

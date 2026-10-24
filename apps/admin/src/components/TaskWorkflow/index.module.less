@@ -1,5 +1,9 @@
 @import (reference) '~antd/es/style/themes/default.less';
 
+.pathsCount:focus-visible {
+  outline: 2px solid var(--lani-primary);
+  outline-offset: 2px;
+}
 .pathsTooltip {
   width: 480px;
   max-width: calc(100vw - 24px);
@@ -44,6 +48,10 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  &:hover .chevron,
+  &:focus-visible .chevron {
+    color: var(--lani-icon-hover);
+  }
   &:focus-visible {
     outline: 2px solid #1890ff;
     outline-offset: 4px;
@@ -59,7 +67,8 @@
 }
 .chevron {
   font-size: 12px;
-  opacity: 0.45;
+  color: var(--lani-text-secondary);
+  transition: color 0.3s;
   :global(svg) {
     transition: transform 0.2s;
   }
@@ -114,6 +123,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .details,
+  .chevron,
   .chevron :global(svg) {
     transition: none;
   }
