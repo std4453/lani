@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { LaniError } from '@/utils/error';
 
 /** 单 API 实例的启动屏障，初始化时即关闭；业务登记记录是唯一持久化进度。 */
 @Injectable()
@@ -21,7 +22,7 @@ export class MediaWriteState {
   }
   assertReady() {
     if (!this.ready)
-      throw new Error(
+      throw new LaniError(
         'lani 正在登记历史媒体，暂时不能修改媒体文件，请稍后重试',
       );
   }

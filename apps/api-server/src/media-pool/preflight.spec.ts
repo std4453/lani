@@ -10,7 +10,9 @@ import { mediaTarget, relativeMediaPath } from './paths';
 jest.mock('@/config', () => ({ default: {}, __esModule: true }));
 let root: string;
 beforeEach(async () => {
-  root = await fs.mkdtemp(path.join(os.tmpdir(), 'lani-preflight-'));
+  root = await fs.realpath(
+    await fs.mkdtemp(path.join(os.tmpdir(), 'lani-preflight-')),
+  );
   for (const name of ['downloads', 'library'])
     await fs.mkdir(path.join(root, name));
 });
@@ -69,6 +71,22 @@ it('预检有超时边界', async () => {
     bounded(new Promise(() => undefined), 5, 'preflight'),
   ).rejects.toThrow('timed out');
 });
+it.each(['downloads', 'library'])(
+  '拒绝媒体池与 %s 目录双向重叠',
+  async (name) => {
+    const directory = path.join(root, name);
+    for (const pool of [directory, path.join(directory, 'pool'), root]) {
+      await expect(
+        probeMediaDirectories(
+          pool,
+          [path.join(root, 'downloads')],
+          [path.join(root, 'library')],
+          false,
+        ),
+      ).rejects.toThrow('must be separate');
+    }
+  },
+);
 it.each([
   '/tmp/file',
   '../file',

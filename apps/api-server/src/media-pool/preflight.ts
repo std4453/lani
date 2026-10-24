@@ -65,11 +65,18 @@ export async function probeMediaDirectories(
   };
   downloads = await expand(downloads);
   libraries = await expand(libraries);
+  const contains = (parent: string, child: string) => {
+    const relative = path.relative(path.resolve(parent), path.resolve(child));
+    return (
+      relative === '' ||
+      (relative !== '..' &&
+        !relative.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relative))
+    );
+  };
   if (
     [...downloads, ...libraries].some(
-      (directory) =>
-        path.resolve(directory) === path.resolve(pool) ||
-        path.resolve(directory).startsWith(path.resolve(pool) + path.sep),
+      (directory) => contains(pool, directory) || contains(directory, pool),
     )
   )
     throw new Error(

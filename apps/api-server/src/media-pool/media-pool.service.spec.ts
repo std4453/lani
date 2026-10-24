@@ -518,6 +518,37 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       await db.mediaAsset.findUnique({ where: { id: video!.assetId } }),
     ).toEqual(video!.asset);
   });
+  it('目录移动前失败撤销意图，后续发布不被失败改名阻塞', async () => {
+    const a = await pool.register(await input('rename-denied'));
+    await pool.publish(a, context());
+    const oldPath = path.join(root, 'library');
+    const originalRename = fs.rename.bind(fs);
+    const rename = jest.spyOn(fs, 'rename').mockImplementation((from, to) => {
+      if (from === oldPath)
+        return Promise.reject(
+          Object.assign(new Error('denied'), { code: 'EACCES' }),
+        );
+      return originalRename(from, to);
+    });
+    await expect(
+      pool.renameSeason(
+        seasonId,
+        oldPath,
+        path.join(root, 'renamed'),
+        'renamed',
+      ),
+    ).rejects.toThrow('denied');
+    rename.mockRestore();
+    expect(
+      await fs.readdir(path.join(root, 'pool', 'directory-moves')),
+    ).toEqual([]);
+    const b = await pool.register(await input('after-denied', 'mp4', false));
+    await pool.publish(b, context());
+    expect(await current()).toBe(b);
+    expect(await fs.readFile(path.join(oldPath, 'Episode.mp4'), 'utf8')).toBe(
+      'content-after-denied',
+    );
+  });
   it('改名中断后重试，历史布局不变且可重新采用旧版本、替换及删除', async () => {
     const a = await pool.register(await input('rename-a'));
     await pool.publish(a, context());

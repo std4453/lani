@@ -48,7 +48,22 @@ export async function moveSeasonDirectory(
   await fs.mkdir(folder, { recursive: true });
   const filename = path.join(folder, `${move.seasonId}.json`);
   await writeRecord(filename, { ...move, dev: stat.dev, ino: stat.ino });
-  await finishMove(db, filename);
+  try {
+    await finishMove(db, filename);
+  } catch (error) {
+    // 尚未移动时撤销本次意图，避免恢复器阻塞其他季度的媒体操作。
+    const old = await exists(move.oldPath);
+    if (
+      old?.isDirectory() &&
+      old.dev === stat.dev &&
+      old.ino === stat.ino &&
+      !(await exists(move.newPath))
+    ) {
+      await fs.unlink(filename);
+      await durable(folder);
+    }
+    throw error;
+  }
 }
 async function finishMove(db: PrismaClient, filename: string) {
   const move: Move = JSON.parse(await fs.readFile(filename, 'utf8'));

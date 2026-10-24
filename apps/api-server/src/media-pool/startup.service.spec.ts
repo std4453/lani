@@ -20,6 +20,7 @@ function request(server: any, method = 'GET') {
 import axios from 'axios';
 import { MediaStartupService } from './startup.service';
 import { MediaWriteState } from './write-state';
+import { LaniError } from '@/utils/error';
 import { TaskService } from '@/task/index.service';
 import { MediaPool } from './media-pool.service';
 
@@ -89,6 +90,7 @@ it('HTTP 在回填未完成时响应查询，所有媒体写入共享 initializi
     const work = service.start();
     const read = await request(app.getHttpServer());
     expect(read.body.state).toBe('initializing');
+    expect(() => state.assertReady()).toThrow(LaniError);
     expect((await request(app.getHttpServer(), 'POST')).status).toBe(500);
     const guarded = new MediaPool({} as never, {} as never, () =>
       state.assertReady(),
