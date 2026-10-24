@@ -62,12 +62,12 @@ const EpisodesStatusContext = createContext<
   Record<number, EpisodeStatusFields> | undefined
 >(undefined);
 
-function EpisodeStatusTag({
+export function EpisodeStatusTag({
   episode,
-  openTaskDetails,
+  openEpisodeDetails,
 }: {
   episode: Episode;
-  openTaskDetails: ReturnType<typeof useTaskDetailsDialog>[2];
+  openEpisodeDetails: ReturnType<typeof useEpisodeDetailsDialog>[2];
 }) {
   const episodesStatus = useContext(EpisodesStatusContext);
   const mergedEpisode = { ...episode, ...episodesStatus?.[episode.id] };
@@ -79,7 +79,9 @@ function EpisodeStatusTag({
         label={mergedEpisode.taskLabel}
         taskId={mergedEpisode.taskId}
         taskType={mergedEpisode.taskType}
-        openTaskDetails={openTaskDetails}
+        openTaskDetails={({ taskId }) =>
+          openEpisodeDetails({ episodeId: episode.id, taskId })
+        }
       />
     </div>
   );
@@ -149,7 +151,10 @@ function useColumns({
         dataIndex: 'taskStatus',
         width: fixedColumnWidths.status,
         render: (_, r) => (
-          <EpisodeStatusTag episode={r} openTaskDetails={openTaskDetails} />
+          <EpisodeStatusTag
+            episode={r}
+            openEpisodeDetails={openEpisodeDetails}
+          />
         ),
       },
       {

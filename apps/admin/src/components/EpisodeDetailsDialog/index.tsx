@@ -7,43 +7,136 @@ import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
 import styles from './index.module.less';
 import { useTaskStates } from '@/utils/useTaskStates';
-import { formatNumbering } from '@/utils/episode';
-import { GetEpisodeByIdDocument, GetTaskByIdDocument } from '@/generated/types';
+import { compareEpisodes, formatNumbering } from '@/utils/episode';
+import {
+  GetEpisodeByIdDocument,
+  GetEpisodeNavigationDocument,
+  GetTaskByIdDocument,
+} from '@/generated/types';
+import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
-import { useQuery } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Alert, Skeleton, Tabs, Typography } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 
 export default function EpisodeDetailsDialog({
   reject,
   visible,
   input,
 }: DialogProps<{ episodeId?: number; taskId?: number }>) {
+  const [selection, setSelection] = useState<{
+    input: typeof input;
+    episodeId: number;
+  }>();
+  const episodeId =
+    selection?.input === input ? selection?.episodeId : input?.episodeId;
+  useEffect(() => {
+    if (!visible) setSelection(undefined);
+  }, [visible]);
   const episodeQuery = useQuery(GetEpisodeByIdDocument, {
-    skip: !input?.episodeId || !visible,
-    variables: { episodeByIdId: input?.episodeId ?? 0 },
+    skip: !episodeId || !visible,
+    variables: { episodeByIdId: episodeId ?? 0 },
   });
   const taskQuery = useQuery(GetTaskByIdDocument, {
-    skip: !!input?.episodeId || !input?.taskId || !visible,
+    skip: !!episodeId || !input?.taskId || !visible,
     variables: { id: input?.taskId ?? 0 },
   });
-  const query = input?.episodeId ? episodeQuery : taskQuery;
+  const query = episodeId ? episodeQuery : taskQuery;
   useApolloPoll({
     refetch: query.refetch,
     pollInterval: 30000,
-    enabled: visible && !!(input?.episodeId || input?.taskId),
+    enabled: visible && !!(episodeId || input?.taskId),
   });
   const task =
-    taskQuery.data?.taskById?.id === input?.taskId
+    !episodeId && taskQuery.data?.taskById?.id === input?.taskId
       ? taskQuery.data?.taskById
       : undefined;
-  const episode = input?.episodeId
-    ? episodeQuery.data?.episodeById?.id === input.episodeId
+  const episode = episodeId
+    ? episodeQuery.data?.episodeById?.id === episodeId
       ? episodeQuery.data.episodeById
       : undefined
     : task?.episodeByEpisodeId;
+  const navigationQuery = useQuery(GetEpisodeNavigationDocument, {
+    skip: !input?.episodeId || !visible,
+    variables: { episodeId: input?.episodeId ?? 0 },
+    fetchPolicy: 'cache-first',
+    onError: (error) => handleError(error, '剧集列表获取失败'),
+  });
+  const episodes =
+    navigationQuery.data?.episodeById?.id === input?.episodeId
+      ? (
+          extractNode(
+            navigationQuery.data?.episodeById?.seasonBySeasonId
+              ?.episodesBySeasonId,
+          ) ?? []
+        ).sort(compareEpisodes)
+      : [];
+  const position = episodes.findIndex((item) => item.id === episodeId);
+  const previous = position > 0 ? episodes[position - 1] : undefined;
+  const next = position >= 0 ? episodes[position + 1] : undefined;
+  const client = useApolloClient();
+  const previousId = previous?.id;
+  const nextId = next?.id;
+  const previousButton = useRef<HTMLButtonElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  const navigate = (id: number) => {
+    // 边界按钮即将禁用时，把焦点留在弹窗内，继续响应方向键和 Esc。
+    if (
+      (id === episodes[0]?.id &&
+        document.activeElement === previousButton.current) ||
+      (id === episodes[episodes.length - 1]?.id &&
+        document.activeElement === nextButton.current)
+    ) {
+      (document.activeElement as HTMLElement)
+        .closest<HTMLElement>('.ant-modal-wrap')
+        ?.focus();
+    }
+    setSelection({ input, episodeId: id });
+  };
+  useEffect(() => {
+    if (!visible || !input?.episodeId) return;
+    for (const id of [previousId, nextId]) {
+      if (id === undefined) continue;
+      void client
+        .query({
+          query: GetEpisodeByIdDocument,
+          variables: { episodeByIdId: id },
+          fetchPolicy: 'cache-first',
+        })
+        // 预加载失败由切换后的详情查询重试并展示错误。
+        .catch(() => undefined);
+    }
+  }, [client, visible, input?.episodeId, previousId, nextId]);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (
+      !visible ||
+      !input?.episodeId ||
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      !(event.target instanceof HTMLElement) ||
+      event.target.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="tablist"], [role="slider"], [role="combobox"]',
+      ) ||
+      event.target.closest('.ant-modal-wrap') !== event.currentTarget
+    )
+      return;
+    const target =
+      event.key === 'ArrowLeft'
+        ? previous
+        : event.key === 'ArrowRight'
+        ? next
+        : undefined;
+    if (target) {
+      event.preventDefault();
+      navigate(target.id);
+    }
+  };
   const tasks = episode
     ? extractNode(episode.tasksByEpisodeId) ?? []
     : task
@@ -56,14 +149,52 @@ export default function EpisodeDetailsDialog({
   );
   const [activeTask, setActiveTask] = useState<string>();
   useEffect(() => {
-    setActiveTask(input?.taskId ? `${input.taskId}` : undefined);
-  }, [input?.episodeId, input?.taskId]);
+    setActiveTask(
+      episodeId === input?.episodeId && input?.taskId
+        ? `${input.taskId}`
+        : undefined,
+    );
+  }, [episodeId, input?.episodeId, input?.taskId, visible]);
   const selectedTask = activeTask ?? (tasks[0] ? `${tasks[0].id}` : undefined);
 
   return (
     <TaskDialog
       visible={visible}
       onCancel={reject}
+      wrapProps={{ onKeyDownCapture: onKeyDown }}
+      titleActions={
+        input?.episodeId && (
+          <>
+            {[
+              {
+                target: previous,
+                label: '上一集',
+                icon: <LeftOutlined />,
+                ref: previousButton,
+              },
+              {
+                target: next,
+                label: '下一集',
+                icon: <RightOutlined />,
+                ref: nextButton,
+              },
+            ].map(({ target, label, icon, ref }) => (
+              <button
+                key={label}
+                ref={ref}
+                type="button"
+                aria-label={label}
+                disabled={!target}
+                onClick={() => {
+                  if (target) navigate(target.id);
+                }}
+              >
+                {icon}
+              </button>
+            ))}
+          </>
+        )
+      }
       footer={false}
       running={tasks.some((task) =>
         ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
@@ -81,13 +212,10 @@ export default function EpisodeDetailsDialog({
       ) : query.error ? (
         <Alert
           type="error"
-          message={input?.taskId ? '任务加载失败' : '剧集加载失败'}
+          message={episodeId ? '剧集加载失败' : '任务加载失败'}
         />
       ) : !episode && !task ? (
-        <Alert
-          type="info"
-          message={input?.taskId ? '任务不存在' : '剧集不存在'}
-        />
+        <Alert type="info" message={episodeId ? '剧集不存在' : '任务不存在'} />
       ) : (
         <>
           <TaskDialogHeader>

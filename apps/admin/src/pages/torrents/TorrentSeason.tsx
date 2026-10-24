@@ -66,7 +66,7 @@ export default function TorrentSeason({
   if (!season) return <div className={styles.seasonCell}>{children}</div>;
 
   return (
-    <span className={styles.seasonCell}>
+    <span className={`${styles.seasonCell} ${styles.matchedSeason}`}>
       <Link to={`/season/${season.id}`}>{season.title}</Link>
       <Tooltip title="取消关联">
         <Button

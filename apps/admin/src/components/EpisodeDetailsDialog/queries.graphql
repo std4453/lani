@@ -4,6 +4,23 @@ query GetEpisodeById($episodeByIdId: Int!) {
   }
 }
 
+query GetEpisodeNavigation($episodeId: Int!) {
+  episodeById(id: $episodeId) {
+    id
+    seasonBySeasonId {
+      id
+      episodesBySeasonId(orderBy: INDEX_ASC) {
+        edges {
+          node {
+            id
+            numbering
+          }
+        }
+      }
+    }
+  }
+}
+
 fragment episodeDetailsFields on Episode {
   rawAirTime
   airTime

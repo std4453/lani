@@ -3,10 +3,14 @@ jest.mock('@/constants/icon-path', () => ({ IconPath: {} }));
 jest.mock('@/utils/error', () => ({ handleError: jest.fn() }));
 jest.mock('@/components/MainTable/index.module.less', () => ({}));
 let mockTable: ProTableProps<any, any>;
+let mockMobile = false;
+const mockCardRefresh = jest.fn();
 let mockCardQuery = {
   loading: false,
   error: undefined as Error | undefined,
-  data: { allSeasons: { edges: [], totalCount: 180 } },
+  data: { allSeasons: { edges: [], totalCount: 180 } } as
+    | { allSeasons: { edges: []; totalCount: number } }
+    | undefined,
 };
 const mockQuery = jest.fn();
 const mockHistory = {
@@ -17,6 +21,11 @@ const mockHistory = {
 jest.mock('umi', () => ({ useHistory: () => mockHistory, Link: 'a' }));
 jest.mock('store2', () => ({ get: () => 'list', set: jest.fn() }));
 jest.mock('@/store/hooks', () => ({ useAppSelector: () => false }));
+jest.mock('@/utils/useMobile', () => ({
+  __esModule: true,
+  ...jest.requireActual('@/utils/useMobile'),
+  default: () => mockMobile,
+}));
 jest.mock('@/components/PageTitle', () => () => null);
 jest.mock('@/components/Layout', () => ({ TableTitle: 'span' }));
 jest.mock('@/components/TaskDetailsDialog', () => ({
@@ -33,7 +42,7 @@ jest.mock('./AddFromBangumiDialog', () => ({
 }));
 jest.mock('./TestRoutingTitle', () => () => null);
 jest.mock('@/utils/useEpisodeStatusPolling', () => ({
-  useEpisodeStatusPolling: () => ({ refetch: jest.fn() }),
+  useEpisodeStatusPolling: () => ({ refetch: mockCardRefresh }),
 }));
 jest.mock('@apollo/client', () => ({
   ...jest.requireActual('@apollo/client'),
@@ -53,12 +62,15 @@ import qs from 'qs';
 import { act, Simulate } from 'react-dom/test-utils';
 import { ProTableProps } from '@ant-design/pro-table';
 import MetadataPage from './index';
+import { handleError } from '@/utils/error';
 
 let container: HTMLDivElement;
 beforeAll(() => {
   HTMLElement.prototype.scrollTo = jest.fn();
 });
 beforeEach(() => {
+  mockMobile = false;
+  mockCardRefresh.mockReset().mockResolvedValue(undefined);
   mockHistory.location.search =
     '?p=2&s=30&q=测试&f_isMonitoring=true&c_folder=9';
   mockHistory.replace.mockClear();
@@ -249,3 +261,35 @@ test('keeps the page when only the surrounding search whitespace changes', () =>
   expect(pagination().current).toBe(2);
   expect(tableSearch().value).toBe('  测试  ');
 });
+
+test('reports card loading failures with a toast instead of a persistent alert', () => {
+  const error = new Error('offline');
+  jest.mocked(handleError).mockClear();
+  mockCardQuery.error = error;
+  toggle();
+  expect(handleError).toHaveBeenCalledWith(error, '季度列表获取失败');
+  expect(container.querySelector('.ant-alert')).toBeNull();
+  expect(container.textContent).not.toContain('暂无季度');
+});
+
+test.each([false, true])(
+  'only desktop cards show the refresh button (mobile=%s)',
+  async (mobile) => {
+    mockMobile = mobile;
+    mockCardQuery.data = undefined;
+    mockCardQuery.error = new Error('offline');
+    toggle();
+    expect(container.querySelector('.ant-alert')).toBeNull();
+    const refresh = container.querySelector('button[aria-label="刷新"]');
+    if (mobile) {
+      expect(refresh).toBeNull();
+      expect(mockCardRefresh).not.toHaveBeenCalled();
+    } else {
+      expect(refresh).not.toBeNull();
+      await act(async () => {
+        Simulate.click(refresh!);
+      });
+      expect(mockCardRefresh).toHaveBeenCalledTimes(1);
+    }
+  },
+);

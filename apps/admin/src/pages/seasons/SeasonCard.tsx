@@ -79,7 +79,11 @@ export default function SeasonCard({
                       data-fractional={number.includes('.')}
                       data-wide={number.replace('.', '').length > 2}
                       aria-label={label}
-                      onClick={() => openEpisode(episode.id)}
+                      onClick={(event) => {
+                        // 鼠标打开时释放入口焦点，键盘打开时保留关闭后的焦点恢复。
+                        if (event.detail > 0) event.currentTarget.blur();
+                        openEpisode(episode.id);
+                      }}
                     >
                       {number}
                     </button>
