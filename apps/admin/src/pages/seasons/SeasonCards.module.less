@@ -45,18 +45,26 @@
   justify-self: center;
   border-radius: var(--lani-radius);
   transition: box-shadow 300ms, border-color 120ms;
+  .highlight() {
+    border-color: var(--lani-primary);
+    box-shadow: var(--lani-card-shadow);
+    .poster img {
+      transform: scale(1.05);
+    }
+  }
+  &:focus-within {
+    .highlight();
+  }
   @media (hover: hover) and (pointer: fine) {
     &:hover {
-      border-color: var(--lani-primary);
-      .poster img {
-        transform: scale(1.05);
-      }
+      .highlight();
     }
   }
 }
 .seasonLink {
   color: var(--lani-text);
-  &:hover {
+  &:hover,
+  &:focus {
     color: var(--lani-text);
   }
   &::after {
