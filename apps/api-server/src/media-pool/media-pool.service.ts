@@ -2,13 +2,11 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@lani/db';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { AtomContext } from '@/task/atom';
-import { lockEpisode } from '@/task/atoms/publication';
+import { lockEpisode } from '@/common/episode-lock';
 import { FileIdentity } from '@lani/workflow';
 import path from 'path';
 import fs from 'fs/promises';
 import {
-  companions,
   identity,
   importToPool,
   sameFile,
@@ -17,21 +15,30 @@ import {
 } from './files';
 import { createHash, randomUUID } from 'crypto';
 import { mediaTarget, relativeMediaPath, seasonMediaRoot } from './paths';
-import { moveSeasonDirectory, recoverDirectoryMoves } from './directory-move';
-import { MediaWriteState } from './write-state';
-import { activeTaskWhere } from '@/task/atoms/publication';
-import {
-  applyPublication,
-  cleanupPublication,
-  preparePublication,
-  PublicationJournal,
-  rollbackPublication,
-} from './publication-files';
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { executePublication, finishPublication } from './publication-files';
+import { LinkMode } from './files';
 
+export interface RegistrationContext {
+  assertActive(): Promise<void>;
+  transaction<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T>;
+}
+export interface PublicationContext {
+  assertActive(): Promise<void>;
+  beforeFiles(
+    files: Array<{ targetPath: string; role: string }>,
+  ): Promise<void>;
+  commit(
+    write: (tx: Prisma.TransactionClient) => Promise<void>,
+    video: string,
+  ): Promise<void>;
+}
 export interface VersionInput {
   episodeId: number;
-  operationKey: string;
-  source: 'download' | 'import' | 'unknown';
+  registrationKey: string;
+  mode: 'import' | 'backfill';
   files: Array<{
     source?: string;
     assetId?: string;
@@ -44,21 +51,15 @@ const json = (value: unknown): Prisma.InputJsonValue =>
 
 /** 当前只支持单 API 实例；串行保护固定外部位置，同时把可恢复状态持久化。 */
 export class MediaPool {
-  private pending: Promise<unknown> = Promise.resolve();
   constructor(
     private db: PrismaClient,
     private settings: { root: string; painfullyAcceptCrossDeviceCopy: boolean },
-    private guard: () => void = () => undefined,
+    private guard: () => void,
+    private operations: MediaOperations,
   ) {}
 
   private exclusive<T>(run: () => Promise<T>): Promise<T> {
-    const resume = async () => {
-      await recoverDirectoryMoves(this.db, this.settings.root);
-      return run();
-    };
-    const next = this.pending.then(resume, resume);
-    this.pending = next.catch(() => undefined);
-    return next;
+    return this.operations.run(run);
   }
 
   async initialize() {
@@ -71,35 +72,19 @@ export class MediaPool {
     await fs.mkdir(this.settings.root, { recursive: true });
     if ((await fs.realpath(this.settings.root)) !== this.settings.root)
       throw new Error('媒体池根目录不能经过符号链接');
-    await recoverDirectoryMoves(this.db, this.settings.root);
-    for (const row of await this.db.mediaPublication.findMany())
-      await this.recover(row.episodeId);
-  }
-
-  private async recover(episodeId: number) {
-    const operation = await this.db.mediaPublication.findUnique({
-      rejectOnNotFound: false,
-      where: { episodeId },
-    });
-    if (!operation) return;
-    const journal = operation.journal as unknown as PublicationJournal;
-    if (journal.version !== 1) throw new Error('不支持的媒体恢复记录');
-    if (!operation.committed) await rollbackPublication(journal);
-    await cleanupPublication(journal);
-    await this.db.mediaPublication.delete({ where: { episodeId } });
-  }
-
-  recoverEpisode(episodeId: number) {
-    return this.exclusive(() => this.recover(episodeId));
   }
 
   /** 创建即完整且不可变；准备不取得发布权，也不恢复其他任务的发布现场。 */
-  register(input: VersionInput, context?: AtomContext, backfill = false) {
+  register(
+    input: VersionInput,
+    context?: RegistrationContext,
+    backfill = false,
+  ) {
     if (!backfill) this.guard();
     return this.exclusive(async () => {
       const existing = await this.db.episodeVersion.findUnique({
         rejectOnNotFound: false,
-        where: { operationKey: input.operationKey },
+        where: { registrationKey: input.registrationKey },
       });
       if (existing) {
         if (existing.episodeId !== input.episodeId)
@@ -123,7 +108,8 @@ export class MediaPool {
       await fs.mkdir(directory, { recursive: true });
       const filename = path.join(
         directory,
-        createHash('sha256').update(input.operationKey).digest('hex') + '.json',
+        createHash('sha256').update(input.registrationKey).digest('hex') +
+          '.json',
       );
       type Preparation = {
         input: VersionInput;
@@ -193,7 +179,7 @@ export class MediaPool {
               size: asset.size,
               poolPath: asset.poolPath,
               poolIdentity: json(asset.poolIdentity),
-              ...(input.source === 'unknown'
+              ...(input.mode === 'backfill'
                 ? {}
                 : {
                     downloadPath: asset.source,
@@ -203,16 +189,10 @@ export class MediaPool {
             },
           });
         }
-        const last = await tx.episodeVersion.findFirst({
-          where: { episodeId: input.episodeId },
-          orderBy: { number: 'desc' },
-        });
         const version = await tx.episodeVersion.create({
           data: {
             episodeId: input.episodeId,
-            number: (last?.number ?? 0) + 1,
-            operationKey: input.operationKey,
-            source: input.source,
+            registrationKey: input.registrationKey,
             files: {
               create: input.files.map((file, index) => ({
                 assetId: imported[index].id,
@@ -225,17 +205,16 @@ export class MediaPool {
         return version.id;
       };
       return context
-        ? context.transaction(({ tx }) => commit(tx))
+        ? context.transaction(commit)
         : this.db.$transaction(commit);
     });
   }
 
   /** 历史回填只登记已存在的目标，不改名、不删除、也不猜测下载来源。 */
   adopt(input: VersionInput) {
-    return this.register({ ...input, source: 'unknown' }, undefined, true).then(
+    return this.register({ ...input, mode: 'backfill' }, undefined, true).then(
       (versionId) =>
         this.exclusive(async () => {
-          await this.recover(input.episodeId);
           const version = await this.version(versionId);
           const episode = await this.db.episode.findUnique({
             rejectOnNotFound: false,
@@ -318,277 +297,157 @@ export class MediaPool {
     };
   }
 
-  publish(versionId: number, context: AtomContext) {
+  /** 文件操作完成后，由调用方在同一短事务提交版本与业务检查点。 */
+  publish(versionId: number, context: PublicationContext) {
     this.guard();
     return this.exclusive(async () => {
-      const version = await this.version(versionId);
-      await this.switchVersion(version.episodeId, versionId, context);
-      return version.files.find((file) => file.role === 'video')!.targetPath;
-    });
-  }
-
-  unpublish(episodeId: number, context?: AtomContext) {
-    this.guard();
-    return this.exclusive(() => this.switchVersion(episodeId, null, context));
-  }
-
-  /** 删除季度沿用可恢复的撤下流程，原件与下载源仍保留。 */
-  deleteSeason(seasonId: number, deleteFiles: () => Promise<void>) {
-    this.guard();
-    return this.exclusive(async () => {
-      const busy = await this.db.task.findFirst({
-        where: {
-          AND: [
-            activeTaskWhere,
-            {
-              OR: [
-                { episode: { seasonId } },
-                { episodes: { some: { episode: { seasonId } } } },
-              ],
-            },
-          ],
-        },
-        select: { id: true },
-      });
-      if (busy)
-        throw new Error('季度仍有进行中或失败的任务，请先取消任务再删除');
-      const episodes = await this.db.episode.findMany({ where: { seasonId } });
-      for (const episode of episodes) {
-        await this.recover(episode.id);
-        if (episode.currentVersionId)
-          await this.switchVersion(episode.id, null);
-      }
-      // 文件或刷新失败时保留版本记录，重新删除可继续完成。
-      await deleteFiles();
-      await this.db.$transaction(async (tx) => {
-        for (const episode of episodes) await lockEpisode(tx, episode.id);
-        await tx.episodeVersion.deleteMany({
-          where: { episode: { seasonId } },
-        });
-        await tx.season.delete({ where: { id: seasonId } });
-      });
-    });
-  }
-
-  assertWritable() {
-    this.guard();
-  }
-
-  renameSeason(
-    seasonId: number,
-    oldPath: string,
-    newPath: string,
-    directory: string,
-  ) {
-    this.guard();
-    return this.exclusive(async () => {
-      const busy = await this.db.task.findFirst({
-        where: {
-          AND: [
-            activeTaskWhere,
-            {
-              OR: [
-                { episode: { seasonId } },
-                { episodes: { some: { episode: { seasonId } } } },
-              ],
-            },
-          ],
-        },
-        select: { id: true },
-      });
-      if (busy)
-        throw new Error('季度仍有进行中或失败的任务，请先处理任务再改名');
-      for (const episode of await this.db.episode.findMany({
-        where: { seasonId },
-      }))
-        await this.recover(episode.id);
-      // exclusive 开始时可能刚恢复上次同一移动；无需再次移动。
-      const season = await this.db.season.findUnique({
-        where: { id: seasonId },
-      });
-      if (season?.lastWriteDirectory === directory) return;
-      await moveSeasonDirectory(this.db, this.settings.root, {
-        seasonId,
-        oldPath,
-        newPath,
-        directory,
-      });
-    });
-  }
-
-  private async switchVersion(
-    episodeId: number,
-    versionId: number | null,
-    context?: AtomContext,
-  ) {
-    await this.recover(episodeId);
-    await context?.assertActive();
-    const episode = await this.db.episode.findUnique({
-      rejectOnNotFound: false,
-      where: { id: episodeId },
-    });
-    if (!episode) throw new Error('剧集不存在');
-    const old = episode.currentVersionId
-      ? await this.version(episode.currentVersionId)
-      : null;
-    const next = versionId ? await this.version(versionId) : null;
-    if (next && next.episodeId !== episodeId)
-      throw new Error('媒体版本不属于此剧集');
-    if (versionId === episode.currentVersionId) {
-      for (const file of old?.files ?? []) {
+      await context.assertActive();
+      const next = await this.version(versionId);
+      const episode = next.episode;
+      const old =
+        episode.currentVersionId === versionId
+          ? next
+          : episode.currentVersionId
+          ? await this.version(episode.currentVersionId)
+          : null;
+      if (!old && episode.jellyfinEpisodeId)
+        throw new Error('已有媒体尚未登记，请先完成历史媒体回填');
+      const oldFiles = old?.files ?? [];
+      for (const file of oldFiles) {
         if (
-          !sameFile(
-            await identity(file.targetPath),
-            file.asset.jellyfinIdentity as unknown as FileIdentity,
+          file.asset.jellyfinPath !== file.targetPath ||
+          !file.asset.jellyfinIdentity
+        )
+          throw new Error('当前版本媒体关联不完整');
+      }
+      for (const file of next.files) {
+        if (
+          file.asset.jellyfinPath &&
+          !oldFiles.some(
+            (old) =>
+              old.assetId === file.assetId &&
+              old.targetPath === file.asset.jellyfinPath,
           )
         )
-          throw new Error('已发布媒体已变化或丢失');
+          throw new Error('同一媒体文件已有其他播放器目标');
       }
-      return;
-    }
-    if (!old && episode.jellyfinEpisodeId)
-      throw new Error('已有媒体尚未登记，请先完成历史媒体回填');
-    const oldFiles = old?.files ?? [];
-    for (const file of oldFiles) {
-      if (
-        file.asset.jellyfinPath !== file.targetPath ||
-        !file.asset.jellyfinIdentity
-      )
-        throw new Error('当前版本媒体关联不完整');
-    }
-    // 未登记的字幕不能因视频同名而无提示混用，也不能自动删除。
-    for (const video of [...oldFiles, ...(next?.files ?? [])].filter(
-      (file) => file.role === 'video',
-    )) {
-      const subtitles = await companions(video.targetPath).catch((error) => {
-        if (error.code === 'ENOENT') return [];
-        throw error;
-      });
-      if (
-        subtitles.some(
-          (name) => !oldFiles.some((file) => file.targetPath === name),
-        )
-      )
-        throw new Error('媒体目录存在未登记字幕，请确认归属后再替换');
-    }
-    for (const file of next?.files ?? []) {
-      if (
-        file.asset.jellyfinPath &&
-        !oldFiles.some(
-          (previous) =>
-            previous.assetId === file.assetId &&
-            previous.targetPath === file.asset.jellyfinPath,
-        )
-      )
-        throw new Error('同一媒体文件已有其他播放器目标，不支持一集多写');
-      if (
-        !sameFile(
-          await identity(file.asset.poolPath),
-          file.asset.poolIdentity as unknown as FileIdentity,
-        )
-      )
-        throw new Error('媒体池文件身份已变化');
-    }
-    const journal = await preparePublication(
-      oldFiles.map((file) => ({
-        target: file.targetPath,
-        assetId: file.assetId,
-        identity: file.asset.jellyfinIdentity as unknown as FileIdentity,
-      })),
-      (next?.files ?? []).map((file) => ({
+      await context.beforeFiles([...oldFiles, ...next.files]);
+      const sources = next.files.map((file) => ({
         target: file.targetPath,
         source: file.asset.poolPath,
         assetId: file.assetId,
         identity: file.asset.poolIdentity as unknown as FileIdentity,
-      })),
-      this.settings.painfullyAcceptCrossDeviceCopy,
-    );
-    try {
-      await this.db.mediaPublication.create({
-        data: { episodeId, journal: json(journal) },
-      });
-    } catch (error) {
-      // 创建结果未知时保留文件；恢复器按数据库记录决定后续行为。
-      if (
-        !(await this.db.mediaPublication.findUnique({
-          rejectOnNotFound: false,
-          where: { episodeId },
-        }))
-      )
-        await cleanupPublication(journal);
-      throw error;
-    }
-    try {
-      await context?.assertActive();
-      await applyPublication(journal);
-      const commit = async (tx: Prisma.TransactionClient) => {
-        await lockEpisode(tx, episodeId);
+      }));
+      const published = await executePublication(
+        oldFiles.map((file) => ({
+          target: file.targetPath,
+          assetId: file.assetId,
+          identity: file.asset.jellyfinIdentity as unknown as FileIdentity,
+          mode: file.asset.jellyfinMode as LinkMode,
+        })),
+        sources,
+        next.registrationKey,
+        this.settings.painfullyAcceptCrossDeviceCopy,
+      );
+      const video = next.files.find(
+        (file) => file.role === 'video',
+      )!.targetPath;
+      await context.commit(async (tx) => {
+        await lockEpisode(tx, next.episodeId);
         const current = await tx.episode.findUnique({
-          rejectOnNotFound: false,
-          where: { id: episodeId },
+          where: { id: next.episodeId },
         });
         if (current?.currentVersionId !== episode.currentVersionId)
           throw new Error('剧集当前版本已变化');
-        const retained = new Set(
-          (next?.files ?? [])
-            .filter((file) =>
-              oldFiles.some(
-                (old) =>
-                  old.assetId === file.assetId &&
-                  old.targetPath === file.targetPath,
-              ),
-            )
-            .map((file) => file.assetId),
-        );
-        for (const file of oldFiles.filter(
-          (file) => !retained.has(file.assetId),
-        ))
-          await tx.mediaAsset.update({
-            where: { id: file.assetId },
+        // 提交前重新确认文件身份，事务只包含短查询与 stat。
+        for (const file of published)
+          if (!sameFile(file.identity, await identity(file.target)))
+            throw new Error('提交前媒体目标发生变化');
+        if (episode.currentVersionId !== versionId) {
+          const retained = new Set(
+            oldFiles
+              .filter((file) =>
+                next.files.some(
+                  (item) =>
+                    item.assetId === file.assetId &&
+                    item.targetPath === file.targetPath,
+                ),
+              )
+              .map((file) => file.assetId),
+          );
+          for (const file of oldFiles.filter(
+            (file) => !retained.has(file.assetId),
+          ))
+            await tx.mediaAsset.update({
+              where: { id: file.assetId },
+              data: {
+                jellyfinPath: null,
+                jellyfinMode: null,
+                jellyfinIdentity: Prisma.DbNull,
+              },
+            });
+          for (const file of published.filter(
+            (file) => !retained.has(file.assetId),
+          ))
+            await tx.mediaAsset.update({
+              where: { id: file.assetId },
+              data: {
+                jellyfinPath: file.target,
+                jellyfinMode: file.mode,
+                jellyfinIdentity: json(file.identity),
+              },
+            });
+          await tx.episode.update({
+            where: { id: next.episodeId },
             data: {
-              jellyfinPath: null,
-              jellyfinMode: null,
-              jellyfinIdentity: Prisma.DbNull,
-            },
-          });
-        for (const file of next?.files ?? []) {
-          if (retained.has(file.assetId)) continue;
-          const prepared = journal.files.find(
-            (item) => item.target === file.targetPath,
-          )!;
-          await tx.mediaAsset.update({
-            where: { id: file.assetId },
-            data: {
-              jellyfinPath: file.targetPath,
-              jellyfinMode: prepared.mode,
-              jellyfinIdentity: json(prepared.next),
+              currentVersionId: versionId,
+              jellyfinEpisodeId: null,
             },
           });
         }
-        await tx.episode.update({
-          where: { id: episodeId },
-          data: { currentVersionId: versionId, jellyfinEpisodeId: null },
-        });
-        await tx.mediaPublication.update({
-          where: { episodeId },
-          data: { committed: true },
-        });
-      };
-      if (context) await context.transaction(({ tx }) => commit(tx));
-      else await this.db.$transaction(commit);
-    } catch (error) {
-      // 必须回读提交结果；数据库不可用时保留日志，避免把已提交版本误回滚。
-      await this.recover(episodeId);
-      throw error;
+      }, video);
+      await finishPublication(sources, next.registrationKey);
+      return video;
+    });
+  }
+
+  /** 只迁移实际位置；版本的文件集合与相对布局保持不变。 */
+  async relocatePublished(
+    tx: Prisma.TransactionClient,
+    oldPath: string,
+    newPath: string,
+  ) {
+    const assets = await tx.mediaAsset.findMany({
+      where: { jellyfinPath: { startsWith: oldPath + path.sep } },
+    });
+    for (const asset of assets) {
+      const target = path.join(
+        newPath,
+        path.relative(oldPath, asset.jellyfinPath!),
+      );
+      if (
+        !sameFile(
+          await identity(target),
+          asset.jellyfinIdentity as unknown as FileIdentity,
+        )
+      )
+        throw new Error('季度改名后的媒体身份不一致');
+      await tx.mediaAsset.update({
+        where: { id: asset.id },
+        data: { jellyfinPath: target },
+      });
     }
-    await this.recover(episodeId);
   }
 }
 
 @Injectable()
 export class MediaPoolService extends MediaPool implements OnModuleInit {
-  constructor(prisma: PrismaService, state: MediaWriteState) {
-    super(prisma, config.mediaPool, () => state.assertReady());
+  constructor(
+    prisma: PrismaService,
+    state: WriteGate,
+    operations: MediaOperations,
+  ) {
+    super(prisma, config.mediaPool, () => state.assertReady(), operations);
   }
   async onModuleInit() {
     if (config.mediaPool.painfullyAcceptCrossDeviceCopy)

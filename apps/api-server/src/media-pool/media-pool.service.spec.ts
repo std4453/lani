@@ -1,20 +1,27 @@
+import { TaskService } from '@/task/index.service';
+import { ImportService } from '@/import/index.service';
 import { ImportFileAtom } from '@/task/atoms/import-file.atom';
-import { removeDirectoryIdempotent } from '@/utils/idempotency';
 import { TaskStore } from '@/task/task-store';
 import { WorkflowRunner } from '@/task/workflow-runner';
 import { requestCancellation, buildWorkflowSnapshot } from '@lani/workflow';
 import { PrismaClient, Prisma } from '@lani/db';
 import { MediaPool, VersionInput } from './media-pool.service';
-import { AtomContext, ExecutionStopped } from '@/task/atom';
+import { ExecutionStopped } from '@/task/atom';
 import { identity } from './files';
-import { applyPublication, preparePublication } from './publication-files';
-import { applyBackfill, inspectBackfillFile } from './backfill';
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { SeasonMediaService } from '@/season-emit/media.service';
+import config from '@/config';
+import {
+  applyBackfill,
+  inspectBackfillFile,
+} from '@/media-initialization/backfill';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
+    mediaPool: {},
     jellyfin: { pathMapping: [] },
     downloadClient: { kind: 'test', test: { pathMapping: [] } },
   },
@@ -27,23 +34,30 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
   let episodeId: number;
   let folderId: number;
   let seasonId: number;
+  const renameSeason = (
+    id: number,
+    oldPath: string,
+    newPath: string,
+    directory: string,
+  ) =>
+    operations.run(() =>
+      seasons.renameWithinOperation(id, oldPath, newPath, directory),
+    );
   let active = true;
-  const context = (): AtomContext => ({
-    checkpoint: {},
-    stepId: 'import',
-    attempt: 1,
+  let seasons: SeasonMediaService;
+  let operations: MediaOperations;
+  const context = () => ({
     assertActive: async () => {
       if (!active) throw new ExecutionStopped();
     },
-    transaction: (run) =>
+    beforeFiles: async () => undefined,
+    transaction: <T>(write: (tx: Prisma.TransactionClient) => Promise<T>) =>
+      db.$transaction(write),
+    commit: (write: (tx: Prisma.TransactionClient) => Promise<void>) =>
       db.$transaction(async (tx) => {
         if (!active) throw new ExecutionStopped();
-        return run({ tx } as never);
+        await write(tx);
       }),
-    saveCheckpoint: jest.fn(),
-    updateCheckpoint: jest.fn(),
-    wait: jest.fn(),
-    waitFor: (value) => value,
   });
   const input = async (
     key: string,
@@ -63,7 +77,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
         role: 'subtitle',
       });
     }
-    return { episodeId, operationKey: key, source: 'download', files };
+    return { episodeId, registrationKey: key, mode: 'import', files };
   };
   const legacyEntry = async (legacy: VersionInput) => {
     await fs.mkdir(path.join(root, 'library'), { recursive: true });
@@ -114,16 +128,30 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       })
     ).id;
     episodeId = (await db.episode.create({ data: { seasonId, index: 1 } })).id;
-    pool = new MediaPool(db, {
-      root: path.join(root, 'pool'),
-      painfullyAcceptCrossDeviceCopy: false,
-    });
+    operations = new MediaOperations();
+    const gate = new WriteGate();
+    gate.open();
+    pool = new MediaPool(
+      db,
+      {
+        root: path.join(root, 'pool'),
+        painfullyAcceptCrossDeviceCopy: false,
+      },
+      () => gate.assertReady(),
+      operations,
+    );
+    config.mediaPool.root = path.join(root, 'pool');
+    seasons = new SeasonMediaService(
+      db as never,
+      pool as never,
+      gate,
+      operations,
+    );
     await pool.initialize();
   });
   afterEach(async () => {
     jest.restoreAllMocks();
     await db.task.deleteMany({ where: { episodeId } });
-    await db.mediaPublication.deleteMany({ where: { episodeId } });
     await db.episode.updateMany({
       where: { id: episodeId },
       data: { currentVersionId: null },
@@ -168,21 +196,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     ).toBe('content-second');
     for (const asset of old)
       expect(await identity(asset.poolPath)).toBeDefined();
-    await pool.unpublish(episodeId);
-    expect(await current()).toBeNull();
-    expect(
-      await identity(path.join(root, 'library', second.files[0].target)),
-    ).toBeUndefined();
     expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(2);
-    const assets = await db.mediaAsset.findMany({
-      where: { poolPath: { startsWith: root } },
-    });
-    expect(
-      assets.every(
-        (asset) =>
-          asset.jellyfinMode === null && asset.downloadMode === 'hardlink',
-      ),
-    ).toBe(true);
   });
   it('准备失败及取消不改变当前版本和旧媒体', async () => {
     const first = await input('first');
@@ -209,94 +223,23 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     );
     expect(await current()).toBe(a);
   });
-  it('切换完成、数据库提交失败时恢复旧视频与字幕', async () => {
-    const first = await input('first');
-    const a = await pool.register(first);
+  it('文件完成但提交失败时重试完成目标版本，提交后再试保持文件身份', async () => {
+    const a = await pool.register(await input('first'));
     await pool.publish(a, context());
     const b = await pool.register(await input('second', 'mp4', false));
     const ctx = context();
-    ctx.transaction = async () => {
+    ctx.commit = async () => {
       throw new Error('commit failure');
     };
     await expect(pool.publish(b, ctx)).rejects.toThrow('commit failure');
     expect(await current()).toBe(a);
-    expect(
-      await fs.readFile(
-        path.join(root, 'library', first.files[0].target),
-        'utf8',
-      ),
-    ).toBe('content-first');
-    expect(
-      await fs.readFile(
-        path.join(root, 'library', first.files[1].target),
-        'utf8',
-      ),
-    ).toBe('subtitle-first');
-    expect(await db.mediaPublication.count()).toBe(0);
-  });
-  it.each([false, true])(
-    '重启恢复 durable journal，committed=%s',
-    async (committed) => {
-      const first = await input('first', 'mkv', false);
-      const a = await pool.register(first);
-      await pool.publish(a, context());
-      const journal = await preparePublication(
-        [
-          {
-            target: path.join(root, 'library', first.files[0].target),
-            assetId: 'old',
-            identity: (await identity(
-              path.join(root, 'library', first.files[0].target),
-            ))!,
-          },
-        ],
-        [],
-        false,
-      );
-      await db.mediaPublication.create({
-        data: {
-          episodeId,
-          journal: JSON.parse(JSON.stringify(journal)),
-          committed,
-        },
-      });
-      await applyPublication(journal);
-      if (committed) {
-        await db.episode.update({
-          where: { id: episodeId },
-          data: { currentVersionId: null },
-        });
-        await db.mediaAsset.updateMany({
-          where: {
-            jellyfinPath: path.join(root, 'library', first.files[0].target),
-          },
-          data: {
-            jellyfinPath: null,
-            jellyfinMode: null,
-            jellyfinIdentity: Prisma.DbNull,
-          },
-        });
-      }
-      const restart = new MediaPool(db, {
-        root: path.join(root, 'pool'),
-        painfullyAcceptCrossDeviceCopy: false,
-      });
-      await restart.initialize();
-      await restart.initialize();
-      expect(
-        !!(await identity(path.join(root, 'library', first.files[0].target))),
-      ).toBe(!committed);
-      expect(await db.mediaPublication.count()).toBe(0);
-    },
-  );
-  it('未登记字幕阻止替换，原文件保持不动', async () => {
-    const first = await input('first', 'mkv', false);
-    const a = await pool.register(first);
-    await pool.publish(a, context());
-    await fs.writeFile(path.join(root, 'library', 'Episode.zh.srt'), 'unknown');
-    const b = await pool.register(await input('second', 'mp4', false));
-    await expect(pool.publish(b, context())).rejects.toThrow('未登记字幕');
-    expect(await current()).toBe(a);
+    const target = path.join(root, 'library', 'Episode.mp4');
+    const finished = await identity(target);
+    expect(finished).toBeDefined();
+    await pool.publish(b, context());
+    await pool.publish(b, context());
+    expect(await current()).toBe(b);
+    expect(await identity(target)).toEqual(finished);
   });
   it('历史回填验证文件身份，保留 Jellyfin ID，重复运行不增长版本', async () => {
     const legacy = await input('legacy', 'mkv', false);
@@ -322,7 +265,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       '身份已变化',
     );
   });
-  it('并发登记分配不同版本号；相同内容的独立导入保持不同 UUID', async () => {
+  it('并发登记创建独立版本；相同内容的独立导入保持不同 UUID', async () => {
     const first = await input('first', 'mkv', false);
     const second = await input('second', 'mp4', false);
     const ids = await Promise.all([
@@ -330,16 +273,8 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       pool.register(second),
     ]);
     expect(new Set(ids).size).toBe(2);
-    expect(
-      (
-        await db.episodeVersion.findMany({
-          where: { episodeId },
-          orderBy: { number: 'asc' },
-        })
-      ).map((v) => v.number),
-    ).toEqual([1, 2]);
     await fs.copyFile(first.files[0].source!, second.files[0].source!);
-    await pool.register({ ...second, operationKey: 'third' });
+    await pool.register({ ...second, registrationKey: 'third' });
     const files = await db.episodeVersionFile.findMany({
       where: { version: { episodeId } },
     });
@@ -374,7 +309,6 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       where: { id: (await current())! },
       include: { files: true },
     });
-    expect(adopted!.number).toBe(2);
     expect(adopted!.files.map((file) => file.targetPath)).toEqual([
       path.relative(path.join(root, 'library'), entry.files[0].path),
     ]);
@@ -385,14 +319,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await pool.publish(await pool.register(first), context());
     const second = await input('second', 'mp4', false);
     await pool.publish(await pool.register(second), context());
-    const remove = jest.fn(async () => {
-      expect(await current()).toBeNull();
-      expect(
-        await identity(path.join(root, 'library', second.files[0].target)),
-      ).toBeUndefined();
-    });
-    await pool.deleteSeason(seasonId, remove);
-    expect(remove).toHaveBeenCalledTimes(1);
+    await seasons.delete(seasonId);
     expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
     expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(0);
     const assets = await db.mediaAsset.findMany({
@@ -405,29 +332,72 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       expect(await identity(asset.downloadPath!)).toBeDefined();
     }
   });
-  it('删除季度的文件清理失败保留版本记录，重试可以完成', async () => {
-    const first = await input('first');
-    await pool.publish(await pool.register(first), context());
-    await expect(
-      pool.deleteSeason(seasonId, async () => {
-        const remove = jest
-          .spyOn(fs, 'rm')
-          .mockRejectedValueOnce(
-            Object.assign(new Error('Permission denied'), { code: 'EACCES' }),
-          );
-        try {
-          await removeDirectoryIdempotent(path.join(root, 'library'));
-        } finally {
-          remove.mockRestore();
-        }
-      }),
-    ).rejects.toThrow('Permission denied');
-    expect(await current()).toBeNull();
-    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
-    await pool.deleteSeason(seasonId, async () => {
-      await removeDirectoryIdempotent(path.join(root, 'library'));
+  it.each([false, true])(
+    '删除部分完成或目录已不存在时继续删除，missing=%s',
+    async (missing) => {
+      const version = await pool.register(await input('first'));
+      await pool.publish(version, context());
+      const target = path.join(root, 'library');
+      const original = fs.rm.bind(fs);
+      const remove = jest.spyOn(fs, 'rm').mockImplementationOnce(async () => {
+        if (missing) await original(target, { recursive: true });
+        else await fs.unlink(path.join(target, 'Episode.ass'));
+        throw Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+      });
+      await expect(seasons.delete(seasonId)).rejects.toThrow(
+        'Permission denied',
+      );
+      remove.mockRestore();
+      expect(await current()).toBe(version);
+      expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
+      await seasons.delete(seasonId);
+      await seasons.delete(seasonId);
+      expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
+    },
+  );
+  it('删除目录期间的新导入等待生命周期完成，不能在删除后提交孤立任务', async () => {
+    const version = await pool.register(await input('admission', 'mkv', false));
+    await pool.publish(version, context());
+    const gate = new WriteGate();
+    gate.open();
+    const tasks = new TaskService(
+      db as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      gate,
+      operations,
+    );
+    const imports = new ImportService(tasks);
+    let entered!: () => void, release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
     });
-    expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = fs.rm.bind(fs);
+    jest.spyOn(fs, 'rm').mockImplementationOnce(async (target, options) => {
+      entered();
+      await blocked;
+      return original(target, options);
+    });
+    const deletion = seasons.delete(seasonId);
+    await started;
+    const creation = imports.importSingle(episodeId, '/source/video.mkv');
+    const rejected = expect(creation).rejects.toThrow('部分剧集不存在');
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(await db.task.count({ where: { episodeId } })).toBe(0);
+    release();
+    await deletion;
+    await rejected;
+    expect(await db.task.count({ where: { episodeId } })).toBe(0);
   });
   it('季度有活动任务时删除在文件变动前失败', async () => {
     const first = await input('first', 'mkv', false);
@@ -443,9 +413,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       },
     });
     const remove = jest.fn();
-    await expect(pool.deleteSeason(seasonId, remove)).rejects.toThrow(
-      '先取消任务',
-    );
+    await expect(seasons.delete(seasonId)).rejects.toThrow('先处理任务');
     expect(remove).not.toHaveBeenCalled();
     expect(await current()).toBe(version);
     expect(
@@ -499,8 +467,8 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await fs.writeFile(subtitle, 'subtitle');
     const b = await pool.register({
       episodeId,
-      operationKey: 'added-subtitle',
-      source: 'import',
+      registrationKey: 'added-subtitle',
+      mode: 'import',
       files: [
         { assetId: video!.assetId, target: 'Episode.mkv', role: 'video' },
         { source: subtitle, target: 'Episode.ass', role: 'subtitle' },
@@ -531,12 +499,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       return originalRename(from, to);
     });
     await expect(
-      pool.renameSeason(
-        seasonId,
-        oldPath,
-        path.join(root, 'renamed'),
-        'renamed',
-      ),
+      renameSeason(seasonId, oldPath, path.join(root, 'renamed'), 'renamed'),
     ).rejects.toThrow('denied');
     rename.mockRestore();
     expect(
@@ -564,10 +527,10 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       .spyOn(db, '$transaction')
       .mockRejectedValueOnce(new Error('interrupted rename'));
     await expect(
-      pool.renameSeason(seasonId, oldPath, newPath, 'renamed'),
+      renameSeason(seasonId, oldPath, newPath, 'renamed'),
     ).rejects.toThrow('interrupted rename');
     transaction.mockRestore();
-    await pool.renameSeason(seasonId, oldPath, newPath, 'renamed');
+    await renameSeason(seasonId, oldPath, newPath, 'renamed');
     expect(
       await db.episodeVersionFile.findMany({
         where: { version: { episodeId } },
@@ -579,9 +542,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       'content-rename-a',
     );
     await pool.publish(b, context());
-    await pool.deleteSeason(seasonId, () =>
-      fs.rm(newPath, { recursive: true }),
-    );
+    await seasons.delete(seasonId);
     expect(
       await db.mediaAsset.count({
         where: { poolPath: { startsWith: root }, jellyfinPath: { not: null } },
@@ -655,6 +616,51 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       await db.mediaAsset.count({ where: { poolPath: { startsWith: root } } }),
     ).toBe(2);
   });
+  it('版本事务已提交但任务检查点尚未保存，重试复用版本和文件 UUID', async () => {
+    const selected = await input('lost-checkpoint', 'mkv', false);
+    const workflow = buildWorkflowSnapshot(
+      [{ id: 'import', atom: 'importFile', title: '导入' }],
+      { importFile: { wants: [] } } as never,
+      new Date().toISOString(),
+    );
+    const task = await db.task.create({
+      data: {
+        type: 'IMPORT',
+        legacyStage: 'IMPORTING',
+        episodeId,
+        sourcePath: selected.files[0].source,
+        importPath: selected.files[0].source,
+        workflow: JSON.parse(JSON.stringify(workflow)),
+        episodes: { create: { episodeId } },
+      },
+    });
+    const store = new TaskStore(db as never);
+    const runner = new WorkflowRunner(store, {} as never, jest.fn());
+    const state = await store.read(task.id);
+    const ctx = runner['context'](state, 'import');
+    jest
+      .spyOn(ctx, 'saveCheckpoint')
+      .mockRejectedValueOnce(new Error('lost checkpoint'));
+    const atom = new ImportFileAtom(db as never, pool as never);
+    await expect(atom.run(task.id, state.input, ctx)).rejects.toThrow(
+      'lost checkpoint',
+    );
+    const version = await db.episodeVersion.findUnique({
+      where: { registrationKey: `task:${task.id}:single` },
+      include: { files: true },
+    });
+    expect(ctx.checkpoint.mediaVersionId).toBeUndefined();
+    const retry = runner['context'](await store.read(task.id), 'import');
+    await atom.recover(task.id, state.input, retry);
+    expect(retry.checkpoint.mediaVersionId).toBe(version!.id);
+    expect(retry.checkpoint.mediaPublished).toBe(true);
+    expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
+    expect(
+      await db.episodeVersionFile.findMany({
+        where: { versionId: version!.id },
+      }),
+    ).toEqual(version!.files);
+  });
   it('同集任务可准备独立版本，采用直到取消前互斥，旧回调不能在交接后提交', async () => {
     const store = new TaskStore(db as never);
     const atom = new ImportFileAtom(db as never, pool as never);
@@ -692,17 +698,18 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       b = await create('claim-b');
     await atom.run(a.id, a.input, a.ctx);
     const versionA = await current();
-    const recover = jest.spyOn(pool as any, 'recover');
+    const publish = jest.spyOn(pool, 'publish');
+    publish.mockClear();
     await expect(atom.run(b.id, b.input, b.ctx)).rejects.toThrow(
       '其他任务正在发布',
     );
-    expect(recover).not.toHaveBeenCalled();
+    expect(publish).not.toHaveBeenCalled();
     const versionB = b.ctx.checkpoint.mediaVersionId;
     expect(versionB).toBeDefined();
     expect(versionB).not.toBe(versionA);
     // 准备阶段的取消不能触碰 A 的恢复现场。
     await atom.cancel(b.id, b.input, b.ctx);
-    expect(recover).not.toHaveBeenCalled();
+    expect(publish).not.toHaveBeenCalled();
     expect(await current()).toBe(versionA);
     await expect(atom.recover(b.id, b.input, b.ctx)).rejects.toThrow(
       '其他任务正在发布',

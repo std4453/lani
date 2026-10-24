@@ -1,4 +1,4 @@
-import { MediaWriteState } from '@/media-pool/write-state';
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -10,12 +10,7 @@ import { PublishEpisodeAtom } from './atoms/publish-episode.atom';
 import { PrismaService } from '@/common/prisma.service';
 import { LaniError } from '@/utils/error';
 import { LegacyTaskStage, Prisma, TaskType } from '@lani/db';
-import {
-  Injectable,
-  Logger,
-  OnApplicationBootstrap,
-  OnApplicationShutdown,
-} from '@nestjs/common';
+import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   parseWorkflow,
@@ -37,9 +32,7 @@ export type TaskParams = Omit<
 
 @Injectable()
 @Resolver()
-export class TaskService
-  implements OnApplicationBootstrap, OnApplicationShutdown
-{
+export class TaskService implements OnApplicationShutdown {
   private readonly atoms: Atoms;
   private readonly runner: WorkflowRunner;
   constructor(
@@ -53,7 +46,8 @@ export class TaskService
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
     findImportFiles: FindImportFilesAtom,
-    private mediaState?: MediaWriteState,
+    private mediaState: WriteGate,
+    private mediaOperations: MediaOperations,
   ) {
     this.atoms = {
       submitDownload,
@@ -70,13 +64,19 @@ export class TaskService
       logger.error(error),
     );
   }
+  /** 创建事务与季度目录生命周期互斥；先取得内存互斥，再开启短数据库事务。 */
+  creationTransaction<T>(run: (tx: Prisma.TransactionClient) => Promise<T>) {
+    this.mediaState.assertReady();
+    return this.mediaOperations.run(() => this.prisma.$transaction(run));
+  }
+
   async create(
     tx: Prisma.TransactionClient,
     type: TaskType,
     definition: StepDefinition[],
     params: TaskParams,
   ) {
-    this.mediaState?.assertReady();
+    this.mediaState.assertReady();
     const workflow = buildWorkflowSnapshot(
       definition,
       this.atoms,
@@ -91,16 +91,13 @@ export class TaskService
       },
     });
   }
-  get mediaWritesReady() {
-    return this.mediaState?.ready ?? true;
-  }
   start(taskId: number) {
-    this.mediaState?.assertReady();
+    this.mediaState.assertReady();
     return this.runner.start(taskId);
   }
   @Mutation(() => ID)
   async retryTask(@Args('taskId') taskId: number) {
-    this.mediaState?.assertReady();
+    this.mediaState.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许重试');
@@ -112,7 +109,7 @@ export class TaskService
   }
   @Mutation(() => ID)
   async cancelTask(@Args('taskId') taskId: number) {
-    this.mediaState?.assertReady();
+    this.mediaState.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许取消');
@@ -144,12 +141,10 @@ export class TaskService
       };
     });
   }
-  async onApplicationBootstrap() {
-    if (this.mediaState) {
-      this.mediaState.onReady(() => this.resumeTasks());
-      return;
-    }
-    await this.resumeTasks();
+  private resumption?: Promise<void>;
+  resumePendingTasks() {
+    this.mediaState.assertReady();
+    return this.resumption ?? (this.resumption = this.resumeTasks());
   }
   private async resumeTasks() {
     await this.prisma.task.updateMany({

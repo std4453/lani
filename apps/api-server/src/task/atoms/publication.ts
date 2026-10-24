@@ -11,16 +11,11 @@ export const activeTaskWhere: Prisma.TaskWhereInput = {
   })),
 };
 
-/** 剧集互斥供下载和导入发布共用，任务行锁由 AtomContext 管理。 */
-export async function lockEpisode(
-  tx: Prisma.TransactionClient,
-  episodeId: number,
-) {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(14521, ${episodeId})::text`;
-}
+import { lockEpisode } from '@/common/episode-lock';
+export { lockEpisode } from '@/common/episode-lock';
 
 /** 发布格式的解释集中在此：旧任务/单集读取根检查点，批量按 Task 内部条目 ID 读取。 */
-async function checkPublication(
+export async function checkPublication(
   id: number,
   transaction: AtomTransaction,
   verifyFile: boolean,

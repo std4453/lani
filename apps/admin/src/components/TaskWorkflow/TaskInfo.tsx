@@ -16,7 +16,7 @@ export default function TaskInfo({
           : '-'}
       </Field>
       <Field label="类型">{TASK_TYPE_LABELS[task.type]}</Field>
-      {['DOWNLOAD', 'BATCH_DOWNLOAD', 'BATCH_IMPORT'].includes(task.type) && (
+      {['DOWNLOAD', 'BATCH_DOWNLOAD'].includes(task.type) && (
         <Field label="种子地址">{task.torrentLink}</Field>
       )}
     </>

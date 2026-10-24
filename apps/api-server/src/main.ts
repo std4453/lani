@@ -2,7 +2,7 @@ import { AppModule } from '@/app.module';
 import { GraphQLExceptionFilter } from '@/utils/GraphQLExceptionFilter';
 import { NestFactory } from '@nestjs/core';
 import { INestApplication, Logger } from '@nestjs/common';
-import { MediaStartupService } from '@/media-pool/startup.service';
+import { MediaStartupService } from '@/media-initialization/startup.service';
 
 let app: INestApplication | undefined;
 async function fail(error: Error) {

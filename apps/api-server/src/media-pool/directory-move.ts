@@ -1,14 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Prisma, PrismaClient } from '@lani/db';
-import { batchImportEntries, FileIdentity } from '@lani/workflow';
-import { canonical, durable, identity, sameFile, writeRecord } from './files';
+import { canonical, durable, writeRecord } from './files';
 
-interface Move {
-  seasonId: number;
+export interface DirectoryMove {
   oldPath: string;
   newPath: string;
-  directory: string;
   dev: number;
   ino: number;
 }
@@ -20,23 +16,11 @@ const exists = async (name: string) => {
     throw error;
   }
 };
-function relocate(value: string | null, move: Move) {
-  if (!value) return value;
-  const relative = path.relative(move.oldPath, value);
-  return relative &&
-    !relative.startsWith('../') &&
-    relative !== '..' &&
-    !path.isAbsolute(relative)
-    ? path.join(move.newPath, relative)
-    : value;
-}
 
-/** 目录身份在移动前落盘。恢复始终使用操作当时的绝对位置，不套用新季度名称。 */
-export async function moveSeasonDirectory(
-  db: PrismaClient,
-  root: string,
-  move: Omit<Move, 'dev' | 'ino'>,
-) {
+/** 调用方持久化业务定位信息；工具仅校验目录并记录文件系统身份。 */
+export async function prepareDirectoryMove<
+  T extends { oldPath: string; newPath: string },
+>(filename: string, move: T): Promise<T & DirectoryMove> {
   await canonical(move.oldPath);
   await canonical(move.newPath);
   const stat = await exists(move.oldPath);
@@ -44,29 +28,16 @@ export async function moveSeasonDirectory(
     throw new Error('原季度目录不存在或不是普通目录');
   if (await exists(move.newPath))
     throw new Error('目标季度目录已存在，无法自动移动');
-  const folder = path.join(root, 'directory-moves');
-  await fs.mkdir(folder, { recursive: true });
-  const filename = path.join(folder, `${move.seasonId}.json`);
-  await writeRecord(filename, { ...move, dev: stat.dev, ino: stat.ino });
-  try {
-    await finishMove(db, filename);
-  } catch (error) {
-    // 尚未移动时撤销本次意图，避免恢复器阻塞其他季度的媒体操作。
-    const old = await exists(move.oldPath);
-    if (
-      old?.isDirectory() &&
-      old.dev === stat.dev &&
-      old.ino === stat.ino &&
-      !(await exists(move.newPath))
-    ) {
-      await fs.unlink(filename);
-      await durable(folder);
-    }
-    throw error;
-  }
+  const record = { ...move, dev: stat.dev, ino: stat.ino };
+  await fs.mkdir(path.dirname(filename), { recursive: true });
+  await writeRecord(filename, record);
+  return record;
 }
-async function finishMove(db: PrismaClient, filename: string) {
-  const move: Move = JSON.parse(await fs.readFile(filename, 'utf8'));
+
+/** 恢复始终采用当时的绝对路径和目录身份，不推断业务的新名称。 */
+export async function executeDirectoryMove(move: DirectoryMove) {
+  await canonical(move.oldPath);
+  await canonical(move.newPath);
   const old = await exists(move.oldPath);
   const next = await exists(move.newPath);
   const owned = (stat: typeof old) =>
@@ -77,77 +48,26 @@ async function finishMove(db: PrismaClient, filename: string) {
   if (old) {
     if (!owned(old) || next) throw new Error('季度移动现场已变化，无法恢复');
     await fs.rename(move.oldPath, move.newPath);
+    await durable(path.dirname(move.oldPath));
     await durable(path.dirname(move.newPath));
   } else if (!owned(next)) throw new Error('季度移动目标身份已变化，无法恢复');
-  await db.$transaction(async (tx) => {
-    const assets = await tx.mediaAsset.findMany({
-      where: { jellyfinPath: { startsWith: move.oldPath + path.sep } },
-    });
-    for (const asset of assets) {
-      const target = relocate(asset.jellyfinPath, move)!;
-      if (
-        !sameFile(
-          await identity(target),
-          asset.jellyfinIdentity as unknown as FileIdentity,
-        )
-      )
-        throw new Error('季度改名后的媒体身份不一致');
-      await tx.mediaAsset.update({
-        where: { id: asset.id },
-        data: { jellyfinPath: target },
-      });
-    }
-    const jobs = await tx.task.findMany({
-      where: {
-        OR: [
-          { episode: { seasonId: move.seasonId } },
-          { episodes: { some: { episode: { seasonId: move.seasonId } } } },
-        ],
-      },
-      select: { id: true },
-    });
-    for (const { id } of jobs) {
-      await tx.$queryRaw`SELECT id FROM download_jobs WHERE id=${id} FOR UPDATE`;
-      const job = await tx.task.findUnique({ where: { id } });
-      if (!job) continue;
-      await tx.task.update({
-        where: { id },
-        data: {
-          filePath: relocate(job.filePath, move),
-          nfoPath: relocate(job.nfoPath, move),
-          batchEntries:
-            job.batchEntries == null
-              ? Prisma.DbNull
-              : batchImportEntries(job.batchEntries).map((entry) => ({
-                  ...entry,
-                  filePath: relocate(entry.filePath ?? null, move),
-                  nfoPath: relocate(entry.nfoPath ?? null, move),
-                })),
-          version: { increment: 1 },
-        },
-      });
-    }
-    await tx.season.update({
-      where: { id: move.seasonId },
-      data: {
-        directory: move.directory,
-        lastWriteDirectory: move.directory,
-        jellyfinId: '',
-      },
-    });
-  });
+}
+export async function finishDirectoryMove(filename: string) {
   await fs.unlink(filename);
   await durable(path.dirname(filename));
 }
-export async function recoverDirectoryMoves(db: PrismaClient, root: string) {
-  const folder = path.join(root, 'directory-moves');
-  let names: string[];
-  try {
-    names = await fs.readdir(folder);
-  } catch (error) {
-    if (error.code === 'ENOENT') return;
-    throw error;
-  }
-  for (const name of names.filter((name) => name.endsWith('.json')))
-    await finishMove(db, path.join(folder, name));
+
+export async function discardUnstartedMove(
+  filename: string,
+  move: DirectoryMove,
+) {
+  const old = await exists(move.oldPath);
+  if (
+    old?.isDirectory() &&
+    !old.isSymbolicLink() &&
+    old.dev === move.dev &&
+    old.ino === move.ino &&
+    !(await exists(move.newPath))
+  )
+    await finishDirectoryMove(filename);
 }

@@ -1,5 +1,5 @@
 import { parseWorkflow } from '@lani/workflow';
-import { MediaPoolService } from '@/media-pool/media-pool.service';
+import { WriteGate } from '@/application-state/write-gate';
 import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
@@ -36,7 +36,7 @@ export class AdminResolver {
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
     private emitter: EventEmitter2,
-    private mediaPool: MediaPoolService,
+    private gate: WriteGate,
   ) {}
 
   @Query(() => ID)
@@ -179,9 +179,7 @@ export class AdminResolver {
     this.logger.verbose(
       `Deleting files for season #${id} (${season.title})...`,
     );
-    await this.mediaPool.deleteSeason(id, () =>
-      this.seasonEmit.deleteSeasonFiles(season),
-    );
+    await this.seasonEmit.deleteSeason(season);
     this.logger.log(`Delete #${id} (${season.title}) success`);
     return 'ok';
   }
@@ -218,7 +216,7 @@ export class AdminResolver {
     })
     { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
-    this.mediaPool.assertWritable();
+    this.gate.assertReady();
     this.logger.log(`Updating season #${id}...`);
     this.logger.verbose(`Writing season #${id} to db...`);
     const results = await this.prisma.$transaction([

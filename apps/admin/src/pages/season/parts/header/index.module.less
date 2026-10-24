@@ -1,4 +1,4 @@
-@import "~@/styles/index.less";
+@import '~@/styles/index.less';
 
 .submitter {
   display: inline-block;
@@ -16,7 +16,7 @@
     margin: 0;
     margin-bottom: 12px;
   }
-  
+
   @media @pc {
     :global {
       .ant-btn {
@@ -45,4 +45,8 @@
   background-color: var(--lani-surface);
   margin-bottom: 16px;
   z-index: 100;
+  @media @mobile {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }

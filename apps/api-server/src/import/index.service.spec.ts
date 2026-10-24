@@ -26,6 +26,7 @@ function setup() {
     }),
   };
   const tasks = {
+    creationTransaction: prisma.$transaction,
     create: jest.fn(async () => ({ id: 42 })),
     start: jest.fn(() => {
       expect(committed).toBe(true);
@@ -33,7 +34,7 @@ function setup() {
     }),
   };
   return {
-    service: new ImportService(prisma as never, tasks as never),
+    service: new ImportService(tasks as never),
     tasks,
     tx,
     prisma,

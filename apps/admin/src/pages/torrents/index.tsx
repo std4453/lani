@@ -31,45 +31,15 @@ import {
 } from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import {
-  Button,
-  message,
-  Space,
-  Tag,
-  TagProps,
-  Tooltip,
-  Typography,
-} from 'antd';
-import { useTheme } from '@/theme';
-import { tagColors } from '@/theme/tagColors';
-import md5 from 'md5';
+import { Button, message, Space, Tooltip, Typography } from 'antd';
 import prettyBytes from 'pretty-bytes';
-import { CSSProperties, useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import styles from './index.module.less';
 import { syncTorrentHistory } from './history';
 import TorrentSeason from './TorrentSeason';
+import ColoredTag from './ColoredTag';
+import { subtitleFilter } from './subtitle-filter';
 import { handleError } from '@/utils/error';
-
-function chooseColor(text: string) {
-  const hash = md5(text);
-  return (parseInt(hash.substring(0, 4), 16) / 65536) * 360;
-}
-
-function ColoredTag({ text, ...props }: { text: string } & TagProps) {
-  const hue = useMemo(() => chooseColor(text), [text]);
-  const { theme } = useTheme();
-  return (
-    <Tooltip title={text}>
-      <Tag
-        className={styles.tag}
-        style={tagColors(hue, theme) as CSSProperties}
-        {...props}
-      >
-        {text}
-      </Tag>
-    </Tooltip>
-  );
-}
 
 enum TorrentSizeFilter {
   XS = 'xs',
@@ -83,15 +53,19 @@ type TorrentTableRow = TorrentFieldsFragment & TorrentParseFieldsFragment;
 
 function useColumns() {
   const mobile = useMobile();
-  const { update } = useAntdSearchContext();
+  const { update, observedState } = useAntdSearchContext();
 
   return useProColumns(
     useMemo(
       (): TableColumns<TorrentTableRow>[] => [
         {
           title: 'ID',
-          dataIndex: 'displayId',
+          dataIndex: 'id',
+          renderText: (_, record) => record.displayId,
           align: 'center',
+          sorter: true,
+          stateKey: { sort: 'id' },
+          onHeaderCell: () => ({ className: styles.idHeader }),
           width: 88,
         },
         {
@@ -136,7 +110,7 @@ function useColumns() {
           title: '制作组',
           key: 'organizations',
           copyable: false,
-          width: 272,
+          width: 160,
           render: (_, r) => {
             const parts = r.organizationParts ?? [];
             if (!parts.length) {
@@ -149,6 +123,7 @@ function useColumns() {
                     <ColoredTag
                       key={i}
                       text={part}
+                      maxWidth={140}
                       onClick={() => {
                         update({
                           custom: { part },
@@ -173,7 +148,7 @@ function useColumns() {
               </Tooltip>
             </>
           ),
-          dataIndex: 'aliases',
+          dataIndex: 'season',
           copyable: false,
           width: 272,
           render: (_, r) => (
@@ -185,7 +160,12 @@ function useColumns() {
                       <ColoredTag
                         key={i}
                         text={alias}
-                        onClick={() => update({ custom: { alias } })}
+                        onClick={() =>
+                          update({
+                            custom: { alias },
+                            filter: { season: ['_custom_filtered'] },
+                          })
+                        }
                       />
                     ) : null,
                   )}
@@ -195,9 +175,25 @@ function useColumns() {
               )}
             </TorrentSeason>
           ),
-          stateKey: {
-            custom: 'alias',
-          },
+          filters: [
+            ...(observedState.custom.alias
+              ? [
+                  {
+                    text: observedState.custom.alias,
+                    value: '_custom_filtered',
+                  },
+                ]
+              : []),
+            { text: '关联季度', value: 'match' },
+            { text: '未关联季度', value: 'no_match' },
+          ],
+          filterMultiple: false,
+          defaultFilteredValue: observedState.custom.alias
+            ? ['_custom_filtered']
+            : observedState.filter.season,
+          filteredValue: observedState.custom.alias
+            ? ['_custom_filtered']
+            : observedState.filter.season,
         },
         {
           title: '集数',
@@ -211,7 +207,14 @@ function useColumns() {
         },
         {
           title: '字幕',
-          key: 'subtitles',
+          dataIndex: 'subtitles',
+          filters: [
+            { text: '中文', value: 'zh' },
+            { text: '日语', value: 'ja' },
+            { text: '英语', value: 'en' },
+          ],
+          filterMultiple: true,
+          stateKey: { filter: 'subtitles' },
           width: 104,
           render: (_, r) => <TorrentSubtitle info={r.subtitleInfo} />,
         },
@@ -329,7 +332,7 @@ function useColumns() {
           fixed: 'right',
         },
       ],
-      [mobile, update],
+      [mobile, update, observedState.custom.alias, observedState.filter.season],
     ),
   );
 }
@@ -346,22 +349,34 @@ export async function queryTorrents(
     keyword?: string;
   },
   {
+    id: idSort,
     publishDate: publishDateSort,
     episode: episodeSort,
   }: {
+    id?: 'ascend' | 'descend';
     publishDate?: 'ascend' | 'descend';
     episode?: 'ascend' | 'descend';
   },
   {
     size,
     channel,
+    season,
+    subtitles,
   }: {
     size?: TorrentSizeFilter[];
     channel?: TorrentChannel[];
+    season?: string[];
+    subtitles?: string[] | null;
   },
   { alias, part }: Record<string, string>,
 ) {
+  const seasonFilter = season?.length === 1 ? season[0] : undefined;
+  const languages = subtitleFilter(subtitles);
   const filter: TorrentFilter = {
+    ...(languages ? { and: [languages] } : {}),
+    ...(seasonFilter === 'match' || seasonFilter === 'no_match'
+      ? { matchedSeasonId: { isNull: seasonFilter === 'no_match' } }
+      : {}),
     ...(channel?.length ? { channel: { in: channel } } : {}),
     ...(keyword
       ? {
@@ -414,6 +429,11 @@ export async function queryTorrents(
       : undefined),
   };
   const orderBy: TorrentsOrderBy[] = [
+    ...(idSort
+      ? idSort === 'ascend'
+        ? [TorrentsOrderBy.DisplayIdAsc]
+        : [TorrentsOrderBy.DisplayIdDesc]
+      : []),
     ...(publishDateSort
       ? publishDateSort === 'ascend'
         ? [TorrentsOrderBy.PublishDateAsc]
@@ -431,7 +451,7 @@ export async function queryTorrents(
       variables: {
         first: pageSize,
         offset: pageSize * (current - 1),
-        orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.IdDesc],
+        orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.DisplayIdDesc],
         ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       },
     });
@@ -461,14 +481,21 @@ export default withAntdSearch(function Torrents() {
   const ref = useRef<ActionType>();
   const client = useApolloClient();
   const props = useAntdSearchProps(
-    ({ search, sort, filter, custom, current, pageSize, keyword }) =>
-      queryTorrents(
+    (state) => {
+      // 名称和关联状态共用一个筛选入口，切换或重置时同步清除名称的 URL 状态。
+      if (!state.filter.season?.includes('_custom_filtered')) {
+        state.custom = { ...state.custom, alias: '' };
+      }
+      const { search, sort, filter, custom, current, pageSize, keyword } =
+        state;
+      return queryTorrents(
         client,
         { ...search, pageSize, current, keyword },
         sort,
         filter,
         custom,
-      ),
+      );
+    },
     {
       hasKeyword: true,
       pagination: {

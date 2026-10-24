@@ -1,5 +1,5 @@
 import { BatchableEpisodeAtom } from '../batchable-episode-atom';
-import { claimEpisodePublication } from './publication';
+import { claimEpisodePublication, checkPublication } from './publication';
 import {
   getSeasonDirectory,
   resolveSeasonPath,
@@ -11,7 +11,7 @@ import { AtomContext, TaskInput } from '@/task/atom';
 import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
-import { companions } from '@/media-pool/files';
+import { companions } from '@/utils/media-companions';
 import path from 'path';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
 
   protected async runEpisode(
     id: number,
-    { episodeId, importPath, type }: TaskInput,
+    { episodeId, importPath }: TaskInput,
     context: AtomContext,
   ) {
     if (!importPath) {
@@ -74,11 +74,8 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
       versionId = await this.mediaPool.register(
         {
           episodeId,
-          operationKey: `task:${id}:${context.entryId ?? 'single'}`,
-          source:
-            type === 'DOWNLOAD' || type === 'BATCH_DOWNLOAD'
-              ? 'download'
-              : 'import',
+          registrationKey: `task:${id}:${context.entryId ?? 'single'}`,
+          mode: 'import',
           files: [
             {
               source: sourcePath,
@@ -104,12 +101,48 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
             })),
           ],
         },
-        context,
+        {
+          assertActive: () => context.assertActive(),
+          transaction: (write) => context.transaction(({ tx }) => write(tx)),
+        },
       );
       await context.saveCheckpoint({ mediaVersionId: versionId });
     }
     await claimEpisodePublication(id, context);
-    return { filePath: await this.mediaPool.publish(versionId, context) };
+    return { filePath: await this.publish(id, versionId, context) };
+  }
+
+  private publish(id: number, versionId: number, context: AtomContext) {
+    return this.mediaPool.publish(versionId, {
+      assertActive: () => context.assertActive(),
+      beforeFiles: async (files) => {
+        for (const video of files.filter((file) => file.role === 'video')) {
+          const subtitles = await companions(video.targetPath).catch(
+            (error) => {
+              if (error.code === 'ENOENT') return [];
+              throw error;
+            },
+          );
+          if (
+            subtitles.some(
+              (name) => !files.some((file) => file.targetPath === name),
+            )
+          )
+            throw new Error('媒体目录存在未登记字幕，请确认归属后再替换');
+        }
+      },
+      commit: (write, video) =>
+        context.transaction(async (transaction) => {
+          if (!context.checkpoint.publicationClaimed)
+            throw new Error('任务尚未取得发布资格');
+          await checkPublication(id, transaction, false);
+          await write(transaction.tx);
+          await transaction.saveCheckpoint(
+            { mediaPublished: true },
+            { filePath: video },
+          );
+        }),
+    });
   }
 
   protected async cancelEpisode(
@@ -117,7 +150,12 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
     input: TaskInput,
     context: AtomContext,
   ) {
-    if (context.checkpoint.publicationClaimed && input.episodeId)
-      await this.mediaPool.recoverEpisode(input.episodeId);
+    if (
+      context.checkpoint.publicationClaimed &&
+      context.checkpoint.mediaVersionId
+    ) {
+      await claimEpisodePublication(_id, context);
+      await this.publish(_id, context.checkpoint.mediaVersionId, context);
+    }
   }
 }

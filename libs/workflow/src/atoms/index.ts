@@ -12,6 +12,7 @@ export interface AtomCheckpoint {
   submission?: SubmissionCheckpoint;
   file?: FileCheckpoint;
   mediaVersionId?: number;
+  mediaPublished?: boolean;
   refreshStartedAt?: string;
   episodePublished?: boolean;
   publicationClaimed?: boolean;
@@ -32,6 +33,7 @@ export const atomSchemas = {
     ...publicationCheckpointSchema,
     file: fileCheckpointSchema,
     mediaVersionId: Joi.number().integer().positive(),
+    mediaPublished: Joi.boolean(),
   },
   writeMetadata: publicationCheckpointSchema,
   refreshPlayer: {

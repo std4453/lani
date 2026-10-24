@@ -1,3 +1,9 @@
+import { WriteGate } from '@/application-state/write-gate';
+const openGate = () => {
+  const gate = new WriteGate();
+  gate.open();
+  return gate;
+};
 import { PrismaClient } from '@lani/db';
 import { DownloadJobService } from './index.service';
 
@@ -32,6 +38,7 @@ it('exposes confirmed ownership and active usage without leaking task states', a
   const service = new DownloadJobService(
     { task: { findMany } } as any,
     {} as any,
+    openGate(),
   );
   expect(await service.getTorrentOwnership()).toEqual({
     owned: new Set([a.toLowerCase(), c, d]),
@@ -65,7 +72,7 @@ databaseTests('scoped torrent ownership in PostgreSQL', () => {
         });
         ids.push(task.id);
       }
-      const service = new DownloadJobService(db as any, {} as any);
+      const service = new DownloadJobService(db as any, {} as any, openGate());
       expect(
         await service.getTorrentOwnership([stored.toLowerCase(), stored]),
       ).toEqual({

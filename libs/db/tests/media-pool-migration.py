@@ -39,8 +39,8 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
         sql((MIGRATIONS / TARGET / 'migration.sql').read_text())
         assert sql("SELECT jsonb_agg(to_jsonb(e) - 'current_version_id' ORDER BY id) FROM episodes e") == before_episodes
         assert sql('SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM download_jobs t') == before_tasks
-        sql("""INSERT INTO episode_versions(episode_id,number,operation_key,source)
-            SELECT id,1,'legacy','unknown' FROM episodes WHERE index=1;
+        sql("""INSERT INTO episode_versions(episode_id,registration_key)
+            SELECT id,'legacy' FROM episodes WHERE index=1;
             UPDATE episodes SET current_version_id=(SELECT id FROM episode_versions) WHERE index=1;""")
         try:
             sql('UPDATE episodes SET current_version_id=(SELECT id FROM episode_versions) WHERE index=2')
@@ -50,13 +50,14 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
         for statement in [
             "INSERT INTO media_assets(id,size,pool_path,pool_identity) VALUES ('invalid',1,'/pool','{}')",
             "INSERT INTO media_assets(id,size,pool_path,pool_identity,download_path,download_mode) VALUES ('00000000-0000-4000-8000-000000000001',1,'/pool','{}','/download','copy')",
-            "UPDATE episode_versions SET source='guessed'",
         ]:
             try:
                 sql(statement)
                 raise AssertionError('invalid media state was accepted')
             except RuntimeError:
                 pass
+        assert sql("SELECT to_regclass('media_publications') IS NULL") == 't'
+        assert sql("SELECT count(*) FROM information_schema.columns WHERE table_name='episode_versions' AND column_name IN ('number','source','operation_key')") == '0'
         asset_id = '00000000-0000-4000-8000-000000000001'
         sql(f"INSERT INTO media_assets(id,size,pool_path,pool_identity) VALUES ('{asset_id}',1,'/pool/file','{{}}')")
         for invalid_path in ['/absolute.mkv', '../escape.mkv', 'Season 1/../../escape', 'a//b', 'a/./b', 'a/', 'C:video', 'a\\b']:
@@ -67,7 +68,7 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
             except RuntimeError:
                 pass
         sql(f"INSERT INTO episode_version_files(version_id,asset_id,target_path,role) SELECT id,'{asset_id}','Season 1/Episode.mkv','video' FROM episode_versions")
-        for table in ['media_assets', 'episode_versions', 'episode_version_files', 'media_publications']:
+        for table in ['media_assets', 'episode_versions', 'episode_version_files']:
             assert sql(f"SELECT obj_description('{table}'::regclass)") == '@omit'
         assert sql("SELECT col_description('episodes'::regclass, attnum) FROM pg_attribute WHERE attrelid='episodes'::regclass AND attname='current_version_id'") == '@omit create,update'
         print('Media pool migration passed: history, ownership, link constraints, smart comments')

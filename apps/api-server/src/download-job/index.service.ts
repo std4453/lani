@@ -1,3 +1,4 @@
+import { WriteGate } from '@/application-state/write-gate';
 import { createEpisodeTask } from '@/task/create-episode-task';
 import { lockEpisode } from '@/task/atoms/publication';
 import { PrismaService } from '@/common/prisma.service';
@@ -14,7 +15,11 @@ import { LaniError } from '@/utils/error';
 @Resolver()
 export class DownloadJobService {
   private logger = new Logger(DownloadJobService.name);
-  constructor(private prisma: PrismaService, private tasks: TaskService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tasks: TaskService,
+    private gate: WriteGate,
+  ) {}
   /** 已越过提交阶段的下载证明归属；同 hash 仍被未完成任务使用时暂不清理。 */
   async getTorrentOwnership(hashes?: readonly string[]) {
     const identities = hashes?.map((hash) => hash.toLowerCase());
@@ -55,7 +60,7 @@ export class DownloadJobService {
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
-    const id = await this.prisma.$transaction(async (tx) => {
+    const id = await this.tasks.creationTransaction(async (tx) => {
       await lockEpisode(tx, episodeId);
       const existing = await tx.task.findFirst({
         where: {
@@ -125,7 +130,7 @@ export class DownloadJobService {
   @Cron('*/1 * * * *') // 每分钟运行一次
   @LaniFilterCron()
   async enqueueDownloadJobsScheduledTask() {
-    if (!this.tasks.mediaWritesReady) return 0;
+    if (!this.gate.ready) return 0;
     return this.enqueueDownloadJobsInternal();
   }
 

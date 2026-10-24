@@ -10,10 +10,7 @@
 }
 
 .tag {
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 100%;
   margin-top: 3px;
   margin-bottom: 3px;
   cursor: pointer;
@@ -30,6 +27,18 @@
     background-color: var(--tag-hover-bg-color);
     border-color: var(--tag-hover-border-color);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--lani-primary);
+    outline-offset: 2px;
+  }
+}
+
+.tagText {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .tagContainer {
@@ -70,12 +79,18 @@
   }
 }
 
+.matchedSeason {
+  padding-right: 20px;
+}
+
 .cancelAssociation {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   margin-left: 4px;
+  margin-right: -20px;
+  width: 16px;
   height: auto;
   // 与图标自身采用相同的文字基线偏移，避免 middle 对齐时按钮下沉。
   vertical-align: -0.125em;
@@ -95,5 +110,17 @@
 
   @media (hover: none) {
     opacity: 1;
+  }
+}
+
+.idHeader {
+  :global(.ant-table-column-sorters) {
+    position: relative;
+  }
+
+  :global(.ant-table-column-sorter) {
+    position: absolute;
+    right: 0;
+    margin-left: 0;
   }
 }

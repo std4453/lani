@@ -1,3 +1,6 @@
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { SeasonMediaService } from './media.service';
+import config from '@/config';
 import { MediaPool } from '@/media-pool/media-pool.service';
 import { Prisma } from '@lani/db';
 import fs from 'fs/promises';
@@ -13,7 +16,11 @@ jest.mock('@/season-jellyfin/SeasonJellyfinService', () => ({
 }));
 jest.mock('@/config', () => ({
   __esModule: true,
-  default: { jellyfin: { pathMapping: [] }, s3: { bucket: 'test' } },
+  default: {
+    mediaPool: {},
+    jellyfin: { pathMapping: [] },
+    s3: { bucket: 'test' },
+  },
 }));
 
 let root: string;
@@ -47,10 +54,17 @@ function setup(patch: any = {}) {
     ...patch,
   };
   const prisma = {
-    episode: { findMany: jest.fn().mockResolvedValue([]) },
-    mediaAsset: { findMany: jest.fn().mockResolvedValue([]) },
-    mediaPublication: { findUnique: jest.fn().mockResolvedValue(null) },
+    episode: {
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn(),
+    },
+    episodeVersion: { deleteMany: jest.fn() },
+    mediaAsset: {
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn(),
+    },
     season: {
+      delete: jest.fn(),
       findUnique: jest.fn(async () => state),
       update: jest.fn(async ({ data }) => {
         state = { ...state, ...data };
@@ -74,14 +88,29 @@ function setup(patch: any = {}) {
     refreshAfterWriteToDisk: jest.fn(),
     refreshAfterDelete: jest.fn(),
   };
+  const gate = new WriteGate();
+  gate.open();
+  const operations = new MediaOperations();
+  config.mediaPool.root = root + '-pool';
+  const pool = new MediaPool(
+    prisma as any,
+    { root: root + '-pool', painfullyAcceptCrossDeviceCopy: false },
+    () => gate.assertReady(),
+    operations,
+  );
+  const media = new SeasonMediaService(
+    prisma as any,
+    pool as any,
+    gate,
+    operations,
+  );
   const service = new SeasonEmitService(
     {} as any,
     jellyfin as any,
     prisma as any,
-    new MediaPool(prisma as any, {
-      root: root + '-pool',
-      painfullyAcceptCrossDeviceCopy: false,
-    }) as any,
+    media,
+    gate,
+    operations,
   );
   return {
     service,
@@ -141,6 +170,7 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.tag).toBeUndefined();
   expect(tvshow.plot).toEqual(['keep']);
   expect(prisma.task.findMany).toHaveBeenCalledWith({
+    orderBy: { id: 'asc' },
     where: {
       OR: [
         { episode: { seasonId: 12 } },
@@ -312,7 +342,7 @@ it('deletes from the last written directory rather than a changed display title'
     directory: 'new',
     lastWriteDirectory: 'old',
   });
-  await service.deleteSeasonFiles(state());
+  await service.deleteSeason(state());
   expect(await fs.readdir(root)).toEqual(['new']);
 });
 
@@ -324,7 +354,7 @@ it('目录删除权限错误继续向上传播，不刷新播放器', async () =
   });
   const remove = jest.spyOn(fs, 'rm').mockRejectedValueOnce(failure);
   try {
-    await expect(service.deleteSeasonFiles(state())).rejects.toBe(failure);
+    await expect(service.deleteSeason(state())).rejects.toBe(failure);
     expect(jellyfin.refreshAfterDelete).not.toHaveBeenCalled();
     expect(await fs.readdir(root)).toEqual(['old']);
   } finally {
@@ -334,7 +364,7 @@ it('目录删除权限错误继续向上传播，不刷新播放器', async () =
 
 it('季度目录已不存在时仍可幂等删除并重试刷新', async () => {
   const { service, state, jellyfin } = setup({ lastWriteDirectory: 'missing' });
-  await service.deleteSeasonFiles(state());
+  await service.deleteSeason(state());
   expect(jellyfin.refreshAfterDelete).toHaveBeenCalledTimes(1);
 });
 
@@ -383,4 +413,39 @@ it('目录改名在任务锁内读取新产物，保留并发写入的批量条�
       ],
     },
   });
+});
+
+it('并发季度同步串行完成文件与位置提交，排队请求重新读取实际目录', async () => {
+  await fs.mkdir(path.join(root, 'old'));
+  const { write, prisma, state, jellyfin } = setup({
+    title: 'A',
+    directory: 'A',
+    lastWriteDirectory: 'old',
+    lastWriteTitle: 'old',
+  });
+  let entered!: () => void, release!: () => void;
+  const started = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  jellyfin.refreshAfterFolderRename.mockImplementationOnce(async () => {
+    entered();
+    await blocked;
+  });
+  const first = write();
+  await started;
+  await prisma.season.update({ data: { title: 'B', directory: 'B' } });
+  const second = write();
+  await new Promise((resolve) => setImmediate(resolve));
+  expect(state().lastWriteDirectory).toBe('A');
+  expect(await fs.readdir(root)).toEqual(['A']);
+  release();
+  await Promise.all([first, second]);
+  expect(state().lastWriteDirectory).toBe('B');
+  expect(await fs.readdir(root)).toEqual(['B']);
+  expect(
+    await fs.readFile(path.join(root, 'B', 'tvshow.nfo'), 'utf8'),
+  ).toContain('<title>B</title>');
 });

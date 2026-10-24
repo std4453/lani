@@ -1,4 +1,4 @@
-import { MediaWriteState } from '@/media-pool/write-state';
+import { WriteGate } from '@/application-state/write-gate';
 import { PrismaService } from '@/common/prisma.service';
 import { EpisodeScrapeService } from '@/season-scrape/EpisodeScrapeService';
 import { SeasonScrapeService } from '@/season-scrape/SeasonScrapeService';
@@ -17,7 +17,7 @@ export class ScrapeMetadataResolver {
     private prisma: PrismaService,
     private seasonScrape: SeasonScrapeService,
     private episodeScrape: EpisodeScrapeService,
-    private mediaState?: MediaWriteState,
+    private mediaState: WriteGate,
   ) {}
 
   @Mutation(() => ID)
@@ -46,13 +46,13 @@ export class ScrapeMetadataResolver {
   @Cron('*/10 * * * *') // 每 10 分钟
   @LaniFilterCron()
   async syncAllSeasonsEpisodeDataCronTask() {
-    if (this.mediaState && !this.mediaState.ready) return 0;
+    if (!this.mediaState.ready) return 0;
     return this.syncAllSeasonsEpisodeData();
   }
 
   @Mutation(() => Int)
   async syncAllSeasonsEpisodeData() {
-    this.mediaState?.assertReady();
+    this.mediaState.assertReady();
     const seasons = await this.prisma.season.findMany({
       where: {
         AND: [

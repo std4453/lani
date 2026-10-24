@@ -1,4 +1,5 @@
-import { MediaPoolService } from '@/media-pool/media-pool.service';
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { SeasonMediaService } from './media.service';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -7,11 +8,7 @@ import {
   SeasonWithFolderAndImages,
   SeasonWithJellyfinFolder,
 } from '@/types/entities';
-import {
-  getFileHash,
-  removeDirectoryIdempotent,
-  writeXMLFileIdempotent,
-} from '@/utils/idempotency';
+import { getFileHash, writeXMLFileIdempotent } from '@/utils/idempotency';
 import { mapPath } from '@/utils/path';
 import { Injectable, Logger } from '@nestjs/common';
 import fs from 'fs/promises';
@@ -32,11 +29,29 @@ export class SeasonEmitService {
     private s3: S3Service,
     private seasonJellyfin: SeasonJellyfinService,
     private prisma: PrismaService,
-    private mediaPool?: MediaPoolService,
+    private media: SeasonMediaService,
+    private gate: WriteGate,
+    private operations: MediaOperations,
   ) {}
 
   async writeSeasonMetadata(season: SeasonWithFolderAndImages) {
-    this.mediaPool?.assertWritable();
+    this.gate.assertReady();
+    return this.operations.run(async () => {
+      const current = await this.prisma.season.findUnique({
+        where: { id: season.id },
+        include: {
+          jellyfinFolder: true,
+          bannerImage: true,
+          fanartImage: true,
+          posterImage: true,
+        },
+      });
+      if (!current) throw new Error('季度不存在');
+      await this.writeMetadata(current);
+    });
+  }
+
+  private async writeMetadata(season: SeasonWithFolderAndImages) {
     this.logger.log(
       `Writing metadata for season #${season.id} (${season.title})`,
     );
@@ -157,9 +172,7 @@ export class SeasonEmitService {
     );
     const oldPath = resolveSeasonPath(root, oldDirectory);
     const newPath = resolveSeasonPath(root, season.directory ?? '');
-    if (!this.mediaPool)
-      throw new Error('MediaPoolService is required for directory moves');
-    await this.mediaPool.renameSeason(
+    await this.media.renameWithinOperation(
       season.id,
       oldPath,
       newPath,
@@ -327,26 +340,8 @@ export class SeasonEmitService {
     };
   }
 
-  async deleteSeasonFiles(season: SeasonWithJellyfinFolder) {
-    this.mediaPool?.assertWritable();
-    const { jellyfinFolder } = season;
-    const seasonRoot = mapPath(
-      config.jellyfin.pathMapping,
-      jellyfinFolder.location,
-    );
-    const folderPath = resolveSeasonPath(
-      seasonRoot,
-      getSeasonDirectory(season),
-    );
-    this.logger.log(
-      `Deleting files for season #${season.id} (${season.title}), located under ${folderPath}`,
-    );
-    const deleted = await removeDirectoryIdempotent(folderPath);
-    if (!deleted) {
-      this.logger.warn(
-        `Delete files for season #${season.id} (${season.title}) under ${folderPath} failed, perhaps files were already deleted?`,
-      );
-    }
+  async deleteSeason(season: SeasonWithJellyfinFolder) {
+    await this.media.delete(season.id);
     await this.seasonJellyfin.refreshAfterDelete(season);
   }
 }

@@ -6,20 +6,22 @@ import styles from './index.module.less';
 export default function TaskDialog({
   title,
   running,
+  titleActions,
   ...props
-}: ModalProps & { running?: boolean }) {
+}: ModalProps & { running?: boolean; titleActions?: ReactNode }) {
   return (
     <Modal
       {...props}
-      className={styles.dialog}
+      className={clsx(styles.dialog, titleActions && styles.hasActions)}
       title={
-        <div className={styles.title}>
+        <div className={clsx(styles.title, titleActions && styles.withActions)}>
           <span role="heading" aria-level={2}>
             {title}
           </span>
           {running && (
             <span className={styles.hint}>后台执行中，可关闭弹窗</span>
           )}
+          {titleActions && <div className={styles.actions}>{titleActions}</div>}
         </div>
       }
     />

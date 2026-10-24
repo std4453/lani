@@ -22,9 +22,7 @@ CREATE TABLE "media_assets" (
 CREATE TABLE "episode_versions" (
     "id" SERIAL NOT NULL,
     "episode_id" INTEGER NOT NULL,
-    "number" INTEGER NOT NULL,
-    "operation_key" TEXT NOT NULL,
-    "source" TEXT NOT NULL,
+    "registration_key" TEXT NOT NULL,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "episode_versions_pkey" PRIMARY KEY ("id")
@@ -40,15 +38,6 @@ CREATE TABLE "episode_version_files" (
     CONSTRAINT "episode_version_files_pkey" PRIMARY KEY ("version_id","asset_id")
 );
 
--- CreateTable
-CREATE TABLE "media_publications" (
-    "episode_id" INTEGER NOT NULL,
-    "journal" JSONB NOT NULL,
-    "committed" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "media_publications_pkey" PRIMARY KEY ("episode_id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "media_assets_pool_path_key" ON "media_assets"("pool_path");
 
@@ -56,13 +45,10 @@ CREATE UNIQUE INDEX "media_assets_pool_path_key" ON "media_assets"("pool_path");
 CREATE UNIQUE INDEX "media_assets_jellyfin_path_key" ON "media_assets"("jellyfin_path");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "episode_versions_operation_key_key" ON "episode_versions"("operation_key");
+CREATE UNIQUE INDEX "episode_versions_registration_key_key" ON "episode_versions"("registration_key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "episode_versions_id_episode_key" ON "episode_versions"("id", "episode_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "episode_versions_episode_id_number_key" ON "episode_versions"("episode_id", "number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "episode_version_files_version_id_target_path_key" ON "episode_version_files"("version_id", "target_path");
@@ -89,7 +75,6 @@ ALTER TABLE "episode_version_files" ADD CONSTRAINT "episode_version_files_versio
 COMMENT ON TABLE media_assets IS E'@omit';
 COMMENT ON TABLE episode_versions IS E'@omit';
 COMMENT ON TABLE episode_version_files IS E'@omit';
-COMMENT ON TABLE media_publications IS E'@omit';
 COMMENT ON COLUMN episodes.current_version_id IS E'@omit create,update';
 
 ALTER TABLE media_assets ADD CONSTRAINT media_assets_content_check CHECK (
@@ -103,5 +88,4 @@ ALTER TABLE media_assets ADD CONSTRAINT media_assets_jellyfin_check CHECK (
   (jellyfin_path IS NULL AND jellyfin_mode IS NULL AND jellyfin_identity IS NULL) OR
   (jellyfin_path IS NOT NULL AND jellyfin_mode IS NOT NULL AND jellyfin_mode IN ('hardlink', 'copy') AND jellyfin_identity IS NOT NULL)
 );
-ALTER TABLE episode_versions ADD CONSTRAINT episode_versions_source_check CHECK (source IN ('download', 'import', 'unknown') AND number > 0);
 ALTER TABLE episode_version_files ADD CONSTRAINT episode_version_files_role_check CHECK (role IN ('video', 'subtitle') AND target_path <> '' AND target_path !~ '(^/|^[A-Za-z]:|\\|(^|/)\.\.?(/|$)|//|/$)');

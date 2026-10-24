@@ -2,10 +2,10 @@ import { PrismaClient } from '@lani/db';
 import path from 'path';
 import { createHash } from 'crypto';
 import { FileIdentity } from '@lani/workflow';
-import { identity, canonical, sameFile } from './files';
-import { MediaPool, VersionInput } from './media-pool.service';
+import { identity, canonical, sameFile } from '@/media-pool/files';
+import { MediaPool, VersionInput } from '@/media-pool/media-pool.service';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
-import { seasonMediaRoot, relativeMediaPath } from './paths';
+import { seasonMediaRoot, relativeMediaPath } from '@/media-pool/paths';
 
 export interface BackfillEntry {
   episodeId: number;
@@ -62,8 +62,8 @@ export async function applyBackfill(
       .digest('hex');
     const input: VersionInput = {
       episodeId: entry.episodeId,
-      operationKey: `backfill:${entry.episodeId}:${entry.jellyfinEpisodeId}:${fingerprint}`,
-      source: 'unknown',
+      registrationKey: `backfill:${entry.episodeId}:${entry.jellyfinEpisodeId}:${fingerprint}`,
+      mode: 'backfill',
       files: files.map((file) => ({
         source: file.path,
         target: path.relative(root, file.path),

@@ -1,3 +1,9 @@
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+const openGate = () => {
+  const gate = new WriteGate();
+  gate.open();
+  return gate;
+};
 jest.mock('@/task/atoms/publication', () => ({
   claimEpisodePublication: jest.fn(async () => undefined),
 }));
@@ -134,6 +140,7 @@ it('共用原子导入后可重复同步季度元数据', async () => {
         update: jest.fn(),
       },
       season: {
+        findUnique: jest.fn(async () => season),
         update: jest.fn(async ({ data }) => {
           season = { ...season, ...data };
           return season;
@@ -165,6 +172,9 @@ it('共用原子导入后可重复同步季度元数据', async () => {
       {} as any,
       jellyfin as any,
       prisma as any,
+      {} as never,
+      openGate(),
+      new MediaOperations(),
     );
     await emitter.writeSeasonMetadata(season);
     await emitter.writeSeasonMetadata(season);

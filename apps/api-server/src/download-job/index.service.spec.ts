@@ -1,3 +1,9 @@
+import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+const openGate = () => {
+  const gate = new WriteGate();
+  gate.open();
+  return gate;
+};
 import { createEpisodeTask } from '@/task/create-episode-task';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
@@ -131,8 +137,14 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms.refreshPlayer as never,
       atoms.publishEpisode as never,
       atoms.findImportFiles as never,
+      openGate(),
+      new MediaOperations(),
     );
-    downloads = new DownloadJobService(prisma as PrismaService, service);
+    downloads = new DownloadJobService(
+      prisma as PrismaService,
+      service,
+      openGate(),
+    );
   });
   afterEach(async () => {
     await service?.onApplicationShutdown();
@@ -241,7 +253,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const old = await createTask({
       data: { episodeId, legacyStage: LegacyTaskStage.DOWNLOADING },
     });
-    await service.onApplicationBootstrap();
+    await service.resumePendingTasks();
     const result = await prisma.task.findUnique({
       where: { id: old.id },
     });

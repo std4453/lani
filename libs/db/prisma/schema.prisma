@@ -404,16 +404,14 @@ model MediaAsset {
 model EpisodeVersion {
   id                 Int @id @default(autoincrement())
   episodeId          Int @map("episode_id")
-  number             Int
-  operationKey       String @unique @map("operation_key")
-  source             String
+  // 版本登记的幂等标识。
+  registrationKey    String @unique @map("registration_key")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   episode            Episode @relation("EpisodeVersions", fields: [episodeId], references: [id], onDelete: Restrict)
   currentEpisode     Episode? @relation("CurrentEpisodeVersion")
   files              EpisodeVersionFile[]
 
   @@unique([id, episodeId], map: "episode_versions_id_episode_key")
-  @@unique([episodeId, number])
   @@map("episode_versions")
 }
 
@@ -429,13 +427,4 @@ model EpisodeVersionFile {
   @@id([versionId, assetId])
   @@unique([versionId, targetPath])
   @@map("episode_version_files")
-}
-
-// 文件系统和数据库不能共用事务，恢复记录必须先于目标文件变化持久化。
-model MediaPublication {
-  episodeId          Int @id @map("episode_id")
-  journal            Json
-  committed          Boolean @default(false)
-
-  @@map("media_publications")
 }

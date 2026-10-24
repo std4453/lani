@@ -1,29 +1,22 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { randomUUID } from 'crypto';
+import { createHash } from 'crypto';
 import { FileIdentity } from '@lani/workflow';
 import {
   canonical,
-  verifyTransfer,
   durable,
   identity,
   linkOrCopy,
   LinkMode,
   sameFile,
+  verifyTransfer,
 } from './files';
 
-export interface PublicationFile {
+export interface PublishedFile {
   target: string;
-  old?: FileIdentity;
-  backup: string;
-  staged: string;
-  next?: FileIdentity;
-
-  mode?: LinkMode;
-}
-export interface PublicationJournal {
-  version: 1;
-  files: PublicationFile[];
+  assetId: string;
+  identity: FileIdentity;
+  mode: LinkMode;
 }
 export interface PublicationSource {
   target: string;
@@ -31,114 +24,121 @@ export interface PublicationSource {
   assetId: string;
   identity: FileIdentity;
 }
+function temporary(file: PublicationSource, key: string) {
+  const token = createHash('sha256')
+    .update(key + ':' + file.assetId)
+    .digest('hex');
+  return `${file.target}.lani-${token}.tmp`;
+}
 
-/** 准备所有新文件和旧文件备份成功后，调用方才允许持久化日志并开始切换。 */
-export async function preparePublication(
-  old: Array<{ target: string; identity: FileIdentity; assetId: string }>,
+/** 由版本集合重放差量。暂存文件本身保留复制目标的 inode，提交前不删除。 */
+export async function executePublication(
+  old: PublishedFile[],
   next: PublicationSource[],
+  key: string,
   acceptCopy: boolean,
-): Promise<PublicationJournal> {
-  const token = randomUUID();
-  const journal: PublicationJournal = { version: 1, files: [] };
-  try {
-    for (const target of new Set([
-      ...old.map((f) => f.target),
-      ...next.map((f) => f.target),
-    ])) {
-      await fs.mkdir(path.dirname(target), { recursive: true });
-      await canonical(target);
-      const previous = old.find((f) => f.target === target);
-      const current = await identity(target);
-      if (previous ? !sameFile(previous.identity, current) : !!current)
-        throw new Error('媒体目标已变化或未登记，不能覆盖');
-      const replacement = next.find((f) => f.target === target);
-      if (
-        replacement &&
-        !sameFile(replacement.identity, await identity(replacement.source))
-      )
-        throw new Error('媒体池文件身份已变化');
-      // 明确沿用 UUID 与目标的文件原位保留，不进入切换日志。
-      if (previous && replacement?.assetId === previous.assetId) continue;
-      const file: PublicationFile = {
-        target,
-        old: current,
-        backup: `${target}.lani-${token}.bak`,
-        staged: `${target}.lani-${token}.tmp`,
-      };
-      journal.files.push(file);
-      if (current) await fs.link(target, file.backup);
-      if (replacement) {
-        file.mode = await linkOrCopy(
-          replacement.source,
-          file.staged,
-          acceptCopy,
-        );
-        file.next = await verifyTransfer(
-          replacement.source,
-          file.staged,
-          replacement.identity,
-          file.mode,
-        );
-        await durable(file.staged);
-      }
-      await durable(path.dirname(target));
+): Promise<PublishedFile[]> {
+  const result: PublishedFile[] = [];
+  for (const file of next) {
+    await fs.mkdir(path.dirname(file.target), { recursive: true });
+    await canonical(file.target);
+    await canonical(file.source);
+    if (!sameFile(file.identity, await identity(file.source)))
+      throw new Error('媒体池文件身份已变化');
+    const previous = old.find((item) => item.target === file.target);
+    let current = await identity(file.target);
+    if (previous?.assetId === file.assetId) {
+      if (!sameFile(previous.identity, current))
+        throw new Error('未变化的媒体目标被外部修改');
+      result.push(previous);
+      continue;
     }
-    return journal;
-  } catch (error) {
-    await cleanupPublication(journal);
-    throw error;
-  }
-}
-
-export async function applyPublication(journal: PublicationJournal) {
-  for (const file of journal.files) {
-    const current = await identity(file.target);
-    if (file.old ? !sameFile(file.old, current) : !!current)
+    if (sameFile(file.identity, current)) {
+      result.push({
+        target: file.target,
+        assetId: file.assetId,
+        identity: current!,
+        mode: 'hardlink',
+      });
+      continue;
+    }
+    const staged = temporary(file, key);
+    const stagedIdentity = await identity(staged);
+    if (current && sameFile(current, stagedIdentity)) {
+      await verifyTransfer(file.source, file.target, file.identity, 'copy');
+      result.push({
+        target: file.target,
+        assetId: file.assetId,
+        identity: current,
+        mode: 'copy',
+      });
+      continue;
+    }
+    if (current && !sameFile(previous?.identity, current))
+      throw new Error('媒体目标已变化或未登记，不能覆盖');
+    // 未发布的复制可从头开始；只处理登记标识与文件 UUID 确定的本次暂存名。
+    const swap = `${staged}.replace`;
+    const leftover = await identity(swap);
+    if (leftover) {
+      if (!sameFile(leftover, stagedIdentity))
+        throw new Error('媒体替换暂存文件身份已变化');
+      await fs.unlink(swap);
+    }
+    if (stagedIdentity) await fs.unlink(staged);
+    const mode = await linkOrCopy(file.source, staged, acceptCopy);
+    const prepared = await verifyTransfer(
+      file.source,
+      staged,
+      file.identity,
+      mode,
+    );
+    await durable(staged);
+    await durable(path.dirname(staged));
+    const latest = await identity(file.target);
+    if (current ? !sameFile(current, latest) : !!latest)
       throw new Error('切换前媒体目标发生变化');
-    if (file.next) {
-      if (!sameFile(file.next, await identity(file.staged)))
-        throw new Error('待发布文件发生变化');
-      // 新建目标无覆盖；替换已登记目标使用同目录 rename。
-      if (file.old) await fs.rename(file.staged, file.target);
-      else await fs.link(file.staged, file.target);
-    } else if (current) await fs.unlink(file.target);
+    if (current) {
+      await fs.link(staged, swap);
+      await fs.rename(swap, file.target);
+    } else await fs.link(staged, file.target);
     await durable(path.dirname(file.target));
+    current = await identity(file.target);
+    if (!sameFile(prepared, current)) throw new Error('发布后的媒体身份已变化');
+    result.push({
+      target: file.target,
+      assetId: file.assetId,
+      identity: prepared,
+      mode,
+    });
   }
-}
-
-/** 恢复可重复执行；只操作日志中有身份凭据的文件，外部变化保留现场。 */
-export async function rollbackPublication(journal: PublicationJournal) {
-  for (const file of [...journal.files].reverse()) {
+  for (const file of old.filter(
+    (file) => !next.some((item) => item.target === file.target),
+  )) {
     const current = await identity(file.target);
-    if (file.old && sameFile(current, file.old)) continue;
-    if (current && !sameFile(current, file.next))
-      throw new Error('媒体目标被外部修改，无法自动恢复');
-    if (file.old) {
-      if (!sameFile(await identity(file.backup), file.old))
-        throw new Error('旧媒体备份已变化或丢失');
-      // 保留备份直到数据库确认回滚，允许中途再次崩溃。
-      const restore = `${file.backup}.restore`;
-      if (!(await identity(restore))) await fs.link(file.backup, restore);
-      if (!sameFile(await identity(restore), file.old))
-        throw new Error('恢复暂存文件已变化');
-      await fs.rename(restore, file.target);
-    } else if (current) await fs.unlink(file.target);
+    if (!current) continue;
+    await canonical(file.target);
+    if (!sameFile(current, file.identity))
+      throw new Error('待移除媒体被外部修改');
+    await fs.unlink(file.target);
     await durable(path.dirname(file.target));
   }
+  return result;
 }
 
-export async function cleanupPublication(journal: PublicationJournal) {
-  for (const file of journal.files) {
-    for (const [name, expected] of [
-      [file.backup, file.old],
-      [file.staged, file.next],
-    ] as const) {
-      const current = await identity(name);
-      // 准备中失败可能尚未记录 next，暂存名仍是本次独有的 UUID。
-      if (current && expected && !sameFile(current, expected))
-        throw new Error('媒体暂存文件已被外部修改');
-      if (current) await fs.unlink(name);
+/** 仅在版本及 atom 检查点提交后清理；提交结果不明时保留暂存身份凭据。 */
+export async function finishPublication(
+  files: PublicationSource[],
+  key: string,
+) {
+  for (const file of files) {
+    const staged = temporary(file, key);
+    for (const filename of [staged, `${staged}.replace`]) {
+      const current = await identity(filename);
+      if (!current) continue;
+      if (!sameFile(current, await identity(file.target)))
+        throw new Error('媒体暂存文件身份已变化');
+      await fs.unlink(filename);
+      await durable(path.dirname(filename));
     }
-    await durable(path.dirname(file.target));
   }
 }
