@@ -11,7 +11,8 @@ import { AtomContext, TaskInput } from '@/task/atom';
 import { mapPath } from '@/utils/path';
 import { Injectable } from '@nestjs/common';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
-import { companions } from '@/utils/media-companions';
+import { companions, SUBTITLE } from '@/utils/media-companions';
+import fs from 'fs/promises';
 import path from 'path';
 
 @Injectable()
@@ -117,15 +118,24 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
       assertActive: () => context.assertActive(),
       beforeFiles: async (files) => {
         for (const video of files.filter((file) => file.role === 'video')) {
-          const subtitles = await companions(video.targetPath).catch(
-            (error) => {
-              if (error.code === 'ENOENT') return [];
-              throw error;
-            },
+          // 发布前检查目标命名空间，包括视频尚不存在时遗留的字幕。
+          const directory = path.dirname(video.targetPath);
+          const stem = path.basename(
+            video.targetPath,
+            path.extname(video.targetPath),
           );
+          const names: string[] = await fs.readdir(directory).catch((error) => {
+            if (error.code === 'ENOENT') return [];
+            throw error;
+          });
           if (
-            subtitles.some(
-              (name) => !files.some((file) => file.targetPath === name),
+            names.some(
+              (name) =>
+                SUBTITLE.test(name) &&
+                name.startsWith(`${stem}.`) &&
+                !files.some(
+                  (file) => file.targetPath === path.join(directory, name),
+                ),
             )
           )
             throw new Error('媒体目录存在未登记字幕，请确认归属后再替换');

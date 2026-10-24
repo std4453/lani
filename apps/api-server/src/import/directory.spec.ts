@@ -69,6 +69,30 @@ function mediaPoolStub(root: string) {
   } as any;
 }
 
+it('目标视频尚不存在时仍阻止覆盖未登记字幕', async () => {
+  const root = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'lani-import-conflict-'),
+  );
+  try {
+    await fs.writeFile(path.join(root, 'Episode.zh.ass'), 'unknown subtitle');
+    const pool = {
+      publish: async (_version, context) =>
+        context.beforeFiles([
+          { role: 'video', targetPath: path.join(root, 'Episode.mkv') },
+        ]),
+    };
+    const atom = new ImportFileAtom({} as never, pool as never);
+    await expect(atom['publish'](1, 1, atomContext())).rejects.toThrow(
+      '媒体目录存在未登记字幕',
+    );
+    expect(await fs.readFile(path.join(root, 'Episode.zh.ass'), 'utf8')).toBe(
+      'unknown subtitle',
+    );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 it('下载和导入共用原子，将视频写入记录的目录', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lani-import-'));
   try {
