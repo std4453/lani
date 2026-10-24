@@ -104,8 +104,13 @@
 .tabs:global(.ant-tabs) {
   min-height: 0;
   > :global(.ant-tabs-nav) {
-    margin: 0;
-    padding: 0 24px;
+    // 页签库按导航栏外宽计算滚动范围，用外边距避免把留白计入可见宽度。
+    margin: 0 24px;
+    padding: 0;
+    &::before {
+      left: -24px;
+      right: -24px;
+    }
   }
   :global(.ant-tabs-content-holder),
   :global(.ant-tabs-content),

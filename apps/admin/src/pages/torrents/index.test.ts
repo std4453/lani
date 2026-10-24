@@ -167,8 +167,8 @@ it.each([undefined, null, [], ['invalid'], ['__proto__']])(
 
 it.each([
   [{}, TorrentsOrderBy.DisplayIdDesc],
-  [{ displayId: 'ascend' }, TorrentsOrderBy.DisplayIdAsc],
-  [{ displayId: 'descend' }, TorrentsOrderBy.DisplayIdDesc],
+  [{ id: 'ascend' }, TorrentsOrderBy.DisplayIdAsc],
+  [{ id: 'descend' }, TorrentsOrderBy.DisplayIdDesc],
   [{ publishDate: 'ascend' }, TorrentsOrderBy.PublishDateAsc],
   [{ episode: 'descend' }, TorrentsOrderBy.EpisodeSortDesc],
 ] as const)(

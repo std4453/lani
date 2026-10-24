@@ -32,7 +32,7 @@ it('直接打开关联筛选 URL 时，表格首次请求携带相同筛选', ()
     f_season: 'match',
     c_part: '星海字幕',
     f_subtitles: 'zh|ja',
-    o_displayId: 'ascend',
+    o_id: 'ascend',
   });
   const container = document.createElement('div');
   try {
@@ -40,10 +40,10 @@ it('直接打开关联筛选 URL 时，表格首次请求携带相同筛选', ()
       ReactDOM.render(<Torrents />, container);
     });
     const { filter, sort } = parseDefaultColumnConfig(columns);
-    expect(sort.displayId).toBe('ascend');
-    expect(
-      columns.find((column) => column.dataIndex === 'displayId')?.sorter,
-    ).toBe(true);
+    expect(sort.id).toBe('ascend');
+    expect(columns.find((column) => column.dataIndex === 'id')?.sorter).toBe(
+      true,
+    );
     expect(filter.season).toEqual(['match']);
     const season = columns.findIndex((column) => column.dataIndex === 'season');
     const organization = columns.findIndex(
@@ -56,7 +56,7 @@ it('直接打开关联筛选 URL 时，表格首次请求携带相同筛选', ()
     );
     expect(subtitles?.filterMultiple).toBe(true);
     expect(subtitles?.filters).toEqual([
-      { text: '中文（包括简体、繁体）', value: 'zh' },
+      { text: '中文', value: 'zh' },
       { text: '日语', value: 'ja' },
       { text: '英语', value: 'en' },
     ]);

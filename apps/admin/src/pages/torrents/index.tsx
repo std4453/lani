@@ -61,10 +61,11 @@ function useColumns() {
       (): TableColumns<TorrentTableRow>[] => [
         {
           title: 'ID',
-          dataIndex: 'displayId',
+          dataIndex: 'id',
+          renderText: (_, record) => record.displayId,
           align: 'center',
           sorter: true,
-          stateKey: { sort: 'displayId' },
+          stateKey: { sort: 'id' },
           onHeaderCell: () => ({ className: styles.idHeader }),
           width: 88,
         },
@@ -204,7 +205,7 @@ function useColumns() {
           title: '字幕',
           dataIndex: 'subtitles',
           filters: [
-            { text: '中文（包括简体、繁体）', value: 'zh' },
+            { text: '中文', value: 'zh' },
             { text: '日语', value: 'ja' },
             { text: '英语', value: 'en' },
           ],
@@ -344,11 +345,11 @@ export async function queryTorrents(
     keyword?: string;
   },
   {
-    displayId: displayIdSort,
+    id: idSort,
     publishDate: publishDateSort,
     episode: episodeSort,
   }: {
-    displayId?: 'ascend' | 'descend';
+    id?: 'ascend' | 'descend';
     publishDate?: 'ascend' | 'descend';
     episode?: 'ascend' | 'descend';
   },
@@ -424,8 +425,8 @@ export async function queryTorrents(
       : undefined),
   };
   const orderBy: TorrentsOrderBy[] = [
-    ...(displayIdSort
-      ? displayIdSort === 'ascend'
+    ...(idSort
+      ? idSort === 'ascend'
         ? [TorrentsOrderBy.DisplayIdAsc]
         : [TorrentsOrderBy.DisplayIdDesc]
       : []),
