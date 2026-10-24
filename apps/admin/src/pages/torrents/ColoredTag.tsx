@@ -16,16 +16,35 @@ export default function ColoredTag({
   );
   const { theme } = useTheme();
   const content = useRef<HTMLSpanElement>(null);
-  const [overflow, setOverflow] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
   return (
-    <Tooltip title={overflow ? text : undefined}>
+    <Tooltip
+      title={text}
+      trigger={['hover', 'focus']}
+      open={tooltipVisible}
+      onOpenChange={(open) => {
+        const element = content.current;
+        setTooltipVisible(
+          !!(open && element && element.scrollWidth > element.clientWidth),
+        );
+      }}
+    >
       <Tag
         className={styles.tag}
         style={tagColors(hue, theme) as CSSProperties}
+        role={props.onClick ? 'button' : undefined}
+        tabIndex={props.onClick ? 0 : undefined}
         {...props}
-        onMouseEnter={() => {
-          const element = content.current;
-          setOverflow(!!element && element.scrollWidth > element.clientWidth);
+        onKeyDown={(event) => {
+          props.onKeyDown?.(event);
+          if (
+            props.onClick &&
+            !event.defaultPrevented &&
+            (event.key === 'Enter' || event.key === ' ')
+          ) {
+            event.preventDefault();
+            if (!event.repeat) event.currentTarget.click();
+          }
         }}
       >
         <span ref={content} className={styles.tagText} style={{ maxWidth }}>
