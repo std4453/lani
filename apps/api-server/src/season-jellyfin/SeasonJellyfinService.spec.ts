@@ -1,4 +1,9 @@
-import { JellyfinHelp, ItemFields, MetadataRefreshMode } from '@/api/jellyfin';
+import {
+  JellyfinHelp,
+  ItemFields,
+  MetadataRefreshMode,
+  TvShowsService,
+} from '@/api/jellyfin';
 import { SeasonJellyfinService } from './SeasonJellyfinService';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
@@ -28,7 +33,20 @@ const season = {
 afterEach(() => jest.restoreAllMocks());
 
 function setup() {
-  const prisma = { season: { update: jest.fn(), findMany: jest.fn() } };
+  const prisma = {
+    season: {
+      update: jest.fn(),
+      findMany: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+    episode: {
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+    $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
+  };
+  prisma.$transaction.mockImplementation((run) => run(prisma));
   const service = new SeasonJellyfinService(prisma as any);
   const refresh = jest.spyOn(JellyfinHelp, 'refreshItem').mockResolvedValue();
   const warn = jest
@@ -80,7 +98,7 @@ it('explicit metadata sync rereads NFOs even when Jellyfin previously cached the
   );
 });
 
-it('prioritizes Lani ID over title and path, warning and choosing the first duplicate', async () => {
+it('prioritizes Lani ID and chooses the current directory among duplicate series', async () => {
   const { service, prisma, warn } = setup();
   await service.syncJellyfinSeriesId(season, [
     { Id: 'path-only', Name: season.title, Path: '/media/new' },
@@ -94,7 +112,7 @@ it('prioritizes Lani ID over title and path, warning and choosing the first dupl
   ]);
   expect(prisma.season.update).toHaveBeenCalledWith({
     where: { id: 12 },
-    data: { jellyfinId: 'first' },
+    data: { jellyfinId: 'second' },
   });
   expect(warn).toHaveBeenCalledWith(expect.stringContaining('matched 2'));
 });
@@ -153,4 +171,96 @@ it('logs query failures without writing an association', async () => {
   expect(await service.syncAllSeasonsJellyfinSeriesId()).toBe(0);
   expect(prisma.season.update).not.toHaveBeenCalled();
   expect(warn).toHaveBeenCalledWith(expect.stringContaining('unavailable'));
+});
+
+function publishedEpisode() {
+  return {
+    id: 51,
+    index: 1,
+    episodeNumber: null,
+    episodeType: 'EPISODE',
+    currentVersionId: 23,
+    jellyfinEpisodeId: 'old-episode',
+    currentVersion: {
+      files: [{ asset: { jellyfinPath: '/local/new/Season 1/Episode.mkv' } }],
+    },
+  };
+}
+it('waits for the renamed episode path before completing the series association', async () => {
+  const { service, prisma } = setup();
+  prisma.episode.findMany.mockResolvedValue([publishedEpisode()]);
+  const get = jest.spyOn(TvShowsService, 'getEpisodes').mockResolvedValue({
+    Items: [
+      {
+        Id: 'stale',
+        IndexNumber: 1,
+        ParentIndexNumber: 1,
+        Path: '/media/old/Season 1/Episode.mkv',
+      },
+    ],
+  });
+  const series = [
+    { Id: 'new-series', Path: '/media/new', ProviderIds: { Lani: '12' } },
+  ];
+  expect(await service.syncJellyfinSeriesId(season, series)).toBe(false);
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(prisma.season.update).not.toHaveBeenCalled();
+  get.mockResolvedValue({
+    Items: [
+      {
+        Id: 'new-episode',
+        IndexNumber: 1,
+        ParentIndexNumber: 1,
+        Path: '/media/new/Season 1/Episode.mkv',
+      },
+    ],
+  });
+  expect(await service.syncJellyfinSeriesId(season, series)).toBe(true);
+  expect(prisma.episode.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        id: 51,
+        currentVersionId: 23,
+        jellyfinEpisodeId: 'old-episode',
+      }),
+      data: { jellyfinEpisodeId: 'new-episode' },
+    }),
+  );
+  expect(prisma.$queryRaw).toHaveBeenCalled();
+  expect(prisma.season.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        id: 12,
+        jellyfinId: '',
+        lastWriteDirectory: 'new',
+      }),
+      data: { jellyfinId: 'new-series' },
+    }),
+  );
+});
+it('does not complete a stale association when publication or another rename changed the snapshot', async () => {
+  const { service, prisma } = setup();
+  prisma.episode.findMany.mockResolvedValue([publishedEpisode()]);
+  jest.spyOn(TvShowsService, 'getEpisodes').mockResolvedValue({
+    Items: [
+      {
+        Id: 'new-episode',
+        IndexNumber: 1,
+        ParentIndexNumber: 1,
+        Path: '/media/new/Season 1/Episode.mkv',
+      },
+    ],
+  });
+  const series = [
+    { Id: 'new-series', Path: '/media/new', ProviderIds: { Lani: '12' } },
+  ];
+  prisma.episode.updateMany.mockResolvedValueOnce({ count: 0 });
+  await expect(service.syncJellyfinSeriesId(season, series)).rejects.toThrow(
+    '剧集版本或播放关联已变化',
+  );
+  expect(prisma.season.updateMany).not.toHaveBeenCalled();
+  prisma.season.updateMany.mockResolvedValueOnce({ count: 0 });
+  await expect(service.syncJellyfinSeriesId(season, series)).rejects.toThrow(
+    '季度目录已变化',
+  );
 });
