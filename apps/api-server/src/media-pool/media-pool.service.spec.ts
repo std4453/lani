@@ -319,7 +319,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await pool.publish(await pool.register(first), context());
     const second = await input('second', 'mp4', false);
     await pool.publish(await pool.register(second), context());
-    await seasons.delete(seasonId);
+    await seasons.delete(seasonId, async () => undefined);
     expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
     expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(0);
     const assets = await db.mediaAsset.findMany({
@@ -344,14 +344,14 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
         else await fs.unlink(path.join(target, 'Episode.ass'));
         throw Object.assign(new Error('Permission denied'), { code: 'EACCES' });
       });
-      await expect(seasons.delete(seasonId)).rejects.toThrow(
-        'Permission denied',
-      );
+      await expect(
+        seasons.delete(seasonId, async () => undefined),
+      ).rejects.toThrow('Permission denied');
       remove.mockRestore();
       expect(await current()).toBe(version);
       expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
-      await seasons.delete(seasonId);
-      await seasons.delete(seasonId);
+      await seasons.delete(seasonId, async () => undefined);
+      await seasons.delete(seasonId, async () => undefined);
       expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
     },
   );
@@ -388,7 +388,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       await blocked;
       return original(target, options);
     });
-    const deletion = seasons.delete(seasonId);
+    const deletion = seasons.delete(seasonId, async () => undefined);
     await started;
     const creation = imports.importSingle(episodeId, '/source/video.mkv');
     const rejected = expect(creation).rejects.toThrow('部分剧集不存在');
@@ -398,6 +398,26 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await deletion;
     await rejected;
     expect(await db.task.count({ where: { episodeId } })).toBe(0);
+  });
+  it('目录删除后播放器刷新失败保留业务记录，重试刷新成功后才提交删除', async () => {
+    const version = await pool.register(
+      await input('delete-refresh', 'mkv', false),
+    );
+    await pool.publish(version, context());
+    const refresh = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('player offline'))
+      .mockResolvedValue(undefined);
+    await expect(seasons.delete(seasonId, refresh)).rejects.toThrow(
+      'player offline',
+    );
+    expect(await current()).toBe(version);
+    expect(
+      await identity(path.join(root, 'library', 'Episode.mkv')),
+    ).toBeUndefined();
+    await seasons.delete(seasonId, refresh);
+    expect(refresh).toHaveBeenCalledTimes(2);
+    expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
   });
   it('季度有活动任务时删除在文件变动前失败', async () => {
     const first = await input('first', 'mkv', false);
@@ -413,7 +433,9 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       },
     });
     const remove = jest.fn();
-    await expect(seasons.delete(seasonId)).rejects.toThrow('先处理任务');
+    await expect(
+      seasons.delete(seasonId, async () => undefined),
+    ).rejects.toThrow('先处理任务');
     expect(remove).not.toHaveBeenCalled();
     expect(await current()).toBe(version);
     expect(
@@ -542,7 +564,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       'content-rename-a',
     );
     await pool.publish(b, context());
-    await seasons.delete(seasonId);
+    await seasons.delete(seasonId, async () => undefined);
     expect(
       await db.mediaAsset.count({
         where: { poolPath: { startsWith: root }, jellyfinPath: { not: null } },

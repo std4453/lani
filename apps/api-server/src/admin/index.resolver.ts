@@ -169,12 +169,15 @@ export class AdminResolver {
 
   @Mutation(() => ID)
   async deleteSeasonById(@Args('id') id: number) {
+    this.gate.assertReady();
     const season = await this.prisma.season.findUnique({
+      rejectOnNotFound: false,
       where: { id },
       include: {
         jellyfinFolder: true,
       },
     });
+    if (!season) return 'ok';
     this.logger.log(`Deleting season #${id} (${season.title})...`);
     this.logger.verbose(
       `Deleting files for season #${id} (${season.title})...`,

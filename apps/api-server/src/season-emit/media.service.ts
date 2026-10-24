@@ -18,6 +18,7 @@ import { lockEpisode } from '@/task/atoms/publication';
 import { seasonMediaRoot } from '@/media-pool/paths';
 import { removeDirectoryIdempotent } from '@/utils/idempotency';
 import { canonical } from '@/media-pool/files';
+import { SeasonWithJellyfinFolder } from '@/types/entities';
 
 interface SeasonMove extends DirectoryMove {
   seasonId: number;
@@ -103,7 +104,10 @@ export class SeasonMediaService {
       throw error;
     }
   }
-  delete(seasonId: number) {
+  delete(
+    seasonId: number,
+    afterFiles: (season: SeasonWithJellyfinFolder) => Promise<void>,
+  ) {
     this.gate.assertReady();
     return this.operations.run(async () => {
       const season = await this.db.season.findUnique({
@@ -124,6 +128,8 @@ export class SeasonMediaService {
       }
       // 保留定位与关联直到递归删除完成；中断后继续删除同一目录。
       await removeDirectoryIdempotent(directory);
+      // 刷新失败仍保留季度定位，重试可处理已不存在的目录。
+      await afterFiles(season);
       await this.db.$transaction(async (tx) => {
         await assertSeasonIdle(tx, seasonId);
         const episodes = await tx.episode.findMany({

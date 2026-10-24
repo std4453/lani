@@ -341,7 +341,8 @@ export class SeasonEmitService {
   }
 
   async deleteSeason(season: SeasonWithJellyfinFolder) {
-    await this.media.delete(season.id);
-    await this.seasonJellyfin.refreshAfterDelete(season);
+    await this.media.delete(season.id, (current) =>
+      this.seasonJellyfin.refreshAfterDelete(current),
+    );
   }
 }
