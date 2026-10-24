@@ -12,7 +12,11 @@ import {
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
-    jellyfin: { apiEndpoint: 'http://127.0.0.1:1', dummyUserId: 'test' },
+    jellyfin: {
+      apiEndpoint: 'http://127.0.0.1:1',
+      dummyUserId: 'test',
+      pathMapping: [],
+    },
   },
 }));
 beforeEach(() => jest.useFakeTimers());
@@ -90,23 +94,41 @@ it('同季度多个剧集只刷新和查询一次，后续轮询仅查询，失�
     .mockResolvedValueOnce({ Items: [] })
     .mockResolvedValueOnce({
       Items: [
-        { Id: 'one', IndexNumber: 1, ParentIndexNumber: 1 },
-        { Id: 'two', IndexNumber: 2, ParentIndexNumber: 1 },
+        {
+          Id: 'one',
+          IndexNumber: 1,
+          ParentIndexNumber: 1,
+          Path: '/media/episode.mkv',
+        },
+        {
+          Id: 'two',
+          IndexNumber: 2,
+          ParentIndexNumber: 1,
+          Path: '/media/episode.mkv',
+        },
       ],
     });
   const queue = new PlayerRefreshService();
   const refreshed = jest.fn(async () => undefined);
   const bad = expect(
-    queue.enqueue(9, { seriesId: 'bad', season: 1, index: 1, refreshed }),
+    queue.enqueue(9, {
+      seriesId: 'bad',
+      filePath: '/media/episode.mkv',
+      season: 1,
+      index: 1,
+      refreshed,
+    }),
   ).rejects.toThrow('offline');
   const one = queue.enqueue(1, {
     seriesId: 'good',
+    filePath: '/media/episode.mkv',
     season: 1,
     index: 1,
     refreshed,
   });
   const two = queue.enqueue(2, {
     seriesId: 'good',
+    filePath: '/media/episode.mkv',
     season: 1,
     index: 2,
     refreshed,
@@ -127,6 +149,7 @@ it('全部取消后不再向 Jellyfin 发送刷新请求', async () => {
   const queue = new PlayerRefreshService();
   void queue.enqueue(1, {
     seriesId: 'series',
+    filePath: '/media/episode.mkv',
     season: 1,
     index: 1,
     refreshed: async () => undefined,
@@ -144,6 +167,7 @@ it('等待识别超过五分钟后失败，失败对象不再进入后续批次'
   const result = expect(
     queue.enqueue(1, {
       seriesId: 'series',
+      filePath: '/media/episode.mkv',
       season: 1,
       index: 1,
       refreshed: async () => undefined,
@@ -165,17 +189,26 @@ it('前一个季度刷新在途时取消后面的季度，不发送已取消季�
       }),
   );
   jest.spyOn(TvShowsService, 'getEpisodes').mockResolvedValue({
-    Items: [{ Id: 'one', IndexNumber: 1, ParentIndexNumber: 1 }],
+    Items: [
+      {
+        Id: 'one',
+        IndexNumber: 1,
+        ParentIndexNumber: 1,
+        Path: '/media/episode.mkv',
+      },
+    ],
   });
   const queue = new PlayerRefreshService();
   const first = queue.enqueue(1, {
     seriesId: 'first',
+    filePath: '/media/episode.mkv',
     season: 1,
     index: 1,
     refreshed: async () => undefined,
   });
   void queue.enqueue(2, {
     seriesId: 'cancelled',
+    filePath: '/media/episode.mkv',
     season: 1,
     index: 1,
     refreshed: async () => undefined,
@@ -231,4 +264,47 @@ it('成功查询后，种子不存在或明确错误才会使对应下载失败'
   await queue.refreshAllLegacyTaskStage();
   await Promise.all([missing, broken, good]);
   expect(await queue.refreshAllLegacyTaskStage()).toBe(0);
+});
+
+it('替换扩展名后忽略同集旧路径，等待新路径被识别且支持路径映射', async () => {
+  const config = (await import('@/config')).default;
+  const previous = config.jellyfin.pathMapping;
+  config.jellyfin.pathMapping = [{ from: '/jellyfin', to: '/media' }];
+  try {
+    jest.spyOn(JellyfinHelp, 'refreshItem').mockResolvedValue(undefined);
+    const old = {
+      Id: 'old',
+      IndexNumber: 1,
+      ParentIndexNumber: 1,
+      Path: '/jellyfin/episode.mkv',
+    };
+    const lookup = jest
+      .spyOn(TvShowsService, 'getEpisodes')
+      .mockResolvedValueOnce({
+        Items: [old, { ...old, Id: 'missing-path', Path: undefined }],
+      })
+      .mockResolvedValueOnce({
+        Items: [old, { ...old, Id: 'new', Path: '/jellyfin/episode.mp4' }],
+      });
+    const queue = new PlayerRefreshService();
+    const completed = jest.fn();
+    const result = queue
+      .enqueue(1, {
+        seriesId: 'series',
+        filePath: '/media/episode.mp4',
+        season: 1,
+        index: 1,
+        refreshed: async () => undefined,
+      })
+      .then(completed);
+    await queue.refreshAllPlayerWaitingStatus();
+    expect(completed).not.toHaveBeenCalled();
+    await queue.refreshAllPlayerWaitingStatus();
+    await result;
+    expect(completed).toHaveBeenCalledWith({ jellyfinEpisodeId: 'new' });
+    expect(lookup).toHaveBeenCalledWith('series', 'test', ['Path']);
+    expect(JellyfinHelp.refreshItem).toHaveBeenCalledTimes(1);
+  } finally {
+    config.jellyfin.pathMapping = previous;
+  }
 });

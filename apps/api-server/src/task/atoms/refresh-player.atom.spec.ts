@@ -14,7 +14,11 @@ jest.mock('./publication', () => ({
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
-    jellyfin: { apiEndpoint: 'http://127.0.0.1:1', dummyUserId: 'test' },
+    jellyfin: {
+      apiEndpoint: 'http://127.0.0.1:1',
+      dummyUserId: 'test',
+      pathMapping: [],
+    },
   },
 }));
 
@@ -64,7 +68,7 @@ function setup() {
     torrentTitle: null,
     downloadPath: null,
     importPath: null,
-    filePath: null,
+    filePath: '/media/episode.mkv',
     nfoPath: null,
     jellyfinEpisodeId: null,
   };
@@ -85,7 +89,14 @@ it('恢复时等待新的批量刷新后重新计时，不因旧检查点立即�
     .spyOn(TvShowsService, 'getEpisodes')
     .mockResolvedValueOnce({ Items: [] })
     .mockResolvedValueOnce({
-      Items: [{ Id: 'episode', IndexNumber: 1, ParentIndexNumber: 1 }],
+      Items: [
+        {
+          Id: 'episode',
+          IndexNumber: 1,
+          ParentIndexNumber: 1,
+          Path: '/media/episode.mkv',
+        },
+      ],
     });
   const result = atom.recover(1, input, context);
   // 让 atom 完成依赖读取并入队。
@@ -111,4 +122,13 @@ it('刷新失败不写计时起点，并将失败任务移出队列', async () =
   await result;
   expect(context.saveCheckpoint).not.toHaveBeenCalled();
   expect(await refresh.refreshAllPlayerWaitingStatus()).toBe(0);
+});
+
+it('缺少导入路径时拒绝刷新，避免仅凭集号关联旧条目', async () => {
+  const { atom, context, input, refresh } = setup();
+  const enqueue = jest.spyOn(refresh, 'enqueue');
+  await expect(
+    atom.recover(1, { ...input, filePath: null }, context),
+  ).rejects.toThrow('缺少已导入的视频路径');
+  expect(enqueue).not.toHaveBeenCalled();
 });

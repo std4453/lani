@@ -2,14 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import {
+  ItemFields,
   JellyfinHelp,
   MetadataRefreshMode,
   TvShowsService,
 } from '@/api/jellyfin';
 import config from '@/config';
 import { BatchQueue, QueueEntry } from './batch-queue';
+import { mapPath } from '@/utils/path';
+import path from 'path';
 interface PlayerRequest {
   seriesId: string;
+  filePath: string;
   season: number;
   index: number;
   startedAt?: number;
@@ -79,12 +83,18 @@ export class PlayerRefreshService extends BatchQueue<
         const { Items } = await TvShowsService.getEpisodes(
           seriesId,
           config.jellyfin.dummyUserId,
+          [ItemFields.PATH],
         );
         for (const [id, entry] of group) {
-          const { season, index, startedAt } = entry.input;
+          const { season, index, filePath, startedAt } = entry.input;
+          // 刷新是异步的；同集旧条目仍可能存在，必须等到实际发布路径被识别。
           const episode = (Items ?? []).find(
             (item) =>
-              item.IndexNumber === index && item.ParentIndexNumber === season,
+              item.IndexNumber === index &&
+              item.ParentIndexNumber === season &&
+              !!item.Path &&
+              path.resolve(mapPath(config.jellyfin.pathMapping, item.Path)) ===
+                path.resolve(filePath),
           );
           if (episode?.Id)
             this.settle(id, entry, { jellyfinEpisodeId: episode.Id });
