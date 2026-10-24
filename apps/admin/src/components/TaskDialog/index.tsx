@@ -12,7 +12,7 @@ export default function TaskDialog({
   return (
     <Modal
       {...props}
-      className={styles.dialog}
+      className={clsx(styles.dialog, titleActions && styles.hasActions)}
       title={
         <div className={clsx(styles.title, titleActions && styles.withActions)}>
           <span role="heading" aria-level={2}>

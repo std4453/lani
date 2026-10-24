@@ -204,3 +204,26 @@ test('replaces failed posters and retries when the image changes', async () => {
   );
   expect(container.querySelector('[aria-label="逐集状态"]')).toBeNull();
 });
+
+test.each([0, 1])(
+  'preserves keyboard focus but releases pointer focus before opening (click detail=%s)',
+  (detail) => {
+    const open = jest.fn(() => {
+      expect(document.activeElement === container.querySelector('button')).toBe(
+        detail === 0,
+      );
+    });
+    act(() => {
+      ReactDOM.render(
+        <SeasonCard season={season()} openEpisode={open} />,
+        container,
+      );
+    });
+    const button = container.querySelector<HTMLButtonElement>('button')!;
+    button.focus();
+    act(() => {
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }));
+    });
+    expect(open).toHaveBeenCalledTimes(1);
+  },
+);

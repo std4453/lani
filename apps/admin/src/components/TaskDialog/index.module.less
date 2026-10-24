@@ -51,24 +51,39 @@
 }
 .withActions {
   padding-right: (
-    3 * @modal-header-close-size - @modal-header-padding-horizontal
+    3 * (@modal-header-close-size - 12px) + 6px -
+      @modal-header-padding-horizontal
   );
+}
+.hasActions :global(.ant-modal-close) {
+  right: 6px;
+  :global(.ant-modal-close-x) {
+    width: (@modal-header-close-size - 12px);
+  }
 }
 .actions {
   position: absolute;
   top: 0;
-  right: @modal-header-close-size;
+  right: (@modal-header-close-size - 6px);
   display: flex;
-  :global(.ant-btn) {
-    width: @modal-header-close-size;
+  > button {
+    width: (@modal-header-close-size - 12px);
     height: @modal-header-close-size;
     padding: 0;
     border: 0;
     border-radius: 0;
     font-size: @font-size-lg;
     color: var(--lani-text-secondary);
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.3s;
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      color: var(--lani-icon-hover);
+    }
     &:disabled {
       opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 }

@@ -86,8 +86,11 @@ let client: ApolloClient<NormalizedCacheObject>;
 let calls: string[];
 let fail: string | undefined;
 let absent: boolean;
+let failEpisode: number | undefined;
+let detailIds: number[];
 let delayedEpisode: number | undefined;
 let finishLate: () => void;
+const reject = jest.fn();
 let render: (
   input: { episodeId?: number; taskId?: number },
   visible?: boolean,
@@ -103,6 +106,8 @@ beforeEach(() => {
   calls = [];
   fail = undefined;
   absent = false;
+  failEpisode = undefined;
+  detailIds = [];
   delayedEpisode = undefined;
   jest.clearAllMocks();
   container = document.createElement('div');
@@ -114,7 +119,13 @@ beforeEach(() => {
         new Observable((observer) => {
           const name = operation.operationName;
           calls.push(name);
-          if (fail === name) {
+          if (name === 'GetEpisodeById')
+            detailIds.push(operation.variables.episodeByIdId);
+          if (
+            fail === name ||
+            (name === 'GetEpisodeById' &&
+              operation.variables.episodeByIdId === failEpisode)
+          ) {
             observer.error(new Error('offline'));
             return;
           }
@@ -137,9 +148,10 @@ beforeEach(() => {
                 }
               : name === 'GetEpisodeById'
               ? {
-                  episodeById: absent
-                    ? null
-                    : episode(operation.variables.episodeByIdId),
+                  episodeById:
+                    absent && operation.variables.episodeByIdId === 20
+                      ? null
+                      : episode(operation.variables.episodeByIdId),
                 }
               : {
                   taskById: {
@@ -167,7 +179,7 @@ beforeEach(() => {
           input={input}
           visible={visible}
           resolve={jest.fn()}
-          reject={jest.fn()}
+          reject={reject}
         />
       </ApolloProvider>,
       container,
@@ -258,15 +270,15 @@ test('navigation failure shows a toast and disables both controls without hiding
 test.each([false, true])(
   'can navigate away from failed or missing episode details (missing=%s)',
   async (missing) => {
-    await act(async () => render({ episodeId: 10, taskId: 11 }));
     if (missing) absent = true;
-    else fail = 'GetEpisodeById';
+    else failEpisode = 20;
+    await act(async () => render({ episodeId: 10, taskId: 11 }));
     await click('下一集');
     expect(document.querySelector('.ant-alert')?.textContent).toBe(
       missing ? '剧集不存在' : '剧集加载失败',
     );
     expect(button('上一集').disabled).toBe(false);
-    fail = undefined;
+    failEpisode = undefined;
     absent = false;
     await click('上一集');
     expect(document.querySelector('[role="heading"]')?.textContent).toContain(
@@ -276,8 +288,8 @@ test.each([false, true])(
 );
 
 test('a late response cannot replace the episode selected by rapid navigation', async () => {
-  await act(async () => render({ episodeId: 10 }));
   delayedEpisode = 20;
+  await act(async () => render({ episodeId: 10 }));
   await click('下一集');
   await click('下一集');
   expect(document.querySelector('[role="heading"]')?.textContent).toContain(
@@ -292,4 +304,107 @@ test('a late response cannot replace the episode selected by rapid navigation', 
   expect(document.querySelector('.ant-tabs-tab-active')?.textContent).toContain(
     '#32',
   );
+});
+
+test('preloads only adjacent details and switches from cache without a loading skeleton', async () => {
+  await act(async () => render({ episodeId: 20 }));
+  expect(detailIds.sort()).toEqual([10, 20, 30]);
+  expect(document.querySelector('.ant-skeleton')).toBeNull();
+  act(() => Simulate.click(button('下一集')));
+  expect(document.querySelector('[role="heading"]')?.textContent).toContain(
+    '剧集 30',
+  );
+  expect(document.querySelector('.ant-skeleton')).toBeNull();
+  await click('上一集');
+  await click('上一集');
+  expect(detailIds).toHaveLength(3);
+});
+
+test('hidden dialogs do not request details or adjacent episodes', async () => {
+  await act(async () => render({ episodeId: 20 }, false));
+  expect(calls).toEqual([]);
+});
+
+test('arrow keys navigate but preserve editing, tabs, modifiers and nested dialogs', async () => {
+  const input = { episodeId: 20 };
+  await act(async () => render(input));
+  const wrap = document.querySelector<HTMLDivElement>('.ant-modal-wrap')!;
+  const press = async (target: Element, key: string, extras = {}) => {
+    await act(async () => Simulate.keyDown(target, { key, ...extras }));
+  };
+  const expectEpisode = (id: number) =>
+    expect(document.querySelector('[role="heading"]')?.textContent).toContain(
+      `剧集 ${id}`,
+    );
+  await press(button('下一集'), 'ArrowRight');
+  expectEpisode(30);
+  await press(button('上一集'), 'ArrowRight');
+  expectEpisode(30);
+  await press(button('上一集'), 'ArrowLeft');
+  expectEpisode(20);
+  for (const extras of [
+    { ctrlKey: true },
+    { altKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { defaultPrevented: true },
+  ]) {
+    await press(button('上一集'), 'ArrowLeft', extras);
+    expectEpisode(20);
+  }
+  await press(document.querySelector('[role="tab"]')!, 'ArrowLeft');
+  expectEpisode(20);
+  for (const html of [
+    '<input />',
+    '<textarea></textarea>',
+    '<select></select>',
+    '<div contenteditable="true"><span>编辑</span></div>',
+    '<div class="ant-modal-wrap"><button>子弹窗</button></div>',
+  ]) {
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    wrap.appendChild(host);
+    await act(async () => {
+      host
+        .querySelector('input, textarea, select, span, button')!
+        .dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }),
+        );
+    });
+    expectEpisode(20);
+    host.remove();
+  }
+  await act(async () => render(input, false));
+  await act(async () => render(input));
+  expectEpisode(20);
+});
+
+test('reaching either boundary keeps focus inside the dialog and preserves Esc handling', async () => {
+  await act(async () => render({ episodeId: 20 }));
+  button('下一集').focus();
+  await click('下一集');
+  expect(document.activeElement).toBe(
+    document.querySelector('.ant-modal-wrap'),
+  );
+  const press = async (key: string, keyCode: number) => {
+    await act(async () => {
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key, keyCode, bubbles: true }),
+      );
+    });
+  };
+  await press('ArrowLeft', 37);
+  expect(document.querySelector('[role="heading"]')?.textContent).toContain(
+    '剧集 20',
+  );
+  button('上一集').focus();
+  await press('ArrowLeft', 37);
+  expect(document.activeElement).toBe(
+    document.querySelector('.ant-modal-wrap'),
+  );
+  expect(document.querySelector('[role="heading"]')?.textContent).toContain(
+    '剧集 10',
+  );
+  await press('Escape', 27);
+  expect(reject).toHaveBeenCalledTimes(1);
 });

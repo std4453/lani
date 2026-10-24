@@ -17,10 +17,10 @@ import { handleError } from '@/utils/error';
 import { extractNode } from '@/utils/graphql';
 import { useApolloPoll } from '@/utils/useApolloPoll';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
-import { useQuery } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { Alert, Button, Skeleton, Tabs, Tooltip, Typography } from 'antd';
-import { useState, useEffect } from 'react';
+import { Alert, Skeleton, Tabs, Typography } from 'antd';
+import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 
 export default function EpisodeDetailsDialog({
   reject,
@@ -77,6 +77,66 @@ export default function EpisodeDetailsDialog({
   const position = episodes.findIndex((item) => item.id === episodeId);
   const previous = position > 0 ? episodes[position - 1] : undefined;
   const next = position >= 0 ? episodes[position + 1] : undefined;
+  const client = useApolloClient();
+  const previousId = previous?.id;
+  const nextId = next?.id;
+  const previousButton = useRef<HTMLButtonElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  const navigate = (id: number) => {
+    // 边界按钮即将禁用时，把焦点留在弹窗内，继续响应方向键和 Esc。
+    if (
+      (id === episodes[0]?.id &&
+        document.activeElement === previousButton.current) ||
+      (id === episodes[episodes.length - 1]?.id &&
+        document.activeElement === nextButton.current)
+    ) {
+      (document.activeElement as HTMLElement)
+        .closest<HTMLElement>('.ant-modal-wrap')
+        ?.focus();
+    }
+    setSelection({ input, episodeId: id });
+  };
+  useEffect(() => {
+    if (!visible || !input?.episodeId) return;
+    for (const id of [previousId, nextId]) {
+      if (id === undefined) continue;
+      void client
+        .query({
+          query: GetEpisodeByIdDocument,
+          variables: { episodeByIdId: id },
+          fetchPolicy: 'cache-first',
+        })
+        // 预加载失败由切换后的详情查询重试并展示错误。
+        .catch(() => undefined);
+    }
+  }, [client, visible, input?.episodeId, previousId, nextId]);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (
+      !visible ||
+      !input?.episodeId ||
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      !(event.target instanceof HTMLElement) ||
+      event.target.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="tablist"], [role="slider"], [role="combobox"]',
+      ) ||
+      event.target.closest('.ant-modal-wrap') !== event.currentTarget
+    )
+      return;
+    const target =
+      event.key === 'ArrowLeft'
+        ? previous
+        : event.key === 'ArrowRight'
+        ? next
+        : undefined;
+    if (target) {
+      event.preventDefault();
+      navigate(target.id);
+    }
+  };
   const tasks = episode
     ? extractNode(episode.tasksByEpisodeId) ?? []
     : task
@@ -101,24 +161,36 @@ export default function EpisodeDetailsDialog({
     <TaskDialog
       visible={visible}
       onCancel={reject}
+      wrapProps={{ onKeyDownCapture: onKeyDown }}
       titleActions={
         input?.episodeId && (
           <>
             {[
-              { target: previous, label: '上一集', icon: <LeftOutlined /> },
-              { target: next, label: '下一集', icon: <RightOutlined /> },
-            ].map(({ target, label, icon }) => (
-              <Tooltip key={label} title={label}>
-                <Button
-                  type="text"
-                  aria-label={label}
-                  icon={icon}
-                  disabled={!target}
-                  onClick={() => {
-                    if (target) setSelection({ input, episodeId: target.id });
-                  }}
-                />
-              </Tooltip>
+              {
+                target: previous,
+                label: '上一集',
+                icon: <LeftOutlined />,
+                ref: previousButton,
+              },
+              {
+                target: next,
+                label: '下一集',
+                icon: <RightOutlined />,
+                ref: nextButton,
+              },
+            ].map(({ target, label, icon, ref }) => (
+              <button
+                key={label}
+                ref={ref}
+                type="button"
+                aria-label={label}
+                disabled={!target}
+                onClick={() => {
+                  if (target) navigate(target.id);
+                }}
+              >
+                {icon}
+              </button>
             ))}
           </>
         )
