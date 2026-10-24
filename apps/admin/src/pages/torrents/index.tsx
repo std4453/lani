@@ -24,7 +24,6 @@ import {
 } from '@/utils/search';
 import useMobile from '@/utils/useMobile';
 import {
-  CloseCircleOutlined,
   ExportOutlined,
   HistoryOutlined,
   InfoCircleOutlined,
@@ -147,17 +146,6 @@ function useColumns() {
               <Tooltip title="根据当前季度列表智能识别">
                 <InfoCircleOutlined aria-label="根据当前季度列表智能识别" />
               </Tooltip>
-              {observedState.custom.alias && (
-                <Tooltip title="取消季度名称筛选">
-                  <Button
-                    type="link"
-                    size="small"
-                    aria-label="取消季度名称筛选"
-                    icon={<CloseCircleOutlined />}
-                    onClick={() => update({ custom: { alias: '' } })}
-                  />
-                </Tooltip>
-              )}
             </>
           ),
           dataIndex: 'season',
@@ -172,7 +160,12 @@ function useColumns() {
                       <ColoredTag
                         key={i}
                         text={alias}
-                        onClick={() => update({ custom: { alias } })}
+                        onClick={() =>
+                          update({
+                            custom: { alias },
+                            filter: { season: ['_custom_filtered'] },
+                          })
+                        }
                       />
                     ) : null,
                   )}
@@ -183,13 +176,24 @@ function useColumns() {
             </TorrentSeason>
           ),
           filters: [
+            ...(observedState.custom.alias
+              ? [
+                  {
+                    text: observedState.custom.alias,
+                    value: '_custom_filtered',
+                  },
+                ]
+              : []),
             { text: '关联季度', value: 'match' },
             { text: '未关联季度', value: 'no_match' },
           ],
           filterMultiple: false,
-          stateKey: {
-            filter: 'season',
-          },
+          defaultFilteredValue: observedState.custom.alias
+            ? ['_custom_filtered']
+            : observedState.filter.season,
+          filteredValue: observedState.custom.alias
+            ? ['_custom_filtered']
+            : observedState.filter.season,
         },
         {
           title: '集数',
@@ -328,7 +332,7 @@ function useColumns() {
           fixed: 'right',
         },
       ],
-      [mobile, update, observedState.custom.alias],
+      [mobile, update, observedState.custom.alias, observedState.filter.season],
     ),
   );
 }
@@ -477,14 +481,21 @@ export default withAntdSearch(function Torrents() {
   const ref = useRef<ActionType>();
   const client = useApolloClient();
   const props = useAntdSearchProps(
-    ({ search, sort, filter, custom, current, pageSize, keyword }) =>
-      queryTorrents(
+    (state) => {
+      // 名称和关联状态共用一个筛选入口，切换或重置时同步清除名称的 URL 状态。
+      if (!state.filter.season?.includes('_custom_filtered')) {
+        state.custom = { ...state.custom, alias: '' };
+      }
+      const { search, sort, filter, custom, current, pageSize, keyword } =
+        state;
+      return queryTorrents(
         client,
         { ...search, pageSize, current, keyword },
         sort,
         filter,
         custom,
-      ),
+      );
+    },
     {
       hasKeyword: true,
       pagination: {
