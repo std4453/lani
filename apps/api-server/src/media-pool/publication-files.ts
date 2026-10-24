@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { FileIdentity } from '@lani/workflow';
 import {
   canonical,
-  digest,
+  verifyTransfer,
   durable,
   identity,
   linkOrCopy,
@@ -18,7 +18,7 @@ export interface PublicationFile {
   backup: string;
   staged: string;
   next?: FileIdentity;
-  hash?: string;
+
   mode?: LinkMode;
 }
 export interface PublicationJournal {
@@ -28,12 +28,13 @@ export interface PublicationJournal {
 export interface PublicationSource {
   target: string;
   source: string;
-  hash: string;
+  assetId: string;
+  identity: FileIdentity;
 }
 
 /** 准备所有新文件和旧文件备份成功后，调用方才允许持久化日志并开始切换。 */
 export async function preparePublication(
-  old: Array<{ target: string; identity: FileIdentity }>,
+  old: Array<{ target: string; identity: FileIdentity; assetId: string }>,
   next: PublicationSource[],
   acceptCopy: boolean,
 ): Promise<PublicationJournal> {
@@ -50,6 +51,14 @@ export async function preparePublication(
       const current = await identity(target);
       if (previous ? !sameFile(previous.identity, current) : !!current)
         throw new Error('媒体目标已变化或未登记，不能覆盖');
+      const replacement = next.find((f) => f.target === target);
+      if (
+        replacement &&
+        !sameFile(replacement.identity, await identity(replacement.source))
+      )
+        throw new Error('媒体池文件身份已变化');
+      // 明确沿用 UUID 与目标的文件原位保留，不进入切换日志。
+      if (previous && replacement?.assetId === previous.assetId) continue;
       const file: PublicationFile = {
         target,
         old: current,
@@ -58,17 +67,18 @@ export async function preparePublication(
       };
       journal.files.push(file);
       if (current) await fs.link(target, file.backup);
-      const replacement = next.find((f) => f.target === target);
       if (replacement) {
-        file.hash = replacement.hash;
         file.mode = await linkOrCopy(
           replacement.source,
           file.staged,
           acceptCopy,
         );
-        if ((await digest(file.staged)).hash !== replacement.hash)
-          throw new Error('待发布媒体内容校验失败');
-        file.next = await identity(file.staged);
+        file.next = await verifyTransfer(
+          replacement.source,
+          file.staged,
+          replacement.identity,
+          file.mode,
+        );
         await durable(file.staged);
       }
       await durable(path.dirname(target));

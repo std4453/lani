@@ -218,6 +218,7 @@ export class AdminResolver {
     })
     { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
+    this.mediaPool.assertWritable();
     this.logger.log(`Updating season #${id}...`);
     this.logger.verbose(`Writing season #${id} to db...`);
     const results = await this.prisma.$transaction([

@@ -1,3 +1,4 @@
+import { MediaWriteState } from '@/media-pool/write-state';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -52,6 +53,7 @@ export class TaskService
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
     findImportFiles: FindImportFilesAtom,
+    private mediaState?: MediaWriteState,
   ) {
     this.atoms = {
       submitDownload,
@@ -74,6 +76,7 @@ export class TaskService
     definition: StepDefinition[],
     params: TaskParams,
   ) {
+    this.mediaState?.assertReady();
     const workflow = buildWorkflowSnapshot(
       definition,
       this.atoms,
@@ -88,11 +91,16 @@ export class TaskService
       },
     });
   }
+  get mediaWritesReady() {
+    return this.mediaState?.ready ?? true;
+  }
   start(taskId: number) {
+    this.mediaState?.assertReady();
     return this.runner.start(taskId);
   }
   @Mutation(() => ID)
   async retryTask(@Args('taskId') taskId: number) {
+    this.mediaState?.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许重试');
@@ -104,6 +112,7 @@ export class TaskService
   }
   @Mutation(() => ID)
   async cancelTask(@Args('taskId') taskId: number) {
+    this.mediaState?.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许取消');
@@ -136,6 +145,13 @@ export class TaskService
     });
   }
   async onApplicationBootstrap() {
+    if (this.mediaState) {
+      this.mediaState.onReady(() => this.resumeTasks());
+      return;
+    }
+    await this.resumeTasks();
+  }
+  private async resumeTasks() {
     await this.prisma.task.updateMany({
       where: {
         workflow: { equals: Prisma.DbNull },

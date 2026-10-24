@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  previewFeatures = ["interactiveTransactions"]
+  previewFeatures = ["interactiveTransactions", "filterJson"]
   output        = "../dist"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
@@ -382,13 +382,13 @@ model BackgroundJob {
   @@map("background_jobs")
 }
 
-// 媒体池文件按内容寻址；只登记下载目录和播放器两个外部位置。
+// 每次独立导入生成 UUID；原件不按内容去重。外部位置可随受控目录迁移更新。
 model MediaAsset {
-  hash               String @id
+  id                 String @id @db.Uuid
   size               BigInt
   poolPath           String @unique @map("pool_path")
   poolIdentity       Json @map("pool_identity")
-  downloadPath       String? @unique @map("download_path")
+  downloadPath       String? @map("download_path")
   downloadMode       String? @map("download_mode")
   downloadIdentity   Json? @map("download_identity")
   jellyfinPath       String? @unique @map("jellyfin_path")
@@ -400,6 +400,7 @@ model MediaAsset {
   @@map("media_assets")
 }
 
+// 创建即完整，文件 UUID 集合、角色及相对布局不可变；内容变化创建新版本。
 model EpisodeVersion {
   id                 Int @id @default(autoincrement())
   episodeId          Int @map("episode_id")
@@ -418,13 +419,14 @@ model EpisodeVersion {
 
 model EpisodeVersionFile {
   versionId          Int @map("version_id")
-  assetHash          String @map("asset_hash")
+  assetId            String @db.Uuid @map("asset_id")
+  // 相对季度实际目录的布局；实际发布位置另存于 MediaAsset。
   targetPath         String @map("target_path")
   role               String
   version            EpisodeVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  asset              MediaAsset @relation(fields: [assetHash], references: [hash], onDelete: Restrict)
+  asset              MediaAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
 
-  @@id([versionId, assetHash])
+  @@id([versionId, assetId])
   @@unique([versionId, targetPath])
   @@map("episode_version_files")
 }

@@ -3,10 +3,21 @@ import { constants, createReadStream } from 'fs';
 import { createHash, randomUUID } from 'crypto';
 import path from 'path';
 import { FileIdentity } from '@lani/workflow';
-import { sameFile } from '@/task/atoms/import-file.operation';
 
 export type LinkMode = 'hardlink' | 'copy';
-export { sameFile };
+export function sameFile(
+  a: FileIdentity | undefined,
+  b: FileIdentity | undefined,
+) {
+  return (
+    !!a &&
+    !!b &&
+    a.dev === b.dev &&
+    a.ino === b.ino &&
+    a.size === b.size &&
+    a.mtimeMs === b.mtimeMs
+  );
+}
 export async function identity(
   filename: string,
 ): Promise<FileIdentity | undefined> {
@@ -79,63 +90,124 @@ export async function canonical(filename: string) {
   return normalized;
 }
 
+/** 硬链接校验 inode；复制才读取内容，身份快照始终覆盖整个操作。 */
+export async function verifyTransfer(
+  source: string,
+  target: string,
+  before: FileIdentity,
+  mode: LinkMode,
+) {
+  const result = await identity(target);
+  if (!sameFile(before, await identity(source)) || !result)
+    throw new Error('导入期间源文件发生变化');
+  if (mode === 'hardlink') {
+    if (!sameFile(before, result)) throw new Error('硬链接文件身份不一致');
+  } else {
+    const sourceDigest = await digest(source);
+    const targetDigest = await digest(target);
+    if (sourceDigest.hash !== targetDigest.hash)
+      throw new Error('复制文件内容校验失败');
+    if (
+      !sameFile(before, sourceDigest.identity) ||
+      !sameFile(result, targetDigest.identity)
+    )
+      throw new Error('复制期间文件身份发生变化');
+  }
+  if (
+    !sameFile(before, await identity(source)) ||
+    !sameFile(result, await identity(target))
+  )
+    throw new Error('导入期间文件身份发生变化');
+  return result;
+}
+
+/** UUID 和源身份由准备记录先行持久化；已有目标只允许属于同一次操作。 */
 export async function importToPool(
   root: string,
   source: string,
   acceptCopy: boolean,
+  id = randomUUID(),
+  expected?: FileIdentity,
 ) {
   source = await canonical(source);
-  const content = await digest(source);
-  const poolPath = path.join(
-    root,
-    'sha256',
-    content.hash.slice(0, 2),
-    content.hash,
-  );
+  const before = await identity(source);
+  if (!before || !before.size) throw new Error('媒体文件不存在或为空');
+  if (expected && !sameFile(expected, before))
+    throw new Error('导入源文件已经变化');
+  if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error('媒体文件 UUID 无效');
+  const poolPath = path.join(root, 'files', id.slice(0, 2), id);
   await fs.mkdir(path.dirname(poolPath), { recursive: true });
   await canonical(poolPath);
+  const receipt = `${poolPath}.json`;
+  let mode: LinkMode;
   let poolIdentity = await identity(poolPath);
-  if (!poolIdentity) {
-    const temporary = `${poolPath}.${randomUUID()}.tmp`;
+  if (poolIdentity) {
+    // 完成文件和回执原子发布之间中断：硬链接可直接验证，复制需核对内容。
+    const saved = JSON.parse(await fs.readFile(receipt, 'utf8'));
+    if (
+      saved.id !== id ||
+      saved.source !== source ||
+      !sameFile(saved.sourceIdentity, before)
+    )
+      throw new Error('媒体池目标归属冲突');
+    mode = saved.mode;
+    if (saved.poolIdentity && !sameFile(saved.poolIdentity, poolIdentity))
+      throw new Error('媒体池目标身份已变化');
+    await verifyTransfer(source, poolPath, before, mode);
+  } else {
+    const temporary = `${poolPath}.tmp`;
+    // 固定暂存名只能在匹配本次 UUID 的准备回执后清理。
     try {
-      await linkOrCopy(source, temporary, acceptCopy);
+      const saved = JSON.parse(await fs.readFile(receipt, 'utf8'));
       if (
-        !sameFile(content.identity, await identity(source)) ||
-        (await digest(temporary)).hash !== content.hash
+        saved.id !== id ||
+        saved.source !== source ||
+        !sameFile(saved.sourceIdentity, before)
       )
-        throw new Error('导入期间源文件发生变化');
+        throw new Error('媒体池目标归属冲突');
+      await fs.rm(temporary, { force: true });
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    await writeRecord(receipt, { id, source, sourceIdentity: before });
+    mode = await linkOrCopy(source, temporary, acceptCopy);
+    try {
+      poolIdentity = await verifyTransfer(source, temporary, before, mode);
       await durable(temporary);
-      try {
-        await fs.link(temporary, poolPath);
-      } catch (error) {
-        if (error.code !== 'EEXIST') throw error;
-      }
+      await writeRecord(receipt, {
+        id,
+        source,
+        sourceIdentity: before,
+        mode,
+        poolIdentity,
+      });
+      await fs.link(temporary, poolPath);
       await durable(path.dirname(poolPath));
     } finally {
       await fs.rm(temporary, { force: true });
     }
-    poolIdentity = await identity(poolPath);
   }
-  if ((await digest(poolPath)).hash !== content.hash)
-    throw new Error('媒体池文件内容校验失败');
-  if (!sameFile(content.identity, await identity(source)))
-    throw new Error('导入源文件已经变化');
-  const sameInode =
-    poolIdentity!.dev === content.identity.dev &&
-    poolIdentity!.ino === content.identity.ino;
-  if (!sameInode && poolIdentity!.dev !== content.identity.dev && !acceptCopy)
-    throw new Error(
-      '媒体路径不在同一卷，未启用 painfullyAcceptCrossDeviceCopy',
-    );
   return {
-    hash: content.hash,
-    size: BigInt(content.identity.size),
+    id,
+    size: BigInt(before.size),
     poolPath,
     poolIdentity: poolIdentity!,
     source,
-    sourceIdentity: content.identity,
-    mode: sameInode ? ('hardlink' as const) : ('copy' as const),
+    sourceIdentity: before,
+    mode,
   };
+}
+
+/** 恢复记录先落盘再改变媒体文件；同目录 rename 保证只读到完整 JSON。 */
+export async function writeRecord(filename: string, value: unknown) {
+  const temporary = `${filename}.${randomUUID()}.tmp`;
+  await fs.writeFile(temporary, JSON.stringify(value), {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  await durable(temporary);
+  await fs.rename(temporary, filename);
+  await durable(path.dirname(filename));
 }
 
 export const SUBTITLE = /\.(?:srt|ass|ssa|sub|idx|vtt)$/i;

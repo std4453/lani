@@ -1,5 +1,4 @@
-import { batchImportEntries } from '@lani/workflow';
-import { Prisma } from '@lani/db';
+import { MediaPoolService } from '@/media-pool/media-pool.service';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
 import config from '@/config';
@@ -33,9 +32,11 @@ export class SeasonEmitService {
     private s3: S3Service,
     private seasonJellyfin: SeasonJellyfinService,
     private prisma: PrismaService,
+    private mediaPool?: MediaPoolService,
   ) {}
 
   async writeSeasonMetadata(season: SeasonWithFolderAndImages) {
+    this.mediaPool?.assertWritable();
     this.logger.log(
       `Writing metadata for season #${season.id} (${season.title})`,
     );
@@ -156,67 +157,14 @@ export class SeasonEmitService {
     );
     const oldPath = resolveSeasonPath(root, oldDirectory);
     const newPath = resolveSeasonPath(root, season.directory ?? '');
-    const exists = async (filename: string) => {
-      try {
-        await fs.lstat(filename);
-        return true;
-      } catch (error) {
-        if (error.code === 'ENOENT') return false;
-        throw error;
-      }
-    };
-    const oldExists = await exists(oldPath);
-    const newExists = await exists(newPath);
-    if (newExists) {
-      // 进程可能在 rename 成功、数据库更新前中断，只允许恢复本季度的目标目录。
-      if (oldExists || !(await this.ownsDirectory(newPath, season.id))) {
-        throw new Error('目标季度目录已存在，无法自动移动');
-      }
-    } else if (oldExists) {
-      await fs.rename(oldPath, newPath);
-    } else {
-      throw new Error('原季度目录不存在，无法自动移动');
-    }
-
-    // 任务重试会使用持久化的路径，必须与移动后的目录一起更新。
-    const jobs = await this.prisma.task.findMany({
-      where: { episodes: { some: { episode: { seasonId: season.id } } } },
-      select: { id: true },
-    });
-    const movePath = (value: string | null) => {
-      if (!value) return value;
-      const relative = path.relative(oldPath, value);
-      return relative &&
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-        ? path.join(newPath, relative)
-        : value;
-    };
-    for (const { id } of jobs) {
-      await this.prisma.$transaction(async (tx) => {
-        // 与 TaskStore 使用同一行锁；在锁内合并最新产物，并使旧快照的 CAS 失效。
-        await tx.$queryRaw`SELECT id FROM download_jobs WHERE id=${id} FOR UPDATE`;
-        const job = await tx.task.findUnique({ where: { id } });
-        if (!job) return;
-        await tx.task.update({
-          where: { id },
-          data: {
-            filePath: movePath(job.filePath),
-            nfoPath: movePath(job.nfoPath),
-            batchEntries:
-              job.batchEntries == null
-                ? Prisma.DbNull
-                : batchImportEntries(job.batchEntries).map((entry) => ({
-                    ...entry,
-                    filePath: movePath(entry.filePath ?? null),
-                    nfoPath: movePath(entry.nfoPath ?? null),
-                  })),
-            version: { increment: 1 },
-          },
-        });
-      });
-    }
+    if (!this.mediaPool)
+      throw new Error('MediaPoolService is required for directory moves');
+    await this.mediaPool.renameSeason(
+      season.id,
+      oldPath,
+      newPath,
+      season.directory!,
+    );
     return { oldPath, newPath };
   }
 
@@ -380,6 +328,7 @@ export class SeasonEmitService {
   }
 
   async deleteSeasonFiles(season: SeasonWithJellyfinFolder) {
+    this.mediaPool?.assertWritable();
     const { jellyfinFolder } = season;
     const seasonRoot = mapPath(
       config.jellyfin.pathMapping,

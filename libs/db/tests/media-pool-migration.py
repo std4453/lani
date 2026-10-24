@@ -48,8 +48,8 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
         except RuntimeError:
             pass
         for statement in [
-            "INSERT INTO media_assets(hash,size,pool_path,pool_identity) VALUES ('invalid',1,'/pool','{}')",
-            "INSERT INTO media_assets(hash,size,pool_path,pool_identity,download_path,download_mode) VALUES (repeat('a',64),1,'/pool','{}','/download','copy')",
+            "INSERT INTO media_assets(id,size,pool_path,pool_identity) VALUES ('invalid',1,'/pool','{}')",
+            "INSERT INTO media_assets(id,size,pool_path,pool_identity,download_path,download_mode) VALUES ('00000000-0000-4000-8000-000000000001',1,'/pool','{}','/download','copy')",
             "UPDATE episode_versions SET source='guessed'",
         ]:
             try:
@@ -57,6 +57,16 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
                 raise AssertionError('invalid media state was accepted')
             except RuntimeError:
                 pass
+        asset_id = '00000000-0000-4000-8000-000000000001'
+        sql(f"INSERT INTO media_assets(id,size,pool_path,pool_identity) VALUES ('{asset_id}',1,'/pool/file','{{}}')")
+        for invalid_path in ['/absolute.mkv', '../escape.mkv', 'Season 1/../../escape', 'a//b', 'a/./b', 'a/', 'C:video', 'a\\b']:
+            escaped = invalid_path.replace("'", "''")
+            try:
+                sql(f"INSERT INTO episode_version_files(version_id,asset_id,target_path,role) SELECT id,'{asset_id}','{escaped}','video' FROM episode_versions")
+                raise AssertionError(f'invalid relative layout accepted: {invalid_path}')
+            except RuntimeError:
+                pass
+        sql(f"INSERT INTO episode_version_files(version_id,asset_id,target_path,role) SELECT id,'{asset_id}','Season 1/Episode.mkv','video' FROM episode_versions")
         for table in ['media_assets', 'episode_versions', 'episode_version_files', 'media_publications']:
             assert sql(f"SELECT obj_description('{table}'::regclass)") == '@omit'
         assert sql("SELECT col_description('episodes'::regclass, attnum) FROM pg_attribute WHERE attrelid='episodes'::regclass AND attname='current_version_id'") == '@omit create,update'

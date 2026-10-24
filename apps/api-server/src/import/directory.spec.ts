@@ -20,7 +20,7 @@ jest.mock('@/config', () => ({
   default: {
     jellyfin: { pathMapping: [] },
     downloadClient: { kind: 'test', test: { pathMapping: [] } },
-    lani: { moveStrategy: 'copyOnly' },
+    lani: {},
     s3: { bucket: 'test' },
   },
 }));
@@ -43,11 +43,14 @@ function atomContext(): AtomContext {
 }
 
 // 此处只验证目录选择与元数据兼容；真实入池、替换和恢复由媒体池集成测试覆盖。
-function mediaPoolStub() {
+function mediaPoolStub(root: string) {
   let files: Array<{ source: string; target: string }> = [];
   return {
     register: jest.fn(async (input) => {
-      files = input.files;
+      files = input.files.map((file) => ({
+        ...file,
+        target: path.join(root, 'A／B', file.target),
+      }));
       return 1;
     }),
     publish: jest.fn(async () => {
@@ -82,7 +85,7 @@ it('下载和导入共用原子，将视频写入记录的目录', async () => {
       },
     };
     const target = (
-      await new ImportFileAtom(prisma as any, mediaPoolStub()).run(
+      await new ImportFileAtom(prisma as any, mediaPoolStub(root)).run(
         1,
         {
           episodeId: 1,
@@ -144,7 +147,7 @@ it('共用原子导入后可重复同步季度元数据', async () => {
       } as any;
       Object.assign(
         input,
-        await new ImportFileAtom(prisma as any, mediaPoolStub()).run(
+        await new ImportFileAtom(prisma as any, mediaPoolStub(root)).run(
           1,
           input,
           atomContext(),

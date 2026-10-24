@@ -1,8 +1,9 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { digest, identity, importToPool, linkOrCopy } from './files';
-import { fileIdentity } from '@/task/atoms/import-file.operation';
+import { identity, importToPool, linkOrCopy } from './files';
+import { identity as fileIdentity, verifyTransfer } from './files';
+import nodeFs from 'fs';
 import {
   applyPublication,
   cleanupPublication,
@@ -23,14 +24,19 @@ async function file(name: string, text = name) {
   return target;
 }
 
-it('按 SHA256 入池并保留源硬链接，重复导入不增加文件', async () => {
+it('独立导入生成不同 UUID，同一操作重试复用 UUID 且不读取文件内容', async () => {
   const source = await file('download.mkv');
   const pool = path.join(root, 'pool');
+  const read = jest.spyOn(nodeFs, 'createReadStream');
   const first = await importToPool(pool, source, false);
   expect(first.mode).toBe('hardlink');
   expect((await fs.stat(first.poolPath)).ino).toBe((await fs.stat(source)).ino);
-  expect((await importToPool(pool, source, false)).hash).toBe(first.hash);
-  expect(await fs.readdir(path.dirname(first.poolPath))).toEqual([first.hash]);
+  expect(
+    (await importToPool(pool, source, false, first.id, first.sourceIdentity))
+      .id,
+  ).toBe(first.id);
+  expect((await importToPool(pool, source, false)).id).not.toBe(first.id);
+  expect(read).not.toHaveBeenCalled();
 });
 it('拒绝空文件和符号链接', async () => {
   const empty = await file('empty', '');
@@ -89,10 +95,14 @@ it('换扩展名及字幕切换后仅保留新目标，旧原件保持', async (
   const target = path.join(root, 'episode.mp4');
   const journal = await preparePublication(
     [
-      { target: old, identity: (await identity(old))! },
-      { target: subtitle, identity: (await identity(subtitle))! },
+      { assetId: 'old', target: old, identity: (await identity(old))! },
+      {
+        assetId: 'subtitle',
+        target: subtitle,
+        identity: (await identity(subtitle))!,
+      },
     ],
-    [{ target, source, hash: (await digest(source)).hash }],
+    [{ target, source, assetId: 'new', identity: (await identity(source))! }],
     false,
   );
   await applyPublication(journal);
@@ -111,10 +121,21 @@ it('新文件准备失败时旧视频和字幕不变', async () => {
   await expect(
     preparePublication(
       [
-        { target: old, identity: (await identity(old))! },
-        { target: subtitle, identity: (await identity(subtitle))! },
+        { assetId: 'old', target: old, identity: (await identity(old))! },
+        {
+          assetId: 'subtitle',
+          target: subtitle,
+          identity: (await identity(subtitle))!,
+        },
       ],
-      [{ target: old, source: path.join(root, 'missing'), hash: 'bad' }],
+      [
+        {
+          target: old,
+          source: path.join(root, 'missing'),
+          assetId: 'new',
+          identity: {} as never,
+        },
+      ],
       false,
     ),
   ).rejects.toThrow();
@@ -125,8 +146,15 @@ it('切换中途失败可以回滚，模拟重启后重复恢复仍安全', asyn
   const old = await file('episode.mkv');
   const source = await file('source');
   const journal = await preparePublication(
-    [{ target: old, identity: (await identity(old))! }],
-    [{ target: old, source, hash: (await digest(source)).hash }],
+    [{ assetId: 'old', target: old, identity: (await identity(old))! }],
+    [
+      {
+        target: old,
+        source,
+        assetId: 'new',
+        identity: (await identity(source))!,
+      },
+    ],
     false,
   );
   await applyPublication(journal);
@@ -141,12 +169,19 @@ it('不覆盖未登记文件，回滚不删除外部替换的文件', async () =
   await expect(
     preparePublication(
       [],
-      [{ target: old, source, hash: (await digest(source)).hash }],
+      [
+        {
+          target: old,
+          source,
+          assetId: 'new',
+          identity: (await identity(source))!,
+        },
+      ],
       false,
     ),
   ).rejects.toThrow('不能覆盖');
   const journal = await preparePublication(
-    [{ target: old, identity: (await identity(old))! }],
+    [{ assetId: 'old', target: old, identity: (await identity(old))! }],
     [],
     false,
   );
@@ -154,4 +189,63 @@ it('不覆盖未登记文件，回滚不删除外部替换的文件', async () =
   await fs.writeFile(old, 'external');
   await expect(rollbackPublication(journal)).rejects.toThrow('外部修改');
   expect(await fs.readFile(old, 'utf8')).toBe('external');
+});
+
+it('只增删字幕时明确沿用的视频 UUID 原位保留，差量失败可回滚', async () => {
+  const video = await file('episode.mkv');
+  const subtitle = await file('subtitle-source', 'subtitle');
+  const target = path.join(root, 'episode.ass');
+  const before = (await identity(video))!;
+  const links = jest.spyOn(fs, 'link');
+  const journal = await preparePublication(
+    [{ assetId: 'video', target: video, identity: before }],
+    [
+      { assetId: 'video', source: video, target: video, identity: before },
+      {
+        assetId: 'subtitle',
+        source: subtitle,
+        target,
+        identity: (await identity(subtitle))!,
+      },
+    ],
+    false,
+  );
+  expect(journal.files.map((file) => file.target)).toEqual([target]);
+  expect(links.mock.calls.every(([source]) => source !== video)).toBe(true);
+  await applyPublication(journal);
+  await rollbackPublication(journal);
+  await cleanupPublication(journal);
+  expect(await identity(video)).toEqual(before);
+  expect(await identity(target)).toBeUndefined();
+});
+it('复制内容不符即失败，即使大小相同', async () => {
+  const source = await file('source', 'aaaa');
+  const target = await file('target', 'bbbb');
+  await expect(
+    verifyTransfer(source, target, (await identity(source))!, 'copy'),
+  ).rejects.toThrow('内容校验失败');
+});
+it('已有 UUID 路径不属于本次操作时拒绝复用，源身份变化时拒绝重试', async () => {
+  const source = await file('source');
+  const pool = path.join(root, 'pool');
+  const first = await importToPool(pool, source, false);
+  const other = await file('other', 'source');
+  await expect(importToPool(pool, other, false, first.id)).rejects.toThrow(
+    '归属冲突',
+  );
+  await fs.writeFile(source, 'changed');
+  await expect(
+    importToPool(pool, source, false, first.id, first.sourceIdentity),
+  ).rejects.toThrow('已经变化');
+});
+it('硬链接过程中源文件变化时不发布池文件', async () => {
+  const source = await file('source');
+  const link = fs.link;
+  jest.spyOn(fs, 'link').mockImplementationOnce(async (from, to) => {
+    await link(from, to);
+    await fs.writeFile(source, 'changed-during-link');
+  });
+  await expect(
+    importToPool(path.join(root, 'pool'), source, false),
+  ).rejects.toThrow('发生变化');
 });

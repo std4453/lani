@@ -80,39 +80,11 @@ Enjoy!
 
 ### 升级与媒体回填
 
-首次升级媒体池功能时，先备份数据库和配置，补齐 `mediaPool` 配置与目录权限。停止旧一体机，使用目标版本镜像启动临时维护容器；将以下 `TARGET_TAG` 替换为目标版本，路径及网络选项需与实际部署一致。维护容器直接进入 shell，不启动 API worker，避免迁移后在回填前恢复任务。
+首次升级时，备份数据库、配置及容器挂载清单，补充 `mediaPool.root` 并删除旧 `lani.moveStrategy`。按[从旧文件结构迁移到媒体池](../media-pool-migration)检查现有目录和挂载，再停止旧容器，用新版镜像及调整后的配置正常启动。保留原持久化数据库和媒体卷，避免新旧容器同时写入。
 
-```bash
-docker stop lani_all_in_one
-docker run --rm -it --name lani_media_maintenance \
-  --volume /srv/lani/config.yaml:/config/config.yaml:ro \
-  --volume /srv/lani/storage:/storage \
-  --volume /srv/media:/data \
-  --entrypoint bash ghcr.io/std4453/lani-all-in-one:TARGET_TAG
-```
+一体机启动流程会先完成数据库迁移。lani 随后进行有超时边界的目录、权限与硬链接预检；失败会输出具体原因及迁移文档链接并退出，修正后重新启动。预检成功即提供查询服务，并在后台自动登记历史媒体，无需维护容器、手工合并内部配置或回填 CLI。
 
-在维护容器中合并配置、执行迁移并生成清单：
-
-```bash
-cd /deploy/apps/all-in-one
-yq '. *= load("/config/config.yaml")' defaults.yaml > /deploy/apps/api-server/config.yaml
-cd /deploy/libs/db
-DATABASE_URL="$(yq '.postgresUrl' /deploy/apps/api-server/config.yaml)" npm run migrate:deploy
-cd /deploy/apps/api-server
-mkdir -p /storage/maintenance
-CONFIG_FILENAME=./config.yaml node dist/media-pool/backfill-cli.js --scan /storage/maintenance/media-plan.json
-```
-
-清单保存于持久化挂载目录，容器退出后仍保留；宿主机路径为 `/srv/lani/storage/maintenance/media-plan.json`。审核每个剧集对应的视频、字幕、路径和哈希。清单含本机路径，应限制访问，不上传到公开仓库。扫描不会覆盖已有清单，重新扫描需使用新文件名。
-
-确认后在同一维护容器中应用：
-
-```bash
-CONFIG_FILENAME=./config.yaml node dist/media-pool/backfill-cli.js --apply /storage/maintenance/media-plan.json
-exit
-```
-
-全部回填成功后，在宿主机执行 `docker rm lani_all_in_one` 移除已停止的旧容器，再按上方启动命令用相同目标版本和挂载参数重新创建一体机容器。失败时保持旧 API 停止，修复原因后重跑；不要同时运行维护工具和 API worker。回填保留原媒体文件和 Jellyfin 识别 ID，不需要启动下载任务。
+后台登记期间已有播放与查询继续可用，导入、替换、删除、改名及相关自动任务暂停。完成后自动开放写入并恢复任务。可通过日志中的 `Media registration` 或 GraphQL `mediaRegistrationProgress { state completed total reason }` 查看进度。中断后重新启动会接续已有登记；无法恢复的错误会明确记录并退出，修复日志指出的问题后再启动。
 
 ### 如果存在问题……
 

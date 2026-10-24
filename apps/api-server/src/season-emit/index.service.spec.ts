@@ -1,3 +1,4 @@
+import { MediaPool } from '@/media-pool/media-pool.service';
 import { Prisma } from '@lani/db';
 import fs from 'fs/promises';
 import os from 'os';
@@ -21,6 +22,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await fs.rm(root, { recursive: true, force: true });
+  await fs.rm(root + '-pool', { recursive: true, force: true });
 });
 
 function setup(patch: any = {}) {
@@ -46,13 +48,17 @@ function setup(patch: any = {}) {
   };
   const prisma = {
     episode: { findMany: jest.fn().mockResolvedValue([]) },
+    mediaAsset: { findMany: jest.fn().mockResolvedValue([]) },
+    mediaPublication: { findUnique: jest.fn().mockResolvedValue(null) },
     season: {
+      findUnique: jest.fn(async () => state),
       update: jest.fn(async ({ data }) => {
         state = { ...state, ...data };
         return state;
       }),
     },
     task: {
+      findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -72,6 +78,10 @@ function setup(patch: any = {}) {
     {} as any,
     jellyfin as any,
     prisma as any,
+    new MediaPool(prisma as any, {
+      root: root + '-pool',
+      painfullyAcceptCrossDeviceCopy: false,
+    }) as any,
   );
   return {
     service,
@@ -131,7 +141,12 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.tag).toBeUndefined();
   expect(tvshow.plot).toEqual(['keep']);
   expect(prisma.task.findMany).toHaveBeenCalledWith({
-    where: { episodes: { some: { episode: { seasonId: 12 } } } },
+    where: {
+      OR: [
+        { episode: { seasonId: 12 } },
+        { episodes: { some: { episode: { seasonId: 12 } } } },
+      ],
+    },
     select: { id: true },
   });
   expect(prisma.task.update).toHaveBeenCalledWith({
@@ -222,16 +237,15 @@ it.each(['<tvshow><uniqueid type="lani">999</uniqueid></tvshow>', '<tvshow>'])(
   },
 );
 
-it('recovers after a rename followed by a database failure using the NFO owner', async () => {
-  await fs.mkdir(path.join(root, 'A／B'));
-  await fs.writeFile(
-    path.join(root, 'A／B', 'tvshow.nfo'),
-    '<tvshow><uniqueId type="lani">12</uniqueId></tvshow>',
-  );
-  const { write, state } = setup({
+it('recovers an interrupted directory move using its durable identity journal', async () => {
+  await fs.mkdir(path.join(root, 'A', 'B'), { recursive: true });
+  const { write, state, prisma } = setup({
     lastWriteTitle: 'A/B',
     lastWriteToDisk: new Date(),
   });
+  prisma.$transaction.mockRejectedValueOnce(new Error('database offline'));
+  await expect(write()).rejects.toThrow('database offline');
+  expect(state().lastWriteDirectory).toBeNull();
   await write();
   expect(state().lastWriteDirectory).toBe('A／B');
 });

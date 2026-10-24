@@ -125,6 +125,7 @@ export class DownloadJobService {
   @Cron('*/1 * * * *') // 每分钟运行一次
   @LaniFilterCron()
   async enqueueDownloadJobsScheduledTask() {
+    if (!this.tasks.mediaWritesReady) return 0;
     return this.enqueueDownloadJobsInternal();
   }
 

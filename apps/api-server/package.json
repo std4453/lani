@@ -4,7 +4,6 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "media:backfill": "node dist/media-pool/backfill-cli.js",
     "build": "rimraf dist && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

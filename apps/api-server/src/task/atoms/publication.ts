@@ -1,8 +1,15 @@
 import { Prisma } from '@lani/db';
 import { AtomContext, AtomTransaction } from '@/task/atom';
-import { currentStep } from '@lani/workflow';
+import { currentStep, batchImportEntries, parseWorkflow } from '@lani/workflow';
+import { mediaTarget, seasonMediaRoot } from '@/media-pool/paths';
 import { identity as fileIdentity, sameFile } from '@/media-pool/files';
 import { FileIdentity } from '@lani/workflow';
+
+export const activeTaskWhere: Prisma.TaskWhereInput = {
+  OR: ['running', 'cancelling', 'failed'].map((status) => ({
+    workflow: { path: ['status'], equals: status },
+  })),
+};
 
 /** 剧集互斥供下载和导入发布共用，任务行锁由 AtomContext 管理。 */
 export async function lockEpisode(
@@ -29,6 +36,7 @@ async function checkPublication(
       throw new Error('旧任务缺少媒体版本关联，请重新创建任务');
     const episode = await tx.episode.findUnique({
       where: { id: input.episodeId },
+      include: { season: { include: { jellyfinFolder: true } } },
     });
     if (episode?.currentVersionId !== imported.mediaVersionId)
       throw new Error('剧集当前媒体版本已变化');
@@ -38,27 +46,44 @@ async function checkPublication(
     });
     if (!files.length) throw new Error('媒体版本没有文件');
     for (const file of files) {
+      const target = mediaTarget(
+        seasonMediaRoot(episode!.season),
+        file.targetPath,
+      );
       if (
-        file.asset.jellyfinPath !== file.targetPath ||
+        file.asset.jellyfinPath !== target ||
         !sameFile(
-          await fileIdentity(file.targetPath),
+          await fileIdentity(target),
           file.asset.jellyfinIdentity as unknown as FileIdentity,
         )
       )
         throw new Error('已导入文件已变化或丢失');
     }
   }
-  const other = await tx.$queryRaw<{ id: number }[]>`
-    SELECT t.id FROM download_jobs t JOIN task_episodes te ON te.task_id=t.id
-    WHERE te.episode_id=${input.episodeId} AND t.id<>${id}
-      AND t.workflow->>'status' IN ('running','cancelling','failed')
-      AND (t.workflow->'steps' @> '[{"checkpoint":{"publicationClaimed":true}}]'::jsonb
-        OR EXISTS (SELECT 1 FROM jsonb_array_elements(t.batch_entries) entry,
-            jsonb_array_elements(t.workflow->'steps') step
-          WHERE entry->>'episodeId'=te.episode_id::text
-            AND step->'checkpoint'->'entries'->(entry->>'id')->>'publicationClaimed'='true'))
-    LIMIT 1`;
-  if (other.length)
+  const candidates = await tx.task.findMany({
+    where: {
+      AND: [
+        activeTaskWhere,
+        { id: { not: id }, episodes: { some: { episodeId: input.episodeId } } },
+      ],
+    },
+    select: { workflow: true, batchEntries: true },
+  });
+  // PostgreSQL JSON filter 不支持关联两个 JSON 数组的动态 key；先缩小候选集再按工作流协议解释。
+  const other = candidates.some((task) => {
+    const steps = parseWorkflow(task.workflow).steps;
+    const entries = batchImportEntries(task.batchEntries).filter(
+      (entry) => entry.episodeId === input.episodeId,
+    );
+    return steps.some(
+      (step) =>
+        step.checkpoint.publicationClaimed ||
+        entries.some(
+          (entry) => step.checkpoint.entries?.[entry.id]?.publicationClaimed,
+        ),
+    );
+  });
+  if (other)
     throw new Error(
       '同一剧集的其他任务正在发布，或发布失败后尚未处理，无法继续',
     );

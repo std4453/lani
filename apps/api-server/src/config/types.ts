@@ -49,26 +49,7 @@ const jellyfinConfig = obj({
   pathMapping: pathMappingConfig,
 });
 
-const laniConfig = opt(
-  obj({
-    moveStrategy: opt(
-      either(
-        ...([
-          'hardLinkOnly',
-          'hardLinkOrCopy',
-          'hardLinkOrMove',
-          'copyOnly',
-          'moveOnly',
-        ] as const),
-      ),
-      'hardLinkOrMove',
-    ),
-    publicHost: opt(str()),
-  }),
-  {
-    moveStrategy: 'hardLinkOrCopy',
-  },
-);
+const laniConfig = opt(obj({ publicHost: opt(str()) }), {});
 
 export const s3Config = ext<AWS.S3.Types.ClientConfiguration>()(
   obj({

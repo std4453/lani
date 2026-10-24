@@ -29,7 +29,6 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
     { episodeId, importPath, type }: TaskInput,
     context: AtomContext,
   ) {
-    await claimEpisodePublication(id, context);
     if (!importPath) {
       throw new Error('寻找视频文件步骤尚未完成');
     }
@@ -81,10 +80,26 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
               ? 'download'
               : 'import',
           files: [
-            { source: sourcePath, target: targetPath, role: 'video' },
+            {
+              source: sourcePath,
+              target: path.relative(
+                resolveSeasonPath(
+                  seasonRoot,
+                  getSeasonDirectory(episode.season),
+                ),
+                targetPath,
+              ),
+              role: 'video',
+            },
             ...subtitles.map((source) => ({
               source,
-              target: targetStem + source.slice(sourceStem.length),
+              target: path.relative(
+                resolveSeasonPath(
+                  seasonRoot,
+                  getSeasonDirectory(episode.season),
+                ),
+                targetStem + source.slice(sourceStem.length),
+              ),
               role: 'subtitle' as const,
             })),
           ],
@@ -93,10 +108,16 @@ export class ImportFileAtom extends BatchableEpisodeAtom {
       );
       await context.saveCheckpoint({ mediaVersionId: versionId });
     }
+    await claimEpisodePublication(id, context);
     return { filePath: await this.mediaPool.publish(versionId, context) };
   }
 
-  protected async cancelEpisode(_id: number, input: TaskInput) {
-    if (input.episodeId) await this.mediaPool.recoverEpisode(input.episodeId);
+  protected async cancelEpisode(
+    _id: number,
+    input: TaskInput,
+    context: AtomContext,
+  ) {
+    if (context.checkpoint.publicationClaimed && input.episodeId)
+      await this.mediaPool.recoverEpisode(input.episodeId);
   }
 }

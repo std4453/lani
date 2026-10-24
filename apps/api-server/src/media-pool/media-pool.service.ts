@@ -7,7 +7,19 @@ import { lockEpisode } from '@/task/atoms/publication';
 import { FileIdentity } from '@lani/workflow';
 import path from 'path';
 import fs from 'fs/promises';
-import { companions, digest, identity, importToPool, sameFile } from './files';
+import {
+  companions,
+  identity,
+  importToPool,
+  sameFile,
+  writeRecord,
+  verifyTransfer,
+} from './files';
+import { createHash, randomUUID } from 'crypto';
+import { mediaTarget, relativeMediaPath, seasonMediaRoot } from './paths';
+import { moveSeasonDirectory, recoverDirectoryMoves } from './directory-move';
+import { MediaWriteState } from './write-state';
+import { activeTaskWhere } from '@/task/atoms/publication';
 import {
   applyPublication,
   cleanupPublication,
@@ -20,7 +32,12 @@ export interface VersionInput {
   episodeId: number;
   operationKey: string;
   source: 'download' | 'import' | 'unknown';
-  files: Array<{ source: string; target: string; role: 'video' | 'subtitle' }>;
+  files: Array<{
+    source?: string;
+    assetId?: string;
+    target: string;
+    role: 'video' | 'subtitle';
+  }>;
 }
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value));
@@ -31,10 +48,15 @@ export class MediaPool {
   constructor(
     private db: PrismaClient,
     private settings: { root: string; painfullyAcceptCrossDeviceCopy: boolean },
+    private guard: () => void = () => undefined,
   ) {}
 
   private exclusive<T>(run: () => Promise<T>): Promise<T> {
-    const next = this.pending.then(run, run);
+    const resume = async () => {
+      await recoverDirectoryMoves(this.db, this.settings.root);
+      return run();
+    };
+    const next = this.pending.then(resume, resume);
     this.pending = next.catch(() => undefined);
     return next;
   }
@@ -49,6 +71,7 @@ export class MediaPool {
     await fs.mkdir(this.settings.root, { recursive: true });
     if ((await fs.realpath(this.settings.root)) !== this.settings.root)
       throw new Error('媒体池根目录不能经过符号链接');
+    await recoverDirectoryMoves(this.db, this.settings.root);
     for (const row of await this.db.mediaPublication.findMany())
       await this.recover(row.episodeId);
   }
@@ -70,9 +93,10 @@ export class MediaPool {
     return this.exclusive(() => this.recover(episodeId));
   }
 
-  register(input: VersionInput, context?: AtomContext) {
+  /** 创建即完整且不可变；准备不取得发布权，也不恢复其他任务的发布现场。 */
+  register(input: VersionInput, context?: AtomContext, backfill = false) {
+    if (!backfill) this.guard();
     return this.exclusive(async () => {
-      await this.recover(input.episodeId);
       const existing = await this.db.episodeVersion.findUnique({
         rejectOnNotFound: false,
         where: { operationKey: input.operationKey },
@@ -84,88 +108,99 @@ export class MediaPool {
       }
       if (input.files.filter((file) => file.role === 'video').length !== 1)
         throw new Error('每个版本必须包含且只能包含一个视频');
+      for (const file of input.files) {
+        relativeMediaPath(file.target);
+        if (!!file.source === !!file.assetId)
+          throw new Error('文件必须指定导入源或已有 UUID');
+      }
       if (
-        new Set(input.files.map((file) => path.resolve(file.target))).size !==
+        new Set(input.files.map((file) => file.target)).size !==
         input.files.length
       )
         throw new Error('媒体目标路径重复');
-      const imported: Array<
-        VersionInput['files'][number] & {
-          asset: Awaited<ReturnType<typeof importToPool>>;
+      // 仅对操作标识编码，不读取或合并文件内容。记录独立 UUID 与源快照以续跑未完成准备。
+      const directory = path.join(this.settings.root, 'preparations');
+      await fs.mkdir(directory, { recursive: true });
+      const filename = path.join(
+        directory,
+        createHash('sha256').update(input.operationKey).digest('hex') + '.json',
+      );
+      type Preparation = {
+        input: VersionInput;
+        files: Array<{ id: string; identity?: FileIdentity }>;
+      };
+      let preparation: Preparation;
+      try {
+        preparation = JSON.parse(await fs.readFile(filename, 'utf8'));
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        preparation = { input, files: [] };
+        for (const file of input.files) {
+          const sourceIdentity = file.source
+            ? await identity(file.source)
+            : undefined;
+          if (file.source && !sourceIdentity)
+            throw new Error('导入源文件不存在');
+          preparation.files.push({
+            id: file.assetId ?? randomUUID(),
+            identity: sourceIdentity,
+          });
         }
-      > = [];
-      for (const file of input.files) {
-        await context?.assertActive();
-        if (!path.isAbsolute(file.target))
-          throw new Error('媒体目标必须是绝对路径');
-        if (
-          path
-            .resolve(file.target)
-            .startsWith(`${this.settings.root}${path.sep}`)
-        )
-          throw new Error('媒体目标不能位于媒体池内');
-        imported.push({
-          ...file,
-          target: path.resolve(file.target),
-          asset: await importToPool(
-            this.settings.root,
-            file.source,
-            this.settings.painfullyAcceptCrossDeviceCopy,
-          ),
-        });
+        await writeRecord(filename, preparation);
       }
-      if (
-        new Set(imported.map((file) => file.asset.hash)).size !==
-        imported.length
-      )
+      if (JSON.stringify(preparation.input) !== JSON.stringify(input))
+        throw new Error('媒体准备操作内容已变化，请使用新的操作标识');
+      const imported = [] as Array<{
+        id: string;
+        data?: Awaited<ReturnType<typeof importToPool>>;
+      }>;
+      for (const [index, file] of input.files.entries()) {
+        await context?.assertActive();
+        const record = preparation.files[index];
+        if (file.assetId) {
+          const asset = await this.db.mediaAsset.findUnique({
+            where: { id: file.assetId },
+          });
+          if (
+            !asset ||
+            !sameFile(
+              await identity(asset.poolPath),
+              asset.poolIdentity as unknown as FileIdentity,
+            )
+          )
+            throw new Error('已有媒体文件不存在或身份已变化');
+          imported.push({ id: asset.id });
+        } else {
+          const data = await importToPool(
+            this.settings.root,
+            file.source!,
+            this.settings.painfullyAcceptCrossDeviceCopy,
+            record.id,
+            record.identity,
+          );
+          imported.push({ id: data.id, data });
+        }
+      }
+      if (new Set(imported.map((file) => file.id)).size !== imported.length)
         throw new Error('同一媒体文件不支持写入多个目标');
       const commit = async (tx: Prisma.TransactionClient) => {
         await lockEpisode(tx, input.episodeId);
-        const duplicate = await tx.episodeVersion.findUnique({
-          rejectOnNotFound: false,
-          where: { operationKey: input.operationKey },
-        });
-        if (duplicate) return duplicate.id;
-        for (const { asset } of imported) {
-          const saved = await tx.mediaAsset.findUnique({
-            rejectOnNotFound: false,
-            where: { hash: asset.hash },
-          });
-          if (
-            saved &&
-            (saved.poolPath !== asset.poolPath ||
-              !sameFile(
-                saved.poolIdentity as unknown as FileIdentity,
-                asset.poolIdentity,
-              ))
-          )
-            throw new Error('媒体池文件身份与登记不一致');
-          if (
-            input.source !== 'unknown' &&
-            saved?.downloadPath &&
-            saved.downloadPath !== asset.source
-          )
-            throw new Error(
-              '同一媒体文件已有其他下载目录位置，不支持多个外部目标',
-            );
-          const download =
-            input.source === 'unknown'
-              ? {}
-              : {
-                  downloadPath: asset.source,
-                  downloadMode: asset.mode,
-                  downloadIdentity: json(asset.sourceIdentity),
-                };
-          await tx.mediaAsset.upsert({
-            where: { hash: asset.hash },
-            create: {
-              hash: asset.hash,
+        for (const { data: asset } of imported) {
+          if (!asset) continue;
+          await tx.mediaAsset.create({
+            data: {
+              id: asset.id,
               size: asset.size,
               poolPath: asset.poolPath,
               poolIdentity: json(asset.poolIdentity),
-              ...download,
+              ...(input.source === 'unknown'
+                ? {}
+                : {
+                    downloadPath: asset.source,
+                    downloadMode: asset.mode,
+                    downloadIdentity: json(asset.sourceIdentity),
+                  }),
             },
-            update: download,
           });
         }
         const last = await tx.episodeVersion.findFirst({
@@ -179,10 +214,10 @@ export class MediaPool {
             operationKey: input.operationKey,
             source: input.source,
             files: {
-              create: imported.map(({ asset, target, role }) => ({
-                assetHash: asset.hash,
-                targetPath: target,
-                role,
+              create: input.files.map((file, index) => ({
+                assetId: imported[index].id,
+                targetPath: file.target,
+                role: file.role,
               })),
             },
           },
@@ -197,61 +232,69 @@ export class MediaPool {
 
   /** 历史回填只登记已存在的目标，不改名、不删除、也不猜测下载来源。 */
   adopt(input: VersionInput) {
-    return this.register({ ...input, source: 'unknown' }).then((versionId) =>
-      this.exclusive(async () => {
-        await this.recover(input.episodeId);
-        const version = await this.version(versionId);
-        const episode = await this.db.episode.findUnique({
-          rejectOnNotFound: false,
-          where: { id: input.episodeId },
-        });
-        if (!episode) throw new Error('剧集不存在');
-        if (episode.currentVersionId === versionId) return versionId;
-        if (episode.currentVersionId)
-          throw new Error('剧集已有当前版本，不能重复回填');
-        const files: Array<{
-          file: typeof version.files[number];
-          current: Awaited<ReturnType<typeof digest>>;
-          mode: string;
-        }> = [];
-        for (const file of version.files) {
-          const current = await digest(file.targetPath);
-          if (current.hash !== file.assetHash)
-            throw new Error('历史媒体内容与媒体池不一致');
-          if (
-            file.asset.jellyfinPath &&
-            file.asset.jellyfinPath !== file.targetPath
-          )
-            throw new Error('同一媒体文件已有其他播放器目标');
-          const pool = await identity(file.asset.poolPath);
-          files.push({
-            file,
-            current,
-            mode:
-              pool?.dev === current.identity.dev &&
-              pool?.ino === current.identity.ino
+    return this.register({ ...input, source: 'unknown' }, undefined, true).then(
+      (versionId) =>
+        this.exclusive(async () => {
+          await this.recover(input.episodeId);
+          const version = await this.version(versionId);
+          const episode = await this.db.episode.findUnique({
+            rejectOnNotFound: false,
+            where: { id: input.episodeId },
+          });
+          if (!episode) throw new Error('剧集不存在');
+          if (episode.currentVersionId === versionId) return versionId;
+          if (episode.currentVersionId)
+            throw new Error('剧集已有当前版本，不能重复回填');
+          const files: Array<{
+            file: typeof version.files[number];
+            current: FileIdentity;
+            mode: string;
+          }> = [];
+          for (const file of version.files) {
+            const current = await identity(file.targetPath);
+            if (!current) throw new Error('历史媒体文件不存在');
+            if (
+              file.asset.jellyfinPath &&
+              file.asset.jellyfinPath !== file.targetPath
+            )
+              throw new Error('同一媒体文件已有其他播放器目标');
+            const pool = await identity(file.asset.poolPath);
+            if (!pool) throw new Error('媒体池文件不存在');
+            await verifyTransfer(
+              file.asset.poolPath,
+              file.targetPath,
+              pool,
+              pool.dev === current.dev && pool.ino === current.ino
                 ? 'hardlink'
                 : 'copy',
-          });
-        }
-        await this.db.$transaction(async (tx) => {
-          await lockEpisode(tx, input.episodeId);
-          for (const { file, current, mode } of files)
-            await tx.mediaAsset.update({
-              where: { hash: file.assetHash },
-              data: {
-                jellyfinPath: file.targetPath,
-                jellyfinMode: mode,
-                jellyfinIdentity: json(current.identity),
-              },
+            );
+            files.push({
+              file,
+              current,
+              mode:
+                pool?.dev === current.dev && pool?.ino === current.ino
+                  ? 'hardlink'
+                  : 'copy',
             });
-          await tx.episode.update({
-            where: { id: input.episodeId },
-            data: { currentVersionId: versionId },
+          }
+          await this.db.$transaction(async (tx) => {
+            await lockEpisode(tx, input.episodeId);
+            for (const { file, current, mode } of files)
+              await tx.mediaAsset.update({
+                where: { id: file.assetId },
+                data: {
+                  jellyfinPath: file.targetPath,
+                  jellyfinMode: mode,
+                  jellyfinIdentity: json(current),
+                },
+              });
+            await tx.episode.update({
+              where: { id: input.episodeId },
+              data: { currentVersionId: versionId },
+            });
           });
-        });
-        return versionId;
-      }),
+          return versionId;
+        }),
     );
   }
 
@@ -259,13 +302,24 @@ export class MediaPool {
     const version = await this.db.episodeVersion.findUnique({
       rejectOnNotFound: false,
       where: { id },
-      include: { files: { include: { asset: true } } },
+      include: {
+        files: { include: { asset: true } },
+        episode: { include: { season: { include: { jellyfinFolder: true } } } },
+      },
     });
     if (!version) throw new Error('媒体版本不存在');
-    return version;
+    const root = seasonMediaRoot(version.episode.season);
+    return {
+      ...version,
+      files: version.files.map((file) => ({
+        ...file,
+        targetPath: mediaTarget(root, file.targetPath),
+      })),
+    };
   }
 
   publish(versionId: number, context: AtomContext) {
+    this.guard();
     return this.exclusive(async () => {
       const version = await this.version(versionId);
       await this.switchVersion(version.episodeId, versionId, context);
@@ -274,21 +328,29 @@ export class MediaPool {
   }
 
   unpublish(episodeId: number, context?: AtomContext) {
+    this.guard();
     return this.exclusive(() => this.switchVersion(episodeId, null, context));
   }
 
   /** 删除季度沿用可恢复的撤下流程，原件与下载源仍保留。 */
   deleteSeason(seasonId: number, deleteFiles: () => Promise<void>) {
+    this.guard();
     return this.exclusive(async () => {
-      const busy = await this.db.$queryRaw<{ id: number }[]>`
-        SELECT t.id FROM download_jobs t
-        WHERE t.workflow->>'status' IN ('running', 'cancelling', 'failed')
-          AND (EXISTS (SELECT 1 FROM episodes e
-            WHERE e.id=t.episode_id AND e.season_id=${seasonId})
-            OR EXISTS (SELECT 1 FROM task_episodes te JOIN episodes e ON e.id=te.episode_id
-              WHERE te.task_id=t.id AND e.season_id=${seasonId}))
-        LIMIT 1`;
-      if (busy.length)
+      const busy = await this.db.task.findFirst({
+        where: {
+          AND: [
+            activeTaskWhere,
+            {
+              OR: [
+                { episode: { seasonId } },
+                { episodes: { some: { episode: { seasonId } } } },
+              ],
+            },
+          ],
+        },
+        select: { id: true },
+      });
+      if (busy)
         throw new Error('季度仍有进行中或失败的任务，请先取消任务再删除');
       const episodes = await this.db.episode.findMany({ where: { seasonId } });
       for (const episode of episodes) {
@@ -304,6 +366,52 @@ export class MediaPool {
           where: { episode: { seasonId } },
         });
         await tx.season.delete({ where: { id: seasonId } });
+      });
+    });
+  }
+
+  assertWritable() {
+    this.guard();
+  }
+
+  renameSeason(
+    seasonId: number,
+    oldPath: string,
+    newPath: string,
+    directory: string,
+  ) {
+    this.guard();
+    return this.exclusive(async () => {
+      const busy = await this.db.task.findFirst({
+        where: {
+          AND: [
+            activeTaskWhere,
+            {
+              OR: [
+                { episode: { seasonId } },
+                { episodes: { some: { episode: { seasonId } } } },
+              ],
+            },
+          ],
+        },
+        select: { id: true },
+      });
+      if (busy)
+        throw new Error('季度仍有进行中或失败的任务，请先处理任务再改名');
+      for (const episode of await this.db.episode.findMany({
+        where: { seasonId },
+      }))
+        await this.recover(episode.id);
+      // exclusive 开始时可能刚恢复上次同一移动；无需再次移动。
+      const season = await this.db.season.findUnique({
+        where: { id: seasonId },
+      });
+      if (season?.lastWriteDirectory === directory) return;
+      await moveSeasonDirectory(this.db, this.settings.root, {
+        seasonId,
+        oldPath,
+        newPath,
+        directory,
       });
     });
   }
@@ -368,7 +476,7 @@ export class MediaPool {
         file.asset.jellyfinPath &&
         !oldFiles.some(
           (previous) =>
-            previous.assetHash === file.assetHash &&
+            previous.assetId === file.assetId &&
             previous.targetPath === file.asset.jellyfinPath,
         )
       )
@@ -380,18 +488,18 @@ export class MediaPool {
         )
       )
         throw new Error('媒体池文件身份已变化');
-      if ((await digest(file.asset.poolPath)).hash !== file.assetHash)
-        throw new Error('媒体池文件内容校验失败');
     }
     const journal = await preparePublication(
       oldFiles.map((file) => ({
         target: file.targetPath,
+        assetId: file.assetId,
         identity: file.asset.jellyfinIdentity as unknown as FileIdentity,
       })),
       (next?.files ?? []).map((file) => ({
         target: file.targetPath,
         source: file.asset.poolPath,
-        hash: file.assetHash,
+        assetId: file.assetId,
+        identity: file.asset.poolIdentity as unknown as FileIdentity,
       })),
       this.settings.painfullyAcceptCrossDeviceCopy,
     );
@@ -421,9 +529,22 @@ export class MediaPool {
         });
         if (current?.currentVersionId !== episode.currentVersionId)
           throw new Error('剧集当前版本已变化');
-        for (const file of oldFiles)
+        const retained = new Set(
+          (next?.files ?? [])
+            .filter((file) =>
+              oldFiles.some(
+                (old) =>
+                  old.assetId === file.assetId &&
+                  old.targetPath === file.targetPath,
+              ),
+            )
+            .map((file) => file.assetId),
+        );
+        for (const file of oldFiles.filter(
+          (file) => !retained.has(file.assetId),
+        ))
           await tx.mediaAsset.update({
-            where: { hash: file.assetHash },
+            where: { id: file.assetId },
             data: {
               jellyfinPath: null,
               jellyfinMode: null,
@@ -431,11 +552,12 @@ export class MediaPool {
             },
           });
         for (const file of next?.files ?? []) {
+          if (retained.has(file.assetId)) continue;
           const prepared = journal.files.find(
             (item) => item.target === file.targetPath,
           )!;
           await tx.mediaAsset.update({
-            where: { hash: file.assetHash },
+            where: { id: file.assetId },
             data: {
               jellyfinPath: file.targetPath,
               jellyfinMode: prepared.mode,
@@ -465,14 +587,14 @@ export class MediaPool {
 
 @Injectable()
 export class MediaPoolService extends MediaPool implements OnModuleInit {
-  constructor(prisma: PrismaService) {
-    super(prisma, config.mediaPool);
+  constructor(prisma: PrismaService, state: MediaWriteState) {
+    super(prisma, config.mediaPool, () => state.assertReady());
   }
   async onModuleInit() {
     if (config.mediaPool.painfullyAcceptCrossDeviceCopy)
       new Logger(MediaPoolService.name).warn(
         'Cross-device media copy enabled: slow copies and loss of cross-device atomicity are explicitly accepted.',
       );
-    await this.initialize();
+    // 初始化和恢复由启动预检通过后的受管理回填流程执行。
   }
 }

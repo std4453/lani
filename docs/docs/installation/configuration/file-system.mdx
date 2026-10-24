@@ -44,7 +44,7 @@ lani 先把下载文件登记到媒体池，再发布到 Jellyfin 目录。默�
 
 ## 媒体池
 
-配置 API 可见的媒体池根目录：
+配置 lani 可见的媒体池根目录：
 
 ```yaml
 mediaPool:
@@ -52,10 +52,12 @@ mediaPool:
   painfullyAcceptCrossDeviceCopy: false
 ```
 
-下载目录、媒体池和 Jellyfin 目录应在同一个文件系统、同一个容器挂载卷下，例如 `/data/downloads`、`/data/pool`、`/data/library`。API 需要这些目录的读写权限；路径不能经过符号链接。
+下载目录、媒体池和 Jellyfin 目录应在同一个文件系统、同一个容器挂载卷下，例如 `/data/downloads`、`/data/pool`、`/data/library`。lani 需要这些目录的读写权限；路径不能经过符号链接。
 
 硬链接让多个路径共享内容，删除一个路径不会删除其他路径的文件，但直接修改任何一处内容都会影响其他链接。请勿原地编辑媒体原件。媒体池保存历史版本，替换成功后撤下旧媒体目标，保留旧原件；本期没有自动清理媒体池的功能。
 
-默认遇到跨卷操作会报错并保留旧版本。确需跨卷时显式开启 `painfullyAcceptCrossDeviceCopy`，启动日志会提示复制较慢、占用额外空间且无法保证跨卷原子性。权限和空间不足等错误仍会失败。旧 `lani.moveStrategy` 配置继续可解析，但新媒体导入统一采用上述规则。
+启动预检会实际验证目录权限及硬链接能力，条件不满足时明确报错退出。确需跨卷时显式开启 `painfullyAcceptCrossDeviceCopy`，允许仅在跨卷时复制；复制较慢、占用额外空间且无法保证跨卷原子性，权限和空间不足等错误仍会失败。
 
-升级已有媒体库时，需先备份并暂停 API，在迁移完成后登记历史文件，再恢复服务。回填前已可用剧集仍可播放，但暂时不能替换。一体机用户按[升级与媒体回填](../deployment/docker-all-in-one#升级与媒体回填)操作；其他部署方式可参考[媒体回填说明](https://github.com/std4453/lani/blob/next/apps/api-server/src/media-pool/DESIGN.md#发布准备与历史回填)。
+升级时删除旧 `lani.moveStrategy`，跨卷复制统一使用上述开关。当前配置校验会拒绝 `lani` 下未声明的旧键；出现 `lani.moveStrategy is not allowed` 时删除它，`publicHost` 保持原配置。
+
+新版启动后自动登记历史视频及字幕，查询和已有播放可继续使用；登记完成前暂停导入、替换、删除及改名，完成后自动恢复。目录和挂载需要调整时，按[从旧文件结构迁移到媒体池](../media-pool-migration)操作，无需手动执行回填命令。

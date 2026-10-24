@@ -1,3 +1,4 @@
+import { MediaWriteState } from '@/media-pool/write-state';
 import { GlobalAxiosService } from '@/common/axios.service';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
@@ -24,6 +25,7 @@ export class SeasonScrapeService {
     private global: GlobalAxiosService,
     private s3: S3Service,
     private thumbnails: ImageThumbnailService,
+    private mediaState?: MediaWriteState,
   ) {}
 
   async syncMetadata({
@@ -37,6 +39,7 @@ export class SeasonScrapeService {
     bannerImage,
     posterImage,
   }: SeasonWithImages) {
+    this.mediaState?.assertReady();
     if (infoSource === MetadataSource.MANUAL) {
       const season = await this.prisma.season.findUnique({
         where: { id },

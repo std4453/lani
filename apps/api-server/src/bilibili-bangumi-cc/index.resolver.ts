@@ -1,3 +1,4 @@
+import { MediaWriteState } from '@/media-pool/write-state';
 import { taskEpisodeOutput } from '@/task/task-input';
 import { MetadataRefreshMode } from '@/api/jellyfin';
 import { BilibiliBangumiCCService } from '@/bilibili-bangumi-cc/index.service';
@@ -15,10 +16,12 @@ export class BilibiliBangumiCCResolver {
   constructor(
     private service: BilibiliBangumiCCService,
     private prisma: PrismaService,
+    private mediaState?: MediaWriteState,
   ) {}
 
   @Mutation(() => ID)
   async downloadBilibiliCC(@Args('episodeId') episodeId: number) {
+    this.mediaState?.assertReady();
     const {
       index,
       jellyfinEpisodeId,
