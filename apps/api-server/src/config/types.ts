@@ -182,6 +182,10 @@ export const rootConfig = root({
   torrents: torrentsConfig,
   matching: matchingConfig,
   postgresUrl: str(),
+  mediaPool: obj({
+    root: str(),
+    painfullyAcceptCrossDeviceCopy: opt(bool(), false),
+  }),
   s3: s3Config,
   downloadClient: downloadClientConfig,
   jellyfin: jellyfinConfig,

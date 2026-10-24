@@ -361,7 +361,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       (await prisma.task.findUnique({ where: { id: first.id } }))?.version,
     ).toBe(0);
   });
-  it('其他任务已经发布后，旧失败任务不能重新进入发布区段', async () => {
+  it('历史完成任务不再永久阻止新的媒体版本发布', async () => {
     await createTask({
       data: { episodeId, legacyStage: LegacyTaskStage.AVAILABLE },
     });
@@ -381,7 +381,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const state = await store.read(retry.id);
     await expect(
       claimEpisodePublication(state.id, await contextFor(state.id)),
-    ).rejects.toThrow('其他任务正在发布或已发布');
+    ).resolves.toBeUndefined();
   });
   it('并发提交只有一个版本获胜，成功后不能取消', async () => {
     const flow = buildWorkflowSnapshot(
@@ -413,10 +413,10 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     await expect(service.cancelTask(task.id)).rejects.toThrow('任务已完成');
   });
   it.each(['failed', 'cancelled'] as const)(
-    '相同识别ID不阻断发布恢复，真正发布后变为 %s 仍保护成果',
+    '识别关联提交幂等，发布任务变为 %s 后按生命周期释放占用',
     async (status) => {
       const flow = buildWorkflowSnapshot(
-        downloadDefinition,
+        [{ id: 'publish', atom: 'publishEpisode', title: '完成' }],
         atoms,
         new Date().toISOString(),
       );
@@ -468,6 +468,16 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       terminal.finishedAt = new Date().toISOString();
       expect(await store.commit(saved, terminal)).toBe(true);
       flow.currentStepId = 'import';
+      flow.steps = [
+        {
+          id: 'import',
+          atom: 'importFile',
+          title: '导入',
+          status: 'running',
+          attempt: 1,
+          checkpoint: {},
+        },
+      ];
       const retry = await createTask({
         data: {
           episodeId,
@@ -475,9 +485,13 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
           workflow: JSON.parse(JSON.stringify(flow)),
         },
       });
-      await expect(
-        claimEpisodePublication(retry.id, await contextFor(retry.id)),
-      ).rejects.toThrow('其他任务正在发布或已发布');
+      const claim = claimEpisodePublication(
+        retry.id,
+        await contextFor(retry.id),
+      );
+      if (status === 'failed')
+        await expect(claim).rejects.toThrow('其他任务正在发布');
+      else await expect(claim).resolves.toBeUndefined();
     },
   );
   it.each([TaskType.IMPORT, TaskType.BATCH_IMPORT, TaskType.BATCH_DOWNLOAD])(
@@ -606,7 +620,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const download = await createImportTask();
     await expect(
       claimEpisodePublication(download.id, await contextFor(download.id)),
-    ).rejects.toThrow('其他任务正在发布或已发布');
+    ).rejects.toThrow('其他任务正在发布，或发布失败后尚未处理');
     await prisma.episode.delete({ where: { id: otherEpisode.id } });
     expect(
       batchImportEntries((await store.read(task.id)).input.batchEntries)[1],

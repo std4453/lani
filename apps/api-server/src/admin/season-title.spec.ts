@@ -31,6 +31,7 @@ it.each([
     {} as any,
     {} as any,
     {} as any,
+    {} as any,
   );
   expect((await resolver.searchBangumi('bgmid:1'))[0].name).toBe(expected);
 });

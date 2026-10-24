@@ -302,6 +302,28 @@ it('deletes from the last written directory rather than a changed display title'
   expect(await fs.readdir(root)).toEqual(['new']);
 });
 
+it('目录删除权限错误继续向上传播，不刷新播放器', async () => {
+  await fs.mkdir(path.join(root, 'old'));
+  const { service, state, jellyfin } = setup({ lastWriteDirectory: 'old' });
+  const failure = Object.assign(new Error('Permission denied'), {
+    code: 'EACCES',
+  });
+  const remove = jest.spyOn(fs, 'rm').mockRejectedValueOnce(failure);
+  try {
+    await expect(service.deleteSeasonFiles(state())).rejects.toBe(failure);
+    expect(jellyfin.refreshAfterDelete).not.toHaveBeenCalled();
+    expect(await fs.readdir(root)).toEqual(['old']);
+  } finally {
+    remove.mockRestore();
+  }
+});
+
+it('季度目录已不存在时仍可幂等删除并重试刷新', async () => {
+  const { service, state, jellyfin } = setup({ lastWriteDirectory: 'missing' });
+  await service.deleteSeasonFiles(state());
+  expect(jellyfin.refreshAfterDelete).toHaveBeenCalledTimes(1);
+});
+
 it('目录改名在任务锁内读取新产物，保留并发写入的批量条目并推进版本', async () => {
   const old = path.join(root, 'A', 'B');
   await fs.mkdir(old, { recursive: true });

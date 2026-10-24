@@ -1,4 +1,5 @@
 import { parseWorkflow } from '@lani/workflow';
+import { MediaPoolService } from '@/media-pool/media-pool.service';
 import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
@@ -35,6 +36,7 @@ export class AdminResolver {
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
     private emitter: EventEmitter2,
+    private mediaPool: MediaPoolService,
   ) {}
 
   @Query(() => ID)
@@ -177,13 +179,9 @@ export class AdminResolver {
     this.logger.verbose(
       `Deleting files for season #${id} (${season.title})...`,
     );
-    await this.seasonEmit.deleteSeasonFiles(season);
-    this.logger.verbose(`Delete db row for season #${id} (${season.title})...`);
-    await this.prisma.season.delete({
-      where: {
-        id,
-      },
-    });
+    await this.mediaPool.deleteSeason(id, () =>
+      this.seasonEmit.deleteSeasonFiles(season),
+    );
     this.logger.log(`Delete #${id} (${season.title}) success`);
     return 'ok';
   }

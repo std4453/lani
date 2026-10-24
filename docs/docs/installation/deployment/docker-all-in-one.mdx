@@ -38,8 +38,9 @@ jellyfin:
   apiToken: your_api_token
   dummyUserId: dummy_user_id
 
-lani:
-  moveStrategy: hardLinkOrMove
+mediaPool:
+  root: /data/pool
+  painfullyAcceptCrossDeviceCopy: false
 ```
 
 ### 准备目录
@@ -48,6 +49,7 @@ lani:
 
 1. 将上述配置文件放在 `/srv/lani/config.yaml`
 2. 创建空目录 `/srv/lani/storage`
+3. 在已有媒体卷内准备 `pool`、`downloads` 和 `library` 目录，将共同父目录挂载为 `/data`，并按路径映射配置下载器与 Jellyfin
 
 ### 启动一体机容器
 
@@ -60,6 +62,7 @@ sudo docker run --detach \
   --restart always \
   --volume /srv/lani/config.yaml:/config/config.yaml \
   --volume /srv/lani/storage:/storage \
+  --volume /srv/media:/data \
   ghcr.io/std4453/lani-all-in-one
 ```
 
@@ -74,6 +77,42 @@ sudo docker run --detach \
 ![lani 截图](/img/lani-successful-start.png)
 
 Enjoy!
+
+### 升级与媒体回填
+
+首次升级媒体池功能时，先备份数据库和配置，补齐 `mediaPool` 配置与目录权限。停止旧一体机，使用目标版本镜像启动临时维护容器；将以下 `TARGET_TAG` 替换为目标版本，路径及网络选项需与实际部署一致。维护容器直接进入 shell，不启动 API worker，避免迁移后在回填前恢复任务。
+
+```bash
+docker stop lani_all_in_one
+docker run --rm -it --name lani_media_maintenance \
+  --volume /srv/lani/config.yaml:/config/config.yaml:ro \
+  --volume /srv/lani/storage:/storage \
+  --volume /srv/media:/data \
+  --entrypoint bash ghcr.io/std4453/lani-all-in-one:TARGET_TAG
+```
+
+在维护容器中合并配置、执行迁移并生成清单：
+
+```bash
+cd /deploy/apps/all-in-one
+yq '. *= load("/config/config.yaml")' defaults.yaml > /deploy/apps/api-server/config.yaml
+cd /deploy/libs/db
+DATABASE_URL="$(yq '.postgresUrl' /deploy/apps/api-server/config.yaml)" npm run migrate:deploy
+cd /deploy/apps/api-server
+mkdir -p /storage/maintenance
+CONFIG_FILENAME=./config.yaml node dist/media-pool/backfill-cli.js --scan /storage/maintenance/media-plan.json
+```
+
+清单保存于持久化挂载目录，容器退出后仍保留；宿主机路径为 `/srv/lani/storage/maintenance/media-plan.json`。审核每个剧集对应的视频、字幕、路径和哈希。清单含本机路径，应限制访问，不上传到公开仓库。扫描不会覆盖已有清单，重新扫描需使用新文件名。
+
+确认后在同一维护容器中应用：
+
+```bash
+CONFIG_FILENAME=./config.yaml node dist/media-pool/backfill-cli.js --apply /storage/maintenance/media-plan.json
+exit
+```
+
+全部回填成功后，在宿主机执行 `docker rm lani_all_in_one` 移除已停止的旧容器，再按上方启动命令用相同目标版本和挂载参数重新创建一体机容器。失败时保持旧 API 停止，修复原因后重跑；不要同时运行维护工具和 API worker。回填保留原媒体文件和 Jellyfin 识别 ID，不需要启动下载任务。
 
 ### 如果存在问题……
 

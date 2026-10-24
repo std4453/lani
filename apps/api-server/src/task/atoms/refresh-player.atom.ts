@@ -17,11 +17,12 @@ export class RefreshPlayerAtom extends BatchableEpisodeAtom {
   }
   protected async runEpisode(
     id: number,
-    { episodeId }: TaskInput,
+    { episodeId, filePath }: TaskInput,
     context: AtomContext,
   ) {
     await claimEpisodePublication(id, context, true);
     if (!episodeId) throw new Error('剧集已被删除');
+    if (!filePath) throw new Error('缺少已导入的视频路径，无法确认播放器条目');
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       include: { season: true },
@@ -39,6 +40,7 @@ export class RefreshPlayerAtom extends BatchableEpisodeAtom {
       return await context.waitFor(
         this.refresh.enqueue(key, {
           seriesId: jellyfinSeriesId,
+          filePath,
           season,
           index,
           refreshed: async (refreshStartedAt) => {

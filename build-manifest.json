@@ -3,10 +3,10 @@
   "algorithmVersion": 2,
   "images": {
     "admin": {
-      "fingerprint": "86b608e375fd9ea67091abc6a79797c4ad38bc29ab64030a96f7233edc896d26"
+      "fingerprint": "8826d6c038f74d483b866c47bdd8368e4d0dbe9445a2252dfdab1737bd48bad4"
     },
     "api-server": {
-      "fingerprint": "226d968ea99729ec375c16cbead4f5016d8a0b00d9365e2b75f41e6e83dcf5e8"
+      "fingerprint": "0d5473331e379d074e1feb1d7c889f584d6c90da46f9dad2eafe9343c97ebfb9"
     },
     "data-server": {
       "fingerprint": "595e54a8a67002a1234b87cef5a73ae0376cd9b116568228ae0c984e394fafb9"
@@ -15,7 +15,7 @@
       "fingerprint": "2a4f5dc1121483db70322778634017967b05e3c9b6fa0b0cfd866d73a8ea6272"
     },
     "db": {
-      "fingerprint": "4496c875b05807cf82a3fb049072111f29ddf0da0b2d99240f0b81a1a87a6249"
+      "fingerprint": "f2f0ea986e8506f73a782c94ff4069e53abff538c56659119e12e4647b936b43"
     },
     "anime-matcher": {
       "fingerprint": "524c75cf47d12828aab460c14ccec75d3643fa909b741be7231d484c7ba2f8dd"
