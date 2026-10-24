@@ -109,9 +109,20 @@ function useColumns() {
               <Tooltip title="根据当前季度列表智能识别">
                 <InfoCircleOutlined aria-label="根据当前季度列表智能识别" />
               </Tooltip>
+              {observedState.custom.alias && (
+                <Tooltip title="取消季度名称筛选">
+                  <Button
+                    type="link"
+                    size="small"
+                    aria-label="取消季度名称筛选"
+                    icon={<CloseCircleOutlined />}
+                    onClick={() => update({ custom: { alias: '' } })}
+                  />
+                </Tooltip>
+              )}
             </>
           ),
-          dataIndex: 'aliases',
+          dataIndex: 'season',
           copyable: false,
           width: 272,
           render: (_, r) => (
@@ -133,28 +144,18 @@ function useColumns() {
               )}
             </TorrentSeason>
           ),
+          filters: [
+            { text: '关联季度', value: 'match' },
+            { text: '未关联季度', value: 'no_match' },
+          ],
+          filterMultiple: false,
           stateKey: {
-            custom: 'alias',
+            filter: 'season',
           },
         },
         {
-          title: (
-            <>
-              制作组
-              {observedState.custom.part && (
-                <Tooltip title="取消制作组筛选">
-                  <Button
-                    type="link"
-                    size="small"
-                    aria-label="取消制作组筛选"
-                    icon={<CloseCircleOutlined />}
-                    onClick={() => update({ custom: { part: '' } })}
-                  />
-                </Tooltip>
-              )}
-            </>
-          ),
-          dataIndex: 'season',
+          title: '制作组',
+          key: 'organizations',
           copyable: false,
           width: 160,
           render: (_, r) => {
@@ -181,13 +182,8 @@ function useColumns() {
               </div>
             );
           },
-          filters: [
-            { text: '关联季度', value: 'match' },
-            { text: '未关联季度', value: 'no_match' },
-          ],
-          filterMultiple: false,
           stateKey: {
-            filter: 'season',
+            custom: 'part',
           },
         },
         {
@@ -320,7 +316,7 @@ function useColumns() {
           fixed: 'right',
         },
       ],
-      [mobile, update, observedState.custom.part],
+      [mobile, update, observedState.custom.alias],
     ),
   );
 }

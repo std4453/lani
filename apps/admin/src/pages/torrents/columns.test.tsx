@@ -36,15 +36,20 @@ it('直接打开关联筛选 URL 时，表格首次请求携带相同筛选', ()
     });
     const { filter } = parseDefaultColumnConfig(columns);
     expect(filter.season).toEqual(['match']);
-    const season = columns.findIndex(
-      (column) => column.dataIndex === 'aliases',
-    );
+    const season = columns.findIndex((column) => column.dataIndex === 'season');
     const organization = columns.findIndex(
-      (column) => column.dataIndex === 'season',
+      (column) => column.key === 'organizations',
     );
     expect(season).toBeLessThan(organization);
     expect(columns[organization].width).toBe(160);
-    expect(columns[organization].filterMultiple).toBe(false);
+    expect(columns[season].filterMultiple).toBe(false);
+    expect(columns[season].filters).toEqual([
+      { text: '关联季度', value: 'match' },
+      { text: '未关联季度', value: 'no_match' },
+    ]);
+    expect(columns[organization].filters).toEqual([
+      { text: '已过滤', value: '_custom_filtered' },
+    ]);
   } finally {
     act(() => {
       ReactDOM.unmountComponentAtNode(container);
