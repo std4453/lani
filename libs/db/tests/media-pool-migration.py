@@ -43,10 +43,12 @@ with tempfile.TemporaryDirectory(prefix='lani-media-migration-') as directory:
             SELECT id,'legacy' FROM episodes WHERE index=1;
             UPDATE episodes SET current_version_id=(SELECT id FROM episode_versions) WHERE index=1;""")
         try:
+            sql('UPDATE episodes SET current_version_id=NULL WHERE index=1')
             sql('UPDATE episodes SET current_version_id=(SELECT id FROM episode_versions) WHERE index=2')
             raise AssertionError('cross-episode current version was accepted')
-        except RuntimeError:
-            pass
+        except RuntimeError as error:
+            assert 'episodes_current_version_id_id_fkey' in str(error), error
+        sql('UPDATE episodes SET current_version_id=(SELECT id FROM episode_versions) WHERE index=1')
         for statement in [
             "INSERT INTO media_assets(id,size,pool_path,pool_identity) VALUES ('invalid',1,'/pool','{}')",
             "INSERT INTO media_assets(id,size,pool_path,pool_identity,download_path,download_mode) VALUES ('00000000-0000-4000-8000-000000000001',1,'/pool','{}','/download','copy')",

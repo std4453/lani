@@ -145,6 +145,7 @@ export class MediaPool {
         const record = preparation.files[index];
         if (file.assetId) {
           const asset = await this.db.mediaAsset.findUnique({
+            rejectOnNotFound: false,
             where: { id: file.assetId },
           });
           if (
