@@ -1,4 +1,5 @@
 import { ImportFileAtom } from '@/task/atoms/import-file.atom';
+import { removeDirectoryIdempotent } from '@/utils/idempotency';
 import { TaskStore } from '@/task/task-store';
 import { WorkflowRunner } from '@/task/workflow-runner';
 import { buildWorkflowSnapshot } from '@lani/workflow';
@@ -372,12 +373,23 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     await pool.publish(await pool.register(first), context());
     await expect(
       pool.deleteSeason(seasonId, async () => {
-        throw new Error('Refresh failed');
+        const remove = jest
+          .spyOn(fs, 'rm')
+          .mockRejectedValueOnce(
+            Object.assign(new Error('Permission denied'), { code: 'EACCES' }),
+          );
+        try {
+          await removeDirectoryIdempotent(path.join(root, 'library'));
+        } finally {
+          remove.mockRestore();
+        }
       }),
-    ).rejects.toThrow('Refresh failed');
+    ).rejects.toThrow('Permission denied');
     expect(await current()).toBeNull();
     expect(await db.episodeVersion.count({ where: { episodeId } })).toBe(1);
-    await pool.deleteSeason(seasonId, async () => undefined);
+    await pool.deleteSeason(seasonId, async () => {
+      await removeDirectoryIdempotent(path.join(root, 'library'));
+    });
     expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
   });
   it('季度有活动任务时删除在文件变动前失败', async () => {
