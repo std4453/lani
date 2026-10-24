@@ -133,7 +133,7 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
               cancelling: 'CANCELLING',
             } as Record<string, EpisodeStatus>
           )[workflow.status] ?? 'UNKNOWN';
-        if (step && status !== 'AVAILABLE')
+        if (step && status === 'UNKNOWN')
           label = `${step.title} · ${EPISODE_STATUS_TAGS[status].children}`;
       }
     } else if (summary?.legacy) {
@@ -199,7 +199,9 @@ export function DownloadStatusTag({
         }}
         icon={showDialog ? <SelectOutlined /> : null}
       >
-        {label ?? children}
+        {['DOWNLOAD_FAILED', 'CANCELLING', 'CANCELLED'].includes(status)
+          ? children
+          : label ?? children}
       </Tag>
     );
   } else {

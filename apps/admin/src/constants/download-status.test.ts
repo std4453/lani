@@ -79,8 +79,8 @@ it.each<[WorkflowStatus, string]>([
   expect(
     calcEpisodeStatus(
       episode({ version: 1, workflow: { ...workflow, status } }),
-    ).status,
-  ).toBe(expected);
+    ),
+  ).toMatchObject({ status: expected, label: undefined });
 });
 it('兼容旧任务，并将损坏或缺失摘要显示为未知', () => {
   const legacy = { stage: 'AVAILABLE', isFailed: false, isCancelled: false };

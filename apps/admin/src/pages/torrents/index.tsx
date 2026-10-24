@@ -24,6 +24,7 @@ import {
 } from '@/utils/search';
 import useMobile from '@/utils/useMobile';
 import {
+  CloseCircleOutlined,
   ExportOutlined,
   HistoryOutlined,
   InfoCircleOutlined,
@@ -31,45 +32,14 @@ import {
 } from '@ant-design/icons';
 import { ActionType } from '@ant-design/pro-table';
 import { ApolloClient, useApolloClient } from '@apollo/client';
-import {
-  Button,
-  message,
-  Space,
-  Tag,
-  TagProps,
-  Tooltip,
-  Typography,
-} from 'antd';
-import { useTheme } from '@/theme';
-import { tagColors } from '@/theme/tagColors';
-import md5 from 'md5';
+import { Button, message, Space, Tooltip, Typography } from 'antd';
 import prettyBytes from 'pretty-bytes';
-import { CSSProperties, useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import styles from './index.module.less';
 import { syncTorrentHistory } from './history';
 import TorrentSeason from './TorrentSeason';
+import ColoredTag from './ColoredTag';
 import { handleError } from '@/utils/error';
-
-function chooseColor(text: string) {
-  const hash = md5(text);
-  return (parseInt(hash.substring(0, 4), 16) / 65536) * 360;
-}
-
-function ColoredTag({ text, ...props }: { text: string } & TagProps) {
-  const hue = useMemo(() => chooseColor(text), [text]);
-  const { theme } = useTheme();
-  return (
-    <Tooltip title={text}>
-      <Tag
-        className={styles.tag}
-        style={tagColors(hue, theme) as CSSProperties}
-        {...props}
-      >
-        {text}
-      </Tag>
-    </Tooltip>
-  );
-}
 
 enum TorrentSizeFilter {
   XS = 'xs',
@@ -83,7 +53,7 @@ type TorrentTableRow = TorrentFieldsFragment & TorrentParseFieldsFragment;
 
 function useColumns() {
   const mobile = useMobile();
-  const { update } = useAntdSearchContext();
+  const { update, observedState } = useAntdSearchContext();
 
   return useProColumns(
     useMemo(
@@ -133,38 +103,6 @@ function useColumns() {
           stateKey: { filter: 'channel' },
         },
         {
-          title: '制作组',
-          key: 'organizations',
-          copyable: false,
-          width: 272,
-          render: (_, r) => {
-            const parts = r.organizationParts ?? [];
-            if (!parts.length) {
-              return '-';
-            }
-            return (
-              <div className={styles.tagContainer}>
-                {parts.map((part, i) =>
-                  part ? (
-                    <ColoredTag
-                      key={i}
-                      text={part}
-                      onClick={() => {
-                        update({
-                          custom: { part },
-                        });
-                      }}
-                    />
-                  ) : null,
-                )}
-              </div>
-            );
-          },
-          stateKey: {
-            custom: 'part',
-          },
-        },
-        {
           title: (
             <>
               季度{' '}
@@ -197,6 +135,59 @@ function useColumns() {
           ),
           stateKey: {
             custom: 'alias',
+          },
+        },
+        {
+          title: (
+            <>
+              制作组
+              {observedState.custom.part && (
+                <Tooltip title="取消制作组筛选">
+                  <Button
+                    type="link"
+                    size="small"
+                    aria-label="取消制作组筛选"
+                    icon={<CloseCircleOutlined />}
+                    onClick={() => update({ custom: { part: '' } })}
+                  />
+                </Tooltip>
+              )}
+            </>
+          ),
+          dataIndex: 'season',
+          copyable: false,
+          width: 160,
+          render: (_, r) => {
+            const parts = r.organizationParts ?? [];
+            if (!parts.length) {
+              return '-';
+            }
+            return (
+              <div className={styles.tagContainer}>
+                {parts.map((part, i) =>
+                  part ? (
+                    <ColoredTag
+                      key={i}
+                      text={part}
+                      maxWidth={140}
+                      onClick={() => {
+                        update({
+                          custom: { part },
+                        });
+                      }}
+                    />
+                  ) : null,
+                )}
+              </div>
+            );
+          },
+          filters: [
+            { text: '关联季度', value: 'match' },
+            { text: '未关联季度', value: 'no_match' },
+          ],
+          filterMultiple: false,
+          stateKey: {
+            filter: 'season',
           },
         },
         {
@@ -329,7 +320,7 @@ function useColumns() {
           fixed: 'right',
         },
       ],
-      [mobile, update],
+      [mobile, update, observedState.custom.part],
     ),
   );
 }
@@ -355,13 +346,19 @@ export async function queryTorrents(
   {
     size,
     channel,
+    season,
   }: {
     size?: TorrentSizeFilter[];
     channel?: TorrentChannel[];
+    season?: string[];
   },
   { alias, part }: Record<string, string>,
 ) {
+  const seasonFilter = season?.length === 1 ? season[0] : undefined;
   const filter: TorrentFilter = {
+    ...(seasonFilter === 'match' || seasonFilter === 'no_match'
+      ? { matchedSeasonId: { isNull: seasonFilter === 'no_match' } }
+      : {}),
     ...(channel?.length ? { channel: { in: channel } } : {}),
     ...(keyword
       ? {
