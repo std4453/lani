@@ -272,14 +272,24 @@ test('reports card loading failures with a toast instead of a persistent alert',
   expect(container.textContent).not.toContain('暂无季度');
 });
 
-test('mobile users can retry an initial card query failure from the toolbar', async () => {
-  mockMobile = true;
-  mockCardQuery.data = undefined;
-  mockCardQuery.error = new Error('offline');
-  toggle();
-  expect(container.querySelector('.ant-alert')).toBeNull();
-  await act(async () => {
-    Simulate.click(container.querySelector('button[aria-label="刷新"]')!);
-  });
-  expect(mockCardRefresh).toHaveBeenCalledTimes(1);
-});
+test.each([false, true])(
+  'only desktop cards show the refresh button (mobile=%s)',
+  async (mobile) => {
+    mockMobile = mobile;
+    mockCardQuery.data = undefined;
+    mockCardQuery.error = new Error('offline');
+    toggle();
+    expect(container.querySelector('.ant-alert')).toBeNull();
+    const refresh = container.querySelector('button[aria-label="刷新"]');
+    if (mobile) {
+      expect(refresh).toBeNull();
+      expect(mockCardRefresh).not.toHaveBeenCalled();
+    } else {
+      expect(refresh).not.toBeNull();
+      await act(async () => {
+        Simulate.click(refresh!);
+      });
+      expect(mockCardRefresh).toHaveBeenCalledTimes(1);
+    }
+  },
+);

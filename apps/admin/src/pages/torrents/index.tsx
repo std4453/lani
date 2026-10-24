@@ -39,6 +39,7 @@ import styles from './index.module.less';
 import { syncTorrentHistory } from './history';
 import TorrentSeason from './TorrentSeason';
 import ColoredTag from './ColoredTag';
+import { subtitleFilter } from './subtitle-filter';
 import { handleError } from '@/utils/error';
 
 enum TorrentSizeFilter {
@@ -62,6 +63,9 @@ function useColumns() {
           title: 'ID',
           dataIndex: 'displayId',
           align: 'center',
+          sorter: true,
+          stateKey: { sort: 'displayId' },
+          onHeaderCell: () => ({ className: styles.idHeader }),
           width: 88,
         },
         {
@@ -101,6 +105,39 @@ function useColumns() {
             { text: 'Nyaa', value: TorrentChannel.Nyaa },
           ],
           stateKey: { filter: 'channel' },
+        },
+        {
+          title: '制作组',
+          key: 'organizations',
+          copyable: false,
+          width: 160,
+          render: (_, r) => {
+            const parts = r.organizationParts ?? [];
+            if (!parts.length) {
+              return '-';
+            }
+            return (
+              <div className={styles.tagContainer}>
+                {parts.map((part, i) =>
+                  part ? (
+                    <ColoredTag
+                      key={i}
+                      text={part}
+                      maxWidth={140}
+                      onClick={() => {
+                        update({
+                          custom: { part },
+                        });
+                      }}
+                    />
+                  ) : null,
+                )}
+              </div>
+            );
+          },
+          stateKey: {
+            custom: 'part',
+          },
         },
         {
           title: (
@@ -154,39 +191,6 @@ function useColumns() {
           },
         },
         {
-          title: '制作组',
-          key: 'organizations',
-          copyable: false,
-          width: 160,
-          render: (_, r) => {
-            const parts = r.organizationParts ?? [];
-            if (!parts.length) {
-              return '-';
-            }
-            return (
-              <div className={styles.tagContainer}>
-                {parts.map((part, i) =>
-                  part ? (
-                    <ColoredTag
-                      key={i}
-                      text={part}
-                      maxWidth={140}
-                      onClick={() => {
-                        update({
-                          custom: { part },
-                        });
-                      }}
-                    />
-                  ) : null,
-                )}
-              </div>
-            );
-          },
-          stateKey: {
-            custom: 'part',
-          },
-        },
-        {
           title: '集数',
           dataIndex: 'episode',
           render: (_, r) => formatEpisode(r.episodeInfo),
@@ -198,7 +202,14 @@ function useColumns() {
         },
         {
           title: '字幕',
-          key: 'subtitles',
+          dataIndex: 'subtitles',
+          filters: [
+            { text: '中文（包括简体、繁体）', value: 'zh' },
+            { text: '日语', value: 'ja' },
+            { text: '英语', value: 'en' },
+          ],
+          filterMultiple: true,
+          stateKey: { filter: 'subtitles' },
           width: 104,
           render: (_, r) => <TorrentSubtitle info={r.subtitleInfo} />,
         },
@@ -333,9 +344,11 @@ export async function queryTorrents(
     keyword?: string;
   },
   {
+    displayId: displayIdSort,
     publishDate: publishDateSort,
     episode: episodeSort,
   }: {
+    displayId?: 'ascend' | 'descend';
     publishDate?: 'ascend' | 'descend';
     episode?: 'ascend' | 'descend';
   },
@@ -343,15 +356,19 @@ export async function queryTorrents(
     size,
     channel,
     season,
+    subtitles,
   }: {
     size?: TorrentSizeFilter[];
     channel?: TorrentChannel[];
     season?: string[];
+    subtitles?: string[] | null;
   },
   { alias, part }: Record<string, string>,
 ) {
   const seasonFilter = season?.length === 1 ? season[0] : undefined;
+  const languages = subtitleFilter(subtitles);
   const filter: TorrentFilter = {
+    ...(languages ? { and: [languages] } : {}),
     ...(seasonFilter === 'match' || seasonFilter === 'no_match'
       ? { matchedSeasonId: { isNull: seasonFilter === 'no_match' } }
       : {}),
@@ -407,6 +424,11 @@ export async function queryTorrents(
       : undefined),
   };
   const orderBy: TorrentsOrderBy[] = [
+    ...(displayIdSort
+      ? displayIdSort === 'ascend'
+        ? [TorrentsOrderBy.DisplayIdAsc]
+        : [TorrentsOrderBy.DisplayIdDesc]
+      : []),
     ...(publishDateSort
       ? publishDateSort === 'ascend'
         ? [TorrentsOrderBy.PublishDateAsc]
@@ -424,7 +446,7 @@ export async function queryTorrents(
       variables: {
         first: pageSize,
         offset: pageSize * (current - 1),
-        orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.IdDesc],
+        orderBy: orderBy.length > 0 ? orderBy : [TorrentsOrderBy.DisplayIdDesc],
         ...(Object.keys(filter).length > 0 ? { filter } : undefined),
       },
     });

@@ -11,7 +11,8 @@ jest.mock('@/utils/error', () => ({ handleError: jest.fn() }));
 import { ApolloClient } from '@apollo/client';
 import { queryTorrents } from './index';
 import { decodeAntdSearch, encodeAntdSearch } from '@/utils/search/encode';
-import { TorrentChannel } from '@/generated/types';
+import { TorrentChannel, TorrentsOrderBy } from '@/generated/types';
+import { subtitleFilter } from './subtitle-filter';
 
 describe('torrent list queries', () => {
   it('keeps the stored display ID across pagination and source filters', async () => {
@@ -106,5 +107,81 @@ it.each([undefined, [], ['invalid'], ['match', 'no_match']])(
       {},
     );
     expect(query.mock.calls[0][0].variables.filter).toBeUndefined();
+  },
+);
+
+it('round-trips multiple subtitle languages and intersects other filters', async () => {
+  const query = jest.fn().mockResolvedValue({
+    data: { allTorrents: { edges: [], totalCount: 0 } },
+  });
+  const state = decodeAntdSearch({ f_subtitles: 'zh|en', f_size: 'sm|md' });
+  expect(encodeAntdSearch({}, {}, state.filter, {})).toEqual({
+    f_subtitles: 'zh|en',
+    f_size: 'sm|md',
+  });
+  await queryTorrents(
+    { query } as unknown as ApolloClient<object>,
+    { keyword: '测试' },
+    {},
+    { ...state.filter, season: ['match'], channel: [TorrentChannel.Nyaa] },
+    { part: '制作组', alias: '季度' },
+  );
+  expect(query.mock.calls[0][0].variables.filter).toEqual({
+    and: [subtitleFilter(['zh', 'en'])],
+    or: [
+      {
+        size: {
+          greaterThanOrEqualTo: 10 * 1024 * 1024,
+          lessThan: 150 * 1024 * 1024,
+        },
+      },
+      {
+        size: {
+          greaterThanOrEqualTo: 150 * 1024 * 1024,
+          lessThan: 750 * 1024 * 1024,
+        },
+      },
+    ],
+    matchedSeasonId: { isNull: false },
+    channel: { in: [TorrentChannel.Nyaa] },
+    title: { includesInsensitive: '测试' },
+    organizationParts: { contains: ['制作组'] },
+    seasonTitleAliases: { contains: ['季度'] },
+  });
+});
+
+it.each([undefined, null, [], ['invalid'], ['__proto__']])(
+  'omits cleared or invalid subtitle filters: %j',
+  async (subtitles) => {
+    const query = jest.fn().mockResolvedValue({ data: { allTorrents: null } });
+    await queryTorrents(
+      { query } as unknown as ApolloClient<object>,
+      {},
+      {},
+      { subtitles },
+      {},
+    );
+    expect(query.mock.calls[0][0].variables.filter).toBeUndefined();
+  },
+);
+
+it.each([
+  [{}, TorrentsOrderBy.DisplayIdDesc],
+  [{ displayId: 'ascend' }, TorrentsOrderBy.DisplayIdAsc],
+  [{ displayId: 'descend' }, TorrentsOrderBy.DisplayIdDesc],
+  [{ publishDate: 'ascend' }, TorrentsOrderBy.PublishDateAsc],
+  [{ episode: 'descend' }, TorrentsOrderBy.EpisodeSortDesc],
+] as const)(
+  'sorts displayed IDs and only defaults when all sorting is cleared: %j',
+  async (sort, expected) => {
+    const query = jest.fn().mockResolvedValue({ data: { allTorrents: null } });
+    await queryTorrents(
+      { query } as unknown as ApolloClient<object>,
+      {},
+      sort,
+      {},
+      {},
+    );
+    expect(query.mock.calls[0][0].variables.orderBy).toEqual([expected]);
   },
 );

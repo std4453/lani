@@ -28,19 +28,38 @@ import { ProColumns } from '@ant-design/pro-table';
 import { decodeAntdSearch } from '@/utils/search/encode';
 
 it('直接打开关联筛选 URL 时，表格首次请求携带相同筛选', () => {
-  state = decodeAntdSearch({ f_season: 'match', c_part: '星海字幕' });
+  state = decodeAntdSearch({
+    f_season: 'match',
+    c_part: '星海字幕',
+    f_subtitles: 'zh|ja',
+    o_displayId: 'ascend',
+  });
   const container = document.createElement('div');
   try {
     act(() => {
       ReactDOM.render(<Torrents />, container);
     });
-    const { filter } = parseDefaultColumnConfig(columns);
+    const { filter, sort } = parseDefaultColumnConfig(columns);
+    expect(sort.displayId).toBe('ascend');
+    expect(
+      columns.find((column) => column.dataIndex === 'displayId')?.sorter,
+    ).toBe(true);
     expect(filter.season).toEqual(['match']);
     const season = columns.findIndex((column) => column.dataIndex === 'season');
     const organization = columns.findIndex(
       (column) => column.key === 'organizations',
     );
-    expect(season).toBeLessThan(organization);
+    expect(season).toBe(organization + 1);
+    expect(filter.subtitles).toEqual(['zh', 'ja']);
+    const subtitles = columns.find(
+      (column) => column.dataIndex === 'subtitles',
+    );
+    expect(subtitles?.filterMultiple).toBe(true);
+    expect(subtitles?.filters).toEqual([
+      { text: '中文（包括简体、繁体）', value: 'zh' },
+      { text: '日语', value: 'ja' },
+      { text: '英语', value: 'en' },
+    ]);
     expect(columns[organization].width).toBe(160);
     expect(columns[season].filterMultiple).toBe(false);
     expect(columns[season].filters).toEqual([

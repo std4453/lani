@@ -106,7 +106,7 @@ export default function SeasonCards({
               onSearch(value);
             },
           }}
-          actions={mobile ? [modeButton, refreshButton, ...actions] : actions}
+          actions={mobile ? [modeButton, ...actions] : actions}
           settings={
             mobile
               ? []
