@@ -13,8 +13,9 @@ import {
   finishDirectoryMove,
   discardUnstartedMove,
 } from '@/media-pool/directory-move';
-import { assertSeasonIdle, relocateTaskMediaPaths } from '@/task/media-paths';
-import { lockEpisode } from '@/task/atoms/publication';
+import { relocateTaskMediaPaths } from '@/task/media-paths';
+import { findActiveSeasonTask } from '@/task/queries';
+import { lockEpisode } from '@/common/episode-lock';
 import { seasonMediaRoot } from '@/media-pool/paths';
 import { removeDirectoryIdempotent } from '@/utils/idempotency';
 import { canonical } from '@/media-pool/files';
@@ -53,7 +54,7 @@ export class SeasonMediaService {
     }
   }
   private async finishMove(filename: string, move: SeasonMove) {
-    await assertSeasonIdle(this.db, move.seasonId);
+    await this.assertSeasonIdle(this.db, move.seasonId);
     await executeDirectoryMove(move);
     await this.db.$transaction(async (tx) => {
       await relocateTaskMediaPaths(
@@ -73,6 +74,15 @@ export class SeasonMediaService {
       });
     });
     await finishDirectoryMove(filename);
+  }
+  private async assertSeasonIdle(
+    tx: Prisma.TransactionClient,
+    seasonId: number,
+  ) {
+    if (await findActiveSeasonTask(tx, seasonId))
+      throw new LaniError(
+        '季度仍有进行中或失败的任务，请先处理任务再修改媒体目录',
+      );
   }
   private async assertRegistered(seasonId: number) {
     const pending = await this.db.episode.findFirst({
@@ -95,7 +105,7 @@ export class SeasonMediaService {
     newPath: string,
     directory: string,
   ) {
-    await assertSeasonIdle(this.db, seasonId);
+    await this.assertSeasonIdle(this.db, seasonId);
     const season = await this.db.season.findUnique({
       where: { id: seasonId },
     });
@@ -141,7 +151,7 @@ export class SeasonMediaService {
       });
       if (!season) return;
       await this.assertRegistered(seasonId);
-      await assertSeasonIdle(this.db, seasonId);
+      await this.assertSeasonIdle(this.db, seasonId);
       const directory = seasonMediaRoot(season);
       try {
         const stat = await fs.lstat(directory);
@@ -156,7 +166,7 @@ export class SeasonMediaService {
       // 刷新失败仍保留季度定位，重试可处理已不存在的目录。
       await afterFiles(season);
       await this.db.$transaction(async (tx) => {
-        await assertSeasonIdle(tx, seasonId);
+        await this.assertSeasonIdle(tx, seasonId);
         const episodes = await tx.episode.findMany({
           where: { seasonId },
           orderBy: { id: 'asc' },

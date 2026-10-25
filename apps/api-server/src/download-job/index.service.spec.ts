@@ -244,7 +244,7 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
     const old = await createTask({
       data: { episodeId, legacyStage: LegacyTaskStage.DOWNLOADING },
     });
-    await service.resumePendingTasks();
+    await service.onApplicationBootstrap();
     const result = await prisma.task.findUnique({
       where: { id: old.id },
     });

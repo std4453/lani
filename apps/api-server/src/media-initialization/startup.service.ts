@@ -10,7 +10,6 @@ import {
   probeMediaDirectories,
 } from '@/media-pool/preflight';
 import { SeasonMediaService } from '@/season-emit/media.service';
-import { TaskService } from '@/task/index.service';
 import { MediaBackfillService } from './backfill.service';
 
 @Injectable()
@@ -22,7 +21,6 @@ export class MediaStartupService implements OnApplicationShutdown {
     private pool: MediaPoolService,
     private seasons: SeasonMediaService,
     private backfill: MediaBackfillService,
-    private tasks: TaskService,
   ) {}
   /** 监听 HTTP、启动定时任务前完成运行条件检查和中断恢复。 */
   async initialize() {
@@ -66,8 +64,6 @@ export class MediaStartupService implements OnApplicationShutdown {
   }
   private async run() {
     try {
-      if (this.stopping) return;
-      await this.tasks.resumePendingTasks();
       if (this.stopping) return;
       await this.backfill.run();
       this.logger.log('Media registration complete');

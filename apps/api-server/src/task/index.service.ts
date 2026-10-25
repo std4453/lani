@@ -10,7 +10,12 @@ import { PublishEpisodeAtom } from './atoms/publish-episode.atom';
 import { PrismaService } from '@/common/prisma.service';
 import { LaniError } from '@/utils/error';
 import { LegacyTaskStage, Prisma, TaskType } from '@lani/db';
-import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   parseWorkflow,
@@ -32,7 +37,9 @@ export type TaskParams = Omit<
 
 @Injectable()
 @Resolver()
-export class TaskService implements OnApplicationShutdown {
+export class TaskService
+  implements OnApplicationBootstrap, OnApplicationShutdown
+{
   private readonly atoms: Atoms;
   private readonly runner: WorkflowRunner;
   constructor(
@@ -136,7 +143,7 @@ export class TaskService implements OnApplicationShutdown {
     });
   }
   private resumption?: Promise<void>;
-  resumePendingTasks() {
+  onApplicationBootstrap() {
     return this.resumption ?? (this.resumption = this.resumeTasks());
   }
   private async resumeTasks() {

@@ -31,14 +31,29 @@ function setup() {
   const pool = { initialize: jest.fn() };
   const seasons = { recoverDirectoryMoves: jest.fn() };
   const backfill = { run: jest.fn(), stop: jest.fn(), fail: jest.fn() };
-  const tasks = { resumePendingTasks: jest.fn() };
+  const db = {
+    task: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+  };
+  const tasks = new TaskService(
+    db as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    new MediaOperations(),
+  );
+  jest.spyOn(tasks, 'onApplicationBootstrap');
   const service = new MediaStartupService(
     pool as never,
     seasons as never,
     backfill as never,
-    tasks as never,
   );
-  return { pool, seasons, backfill, tasks, service };
+  return { pool, seasons, backfill, tasks, db, service };
 }
 function request(server: any, method = 'GET') {
   return new Promise<number>((resolve, reject) => {
@@ -54,7 +69,7 @@ function request(server: any, method = 'GET') {
   });
 }
 it('预检和中断恢复先完成；HTTP 写入和任务恢复不等待后台回填', async () => {
-  const { pool, backfill, seasons, tasks, service } = setup();
+  const { pool, backfill, seasons, tasks, db, service } = setup();
   let complete!: () => void;
   backfill.run.mockImplementation(
     () => new Promise<void>((resolve) => (complete = resolve)),
@@ -62,6 +77,7 @@ it('预检和中断恢复先完成；HTTP 写入和任务恢复不等待后台�
   const order: string[] = [];
   pool.initialize.mockImplementation(() => order.push('pool'));
   seasons.recoverDirectoryMoves.mockImplementation(() => order.push('recover'));
+  db.task.updateMany.mockImplementation(() => order.push('tasks'));
   @Controller()
   class Status {
     @Get() read() {
@@ -71,7 +87,10 @@ it('预检和中断恢复先完成；HTTP 写入和任务恢复不等待后台�
       return {};
     }
   }
-  @Module({ controllers: [Status] })
+  @Module({
+    controllers: [Status],
+    providers: [{ provide: TaskService, useValue: tasks }],
+  })
   class TestModule {}
   const app = await NestFactory.create(TestModule, { logger: false });
   try {
@@ -83,16 +102,18 @@ it('预检和中断恢复先完成；HTTP 写入和任务恢复不等待后台�
     );
     expect(order).toEqual(['pool', 'recover']);
     expect(backfill.run).not.toHaveBeenCalled();
-    expect(tasks.resumePendingTasks).not.toHaveBeenCalled();
+    expect(tasks.onApplicationBootstrap).not.toHaveBeenCalled();
     await app.listen(0, '127.0.0.1');
+    expect(order).toEqual(['pool', 'recover', 'tasks']);
+    expect(backfill.run).not.toHaveBeenCalled();
     const work = service.start();
     expect(await request(app.getHttpServer())).toBe(200);
     expect(await request(app.getHttpServer(), 'POST')).toBe(201);
-    expect(tasks.resumePendingTasks).toHaveBeenCalledTimes(1);
+    expect(tasks.onApplicationBootstrap).toHaveBeenCalledTimes(1);
     complete();
     await work;
     await service.start();
-    expect(tasks.resumePendingTasks).toHaveBeenCalledTimes(1);
+    expect(tasks.onApplicationBootstrap).toHaveBeenCalledTimes(1);
   } finally {
     complete?.();
     await service.onApplicationShutdown();
@@ -110,7 +131,7 @@ it.each(['preflight', 'recovery'])(
     operation.mockRejectedValue(new Error('unrecoverable'));
     await expect(service.initialize()).rejects.toThrow('unrecoverable');
     expect(backfill.run).not.toHaveBeenCalled();
-    expect(tasks.resumePendingTasks).not.toHaveBeenCalled();
+    expect(tasks.onApplicationBootstrap).not.toHaveBeenCalled();
   },
 );
 it('回填失败交给进程入口受控关闭，关闭停止后台工作', async () => {
@@ -123,26 +144,12 @@ it('回填失败交给进程入口受控关闭，关闭停止后台工作', asyn
   expect(backfill.stop).toHaveBeenCalled();
 });
 it('无回填时也恢复任务，重复调用不会重复调度', async () => {
-  const { service, tasks } = setup();
-  const db = {
-    task: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-  };
-  const task = new TaskService(
-    db as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    new MediaOperations(),
-  );
-  tasks.resumePendingTasks.mockImplementation(() => task.resumePendingTasks());
+  const { service, tasks, db } = setup();
   await service.initialize();
+  await Promise.all([
+    tasks.onApplicationBootstrap(),
+    tasks.onApplicationBootstrap(),
+  ]);
   await service.start();
-  await task.resumePendingTasks();
   expect(db.task.findMany).toHaveBeenCalledTimes(1);
 });

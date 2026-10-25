@@ -10,7 +10,7 @@ import {
 } from '@/api/jellyfin';
 import { mapPath } from '@/utils/path';
 import { jellyfinNumber } from '@/utils/episode-number';
-import { lockEpisode } from '@/task/atoms/publication';
+import { lockEpisode } from '@/common/episode-lock';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { SeasonWithJellyfinFolder } from '@/types/entities';

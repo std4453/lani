@@ -1,29 +1,7 @@
 import { Prisma } from '@lani/db';
 import { batchImportEntries } from '@lani/workflow';
 import path from 'path';
-import { LaniError } from '@/utils/error';
-import { activeTaskWhere } from './atoms/publication';
-
-export const seasonTasks = (seasonId: number): Prisma.TaskWhereInput => ({
-  OR: [
-    { episode: { seasonId } },
-    { episodes: { some: { episode: { seasonId } } } },
-  ],
-});
-export async function assertSeasonIdle(
-  tx: Prisma.TransactionClient,
-  seasonId: number,
-) {
-  if (
-    await tx.task.findFirst({
-      where: { AND: [activeTaskWhere, seasonTasks(seasonId)] },
-      select: { id: true },
-    })
-  )
-    throw new LaniError(
-      '季度仍有进行中或失败的任务，请先处理任务再修改媒体目录',
-    );
-}
+import { seasonTasks } from './queries';
 
 /** 调用方持有媒体操作互斥；任务行锁保护批量 JSON 的读取、修改、写回。 */
 export async function relocateTaskMediaPaths(

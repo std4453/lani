@@ -1,5 +1,5 @@
 import { createEpisodeTask } from '@/task/create-episode-task';
-import { lockEpisode } from '@/task/atoms/publication';
+import { lockEpisode } from '@/common/episode-lock';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';

@@ -1,18 +1,11 @@
-import { Prisma } from '@lani/db';
 import { AtomContext, AtomTransaction } from '@/task/atom';
 import { currentStep, batchImportEntries, parseWorkflow } from '@lani/workflow';
 import { mediaTarget, seasonMediaRoot } from '@/media-pool/paths';
 import { identity as fileIdentity, sameFile } from '@/media-pool/files';
 import { FileIdentity } from '@lani/workflow';
 
-export const activeTaskWhere: Prisma.TaskWhereInput = {
-  OR: ['running', 'cancelling', 'failed'].map((status) => ({
-    workflow: { path: ['status'], equals: status },
-  })),
-};
-
 import { lockEpisode } from '@/common/episode-lock';
-export { lockEpisode } from '@/common/episode-lock';
+import { activeTaskWhere } from '../queries';
 
 /** 发布格式的解释集中在此：旧任务/单集读取根检查点，批量按 Task 内部条目 ID 读取。 */
 export async function checkPublication(

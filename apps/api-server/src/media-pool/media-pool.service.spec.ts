@@ -150,7 +150,14 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
   });
   afterEach(async () => {
     jest.restoreAllMocks();
-    await db.task.deleteMany({ where: { episode: { seasonId } } });
+    await db.task.deleteMany({
+      where: {
+        OR: [
+          { episode: { seasonId } },
+          { episodes: { some: { episode: { seasonId } } } },
+        ],
+      },
+    });
     await db.episode.updateMany({
       where: { seasonId },
       data: { currentVersionId: null },
@@ -417,32 +424,50 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     expect(refresh).toHaveBeenCalledTimes(2);
     expect(await db.season.count({ where: { id: seasonId } })).toBe(0);
   });
-  it('季度有活动任务时删除在文件变动前失败', async () => {
-    const first = await input('first', 'mkv', false);
-    const version = await pool.register(first);
-    await pool.publish(version, context());
-    await db.task.create({
-      data: {
-        type: 'IMPORT',
-        legacyStage: 'IMPORTING',
-        episodeId,
-        workflow: { status: 'running' },
-        episodes: { create: { episodeId } },
-      },
-    });
-    const remove = jest.fn();
-    await expect(
-      seasons.delete(seasonId, async () => undefined),
-    ).rejects.toThrow('先处理任务');
-    expect(remove).not.toHaveBeenCalled();
-    expect(await current()).toBe(version);
-    expect(
-      await fs.readFile(
-        path.join(root, 'library', first.files[0].target),
-        'utf8',
-      ),
-    ).toBe('content-first');
-  });
+  it.each([
+    ['running', false],
+    ['cancelling', false],
+    ['failed', false],
+    ['running', true],
+    ['cancelling', true],
+    ['failed', true],
+  ])(
+    '季度有 %s 任务（批量=%s）时改名和删除在文件变动前失败',
+    async (status, batch) => {
+      const first = await input('first', 'mkv', false);
+      const version = await pool.register(first);
+      await pool.publish(version, context());
+      await db.task.create({
+        data: {
+          type: 'IMPORT',
+          legacyStage: 'IMPORTING',
+          episodeId: batch ? null : episodeId,
+          workflow: { status },
+          ...(batch ? { episodes: { create: { episodeId } } } : {}),
+        },
+      });
+      await expect(
+        renameSeason(
+          seasonId,
+          path.join(root, 'library'),
+          path.join(root, 'renamed'),
+          'renamed',
+        ),
+      ).rejects.toThrow('先处理任务');
+      const afterFiles = jest.fn();
+      await expect(seasons.delete(seasonId, afterFiles)).rejects.toThrow(
+        '先处理任务',
+      );
+      expect(afterFiles).not.toHaveBeenCalled();
+      expect(await current()).toBe(version);
+      expect(
+        await fs.readFile(
+          path.join(root, 'library', first.files[0].target),
+          'utf8',
+        ),
+      ).toBe('content-first');
+    },
+  );
   it('真实任务事务保存版本检查点，源文件消失后恢复不重复入池或改目标', async () => {
     const selected = await input('atom', 'mkv', false);
     const workflow = buildWorkflowSnapshot(
