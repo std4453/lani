@@ -1,7 +1,7 @@
 import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { Injectable } from '@nestjs/common';
 import { TaskInput } from '../atom';
-import { fileIdentity } from './import-file.operation';
+import { identity as fileIdentity } from '@/media-pool/files';
 import { mapPath } from '@/utils/path';
 import { VIDEO_FILE_MATCHER } from '@/utils/video-file';
 import config from '@/config';

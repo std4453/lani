@@ -6,7 +6,11 @@ import {
   ItemFields,
   JellyfinHelp,
   MetadataRefreshMode,
+  TvShowsService,
 } from '@/api/jellyfin';
+import { mapPath } from '@/utils/path';
+import { jellyfinNumber } from '@/utils/episode-number';
+import { lockEpisode } from '@/common/episode-lock';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
 import { SeasonWithJellyfinFolder } from '@/types/entities';
@@ -144,14 +148,17 @@ export class SeasonJellyfinService {
             item.Path &&
             normalize(item.Path) === expectedPath,
         );
+    const match =
+      matches.find(
+        (item) => item.Path && normalize(item.Path) === expectedPath,
+      ) ?? matches[0];
     if (matches.length > 1) {
       this.logger.warn(
         `Season #${seasonId} matched ${matches.length} Jellyfin series by ${
           byId.length ? 'Lani ID' : 'path'
-        }; using first item ${matches[0].Id}`,
+        }; using item ${match.Id}`,
       );
     }
-    const match = matches[0];
     if (!match?.Id) {
       this.logger.verbose(
         `Season #${seasonId} (${title}) matched no Jellyfin series`,
@@ -168,6 +175,78 @@ export class SeasonJellyfinService {
       // 对已经由应用写入或显式同步的季度，关联后单独读取其元数据。
       if (!laniId(match) && season.directory) {
         await this.refreshAfterWriteToDisk({ ...season, jellyfinId: match.Id });
+      }
+      // 改名后 Jellyfin 会生成新剧集 ID。所有已发布版本按实际新路径匹配完成后，
+      // 才完成季度关联；否则保留空季度 ID，让定时同步继续等待异步扫描。
+      const episodes = await this.prisma.episode.findMany({
+        where: {
+          seasonId,
+          currentVersionId: { not: null },
+          jellyfinEpisodeId: { not: null },
+        },
+        include: {
+          currentVersion: {
+            include: {
+              files: { where: { role: 'video' }, include: { asset: true } },
+            },
+          },
+        },
+        orderBy: { id: 'asc' },
+      });
+      if (episodes.length) {
+        if (!match.Path || normalize(match.Path) !== expectedPath) return false;
+        const { Items = [] } = await TvShowsService.getEpisodes(
+          match.Id,
+          config.jellyfin.dummyUserId,
+          [ItemFields.PATH],
+        );
+        const associations = episodes.map((episode) => {
+          const target = episode.currentVersion?.files[0]?.asset.jellyfinPath;
+          const number = jellyfinNumber(episode);
+          const item = (Items ?? []).find(
+            (item) =>
+              item.Id &&
+              item.Path &&
+              target &&
+              item.IndexNumber === number.index &&
+              item.ParentIndexNumber === number.season &&
+              path.resolve(mapPath(config.jellyfin.pathMapping, item.Path)) ===
+                path.resolve(target),
+          );
+          return { episode, target, item };
+        });
+        if (associations.some(({ item }) => !item?.Id)) return false;
+        await this.prisma.$transaction(async (tx) => {
+          for (const { episode, target, item } of associations) {
+            await lockEpisode(tx, episode.id);
+            const result = await tx.episode.updateMany({
+              where: {
+                id: episode.id,
+                currentVersionId: episode.currentVersionId,
+                jellyfinEpisodeId: episode.jellyfinEpisodeId,
+                currentVersion: {
+                  files: {
+                    some: { role: 'video', asset: { jellyfinPath: target } },
+                  },
+                },
+              },
+              data: { jellyfinEpisodeId: item!.Id },
+            });
+            if (!result.count)
+              throw new Error('剧集版本或播放关联已变化，请重试同步');
+          }
+          const updated = await tx.season.updateMany({
+            where: {
+              id: seasonId,
+              jellyfinId,
+              lastWriteDirectory: season.lastWriteDirectory,
+              lastWriteTitle: season.lastWriteTitle,
+            },
+            data: { jellyfinId: match.Id },
+          });
+          if (!updated.count) throw new Error('季度目录已变化，请重试同步');
+        });
+        return true;
       }
       await this.prisma.season.update({
         where: { id: seasonId },

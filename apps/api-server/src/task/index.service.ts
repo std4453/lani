@@ -1,3 +1,4 @@
+import { MediaOperations } from '@/common/media-operations';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -52,6 +53,7 @@ export class TaskService
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
     findImportFiles: FindImportFilesAtom,
+    private mediaOperations: MediaOperations,
   ) {
     this.atoms = {
       submitDownload,
@@ -68,6 +70,11 @@ export class TaskService
       logger.error(error),
     );
   }
+  /** 创建事务与季度目录生命周期互斥；先取得内存互斥，再开启短数据库事务。 */
+  creationTransaction<T>(run: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.mediaOperations.run(() => this.prisma.$transaction(run));
+  }
+
   async create(
     tx: Prisma.TransactionClient,
     type: TaskType,
@@ -135,7 +142,11 @@ export class TaskService
       };
     });
   }
-  async onApplicationBootstrap() {
+  private resumption?: Promise<void>;
+  onApplicationBootstrap() {
+    return this.resumption ?? (this.resumption = this.resumeTasks());
+  }
+  private async resumeTasks() {
     await this.prisma.task.updateMany({
       where: {
         workflow: { equals: Prisma.DbNull },

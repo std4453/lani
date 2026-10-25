@@ -1,4 +1,5 @@
 import { TaskStatusResolver } from './task-status.resolver';
+import { MediaPoolModule } from '@/media-pool/index.module';
 import { TorrentSubtitleResolver } from './torrent-subtitle.resolver';
 import { JellyfinFolderResolver } from '@/admin/JellyfinFolderResolver';
 import { ImageResolver } from '@/admin/image.resolver';
@@ -14,6 +15,7 @@ import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
 
 @Module({
   imports: [
+    MediaPoolModule,
     ImageThumbnailModule,
     CommonModule,
     ConfigModule,

@@ -48,7 +48,7 @@ node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/g
 - Data Server：`apps/data-server/src/config.ts`；需要 `postgresUrl` 和 `postgraphile`，没有额外选项时也应提供 `postgraphile: {}`。
 - Admin：`apps/admin/src/store/config.ts` 通过 GraphQL 获取配置，登录设置来自 Gateway；只启动 Umi 不代表整个应用已就绪。
 
-将自行准备的开发配置放在各后端包的 `config.yaml` 中：`apps/api-server/config.yaml`、`apps/data-server/config.yaml` 和 `apps/gateway/config.yaml`。这些路径已由各包的 `.gitignore` 忽略。已有文件时先确认其用途，不要覆盖原配置；如需使用其他位置，可通过 `CONFIG_FILENAME` 指定，并确保该文件不会被提交。含凭据的文件应限制为仅当前用户可读写。不要提交实际配置，也不要复制维护者的远端凭据来代替自己的开发依赖。
+将自行准备的开发配置放在各后端包的 `config.yaml` 中：`apps/api-server/config.yaml`、`apps/data-server/config.yaml` 和 `apps/gateway/config.yaml`。这些路径已由各包的 `.gitignore` 忽略。已有文件时先确认其用途，不要覆盖原配置；如需使用其他位置，可通过 `CONFIG_FILENAME` 指定，并确保该文件不会被提交。API 还需配置 `mediaPool.root`，使用与隔离下载和媒体库相同挂载卷内的独立目录；媒体池与升级回填见[设计说明](../apps/api-server/src/media-pool/DESIGN.md)。含凭据的文件应限制为仅当前用户可读写。不要提交实际配置，也不要复制维护者的远端凭据来代替自己的开发依赖。
 
 本地 Gateway 的 subgraph 地址应与本次启动方式一致：API 默认使用 `http://127.0.0.1:3000/graphql`，下文的 Data Server 使用 `http://127.0.0.1:8083/graphql`，Gateway 自身使用 8080。数据库 schema 和迁移位于 `libs/db/prisma`；初始化前确认目标是隔离的开发数据库。
 
@@ -66,7 +66,7 @@ export no_proxy="$NO_PROXY"
 `rushx start:dev` 设置 `NODE_ENV=development`，但不会自动关闭 API 后台任务：
 
 - `JellyfinSyncService.onApplicationBootstrap()` 会同步媒体文件夹并写数据库。
-- `TaskService.onApplicationBootstrap()` 会恢复未完成的下载任务。
+- 预检和中断恢复完成后，`TaskService.onApplicationBootstrap()` 会恢复未完成任务。
 - Cron 任务仍可能运行，`LaniFilterCron` 只处理异常，不会因开发模式跳过任务。
 
 启动 API 前，应确认数据库、下载器、媒体服务、存储及通知配置均用于隔离的开发环境。需要连接共享或维护者环境时，先确认目标和预期副作用，并遵守私有操作说明；不能将开发启动当作只读验证。

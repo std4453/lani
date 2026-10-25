@@ -96,7 +96,7 @@ export class BatchDownloadService {
       );
     this.submittingPreviews.add(previewToken);
     try {
-      const id = await this.prisma.$transaction(async (tx) => {
+      const id = await this.tasks.creationTransaction(async (tx) => {
         const episodes = await tx.episode.findMany({
           where: {
             id: { in: entries.map((entry) => entry.episodeId) },

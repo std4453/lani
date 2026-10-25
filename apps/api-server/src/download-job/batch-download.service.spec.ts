@@ -31,6 +31,7 @@ function setup() {
     }),
   };
   const tasks = {
+    creationTransaction: prisma.$transaction,
     create: jest.fn(async () => ({ id: 42 })),
     start: jest.fn(() => {
       expect(committed).toBe(true);

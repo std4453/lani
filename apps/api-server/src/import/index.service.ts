@@ -1,6 +1,5 @@
 import { createEpisodeTask } from '@/task/create-episode-task';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma.service';
 import { TaskService } from '@/task/index.service';
 import { TaskType } from '@lani/db';
 import { StepDefinition } from '@lani/workflow';
@@ -17,7 +16,7 @@ export const importDefinition: StepDefinition[] = [
 ];
 @Injectable()
 export class ImportService {
-  constructor(private prisma: PrismaService, private tasks: TaskService) {}
+  constructor(private tasks: TaskService) {}
   importSingle(episodeId: number, importPath: string) {
     return this.create([{ episodeId, importPath }], TaskType.IMPORT);
   }
@@ -46,7 +45,7 @@ export class ImportService {
       throw new LaniError('多个文件不能导入同一剧集');
     if (new Set(normalized.map((e) => e.sourcePath)).size !== entries.length)
       throw new LaniError('不能重复选择同一文件');
-    const id = await this.prisma.$transaction(async (tx) => {
+    const id = await this.tasks.creationTransaction(async (tx) => {
       const episodes = await tx.episode.findMany({
         where: { id: { in: entries.map((e) => e.episodeId) } },
       });

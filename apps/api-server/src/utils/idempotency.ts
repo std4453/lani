@@ -86,7 +86,7 @@ export async function removeDirectoryIdempotent(path: string) {
     await fs.rm(path, { recursive: true });
     return true;
   } catch (error) {
-    // 若文件不存在，返回未删除
-    return false;
+    if (error.code === 'ENOENT') return false;
+    throw error;
   }
 }

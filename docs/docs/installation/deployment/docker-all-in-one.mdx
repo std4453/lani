@@ -38,8 +38,9 @@ jellyfin:
   apiToken: your_api_token
   dummyUserId: dummy_user_id
 
-lani:
-  moveStrategy: hardLinkOrMove
+mediaPool:
+  root: /data/pool
+  painfullyAcceptCrossDeviceCopy: false
 ```
 
 ### 准备目录
@@ -48,6 +49,7 @@ lani:
 
 1. 将上述配置文件放在 `/srv/lani/config.yaml`
 2. 创建空目录 `/srv/lani/storage`
+3. 在已有媒体卷内准备 `pool`、`downloads` 和 `library` 目录，将共同父目录挂载为 `/data`，并按路径映射配置下载器与 Jellyfin
 
 ### 启动一体机容器
 
@@ -60,6 +62,7 @@ sudo docker run --detach \
   --restart always \
   --volume /srv/lani/config.yaml:/config/config.yaml \
   --volume /srv/lani/storage:/storage \
+  --volume /srv/media:/data \
   ghcr.io/std4453/lani-all-in-one
 ```
 
@@ -74,6 +77,14 @@ sudo docker run --detach \
 ![lani 截图](/img/lani-successful-start.png)
 
 Enjoy!
+
+### 升级与媒体回填
+
+首次升级时，备份数据库、配置及容器挂载清单，补充 `mediaPool.root` 并删除旧 `lani.moveStrategy`。按[从旧文件结构迁移到媒体池](../media-pool-migration)检查现有目录和挂载，再停止旧容器，用新版镜像及调整后的配置正常启动。保留原持久化数据库和媒体卷，避免新旧容器同时写入。
+
+一体机启动流程会先完成数据库迁移。lani 随后进行有超时边界的媒体池与 Jellyfin 库目录的权限、硬链接预检；失败会输出具体原因及迁移文档链接并退出，修正后重新启动。预检与中断操作恢复成功后即提供服务，并在后台自动登记历史媒体，无需维护容器、手工合并内部配置或回填 CLI。
+
+后台登记期间已有播放与查询继续可用，无关剧集可正常下载和导入。尚未登记的历史剧集暂缓替换，其所在季度暂缓改名和删除；对应剧集登记后即可重试，无需等待全库完成。可通过日志中的 `Media registration` 或 GraphQL `mediaRegistrationProgress { state completed total reason }` 查看进度。中断后重新启动会接续已有登记；无法恢复的错误会明确记录并退出，修复日志指出的问题后再启动。
 
 ### 如果存在问题……
 

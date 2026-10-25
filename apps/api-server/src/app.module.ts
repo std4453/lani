@@ -1,3 +1,4 @@
+import { MediaInitializationModule } from '@/media-initialization/index.module';
 import { Task } from '@/admin/task-status.resolver';
 import { TorrentRetentionModule } from '@/torrent-retention/index.module';
 import { Torrent } from '@/admin/torrent-subtitle.resolver';
@@ -31,6 +32,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    MediaInitializationModule,
     CommonModule,
     TorrentRetentionModule,
     TorrentMatchModule,

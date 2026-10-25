@@ -1,3 +1,7 @@
+import { MediaOperations } from '@/common/media-operations';
+import { SeasonMediaService } from './media.service';
+import config from '@/config';
+import { MediaPool } from '@/media-pool/media-pool.service';
 import { Prisma } from '@lani/db';
 import fs from 'fs/promises';
 import os from 'os';
@@ -12,7 +16,11 @@ jest.mock('@/season-jellyfin/SeasonJellyfinService', () => ({
 }));
 jest.mock('@/config', () => ({
   __esModule: true,
-  default: { jellyfin: { pathMapping: [] }, s3: { bucket: 'test' } },
+  default: {
+    mediaPool: {},
+    jellyfin: { pathMapping: [] },
+    s3: { bucket: 'test' },
+  },
 }));
 
 let root: string;
@@ -21,6 +29,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await fs.rm(root, { recursive: true, force: true });
+  await fs.rm(root + '-pool', { recursive: true, force: true });
 });
 
 function setup(patch: any = {}) {
@@ -45,14 +54,26 @@ function setup(patch: any = {}) {
     ...patch,
   };
   const prisma = {
-    episode: { findMany: jest.fn().mockResolvedValue([]) },
+    episode: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn(),
+    },
+    episodeVersion: { deleteMany: jest.fn() },
+    mediaAsset: {
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn(),
+    },
     season: {
+      delete: jest.fn(),
+      findUnique: jest.fn(async () => state),
       update: jest.fn(async ({ data }) => {
         state = { ...state, ...data };
         return state;
       }),
     },
     task: {
+      findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -68,10 +89,28 @@ function setup(patch: any = {}) {
     refreshAfterWriteToDisk: jest.fn(),
     refreshAfterDelete: jest.fn(),
   };
+
+  const operations = new MediaOperations();
+  config.mediaPool.root = root + '-pool';
+  const pool = new MediaPool(
+    prisma as any,
+    { root: root + '-pool', painfullyAcceptCrossDeviceCopy: false },
+
+    operations,
+  );
+  const media = new SeasonMediaService(
+    prisma as any,
+    pool as any,
+
+    operations,
+  );
   const service = new SeasonEmitService(
     {} as any,
     jellyfin as any,
     prisma as any,
+    media,
+
+    operations,
   );
   return {
     service,
@@ -81,6 +120,38 @@ function setup(patch: any = {}) {
     write: () => service.writeSeasonMetadata(state),
   };
 }
+
+it('仅记录目录的历史季度改名失败后仍按旧位置重试', async () => {
+  const { write, state } = setup({ title: 'new', directory: 'old' });
+  await fs.mkdir(path.join(root, 'old'));
+  await fs.writeFile(path.join(root, 'old', 'video.mkv'), 'video');
+  await fs.mkdir(path.join(root, 'new'));
+  await expect(write()).rejects.toThrow('目标季度目录已存在');
+  expect(state().lastWriteDirectory).toBe('old');
+  await fs.rmdir(path.join(root, 'new'));
+  await write();
+  expect(await fs.readFile(path.join(root, 'new', 'video.mkv'), 'utf8')).toBe(
+    'video',
+  );
+  expect(state().lastWriteDirectory).toBe('new');
+});
+
+it('待回填季度改名不改写目录定位或媒体文件，回填后可重试', async () => {
+  const { write, state, prisma } = setup({ title: 'new', directory: 'old' });
+  prisma.episode.findFirst.mockResolvedValue({ id: 1 });
+  await fs.mkdir(path.join(root, 'old'));
+  await fs.writeFile(path.join(root, 'old', 'video.mkv'), 'video');
+  await expect(write()).rejects.toThrow('历史媒体待回填');
+  expect(state().directory).toBe('old');
+  expect(state().lastWriteDirectory).toBeNull();
+  expect(prisma.season.update).not.toHaveBeenCalled();
+  expect(await fs.readdir(root)).toEqual(['old']);
+  prisma.episode.findFirst.mockResolvedValue(null);
+  await write();
+  expect(await fs.readFile(path.join(root, 'new', 'video.mkv'), 'utf8')).toBe(
+    'video',
+  );
+});
 
 it('writes new seasons into a single safe directory and preserves the displayed slash', async () => {
   const { write, state } = setup();
@@ -131,7 +202,13 @@ it('moves legacy directories on explicit sync, cleans old NFO tags and moves per
   expect(tvshow.tag).toBeUndefined();
   expect(tvshow.plot).toEqual(['keep']);
   expect(prisma.task.findMany).toHaveBeenCalledWith({
-    where: { episodes: { some: { episode: { seasonId: 12 } } } },
+    orderBy: { id: 'asc' },
+    where: {
+      OR: [
+        { episode: { seasonId: 12 } },
+        { episodes: { some: { episode: { seasonId: 12 } } } },
+      ],
+    },
     select: { id: true },
   });
   expect(prisma.task.update).toHaveBeenCalledWith({
@@ -222,16 +299,15 @@ it.each(['<tvshow><uniqueid type="lani">999</uniqueid></tvshow>', '<tvshow>'])(
   },
 );
 
-it('recovers after a rename followed by a database failure using the NFO owner', async () => {
-  await fs.mkdir(path.join(root, 'A／B'));
-  await fs.writeFile(
-    path.join(root, 'A／B', 'tvshow.nfo'),
-    '<tvshow><uniqueId type="lani">12</uniqueId></tvshow>',
-  );
-  const { write, state } = setup({
+it('recovers an interrupted directory move using its durable identity journal', async () => {
+  await fs.mkdir(path.join(root, 'A', 'B'), { recursive: true });
+  const { write, state, prisma } = setup({
     lastWriteTitle: 'A/B',
     lastWriteToDisk: new Date(),
   });
+  prisma.$transaction.mockRejectedValueOnce(new Error('database offline'));
+  await expect(write()).rejects.toThrow('database offline');
+  expect(state().lastWriteDirectory).toBeNull();
   await write();
   expect(state().lastWriteDirectory).toBe('A／B');
 });
@@ -298,8 +374,30 @@ it('deletes from the last written directory rather than a changed display title'
     directory: 'new',
     lastWriteDirectory: 'old',
   });
-  await service.deleteSeasonFiles(state());
+  await service.deleteSeason(state());
   expect(await fs.readdir(root)).toEqual(['new']);
+});
+
+it('目录删除权限错误继续向上传播，不刷新播放器', async () => {
+  await fs.mkdir(path.join(root, 'old'));
+  const { service, state, jellyfin } = setup({ lastWriteDirectory: 'old' });
+  const failure = Object.assign(new Error('Permission denied'), {
+    code: 'EACCES',
+  });
+  const remove = jest.spyOn(fs, 'rm').mockRejectedValueOnce(failure);
+  try {
+    await expect(service.deleteSeason(state())).rejects.toBe(failure);
+    expect(jellyfin.refreshAfterDelete).not.toHaveBeenCalled();
+    expect(await fs.readdir(root)).toEqual(['old']);
+  } finally {
+    remove.mockRestore();
+  }
+});
+
+it('季度目录已不存在时仍可幂等删除并重试刷新', async () => {
+  const { service, state, jellyfin } = setup({ lastWriteDirectory: 'missing' });
+  await service.deleteSeason(state());
+  expect(jellyfin.refreshAfterDelete).toHaveBeenCalledTimes(1);
 });
 
 it('目录改名在任务锁内读取新产物，保留并发写入的批量条目并推进版本', async () => {
@@ -347,4 +445,39 @@ it('目录改名在任务锁内读取新产物，保留并发写入的批量条�
       ],
     },
   });
+});
+
+it('并发季度同步串行完成文件与位置提交，排队请求重新读取实际目录', async () => {
+  await fs.mkdir(path.join(root, 'old'));
+  const { write, prisma, state, jellyfin } = setup({
+    title: 'A',
+    directory: 'A',
+    lastWriteDirectory: 'old',
+    lastWriteTitle: 'old',
+  });
+  let entered!: () => void, release!: () => void;
+  const started = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  jellyfin.refreshAfterFolderRename.mockImplementationOnce(async () => {
+    entered();
+    await blocked;
+  });
+  const first = write();
+  await started;
+  await prisma.season.update({ data: { title: 'B', directory: 'B' } });
+  const second = write();
+  await new Promise((resolve) => setImmediate(resolve));
+  expect(state().lastWriteDirectory).toBe('A');
+  expect(await fs.readdir(root)).toEqual(['A']);
+  release();
+  await Promise.all([first, second]);
+  expect(state().lastWriteDirectory).toBe('B');
+  expect(await fs.readdir(root)).toEqual(['B']);
+  expect(
+    await fs.readFile(path.join(root, 'B', 'tvshow.nfo'), 'utf8'),
+  ).toContain('<title>B</title>');
 });

@@ -11,10 +11,12 @@ import { PrismaService } from '@/common/prisma.service';
 import { S3ServiceProvider } from '@/common/s3.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { MediaOperations } from './media-operations';
 
 @Module({
   imports: [ConfigModule],
   providers: [
+    MediaOperations,
     GlobalAxiosService,
     HKAxiosService,
     ChinaAxiosService,
@@ -23,9 +25,10 @@ import { ConfigModule } from '@nestjs/config';
     PrismaService,
     S3ServiceProvider,
     InjectBangumiAxiosService,
-    InjectJellyfinAxiosService
+    InjectJellyfinAxiosService,
   ],
   exports: [
+    MediaOperations,
     GlobalAxiosService,
     HKAxiosService,
     ChinaAxiosService,

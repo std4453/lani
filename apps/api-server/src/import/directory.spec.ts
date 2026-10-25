@@ -1,3 +1,4 @@
+import { MediaOperations } from '@/common/media-operations';
 jest.mock('@/task/atoms/publication', () => ({
   claimEpisodePublication: jest.fn(async () => undefined),
 }));
@@ -20,7 +21,7 @@ jest.mock('@/config', () => ({
   default: {
     jellyfin: { pathMapping: [] },
     downloadClient: { kind: 'test', test: { pathMapping: [] } },
-    lani: { moveStrategy: 'copyOnly' },
+    lani: {},
     s3: { bucket: 'test' },
   },
 }));
@@ -41,6 +42,51 @@ function atomContext(): AtomContext {
   };
   return context;
 }
+
+// 此处只验证目录选择与元数据兼容；真实入池、替换和恢复由媒体池集成测试覆盖。
+function mediaPoolStub(root: string) {
+  let files: Array<{ source: string; target: string }> = [];
+  return {
+    register: jest.fn(async (input) => {
+      files = input.files.map((file) => ({
+        ...file,
+        target: path.join(root, 'A／B', file.target),
+      }));
+      return 1;
+    }),
+    publish: jest.fn(async () => {
+      for (const file of files) {
+        await fs.mkdir(path.dirname(file.target), { recursive: true });
+        await fs.link(file.source, file.target);
+      }
+      return files[0].target;
+    }),
+  } as any;
+}
+
+it('目标视频尚不存在时仍阻止覆盖未登记字幕', async () => {
+  const root = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'lani-import-conflict-'),
+  );
+  try {
+    await fs.writeFile(path.join(root, 'Episode.zh.ass'), 'unknown subtitle');
+    const pool = {
+      publish: async (_version, context) =>
+        context.beforeFiles([
+          { role: 'video', targetPath: path.join(root, 'Episode.mkv') },
+        ]),
+    };
+    const atom = new ImportFileAtom({} as never, pool as never);
+    await expect(atom['publish'](1, 1, atomContext())).rejects.toThrow(
+      '媒体目录存在未登记字幕',
+    );
+    expect(await fs.readFile(path.join(root, 'Episode.zh.ass'), 'utf8')).toBe(
+      'unknown subtitle',
+    );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
 
 it('下载和导入共用原子，将视频写入记录的目录', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lani-import-'));
@@ -64,7 +110,7 @@ it('下载和导入共用原子，将视频写入记录的目录', async () => {
       },
     };
     const target = (
-      await new ImportFileAtom(prisma as any).run(
+      await new ImportFileAtom(prisma as any, mediaPoolStub(root)).run(
         1,
         {
           episodeId: 1,
@@ -113,6 +159,7 @@ it('共用原子导入后可重复同步季度元数据', async () => {
         update: jest.fn(),
       },
       season: {
+        findUnique: jest.fn(async () => season),
         update: jest.fn(async ({ data }) => {
           season = { ...season, ...data };
           return season;
@@ -126,7 +173,11 @@ it('共用原子导入后可重复同步季度元数据', async () => {
       } as any;
       Object.assign(
         input,
-        await new ImportFileAtom(prisma as any).run(1, input, atomContext()),
+        await new ImportFileAtom(prisma as any, mediaPoolStub(root)).run(
+          1,
+          input,
+          atomContext(),
+        ),
       );
       await new WriteMetadataAtom(prisma as any).run(1, input, atomContext());
     }
@@ -140,6 +191,9 @@ it('共用原子导入后可重复同步季度元数据', async () => {
       {} as any,
       jellyfin as any,
       prisma as any,
+      {} as never,
+
+      new MediaOperations(),
     );
     await emitter.writeSeasonMetadata(season);
     await emitter.writeSeasonMetadata(season);

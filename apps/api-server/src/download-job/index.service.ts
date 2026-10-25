@@ -1,5 +1,5 @@
 import { createEpisodeTask } from '@/task/create-episode-task';
-import { lockEpisode } from '@/task/atoms/publication';
+import { lockEpisode } from '@/common/episode-lock';
 import { PrismaService } from '@/common/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
@@ -55,7 +55,7 @@ export class DownloadJobService {
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
-    const id = await this.prisma.$transaction(async (tx) => {
+    const id = await this.tasks.creationTransaction(async (tx) => {
       await lockEpisode(tx, episodeId);
       const existing = await tx.task.findFirst({
         where: {

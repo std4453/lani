@@ -1,5 +1,4 @@
 import { parseWorkflow } from '@lani/workflow';
-import { sanitizeSeasonDirectory } from '@/utils/season-directory';
 import {
   AdminConfig,
   DownloadProgress,
@@ -168,22 +167,18 @@ export class AdminResolver {
   @Mutation(() => ID)
   async deleteSeasonById(@Args('id') id: number) {
     const season = await this.prisma.season.findUnique({
+      rejectOnNotFound: false,
       where: { id },
       include: {
         jellyfinFolder: true,
       },
     });
+    if (!season) return 'ok';
     this.logger.log(`Deleting season #${id} (${season.title})...`);
     this.logger.verbose(
       `Deleting files for season #${id} (${season.title})...`,
     );
-    await this.seasonEmit.deleteSeasonFiles(season);
-    this.logger.verbose(`Delete db row for season #${id} (${season.title})...`);
-    await this.prisma.season.delete({
-      where: {
-        id,
-      },
-    });
+    await this.seasonEmit.deleteSeason(season);
     this.logger.log(`Delete #${id} (${season.title}) success`);
     return 'ok';
   }
@@ -261,9 +256,6 @@ export class AdminResolver {
         },
         data: {
           ...seasonPatch,
-          ...(seasonPatch.title !== undefined
-            ? { directory: sanitizeSeasonDirectory(seasonPatch.title) }
-            : {}),
           yearAndSemesterCanonical: ((yearAndSemester?: string) => {
             if (!yearAndSemester) {
               return undefined;

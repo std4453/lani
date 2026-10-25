@@ -59,6 +59,7 @@ function setup() {
   const tx = {
     $queryRaw: jest.fn(async (_query: TemplateStringsArray) => []),
     task: {
+      findMany: jest.fn(async () => []),
       findUnique: jest.fn(async () => ({
         ...input,
         episodes: [
@@ -174,11 +175,13 @@ it('不覆盖其他 Jellyfin 关联', async () => {
 
 it('发布区段冲突时同一事务内拒绝关联更新', async () => {
   const test = setup();
-  test.tx.$queryRaw.mockImplementation(async (query) =>
-    query.join('').includes('SELECT t.id') ? ([{ id: 99 }] as never) : [],
-  );
+  const other = parseWorkflow(test.workflow);
+  other.steps[0].checkpoint.publicationClaimed = true;
+  test.tx.task.findMany.mockResolvedValue([
+    { workflow: other, batchEntries: null },
+  ] as never);
   await expect(test.atom.run(1, test.input, test.context)).rejects.toThrow(
-    '其他任务正在发布或已发布',
+    '其他任务正在发布，或发布失败后尚未处理',
   );
   expect(test.episode.updateMany).not.toHaveBeenCalled();
   expect(test.emit).not.toHaveBeenCalled();
