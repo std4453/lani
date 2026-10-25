@@ -21,7 +21,7 @@ async function bootstrap() {
   app.enableShutdownHooks(['SIGINT', 'SIGTERM']);
   app.useGlobalFilters(new GraphQLExceptionFilter());
   const media = app.get(MediaStartupService);
-  await media.preflight();
+  await media.initialize();
   await app.listen(parseInt(process.env.PORT || '3000'));
   void media.start().catch(fail);
 }

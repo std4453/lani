@@ -1,11 +1,9 @@
 import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import path from 'path';
 import config from '@/config';
-import { QBittorrentService } from '@/download-client/QBittorrentService';
 import { LibraryStructureService } from '@/api/jellyfin';
 import { mapPath } from '@/utils/path';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
-import { WriteGate } from '@/application-state/write-gate';
 import {
   bounded,
   MEDIA_MIGRATION_GUIDE,
@@ -22,13 +20,12 @@ export class MediaStartupService implements OnApplicationShutdown {
   private work?: Promise<void>;
   constructor(
     private pool: MediaPoolService,
-    private gate: WriteGate,
-    private qbt: QBittorrentService,
     private seasons: SeasonMediaService,
     private backfill: MediaBackfillService,
     private tasks: TaskService,
   ) {}
-  async preflight() {
+  /** 监听 HTTP、启动定时任务前完成运行条件检查和中断恢复。 */
+  async initialize() {
     await bounded(
       this.inspectEnvironment(),
       30000,
@@ -38,31 +35,11 @@ export class MediaStartupService implements OnApplicationShutdown {
         `lani startup preflight failed: ${error.message}. Check configuration, permissions and mounts. Guide: ${MEDIA_MIGRATION_GUIDE}`,
       );
     });
+    await this.pool.initialize();
+    await this.seasons.recoverDirectoryMoves();
   }
   private async inspectEnvironment() {
-    const [preferences, categories, torrents, folders] = await Promise.all([
-      this.qbt.get('/app/preferences'),
-      this.qbt.get('/torrents/categories'),
-      this.qbt.listTorrents(),
-      LibraryStructureService.getVirtualFolders(),
-    ]);
-    const rawDownloads = [
-      preferences.data.save_path,
-      ...(preferences.data.temp_path_enabled
-        ? [preferences.data.temp_path]
-        : []),
-      ...Object.values(
-        categories.data as Record<string, { savePath: string }>,
-      ).map((category) => category.savePath),
-      ...torrents.map((torrent) => torrent.save_path),
-    ].filter((value): value is string => typeof value === 'string' && !!value);
-    const downloads = [
-      ...new Set(
-        rawDownloads.map((value) =>
-          mapPath(config.downloadClient.qbittorrent.pathMapping, value),
-        ),
-      ),
-    ];
+    const folders = await LibraryStructureService.getVirtualFolders();
     const libraries = [
       ...new Set(
         folders
@@ -73,12 +50,11 @@ export class MediaStartupService implements OnApplicationShutdown {
           .map((value) => mapPath(config.jellyfin.pathMapping, value)),
       ),
     ];
-    for (const value of [...downloads, ...libraries])
+    for (const value of libraries)
       if (!path.isAbsolute(value))
         throw new Error(`Mapped directory is not absolute: ${value}`);
     await probeMediaDirectories(
       config.mediaPool.root,
-      downloads,
       libraries,
       config.mediaPool.painfullyAcceptCrossDeviceCopy,
     );
@@ -90,16 +66,13 @@ export class MediaStartupService implements OnApplicationShutdown {
   }
   private async run() {
     try {
-      await this.pool.initialize();
-      await this.seasons.recoverDirectoryMoves();
-      await this.backfill.run();
       if (this.stopping) return;
-      this.gate.open();
       await this.tasks.resumePendingTasks();
-      this.logger.log('Media initialization complete; writes enabled');
+      if (this.stopping) return;
+      await this.backfill.run();
+      this.logger.log('Media registration complete');
     } catch (error) {
       if (this.stopping) return;
-      this.gate.fail();
       this.backfill.fail(error.message);
       throw new Error(
         `Media initialization failed: ${error.message}. Guide: ${MEDIA_MIGRATION_GUIDE}`,
@@ -108,7 +81,6 @@ export class MediaStartupService implements OnApplicationShutdown {
   }
   async onApplicationShutdown() {
     this.stopping = true;
-    this.gate.fail();
     this.backfill.stop();
     await this.work?.catch(() => undefined);
   }

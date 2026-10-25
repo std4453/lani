@@ -8,7 +8,7 @@ import { PrismaClient, Prisma } from '@lani/db';
 import { MediaPool, VersionInput } from './media-pool.service';
 import { ExecutionStopped } from '@/task/atom';
 import { identity } from './files';
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { SeasonMediaService } from '@/season-emit/media.service';
 import config from '@/config';
 import {
@@ -129,34 +129,33 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     ).id;
     episodeId = (await db.episode.create({ data: { seasonId, index: 1 } })).id;
     operations = new MediaOperations();
-    const gate = new WriteGate();
-    gate.open();
+
     pool = new MediaPool(
       db,
       {
         root: path.join(root, 'pool'),
         painfullyAcceptCrossDeviceCopy: false,
       },
-      () => gate.assertReady(),
+
       operations,
     );
     config.mediaPool.root = path.join(root, 'pool');
     seasons = new SeasonMediaService(
       db as never,
       pool as never,
-      gate,
+
       operations,
     );
     await pool.initialize();
   });
   afterEach(async () => {
     jest.restoreAllMocks();
-    await db.task.deleteMany({ where: { episodeId } });
+    await db.task.deleteMany({ where: { episode: { seasonId } } });
     await db.episode.updateMany({
-      where: { id: episodeId },
+      where: { seasonId },
       data: { currentVersionId: null },
     });
-    await db.episodeVersion.deleteMany({ where: { episodeId } });
+    await db.episodeVersion.deleteMany({ where: { episode: { seasonId } } });
     await db.mediaAsset.deleteMany({
       where: { poolPath: { startsWith: root } },
     });
@@ -358,8 +357,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
   it('删除目录期间的新导入等待生命周期完成，不能在删除后提交孤立任务', async () => {
     const version = await pool.register(await input('admission', 'mkv', false));
     await pool.publish(version, context());
-    const gate = new WriteGate();
-    gate.open();
+
     const tasks = new TaskService(
       db as never,
       {} as never,
@@ -371,7 +369,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       {} as never,
       {} as never,
       {} as never,
-      gate,
+
       operations,
     );
     const imports = new ImportService(tasks);
@@ -570,6 +568,110 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
         where: { poolPath: { startsWith: root }, jellyfinPath: { not: null } },
       }),
     ).toBe(0);
+  });
+  it('回填仅暂缓待登记剧集的发布和所在季度的改名删除，无关剧集可准备及发布', async () => {
+    await db.episode.update({
+      where: { id: episodeId },
+      data: { jellyfinEpisodeId: 'legacy-item' },
+    });
+    const legacy = await legacyEntry(
+      await input('pending-legacy', 'mkv', false),
+    );
+    const replacement = await input('pending-replacement', 'mp4', false);
+    const version = await pool.register(replacement);
+    await expect(pool.publish(version, context())).rejects.toThrow(
+      '历史媒体回填',
+    );
+    expect(await pool.register(replacement)).toBe(version);
+    const oldPath = path.join(root, 'library');
+    const newPath = path.join(root, 'renamed');
+    await expect(
+      renameSeason(seasonId, oldPath, newPath, 'renamed'),
+    ).rejects.toThrow('历史媒体待回填');
+    await expect(
+      seasons.delete(seasonId, async () => undefined),
+    ).rejects.toThrow('历史媒体待回填');
+    expect(await fs.readFile(legacy.files[0].path, 'utf8')).toBe(
+      'content-pending-legacy',
+    );
+    expect(
+      (await db.season.findUnique({ where: { id: seasonId } }))!.directory,
+    ).toBe('library');
+
+    // 同季度没有历史播放关联的另一集也可正常准备、发布。
+    const other = await db.episode.create({ data: { seasonId, index: 2 } });
+    const independent = await input('independent', 'mkv', false);
+    independent.episodeId = other.id;
+    independent.files[0].target = 'Other.mkv';
+    const otherVersion = await pool.register(independent);
+    await pool.publish(otherVersion, context());
+    expect(
+      (await db.episode.findUnique({ where: { id: other.id } }))!
+        .currentVersionId,
+    ).toBe(otherVersion);
+
+    const unrelated = await db.season.create({
+      data: {
+        title: 'unrelated',
+        directory: 'unrelated',
+        tags: [],
+        aliases: [],
+        jellyfinFolderId: folderId,
+      },
+    });
+    try {
+      await fs.mkdir(path.join(root, 'unrelated'));
+      await renameSeason(
+        unrelated.id,
+        path.join(root, 'unrelated'),
+        path.join(root, 'other-season'),
+        'other-season',
+      );
+    } finally {
+      await seasons.delete(unrelated.id, async () => undefined);
+    }
+
+    // 该剧集回填提交后即可继续，无需等待其他剧集的后台登记。
+    await applyBackfill(db, pool, [legacy]);
+    await pool.publish(version, context());
+    await renameSeason(seasonId, oldPath, newPath, 'renamed');
+    expect(await fs.readFile(path.join(newPath, 'Episode.mp4'), 'utf8')).toBe(
+      'content-pending-replacement',
+    );
+    await seasons.delete(seasonId, async () => undefined);
+  });
+  it('排队中的发布、改名和删除在取得互斥后重新判断待回填状态', async () => {
+    const version = await pool.register(await input('queued', 'mkv', false));
+    let release!: () => void;
+    const barrier = operations.run(
+      () => new Promise<void>((resolve) => (release = resolve)),
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    const results = Promise.allSettled([
+      pool.publish(version, context()),
+      renameSeason(
+        seasonId,
+        path.join(root, 'library'),
+        path.join(root, 'renamed'),
+        'renamed',
+      ),
+      seasons.delete(seasonId, async () => undefined),
+    ]);
+    try {
+      await db.episode.update({
+        where: { id: episodeId },
+        data: { jellyfinEpisodeId: 'legacy-item' },
+      });
+    } finally {
+      release();
+    }
+    await barrier;
+    for (const result of await results) {
+      expect(result.status).toBe('rejected');
+      if (result.status === 'rejected')
+        expect(result.reason.message).toMatch(/回填/);
+    }
+    expect(await current()).toBeNull();
   });
   it('同内容的不同剧集独立回填，替换一份不影响另一份', async () => {
     const legacy = await input('duplicate', 'mkv', false);

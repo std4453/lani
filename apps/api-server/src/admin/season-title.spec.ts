@@ -1,6 +1,5 @@
 import { AdminResolver } from './index.resolver';
 import { BangumiAPIService } from '@/api/bangumi';
-import { WriteGate } from '@/application-state/write-gate';
 
 jest.mock('@/config', () => ({ __esModule: true, default: {} }));
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
@@ -32,15 +31,13 @@ it('保存标题时将旧目录定位交给媒体服务处理', async () => {
     $transaction: (queries) => Promise.all(queries),
   };
   const emit = { writeSeasonMetadata: jest.fn() };
-  const gate = new WriteGate();
-  gate.open();
+
   const resolver = new AdminResolver(
     prisma as never,
     { enqueueDownloadJobsInternal: jest.fn() } as never,
     emit as never,
     {} as never,
     { emit: jest.fn() } as never,
-    gate,
   );
   await resolver.saveSeason(1, { title: 'new', sources: [] } as never);
   expect(emit.writeSeasonMetadata).toHaveBeenCalledWith(
@@ -66,7 +63,6 @@ it.each([
   });
   const resolver = new AdminResolver(
     { season: { findFirst: jest.fn().mockResolvedValue(null) } } as any,
-    {} as any,
     {} as any,
     {} as any,
     {} as any,

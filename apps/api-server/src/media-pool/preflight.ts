@@ -30,7 +30,6 @@ export async function bounded<T>(
 /** 只探测自建临时文件；真实 link 结果同时验证文件系统和容器挂载边界。 */
 export async function probeMediaDirectories(
   pool: string,
-  downloads: string[],
   libraries: string[],
   acceptCopy: boolean,
 ) {
@@ -63,7 +62,6 @@ export async function probeMediaDirectories(
       );
     return [...new Set([...directories, ...nested])];
   };
-  downloads = await expand(downloads);
   libraries = await expand(libraries);
   const contains = (parent: string, child: string) => {
     const relative = path.relative(path.resolve(parent), path.resolve(child));
@@ -75,20 +73,16 @@ export async function probeMediaDirectories(
     );
   };
   if (
-    [...downloads, ...libraries].some(
+    libraries.some(
       (directory) => contains(pool, directory) || contains(directory, pool),
     )
   )
-    throw new Error(
-      'Media pool must be separate from download and library roots',
-    );
+    throw new Error('Media pool must be separate from library roots');
   const roots = [
-    ...new Set(
-      [pool, ...downloads, ...libraries].map((value) => path.resolve(value)),
-    ),
+    ...new Set([pool, ...libraries].map((value) => path.resolve(value))),
   ];
-  if (!downloads.length || !libraries.length)
-    throw new Error('Download and media library directories are required');
+  if (!libraries.length)
+    throw new Error('Media library directories are required');
   for (const root of roots) {
     if (
       (await fs.realpath(root)) !== root ||
@@ -100,7 +94,6 @@ export async function probeMediaDirectories(
     await fs.access(root, constants.R_OK | constants.W_OK | constants.X_OK);
   }
   for (const [sourceRoot, targetRoot] of [
-    ...downloads.map((root) => [root, pool]),
     ...libraries.map((root) => [pool, root]),
   ]) {
     const token = randomUUID();

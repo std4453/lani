@@ -1,4 +1,4 @@
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { FindImportFilesAtom } from './atoms/find-import-files.atom';
 import { SubmitDownloadAtom } from './atoms/submit-download.atom';
 import { DownloadAtom } from './atoms/download-atom';
@@ -46,7 +46,6 @@ export class TaskService implements OnApplicationShutdown {
     refreshPlayer: RefreshPlayerAtom,
     publishEpisode: PublishEpisodeAtom,
     findImportFiles: FindImportFilesAtom,
-    private mediaState: WriteGate,
     private mediaOperations: MediaOperations,
   ) {
     this.atoms = {
@@ -66,7 +65,6 @@ export class TaskService implements OnApplicationShutdown {
   }
   /** 创建事务与季度目录生命周期互斥；先取得内存互斥，再开启短数据库事务。 */
   creationTransaction<T>(run: (tx: Prisma.TransactionClient) => Promise<T>) {
-    this.mediaState.assertReady();
     return this.mediaOperations.run(() => this.prisma.$transaction(run));
   }
 
@@ -76,7 +74,6 @@ export class TaskService implements OnApplicationShutdown {
     definition: StepDefinition[],
     params: TaskParams,
   ) {
-    this.mediaState.assertReady();
     const workflow = buildWorkflowSnapshot(
       definition,
       this.atoms,
@@ -92,12 +89,10 @@ export class TaskService implements OnApplicationShutdown {
     });
   }
   start(taskId: number) {
-    this.mediaState.assertReady();
     return this.runner.start(taskId);
   }
   @Mutation(() => ID)
   async retryTask(@Args('taskId') taskId: number) {
-    this.mediaState.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许重试');
@@ -109,7 +104,6 @@ export class TaskService implements OnApplicationShutdown {
   }
   @Mutation(() => ID)
   async cancelTask(@Args('taskId') taskId: number) {
-    this.mediaState.assertReady();
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许取消');
@@ -143,7 +137,6 @@ export class TaskService implements OnApplicationShutdown {
   }
   private resumption?: Promise<void>;
   resumePendingTasks() {
-    this.mediaState.assertReady();
     return this.resumption ?? (this.resumption = this.resumeTasks());
   }
   private async resumeTasks() {

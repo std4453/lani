@@ -1,9 +1,3 @@
-import { WriteGate } from '@/application-state/write-gate';
-const openGate = () => {
-  const gate = new WriteGate();
-  gate.open();
-  return gate;
-};
 import { SeasonScrapeService } from './SeasonScrapeService';
 
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
@@ -38,7 +32,6 @@ it('uses explicit metadata sync to rewrite manual seasons without fetching exter
     {} as any,
     {} as any,
     { path: jest.fn() } as any,
-    openGate(),
   );
   await service.syncMetadata(season);
   expect(emit.writeSeasonMetadata).toHaveBeenCalledWith(season);
@@ -68,7 +61,6 @@ function setup(infoSource: string) {
     {} as any,
     {} as any,
     { path: jest.fn() } as any,
-    openGate(),
   );
   return { season, fetch, emit, prisma, service };
 }

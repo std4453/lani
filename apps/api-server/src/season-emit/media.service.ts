@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import config from '@/config';
 import { PrismaService } from '@/common/prisma.service';
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
 import {
   DirectoryMove,
@@ -19,6 +19,8 @@ import { seasonMediaRoot } from '@/media-pool/paths';
 import { removeDirectoryIdempotent } from '@/utils/idempotency';
 import { canonical } from '@/media-pool/files';
 import { SeasonWithJellyfinFolder } from '@/types/entities';
+import { getSeasonDirectory } from '@/utils/season-directory';
+import { LaniError } from '@/utils/error';
 
 interface SeasonMove extends DirectoryMove {
   seasonId: number;
@@ -30,7 +32,6 @@ export class SeasonMediaService {
   constructor(
     private db: PrismaService,
     private pool: MediaPoolService,
-    private gate: WriteGate,
     private operations: MediaOperations,
   ) {
     this.operations.recovery = () => this.recoverDirectoryMoves();
@@ -73,6 +74,20 @@ export class SeasonMediaService {
     });
     await finishDirectoryMove(filename);
   }
+  private async assertRegistered(seasonId: number) {
+    const pending = await this.db.episode.findFirst({
+      where: {
+        seasonId,
+        jellyfinEpisodeId: { not: null },
+        currentVersionId: null,
+      },
+      select: { id: true },
+    });
+    if (pending)
+      throw new LaniError(
+        '该季度还有历史媒体待回填，暂时不能改名或删除，请稍后重试',
+      );
+  }
   /** 调用方持有 MediaOperations，完整元数据写入期间不释放。 */
   async renameWithinOperation(
     seasonId: number,
@@ -80,12 +95,22 @@ export class SeasonMediaService {
     newPath: string,
     directory: string,
   ) {
-    this.gate.assertReady();
     await assertSeasonIdle(this.db, seasonId);
     const season = await this.db.season.findUnique({
       where: { id: seasonId },
     });
     if (season?.lastWriteDirectory === directory) return;
+    await this.assertRegistered(seasonId);
+    // 在文件操作前保留实际旧位置，并用唯一约束检查目标目录冲突。
+    await this.db.season.update({
+      where: { id: seasonId },
+      data: {
+        directory,
+        ...(season && !season.lastWriteDirectory && !season.lastWriteTitle
+          ? { lastWriteDirectory: getSeasonDirectory(season) }
+          : {}),
+      },
+    });
     const filename = path.join(
       config.mediaPool.root,
       'directory-moves',
@@ -108,7 +133,6 @@ export class SeasonMediaService {
     seasonId: number,
     afterFiles: (season: SeasonWithJellyfinFolder) => Promise<void>,
   ) {
-    this.gate.assertReady();
     return this.operations.run(async () => {
       const season = await this.db.season.findUnique({
         rejectOnNotFound: false,
@@ -116,6 +140,7 @@ export class SeasonMediaService {
         include: { jellyfinFolder: true },
       });
       if (!season) return;
+      await this.assertRegistered(seasonId);
       await assertSeasonIdle(this.db, seasonId);
       const directory = seasonMediaRoot(season);
       try {

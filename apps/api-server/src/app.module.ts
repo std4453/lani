@@ -1,4 +1,3 @@
-import { ApplicationStateModule } from '@/application-state/write-gate';
 import { MediaInitializationModule } from '@/media-initialization/index.module';
 import { Task } from '@/admin/task-status.resolver';
 import { TorrentRetentionModule } from '@/torrent-retention/index.module';
@@ -33,7 +32,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
-    ApplicationStateModule,
     MediaInitializationModule,
     CommonModule,
     TorrentRetentionModule,

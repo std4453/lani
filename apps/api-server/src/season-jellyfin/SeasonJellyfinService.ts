@@ -1,4 +1,3 @@
-import { WriteGate } from '@/application-state/write-gate';
 import path from 'path';
 import { getSeasonDirectory } from '@/utils/season-directory';
 import {
@@ -23,7 +22,7 @@ import { Cron } from '@nestjs/schedule';
 export class SeasonJellyfinService {
   private logger = new Logger(SeasonJellyfinService.name);
 
-  constructor(private prisma: PrismaService, private mediaState: WriteGate) {}
+  constructor(private prisma: PrismaService) {}
 
   async refreshAfterFolderRename({ jellyfinFolder }: SeasonWithJellyfinFolder) {
     this.logger.verbose(
@@ -125,7 +124,6 @@ export class SeasonJellyfinService {
     season: SeasonWithJellyfinFolder,
     series?: BaseItemDto[],
   ) {
-    this.mediaState.assertReady();
     const { id: seasonId, jellyfinId, title, jellyfinFolder } = season;
     const items = series ?? (await this.getSeries(jellyfinFolder.jellyfinId));
     const laniId = (item: BaseItemDto) =>
@@ -261,7 +259,6 @@ export class SeasonJellyfinService {
   @Cron('*/5 * * * * *') // 每 5 秒
   @LaniFilterCron()
   async syncAllSeasonsJellyfinSeriesId() {
-    if (!this.mediaState.ready) return 0;
     // 已经写入硬盘，且缺少 Jellyfin ID 的季度
     const seasons = await this.prisma.season.findMany({
       where: {

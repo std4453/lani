@@ -1,9 +1,4 @@
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
-const openGate = () => {
-  const gate = new WriteGate();
-  gate.open();
-  return gate;
-};
+import { MediaOperations } from '@/common/media-operations';
 import { createEpisodeTask } from '@/task/create-episode-task';
 import { DownloadJobService } from './index.service';
 import { downloadDefinition } from './definition';
@@ -137,14 +132,10 @@ databaseTests('隔离数据库上的生命周期原子更新', () => {
       atoms.refreshPlayer as never,
       atoms.publishEpisode as never,
       atoms.findImportFiles as never,
-      openGate(),
+
       new MediaOperations(),
     );
-    downloads = new DownloadJobService(
-      prisma as PrismaService,
-      service,
-      openGate(),
-    );
+    downloads = new DownloadJobService(prisma as PrismaService, service);
   });
   afterEach(async () => {
     await service?.onApplicationShutdown();

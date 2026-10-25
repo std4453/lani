@@ -1,4 +1,4 @@
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { SeasonMediaService } from './media.service';
 import config from '@/config';
 import { MediaPool } from '@/media-pool/media-pool.service';
@@ -55,6 +55,7 @@ function setup(patch: any = {}) {
   };
   const prisma = {
     episode: {
+      findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
       updateMany: jest.fn(),
     },
@@ -88,20 +89,19 @@ function setup(patch: any = {}) {
     refreshAfterWriteToDisk: jest.fn(),
     refreshAfterDelete: jest.fn(),
   };
-  const gate = new WriteGate();
-  gate.open();
+
   const operations = new MediaOperations();
   config.mediaPool.root = root + '-pool';
   const pool = new MediaPool(
     prisma as any,
     { root: root + '-pool', painfullyAcceptCrossDeviceCopy: false },
-    () => gate.assertReady(),
+
     operations,
   );
   const media = new SeasonMediaService(
     prisma as any,
     pool as any,
-    gate,
+
     operations,
   );
   const service = new SeasonEmitService(
@@ -109,7 +109,7 @@ function setup(patch: any = {}) {
     jellyfin as any,
     prisma as any,
     media,
-    gate,
+
     operations,
   );
   return {
@@ -134,6 +134,23 @@ it('仅记录目录的历史季度改名失败后仍按旧位置重试', async (
     'video',
   );
   expect(state().lastWriteDirectory).toBe('new');
+});
+
+it('待回填季度改名不改写目录定位或媒体文件，回填后可重试', async () => {
+  const { write, state, prisma } = setup({ title: 'new', directory: 'old' });
+  prisma.episode.findFirst.mockResolvedValue({ id: 1 });
+  await fs.mkdir(path.join(root, 'old'));
+  await fs.writeFile(path.join(root, 'old', 'video.mkv'), 'video');
+  await expect(write()).rejects.toThrow('历史媒体待回填');
+  expect(state().directory).toBe('old');
+  expect(state().lastWriteDirectory).toBeNull();
+  expect(prisma.season.update).not.toHaveBeenCalled();
+  expect(await fs.readdir(root)).toEqual(['old']);
+  prisma.episode.findFirst.mockResolvedValue(null);
+  await write();
+  expect(await fs.readFile(path.join(root, 'new', 'video.mkv'), 'utf8')).toBe(
+    'video',
+  );
 });
 
 it('writes new seasons into a single safe directory and preserves the displayed slash', async () => {

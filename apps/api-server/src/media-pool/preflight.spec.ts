@@ -13,8 +13,7 @@ beforeEach(async () => {
   root = await fs.realpath(
     await fs.mkdtemp(path.join(os.tmpdir(), 'lani-preflight-')),
   );
-  for (const name of ['downloads', 'library'])
-    await fs.mkdir(path.join(root, name));
+  for (const name of ['library']) await fs.mkdir(path.join(root, name));
 });
 afterEach(async () => {
   jest.restoreAllMocks();
@@ -23,11 +22,11 @@ afterEach(async () => {
 it('不同目录实际硬链接成功，探测文件全部清理', async () => {
   await probeMediaDirectories(
     path.join(root, 'pool'),
-    [path.join(root, 'downloads')],
+
     [path.join(root, 'library')],
     false,
   );
-  for (const name of ['pool', 'downloads', 'library'])
+  for (const name of ['pool', 'library'])
     expect(await fs.readdir(path.join(root, name))).toEqual([]);
 });
 it('独立挂载返回 EXDEV 时诊断包含路径和迁移指引，显式开启复制后可用', async () => {
@@ -39,14 +38,14 @@ it('独立挂载返回 EXDEV 时诊断包含路径和迁移指引，显式开启
   await expect(
     probeMediaDirectories(
       path.join(root, 'pool'),
-      [path.join(root, 'downloads')],
+
       [path.join(root, 'library')],
       false,
     ),
   ).rejects.toThrow(MEDIA_MIGRATION_GUIDE);
   await probeMediaDirectories(
     path.join(root, 'pool'),
-    [path.join(root, 'downloads')],
+
     [path.join(root, 'library')],
     true,
   );
@@ -60,7 +59,7 @@ it('开启复制仍拒绝权限错误', async () => {
   await expect(
     probeMediaDirectories(
       path.join(root, 'pool'),
-      [path.join(root, 'downloads')],
+
       [path.join(root, 'library')],
       true,
     ),
@@ -71,22 +70,19 @@ it('预检有超时边界', async () => {
     bounded(new Promise(() => undefined), 5, 'preflight'),
   ).rejects.toThrow('timed out');
 });
-it.each(['downloads', 'library'])(
-  '拒绝媒体池与 %s 目录双向重叠',
-  async (name) => {
-    const directory = path.join(root, name);
-    for (const pool of [directory, path.join(directory, 'pool'), root]) {
-      await expect(
-        probeMediaDirectories(
-          pool,
-          [path.join(root, 'downloads')],
-          [path.join(root, 'library')],
-          false,
-        ),
-      ).rejects.toThrow('must be separate');
-    }
-  },
-);
+it.each(['library'])('拒绝媒体池与 %s 目录双向重叠', async (name) => {
+  const directory = path.join(root, name);
+  for (const pool of [directory, path.join(directory, 'pool'), root]) {
+    await expect(
+      probeMediaDirectories(
+        pool,
+
+        [path.join(root, 'library')],
+        false,
+      ),
+    ).rejects.toThrow('must be separate');
+  }
+});
 it.each([
   '/tmp/file',
   '../file',

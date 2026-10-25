@@ -1,9 +1,3 @@
-import { WriteGate } from '@/application-state/write-gate';
-const openGate = () => {
-  const gate = new WriteGate();
-  gate.open();
-  return gate;
-};
 import {
   JellyfinHelp,
   ItemFields,
@@ -53,7 +47,7 @@ function setup() {
     $transaction: jest.fn(),
   };
   prisma.$transaction.mockImplementation((run) => run(prisma));
-  const service = new SeasonJellyfinService(prisma as any, openGate());
+  const service = new SeasonJellyfinService(prisma as any);
   const refresh = jest.spyOn(JellyfinHelp, 'refreshItem').mockResolvedValue();
   const warn = jest
     .spyOn((service as any).logger, 'warn')

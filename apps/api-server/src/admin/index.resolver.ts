@@ -1,5 +1,4 @@
 import { parseWorkflow } from '@lani/workflow';
-import { WriteGate } from '@/application-state/write-gate';
 import {
   AdminConfig,
   DownloadProgress,
@@ -35,7 +34,6 @@ export class AdminResolver {
     private seasonEmit: SeasonEmitService,
     private client: IDownloadClient,
     private emitter: EventEmitter2,
-    private gate: WriteGate,
   ) {}
 
   @Query(() => ID)
@@ -168,7 +166,6 @@ export class AdminResolver {
 
   @Mutation(() => ID)
   async deleteSeasonById(@Args('id') id: number) {
-    this.gate.assertReady();
     const season = await this.prisma.season.findUnique({
       rejectOnNotFound: false,
       where: { id },
@@ -218,7 +215,6 @@ export class AdminResolver {
     })
     { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
-    this.gate.assertReady();
     this.logger.log(`Updating season #${id}...`);
     this.logger.verbose(`Writing season #${id} to db...`);
     const results = await this.prisma.$transaction([

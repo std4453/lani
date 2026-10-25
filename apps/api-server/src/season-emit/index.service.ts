@@ -1,4 +1,4 @@
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { SeasonMediaService } from './media.service';
 import { PrismaService } from '@/common/prisma.service';
 import { S3Service } from '@/common/s3.service';
@@ -30,12 +30,10 @@ export class SeasonEmitService {
     private seasonJellyfin: SeasonJellyfinService,
     private prisma: PrismaService,
     private media: SeasonMediaService,
-    private gate: WriteGate,
     private operations: MediaOperations,
   ) {}
 
   async writeSeasonMetadata(season: SeasonWithFolderAndImages) {
-    this.gate.assertReady();
     return this.operations.run(async () => {
       const current = await this.prisma.season.findUnique({
         where: { id: season.id },
@@ -59,20 +57,12 @@ export class SeasonEmitService {
     const directory = sanitizeSeasonDirectory(season.title);
     const oldDirectory = getSeasonDirectory(season);
     const renamed = oldDirectory !== directory;
-    // 先保存目标目录，让数据库唯一约束在任何文件操作之前检查冲突。
-    await this.prisma.season.update({
-      where: { id: season.id },
-      data: {
-        directory,
-        // 历史登记可能只有 directory；改名前保留实际旧位置，失败时可重试。
-        ...(renamed &&
-        season.directory &&
-        !season.lastWriteDirectory &&
-        !season.lastWriteTitle
-          ? { lastWriteDirectory: oldDirectory }
-          : {}),
-      },
-    });
+    // 改名由季度媒体服务在检查历史登记后预留目录。
+    if (!renamed)
+      await this.prisma.season.update({
+        where: { id: season.id },
+        data: { directory },
+      });
     season = { ...season, directory };
     if (!renamed && !season.lastWriteTitle && !season.lastWriteDirectory) {
       const root = mapPath(

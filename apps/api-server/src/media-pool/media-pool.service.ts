@@ -15,7 +15,7 @@ import {
 } from './files';
 import { createHash, randomUUID } from 'crypto';
 import { mediaTarget, relativeMediaPath, seasonMediaRoot } from './paths';
-import { WriteGate, MediaOperations } from '@/application-state/write-gate';
+import { MediaOperations } from '@/common/media-operations';
 import { executePublication, finishPublication } from './publication-files';
 import { LinkMode } from './files';
 
@@ -54,7 +54,6 @@ export class MediaPool {
   constructor(
     private db: PrismaClient,
     private settings: { root: string; painfullyAcceptCrossDeviceCopy: boolean },
-    private guard: () => void,
     private operations: MediaOperations,
   ) {}
 
@@ -75,12 +74,7 @@ export class MediaPool {
   }
 
   /** 创建即完整且不可变；准备不取得发布权，也不恢复其他任务的发布现场。 */
-  register(
-    input: VersionInput,
-    context?: RegistrationContext,
-    backfill = false,
-  ) {
-    if (!backfill) this.guard();
+  register(input: VersionInput, context?: RegistrationContext) {
     return this.exclusive(async () => {
       const existing = await this.db.episodeVersion.findUnique({
         rejectOnNotFound: false,
@@ -213,68 +207,67 @@ export class MediaPool {
 
   /** 历史回填只登记已存在的目标，不改名、不删除、也不猜测下载来源。 */
   adopt(input: VersionInput) {
-    return this.register({ ...input, mode: 'backfill' }, undefined, true).then(
-      (versionId) =>
-        this.exclusive(async () => {
-          const version = await this.version(versionId);
-          const episode = await this.db.episode.findUnique({
-            rejectOnNotFound: false,
-            where: { id: input.episodeId },
-          });
-          if (!episode) throw new Error('剧集不存在');
-          if (episode.currentVersionId === versionId) return versionId;
-          if (episode.currentVersionId)
-            throw new Error('剧集已有当前版本，不能重复回填');
-          const files: Array<{
-            file: typeof version.files[number];
-            current: FileIdentity;
-            mode: string;
-          }> = [];
-          for (const file of version.files) {
-            const current = await identity(file.targetPath);
-            if (!current) throw new Error('历史媒体文件不存在');
-            if (
-              file.asset.jellyfinPath &&
-              file.asset.jellyfinPath !== file.targetPath
-            )
-              throw new Error('同一媒体文件已有其他播放器目标');
-            const pool = await identity(file.asset.poolPath);
-            if (!pool) throw new Error('媒体池文件不存在');
-            await verifyTransfer(
-              file.asset.poolPath,
-              file.targetPath,
-              pool,
-              pool.dev === current.dev && pool.ino === current.ino
+    return this.register({ ...input, mode: 'backfill' }).then((versionId) =>
+      this.exclusive(async () => {
+        const version = await this.version(versionId);
+        const episode = await this.db.episode.findUnique({
+          rejectOnNotFound: false,
+          where: { id: input.episodeId },
+        });
+        if (!episode) throw new Error('剧集不存在');
+        if (episode.currentVersionId === versionId) return versionId;
+        if (episode.currentVersionId)
+          throw new Error('剧集已有当前版本，不能重复回填');
+        const files: Array<{
+          file: typeof version.files[number];
+          current: FileIdentity;
+          mode: string;
+        }> = [];
+        for (const file of version.files) {
+          const current = await identity(file.targetPath);
+          if (!current) throw new Error('历史媒体文件不存在');
+          if (
+            file.asset.jellyfinPath &&
+            file.asset.jellyfinPath !== file.targetPath
+          )
+            throw new Error('同一媒体文件已有其他播放器目标');
+          const pool = await identity(file.asset.poolPath);
+          if (!pool) throw new Error('媒体池文件不存在');
+          await verifyTransfer(
+            file.asset.poolPath,
+            file.targetPath,
+            pool,
+            pool.dev === current.dev && pool.ino === current.ino
+              ? 'hardlink'
+              : 'copy',
+          );
+          files.push({
+            file,
+            current,
+            mode:
+              pool?.dev === current.dev && pool?.ino === current.ino
                 ? 'hardlink'
                 : 'copy',
-            );
-            files.push({
-              file,
-              current,
-              mode:
-                pool?.dev === current.dev && pool?.ino === current.ino
-                  ? 'hardlink'
-                  : 'copy',
-            });
-          }
-          await this.db.$transaction(async (tx) => {
-            await lockEpisode(tx, input.episodeId);
-            for (const { file, current, mode } of files)
-              await tx.mediaAsset.update({
-                where: { id: file.assetId },
-                data: {
-                  jellyfinPath: file.targetPath,
-                  jellyfinMode: mode,
-                  jellyfinIdentity: json(current),
-                },
-              });
-            await tx.episode.update({
-              where: { id: input.episodeId },
-              data: { currentVersionId: versionId },
-            });
           });
-          return versionId;
-        }),
+        }
+        await this.db.$transaction(async (tx) => {
+          await lockEpisode(tx, input.episodeId);
+          for (const { file, current, mode } of files)
+            await tx.mediaAsset.update({
+              where: { id: file.assetId },
+              data: {
+                jellyfinPath: file.targetPath,
+                jellyfinMode: mode,
+                jellyfinIdentity: json(current),
+              },
+            });
+          await tx.episode.update({
+            where: { id: input.episodeId },
+            data: { currentVersionId: versionId },
+          });
+        });
+        return versionId;
+      }),
     );
   }
 
@@ -300,7 +293,6 @@ export class MediaPool {
 
   /** 文件操作完成后，由调用方在同一短事务提交版本与业务检查点。 */
   publish(versionId: number, context: PublicationContext) {
-    this.guard();
     return this.exclusive(async () => {
       await context.assertActive();
       const next = await this.version(versionId);
@@ -311,7 +303,10 @@ export class MediaPool {
           : episode.currentVersionId
           ? await this.version(episode.currentVersionId)
           : null;
-      if (!old && episode.jellyfinEpisodeId)
+      if (
+        episode.currentVersionId === null &&
+        episode.jellyfinEpisodeId !== null
+      )
         throw new Error('已有媒体尚未登记，请先完成历史媒体回填');
       const oldFiles = old?.files ?? [];
       for (const file of oldFiles) {
@@ -443,18 +438,14 @@ export class MediaPool {
 
 @Injectable()
 export class MediaPoolService extends MediaPool implements OnModuleInit {
-  constructor(
-    prisma: PrismaService,
-    state: WriteGate,
-    operations: MediaOperations,
-  ) {
-    super(prisma, config.mediaPool, () => state.assertReady(), operations);
+  constructor(prisma: PrismaService, operations: MediaOperations) {
+    super(prisma, config.mediaPool, operations);
   }
   async onModuleInit() {
     if (config.mediaPool.painfullyAcceptCrossDeviceCopy)
       new Logger(MediaPoolService.name).warn(
         'Cross-device media copy enabled: slow copies and loss of cross-device atomicity are explicitly accepted.',
       );
-    // 初始化和恢复由启动预检通过后的受管理回填流程执行。
+    // 初始化和中断恢复在 HTTP 监听前完成。
   }
 }

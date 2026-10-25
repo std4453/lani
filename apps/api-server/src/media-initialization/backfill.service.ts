@@ -3,7 +3,7 @@ import { Field, Int, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import config from '@/config';
 import { PrismaService } from '@/common/prisma.service';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
-import { getLibraryItem } from '@/api/jellyfin/library-item';
+import { UserLibraryService } from '@/api/jellyfin';
 import { mapPath } from '@/utils/path';
 import { companions } from '@/utils/media-companions';
 import { applyBackfill, inspectBackfillFile } from './backfill';
@@ -20,7 +20,6 @@ class MediaRegistrationProgress {
 export class MediaBackfillService {
   private logger = new Logger(MediaBackfillService.name);
   private stopping = false;
-  private abort = new AbortController();
   private state = 'initializing';
   private completed = 0;
   private total = 0;
@@ -37,7 +36,6 @@ export class MediaBackfillService {
   }
   stop() {
     this.stopping = true;
-    this.abort.abort();
   }
   fail(reason: string) {
     this.state = 'failed';
@@ -88,11 +86,11 @@ export class MediaBackfillService {
       );
       if (!episode) break;
       await this.retry(async () => {
-        const item = await getLibraryItem(
+        const item = await UserLibraryService.getItem(
           config.jellyfin.dummyUserId,
           episode.jellyfinEpisodeId!,
-          this.abort.signal,
         );
+        if (this.stopping) return;
         if (!item.Path || (item.MediaSources?.length ?? 0) > 1)
           throw new Error(
             `Episode ${episode.id}: ambiguous or missing media path`,
