@@ -138,7 +138,7 @@ it('finds matches beyond the first page and shares the library query within a cr
   const { service, prisma } = setup();
   prisma.season.findMany.mockResolvedValue([season, { ...season, id: 13 }]);
   const get = jest
-    .spyOn(JellyfinHelp, 'getItemsByUserId')
+    .spyOn(JellyfinHelp, 'getItems')
     .mockResolvedValueOnce({
       Items: Array.from({ length: 100 }, (_, i) => ({ Id: `other-${i}` })),
       TotalRecordCount: 102,
@@ -166,7 +166,7 @@ it('logs query failures without writing an association', async () => {
   const { service, prisma, warn } = setup();
   prisma.season.findMany.mockResolvedValue([season]);
   jest
-    .spyOn(JellyfinHelp, 'getItemsByUserId')
+    .spyOn(JellyfinHelp, 'getItems')
     .mockRejectedValue(new Error('unavailable'));
   expect(await service.syncAllSeasonsJellyfinSeriesId()).toBe(0);
   expect(prisma.season.update).not.toHaveBeenCalled();

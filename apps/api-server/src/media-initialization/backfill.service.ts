@@ -3,7 +3,7 @@ import { Field, Int, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import config from '@/config';
 import { PrismaService } from '@/common/prisma.service';
 import { MediaPoolService } from '@/media-pool/media-pool.service';
-import { UserLibraryService } from '@/api/jellyfin';
+import { JellyfinHelp } from '@/api/jellyfin';
 import { mapPath } from '@/utils/path';
 import { companions } from '@/utils/media-companions';
 import { applyBackfill, inspectBackfillFile } from './backfill';
@@ -86,10 +86,10 @@ export class MediaBackfillService {
       );
       if (!episode) break;
       await this.retry(async () => {
-        const item = await UserLibraryService.getItem(
-          config.jellyfin.dummyUserId,
-          episode.jellyfinEpisodeId!,
-        );
+        const item = await JellyfinHelp.getItem({
+          userId: config.jellyfin.dummyUserId,
+          itemId: episode.jellyfinEpisodeId!,
+        });
         if (this.stopping) return;
         if (!item.Path || (item.MediaSources?.length ?? 0) > 1)
           throw new Error(
