@@ -481,3 +481,71 @@ it('并发季度同步串行完成文件与位置提交，排队请求重新读�
     await fs.readFile(path.join(root, 'B', 'tvshow.nfo'), 'utf8'),
   ).toContain('<title>B</title>');
 });
+
+it('重写已有单集NFO并刷新Jellyfin，重复写入保留准确的单集ID', async () => {
+  const { service, prisma, jellyfin } = setup({
+    title: 'Anime',
+    directory: 'Anime',
+  });
+  const filename = path.join(root, 'episode.mkv');
+  await fs.writeFile(filename, 'video');
+  const episode = {
+    id: 101,
+    title: 'one',
+    index: 1,
+    episodeType: 'EPISODE',
+    dandanplayEpisodeId: '186900001',
+    currentVersion: {
+      files: [{ role: 'video', asset: { jellyfinPath: filename } }],
+    },
+  };
+  prisma.episode.findMany.mockResolvedValue([episode] as any);
+  await fs.writeFile(
+    path.join(root, 'episode.nfo'),
+    '<episodedetails><uniqueId type="DanmuID">dandan:old</uniqueId></episodedetails>',
+  );
+  await service.writeEpisodeMetadata(12);
+  await service.writeEpisodeMetadata(12);
+  let nfo = (
+    await xml2js.parseStringPromise(
+      await fs.readFile(path.join(root, 'episode.nfo'), 'utf8'),
+    )
+  ).episodedetails;
+  expect(nfo.uniqueId).toBeUndefined();
+  expect(nfo.uniqueid).toEqual([
+    { $: { type: 'lani', default: 'true' }, _: '101' },
+    { $: { type: 'DanmuID' }, _: 'dandan:186900001' },
+  ]);
+  expect(jellyfin.refreshAfterWriteToDisk).toHaveBeenCalledTimes(2);
+  episode.dandanplayEpisodeId = null as any;
+  await service.writeEpisodeMetadata(12);
+  nfo = (
+    await xml2js.parseStringPromise(
+      await fs.readFile(path.join(root, 'episode.nfo'), 'utf8'),
+    )
+  ).episodedetails;
+  expect(nfo.uniqueid).toHaveLength(1);
+});
+
+it('发布任务未结束时跳过已有媒体NFO写入', async () => {
+  const { service, prisma, jellyfin } = setup();
+  prisma.task.findFirst.mockResolvedValue({ id: 1 } as any);
+  await service.writeEpisodeMetadata(12);
+  expect(prisma.episode.findMany).not.toHaveBeenCalled();
+  expect(jellyfin.refreshAfterWriteToDisk).not.toHaveBeenCalled();
+});
+
+it('季度NFO保存作品ID，重写后仍以lani作为默认ID', async () => {
+  const { write } = setup({ title: 'Anime', dandanplayAnimeId: '18690' });
+  await write();
+  await write();
+  const nfo = (
+    await xml2js.parseStringPromise(
+      await fs.readFile(path.join(root, 'Anime', 'tvshow.nfo'), 'utf8'),
+    )
+  ).tvshow;
+  expect(nfo.uniqueid).toEqual([
+    { $: { type: 'lani', default: 'true' }, _: '12' },
+    { $: { type: 'DanmuID' }, _: 'dandan:18690' },
+  ]);
+});

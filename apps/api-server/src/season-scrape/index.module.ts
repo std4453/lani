@@ -9,6 +9,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BangumiDataService } from './bangumi-data/BangumiDataService';
 import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
+import { DandanplayService } from './dandanplay.service';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
     SeasonEmitModule,
   ],
   providers: [
+    DandanplayService,
     ScrapeMetadataResolver,
     EpisodeScrapeService,
     SeasonScrapeService,

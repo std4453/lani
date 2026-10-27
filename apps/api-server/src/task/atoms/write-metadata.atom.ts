@@ -1,12 +1,10 @@
 import { BatchableEpisodeAtom } from '../batchable-episode-atom';
 import { claimEpisodePublication } from './publication';
-import { jellyfinNumber, episodeLabel } from '@/utils/episode-number';
+import { episodeNfo } from '@/utils/episode-nfo';
 import { PrismaService } from '@/common/prisma.service';
-import { DateFormat } from '@/constants/date-format';
 import { TaskInput, AtomContext } from '@/task/atom';
 import { ensureXMLRoot, mergeXMLNode } from '@/utils/xml';
 import { Injectable } from '@nestjs/common';
-import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
@@ -37,8 +35,6 @@ export class WriteMetadataAtom extends BatchableEpisodeAtom {
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
     });
-    const { title, airTime, description } = episode;
-    const { season: mediaSeason, index } = jellyfinNumber(episode);
     const nfoPath = filePath.replace(path.extname(filePath), '').concat('.nfo');
     // xml2js 对象结构没有类型，只能用 any
     let xmlObj: any = {};
@@ -51,31 +47,10 @@ export class WriteMetadataAtom extends BatchableEpisodeAtom {
       // 如果是没有读权限，或是目录，之后写入时肯定会报错，现在也可以无视
     }
     ensureXMLRoot(xmlObj, 'episodedetails');
+    delete xmlObj.episodedetails.uniqueid;
+    delete xmlObj.episodedetails.uniqueId;
     // https://kodi.wiki/view/NFO_files/Episodes
-    mergeXMLNode(
-      {
-        title: [
-          mediaSeason === 0 ? `${episodeLabel(episode)} - ${title}` : title,
-        ],
-        ...(description ? { plot: [description] } : undefined),
-        // 不设置 season 的话 Jellyfin 会显示未知
-        season: [mediaSeason],
-        episode: [index],
-        ...(airTime
-          ? { aired: [dayjs(airTime).format(DateFormat.BarDay)] }
-          : undefined),
-        uniqueid: [
-          {
-            $: {
-              type: 'lani',
-              default: 'true',
-            },
-            _: episodeId,
-          },
-        ],
-      },
-      xmlObj.episodedetails,
-    );
+    mergeXMLNode(episodeNfo(episode), xmlObj.episodedetails);
     const nfoContent = this.builder.buildObject(xmlObj);
     await context.assertActive();
     const temporary = `${nfoPath}.lani-${id}-${context.entryId ?? 0}.tmp`;

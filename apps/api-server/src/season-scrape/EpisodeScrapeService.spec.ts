@@ -1,5 +1,9 @@
 import { EpisodeScrapeService } from './EpisodeScrapeService';
 import { Prisma } from '@lani/db';
+jest.mock('./dandanplay.service', () => ({ DandanplayService: class {} }));
+jest.mock('@/season-emit/index.service', () => ({
+  SeasonEmitService: class {},
+}));
 jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
 jest.mock('@/season-scrape/bangumi/index.service', () => ({
   BangumiSeasonService: class {},
@@ -27,9 +31,12 @@ function setup(existing: any[], episodes: any[]) {
     { fetch: async () => ({ episodes }) } as any,
     prisma as any,
     bangumiData as any,
+    { findEpisodes: jest.fn().mockResolvedValue(undefined) } as any,
+    { writeEpisodeMetadata: jest.fn() } as any,
   );
   return {
     prisma,
+    service,
     bangumiData,
     sync: (overrides: Record<string, unknown> = {}) =>
       service.syncEpisodeData({
@@ -296,3 +303,23 @@ it.each(['前移', '交换'])(
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   },
 );
+
+it('分集映射随剧集保存，并刷新历史媒体的NFO', async () => {
+  const episode = { episodeNumber: '1', title: 'one' };
+  const { prisma, service, sync } = setup([], [episode]);
+  (service as any).dandanplay.findEpisodes.mockResolvedValue(
+    new Map([[episode, '186900001']]),
+  );
+  await sync({ dandanplayAnimeId: '18690' });
+  expect(prisma.episode.create.mock.calls[0][0].data.dandanplayEpisodeId).toBe(
+    '186900001',
+  );
+  expect((service as any).emit.writeEpisodeMetadata).toHaveBeenCalledWith(1);
+});
+it('分集请求失败时保留旧映射，元数据仍可更新', async () => {
+  const { prisma, sync } = setup([], [{ episodeNumber: '1', title: 'one' }]);
+  await sync({ dandanplayAnimeId: '18690' });
+  expect(prisma.episode.create.mock.calls[0][0].data).not.toHaveProperty(
+    'dandanplayEpisodeId',
+  );
+});

@@ -165,6 +165,7 @@ it('共用原子导入后可重复同步季度元数据', async () => {
           return season;
         }),
       },
+      task: { findFirst: jest.fn().mockResolvedValue(null) },
     };
     {
       const input = {

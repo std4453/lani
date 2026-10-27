@@ -15,6 +15,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import xml2js from 'xml2js';
 import { jellyfinNumber } from '@/utils/episode-number';
+import { episodeNfo } from '@/utils/episode-nfo';
+import { findActiveSeasonTask } from '@/task/queries';
 import {
   getSeasonDirectory,
   resolveSeasonPath,
@@ -47,6 +49,50 @@ export class SeasonEmitService {
       if (!current) throw new Error('季度不存在');
       await this.writeMetadata(current);
     });
+  }
+
+  async writeEpisodeMetadata(seasonId: number) {
+    return this.operations.run(async () => {
+      const written = await this.writeEpisodeNfos(seasonId);
+      if (written) {
+        const season = await this.prisma.season.findUnique({
+          where: { id: seasonId },
+          include: { jellyfinFolder: true },
+        });
+        if (season) await this.seasonJellyfin.refreshAfterWriteToDisk(season);
+      }
+    });
+  }
+
+  private async writeEpisodeNfos(seasonId: number) {
+    // 发布中的任务会写入最新元数据；避免与正在替换的媒体版本交错写文件。
+    if (await findActiveSeasonTask(this.prisma, seasonId)) return false;
+    const episodes = await this.prisma.episode.findMany({
+      where: { seasonId, currentVersionId: { not: null } },
+      include: {
+        currentVersion: { include: { files: { include: { asset: true } } } },
+      },
+    });
+    let written = false;
+    for (const episode of episodes) {
+      const video = episode.currentVersion?.files.find(
+        (file) => file.role === 'video',
+      );
+      const filename = video?.asset.jellyfinPath;
+      if (!filename) continue;
+      await fs.access(filename);
+      await writeXMLFileIdempotent(
+        path.join(path.dirname(filename), path.parse(filename).name + '.nfo'),
+        episodeNfo(episode),
+        {
+          rootType: 'episodedetails',
+          mkdir: false,
+          removeKeys: ['uniqueid', 'uniqueId'],
+        },
+      );
+      written = true;
+    }
+    return written;
   }
 
   private async writeMetadata(season: SeasonWithFolderAndImages) {
@@ -145,6 +191,8 @@ export class SeasonEmitService {
       );
     }
 
+    await this.writeEpisodeNfos(season.id);
+
     // 显式同步始终刷新，保证上次文件写入成功但 Jellyfin 刷新失败后仍可重试。
     if (renamed) {
       await this.seasonJellyfin.refreshAfterFolderRename(season);
@@ -230,6 +278,7 @@ export class SeasonEmitService {
     tags,
     tvdbId,
     bangumiId,
+    dandanplayAnimeId,
     id,
     yearAndSemester,
     jellyfinFolder: { location: jellyfinFolderRoot },
@@ -270,6 +319,9 @@ export class SeasonEmitService {
                 _: bangumiId,
               }
             : undefined,
+          dandanplayAnimeId
+            ? { $: { type: 'DanmuID' }, _: `dandan:${dandanplayAnimeId}` }
+            : undefined,
         ].filter(Boolean),
         ...(yearAndSemester
           ? { year: [yearAndSemester.substring(0, 4)] }
@@ -277,7 +329,7 @@ export class SeasonEmitService {
       },
       {
         rootType: 'tvshow',
-        removeKeys: ['uniqueId'],
+        removeKeys: ['uniqueid', 'uniqueId'],
       },
     );
     return { modified, nfoPath };

@@ -11,6 +11,8 @@ import { SkyhookSeasonService } from '@/season-scrape/skyhook/index.service';
 import { EpisodeType, MetadataSource, Prisma, Season } from '@lani/db';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
+import { DandanplayService } from './dandanplay.service';
+import { SeasonEmitService } from '@/season-emit/index.service';
 
 @Injectable()
 export class EpisodeScrapeService {
@@ -21,6 +23,8 @@ export class EpisodeScrapeService {
     private bangumi: BangumiSeasonService,
     private prisma: PrismaService,
     private bangumiData: BangumiDataService,
+    private dandanplay: DandanplayService,
+    private emit: SeasonEmitService,
   ) {}
 
   async syncEpisodeData({
@@ -28,6 +32,7 @@ export class EpisodeScrapeService {
     title,
     episodesSource,
     bangumiId,
+    dandanplayAnimeId,
     tvdbId,
     tvdbSeason,
     airTime: seasonAirTime,
@@ -96,6 +101,13 @@ export class EpisodeScrapeService {
     const existing = await this.prisma.episode.findMany({
       where: { seasonId },
     });
+    const dandanEpisodes =
+      episodesSource === MetadataSource.BGM_CN && dandanplayAnimeId
+        ? await this.dandanplay.findEpisodes(
+            dandanplayAnimeId,
+            result.episodes ?? [],
+          )
+        : undefined;
     const seen = new Set<string>();
     const matchedIds = new Set<number>();
     const updates = (result.episodes ?? []).flatMap((episode) => {
@@ -143,6 +155,9 @@ export class EpisodeScrapeService {
       if (current) matchedIds.add(current.id);
       const rawAirTime = getEpisodeAirTime(clock, episode.airDate);
       const data = {
+        ...(dandanEpisodes
+          ? { dandanplayEpisodeId: dandanEpisodes.get(episode) ?? null }
+          : {}),
         episodeType,
         episodeNumber,
         index:
@@ -178,6 +193,7 @@ export class EpisodeScrapeService {
         data: { episodesLastSync: new Date() },
       }),
     ]);
+    await this.emit.writeEpisodeMetadata(seasonId);
     return true;
   }
 }
