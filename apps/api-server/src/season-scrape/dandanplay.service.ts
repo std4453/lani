@@ -1,5 +1,8 @@
 import { GlobalAxiosService } from '@/common/axios.service';
+import config from '@/config';
+import { DandanplayConfig } from '@/config/dandanplay';
 import { Injectable, Logger } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { SeasonEpisode } from './index.model';
 
 interface DandanEpisode {
@@ -12,7 +15,34 @@ interface DandanResponse {
   bangumi?: { animeId: number | string; episodes: DandanEpisode[] };
 }
 
-const endpoint = 'https://api.danmaku.weeblify.app/ddp/v1';
+export function dandanplayRequest(
+  path: string,
+  channel: Exclude<DandanplayConfig, false>,
+  timestamp = Math.floor(Date.now() / 1000),
+) {
+  if (channel.kind === 'publicProxy') {
+    return {
+      url: 'https://api.danmaku.weeblify.app/ddp/v1',
+      options: { params: { path }, timeout: 10000 },
+    };
+  }
+  const apiPath = `/api${path}`;
+  // 官方签名只包含 URL path，不包含域名或 query。密钥不发送给公开代理。
+  const signature = createHash('sha256')
+    .update(`${channel.appId}${timestamp}${apiPath}${channel.appSecret}`)
+    .digest('base64');
+  return {
+    url: `https://api.dandanplay.net${apiPath}`,
+    options: {
+      headers: {
+        'X-AppId': channel.appId,
+        'X-Timestamp': String(timestamp),
+        'X-Signature': signature,
+      },
+      timeout: 10000,
+    },
+  };
+}
 
 export function dandanId(value: unknown): string | undefined {
   const id = String(value ?? '');
@@ -56,20 +86,24 @@ export class DandanplayService {
   constructor(private readonly http: GlobalAxiosService) {}
 
   private async fetch(path: string) {
+    if (!config.dandanplay) return undefined;
     try {
-      const { data } = await this.http.get<DandanResponse>(endpoint, {
-        params: { path },
-        timeout: 10000,
-      });
+      const request = dandanplayRequest(path, config.dandanplay);
+      this.logger.debug(
+        `Dandanplay request ${path} via ${config.dandanplay.kind}`,
+      );
+      const { data } = await this.http.get<DandanResponse>(
+        request.url,
+        request.options,
+      );
       if (!data.success || !data.bangumi || !dandanId(data.bangumi.animeId)) {
         this.logger.warn(`Dandanplay lookup returned no mapping for ${path}`);
         return undefined;
       }
       return data.bangumi;
-    } catch (error) {
-      this.logger.warn(
-        `Dandanplay lookup failed for ${path}: ${error.message}`,
-      );
+    } catch {
+      // Axios 错误可能包含带认证头的请求配置，不输出原始错误。
+      this.logger.warn(`Dandanplay lookup failed for ${path}`);
       return undefined;
     }
   }

@@ -1,6 +1,61 @@
-import { DandanplayService, mapDandanEpisodes } from './dandanplay.service';
+import {
+  dandanplayRequest,
+  DandanplayService,
+  mapDandanEpisodes,
+} from './dandanplay.service';
+import config from '@/config';
+import { createHash } from 'crypto';
 
 jest.mock('@/common/axios.service', () => ({ GlobalAxiosService: class {} }));
+jest.mock('@/config', () => ({
+  __esModule: true,
+  default: { dandanplay: { kind: 'publicProxy' } },
+}));
+
+beforeEach(() => {
+  config.dandanplay = { kind: 'publicProxy' };
+});
+
+it('禁用时不发送新查询', async () => {
+  config.dandanplay = false;
+  const get = jest.fn();
+  const service = new DandanplayService({ get } as any);
+  expect(await service.findAnime('499169')).toBeUndefined();
+  expect(await service.findEpisodes('18690', [])).toBeUndefined();
+  expect(get).not.toHaveBeenCalled();
+});
+
+it('官方请求签名使用官方路径，密钥不进入URL或请求头', () => {
+  const request = dandanplayRequest(
+    '/v2/bangumi/18690',
+    { kind: 'official', appId: 'test-app', appSecret: 'test-key' },
+    1700000000,
+  );
+  expect(request.url).toBe('https://api.dandanplay.net/api/v2/bangumi/18690');
+  expect(request.options.headers).toEqual({
+    'X-AppId': 'test-app',
+    'X-Timestamp': '1700000000',
+    'X-Signature': createHash('sha256')
+      .update('test-app1700000000/api/v2/bangumi/18690test-key')
+      .digest('base64'),
+  });
+  expect(JSON.stringify(request)).not.toContain('test-key');
+});
+
+it('官方请求失败时不切换到公开代理或泄露错误中的认证信息', async () => {
+  config.dandanplay = {
+    kind: 'official',
+    appId: 'test-app',
+    appSecret: 'test-key',
+  };
+  const get = jest.fn().mockRejectedValue(new Error('test-key'));
+  const service = new DandanplayService({ get } as any);
+  const warn = jest.spyOn((service as any).logger, 'warn').mockImplementation();
+  await expect(service.findAnime('499169')).resolves.toBeUndefined();
+  expect(get).toHaveBeenCalledTimes(1);
+  expect(get.mock.calls[0][0]).toContain('api.dandanplay.net');
+  expect(JSON.stringify(warn.mock.calls)).not.toContain('test-key');
+});
 
 it('整数集号与SP顺序匹配，不混淆正片、SP、半集和其他类型', () => {
   const episodes = [

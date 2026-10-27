@@ -323,3 +323,31 @@ it('分集请求失败时保留旧映射，元数据仍可更新', async () => {
     'dandanplayEpisodeId',
   );
 });
+
+it('停用查询后更新元数据时不清除已有单集身份，仍刷新NFO', async () => {
+  const { prisma, service, sync } = setup(
+    [
+      {
+        id: 5,
+        index: 1,
+        episodeType: 'EPISODE',
+        episodeNumber: new Prisma.Decimal(1),
+        bangumiEpisodeId: 99,
+        dandanplayEpisodeId: '186900001',
+      },
+    ],
+    [
+      {
+        episodeNumber: '1',
+        episodeType: 'EPISODE',
+        bangumiEpisodeId: 99,
+        title: 'one',
+      },
+    ],
+  );
+  await sync({ dandanplayAnimeId: '18690' });
+  expect(prisma.episode.update.mock.calls[0][0].data).not.toHaveProperty(
+    'dandanplayEpisodeId',
+  );
+  expect((service as any).emit.writeEpisodeMetadata).toHaveBeenCalledWith(1);
+});
