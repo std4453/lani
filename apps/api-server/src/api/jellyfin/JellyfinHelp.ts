@@ -1,5 +1,6 @@
 import {
   BaseItemKind,
+  BaseItemDto,
   CancelablePromise,
   ImageType,
   ItemFields,
@@ -16,7 +17,30 @@ import { request as __request } from './generated/core/request';
 
 // OpenAPI生成的API不好用，包一层
 export class JellyfinHelp {
-  public static getItemsByUserId({
+  public static async getItem({
+    itemId,
+    userId,
+  }: {
+    itemId: string;
+    userId: string;
+  }): Promise<BaseItemDto> {
+    // 10.8 尚不支持 GET /Items/{itemId}，按 ID 查询兼容新旧版本。
+    const { Items } = await this.getItems({
+      userId,
+      ids: [itemId],
+      fields: [
+        ItemFields.PATH,
+        ItemFields.MEDIA_SOURCES,
+        ItemFields.MEDIA_STREAMS,
+      ],
+      limit: 1,
+    });
+    const item = Items?.[0];
+    if (!item) throw new Error('Jellyfin 媒体条目不存在');
+    return item;
+  }
+
+  public static getItems({
     userId,
     maxOfficialRating,
     hasThemeSong,
@@ -188,8 +212,8 @@ export class JellyfinHelp {
     genreIds?: Array<string>;
     enableTotalRecordCount?: boolean;
     enableImages?: boolean;
-  }): ReturnType<typeof ItemsService['getItemsByUserId']> {
-    return ItemsService.getItemsByUserId(
+  }): ReturnType<typeof ItemsService['getItems']> {
+    return ItemsService.getItems(
       userId,
       maxOfficialRating,
       hasThemeSong,
@@ -284,14 +308,12 @@ export class JellyfinHelp {
     imageRefreshMode,
     replaceAllMetadata,
     replaceAllImages,
-    recursive,
   }: {
     itemId: string;
     metadataRefreshMode?: MetadataRefreshMode;
     imageRefreshMode?: MetadataRefreshMode;
     replaceAllMetadata?: boolean;
     replaceAllImages?: boolean;
-    recursive?: boolean;
   }): CancelablePromise<void> {
     return __request(OpenAPI, {
       method: 'POST',
@@ -304,7 +326,6 @@ export class JellyfinHelp {
         imageRefreshMode: imageRefreshMode,
         replaceAllMetadata: replaceAllMetadata,
         replaceAllImages: replaceAllImages,
-        recursive: recursive,
       },
       errors: {
         401: `Unauthorized`,

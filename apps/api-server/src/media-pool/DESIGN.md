@@ -24,7 +24,7 @@
 
 当前协议只支持单 API 实例，部署时停止旧实例，先执行唯一最终 schema migration，再启动新实例。启动协调器在 HTTP 监听和定时任务启动前完成环境预检、媒体池初始化与季度移动恢复。预检有 30 秒边界，仅检查媒体池与映射后的 Jellyfin 库目录，通过自建临时文件验证权限与硬链接；下载路径的链接能力在实际下载导入流程中检查。仅 EXDEV 且显式开启 `mediaPool.painfullyAcceptCrossDeviceCopy` 时允许复制。失败日志附[用户迁移指南](https://std4453.github.io/lani/docs/installation/media-pool-migration)，受控关闭后非零退出。
 
-预检与中断恢复完成后，任务服务在 `OnApplicationBootstrap` 中恢复待处理任务一次；HTTP 监听后，协调器启动受管理的后台登记，不等待全量回填。回填服务位于媒体池模块之外，仅查询 `jellyfinEpisodeId != null && currentVersionId == null` 的剧集，通过既有 `UserLibraryService.getItem` 和注入的 `AxiosService` 获取视频与外挂字幕；超时和错误转换沿用统一接入层。无待登记剧集时不请求详情。回填模式不记录下载来源，也不移动用户文件或改写播放关联与历史任务。
+预检与中断恢复完成后，任务服务在 `OnApplicationBootstrap` 中恢复待处理任务一次；HTTP 监听后，协调器启动受管理的后台登记，不等待全量回填。回填服务位于媒体池模块之外，仅查询 `jellyfinEpisodeId != null && currentVersionId == null` 的剧集，通过 `JellyfinHelp.getItem` 和注入的 `AxiosService` 获取视频与外挂字幕；超时和错误转换沿用统一接入层。无待登记剧集时不请求详情。回填模式不记录下载来源，也不移动用户文件或改写播放关联与历史任务。
 
 无需全局写入开关：发布在 `MediaOperations` 互斥内读取剧集当前状态，暂缓待回填剧集的替换；季度服务在同一互斥内检查该季度是否仍有待回填剧集，再执行改名或删除。无关剧集可以下载、准备和发布，查询与原有播放继续可用。目录移动恢复依据已持久化的现场完成，不受回填条件阻止。单集登记完成后相关限制自然解除，同集跨步骤发布互斥仍由任务维护。
 

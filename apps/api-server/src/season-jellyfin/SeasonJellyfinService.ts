@@ -34,7 +34,6 @@ export class SeasonJellyfinService {
     await JellyfinHelp.refreshItem({
       itemId: jellyfinFolder.jellyfinId,
       metadataRefreshMode: MetadataRefreshMode.DEFAULT,
-      recursive: true,
     });
   }
 
@@ -68,7 +67,6 @@ export class SeasonJellyfinService {
       await JellyfinHelp.refreshItem({
         itemId: jellyfinFolder.jellyfinId,
         metadataRefreshMode: MetadataRefreshMode.DEFAULT,
-        recursive: true,
       });
     }
   }
@@ -96,7 +94,7 @@ export class SeasonJellyfinService {
     const result: BaseItemDto[] = [];
     const limit = 100;
     for (let startIndex = 0; ; ) {
-      const page = await JellyfinHelp.getItemsByUserId({
+      const page = await JellyfinHelp.getItems({
         userId: config.jellyfin.dummyUserId,
         parentId: jellyfinFolderId,
         recursive: true,
