@@ -11,6 +11,7 @@ import { Image, MetadataSource, Prisma } from '@lani/db';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import md5 from 'md5';
 import { ImageThumbnailService } from '@/image-thumbnail/index.service';
+import { DandanplayService } from './dandanplay.service';
 
 @Injectable()
 export class SeasonScrapeService {
@@ -24,12 +25,14 @@ export class SeasonScrapeService {
     private global: GlobalAxiosService,
     private s3: S3Service,
     private thumbnails: ImageThumbnailService,
+    private dandanplay: DandanplayService,
   ) {}
 
   async syncMetadata({
     id,
     title,
     bangumiId,
+    dandanplayAnimeId,
     tvdbId,
     tvdbSeason,
     infoSource,
@@ -92,8 +95,27 @@ export class SeasonScrapeService {
         throw new ConflictException('infoSource not available for auto sync');
     }
     const { info, images } = result;
+    const animeId =
+      infoSource === MetadataSource.BGM_CN
+        ? await this.dandanplay.findAnime(bangumiId)
+        : undefined;
 
     const data: Prisma.SeasonUpdateInput = {
+      ...(animeId
+        ? {
+            dandanplayAnimeId: animeId,
+            ...(animeId !== dandanplayAnimeId
+              ? {
+                  episodes: {
+                    updateMany: {
+                      where: {},
+                      data: { dandanplayEpisodeId: null },
+                    },
+                  },
+                }
+              : {}),
+          }
+        : {}),
       aliases: info?.aliases ?? [],
       description: info?.description ?? '',
       tags: info?.tags ?? info?.genres ?? [],

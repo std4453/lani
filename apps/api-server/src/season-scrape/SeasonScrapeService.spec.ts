@@ -32,6 +32,7 @@ it('uses explicit metadata sync to rewrite manual seasons without fetching exter
     {} as any,
     {} as any,
     { path: jest.fn() } as any,
+    { findAnime: jest.fn().mockResolvedValue(undefined) } as any,
   );
   await service.syncMetadata(season);
   expect(emit.writeSeasonMetadata).toHaveBeenCalledWith(season);
@@ -61,6 +62,7 @@ function setup(infoSource: string) {
     {} as any,
     {} as any,
     { path: jest.fn() } as any,
+    { findAnime: jest.fn().mockResolvedValue(undefined) } as any,
   );
   return { season, fetch, emit, prisma, service };
 }
@@ -96,3 +98,32 @@ it.each(['BGM_CN', 'SKYHOOK'])(
     expect(season.aliases).toEqual(['旧名称']);
   },
 );
+
+it('弹弹play查询失败不阻断原有元数据和NFO同步', async () => {
+  const { season, service, prisma, emit } = setup('BGM_CN');
+  await service.syncMetadata(season);
+  expect(prisma.season.update).toHaveBeenCalled();
+  expect(emit.writeSeasonMetadata).toHaveBeenCalled();
+});
+
+it('停用查询后保留已有作品身份并继续写NFO', async () => {
+  const { season, service, prisma, emit } = setup('BGM_CN');
+  season.dandanplayAnimeId = '18690';
+  await service.syncMetadata(season);
+  const data = prisma.season.update.mock.calls[0][0].data;
+  expect(data).not.toHaveProperty('dandanplayAnimeId');
+  expect(data).not.toHaveProperty('episodes');
+  expect(emit.writeSeasonMetadata).toHaveBeenCalledWith(
+    expect.objectContaining({ dandanplayAnimeId: '18690' }),
+  );
+});
+
+it('作品映射变化时清除旧的单集映射', async () => {
+  const { season, service, prisma } = setup('BGM_CN');
+  (service as any).dandanplay.findAnime.mockResolvedValue('18690');
+  await service.syncMetadata({ ...season, dandanplayAnimeId: '123' });
+  expect(prisma.season.update.mock.calls[0][0].data).toMatchObject({
+    dandanplayAnimeId: '18690',
+    episodes: { updateMany: { data: { dandanplayEpisodeId: null } } },
+  });
+});

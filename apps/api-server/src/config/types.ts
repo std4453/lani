@@ -1,6 +1,7 @@
 import { torrentRetentionConfig } from './torrent-retention';
 import { torrentsConfig } from './torrents';
 import { matchingConfig } from './matching';
+import { dandanplayConfig } from './dandanplay';
 import {
   obj,
   opt,
@@ -162,6 +163,7 @@ export const rootConfig = root({
   network: networkConfig,
   torrents: torrentsConfig,
   matching: matchingConfig,
+  dandanplay: dandanplayConfig,
   postgresUrl: str(),
   mediaPool: obj({
     root: str(),
