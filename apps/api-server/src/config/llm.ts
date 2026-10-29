@@ -8,7 +8,11 @@ export const llmConfig = opt(
       2,
     ),
     timeoutMs: opt(
-      Joi.number().integer().positive().required() as unknown as D<number>,
+      Joi.number()
+        .integer()
+        .positive()
+        .max(2147483647)
+        .required() as unknown as D<number>,
       45000,
     ),
   }),

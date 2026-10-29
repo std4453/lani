@@ -22,6 +22,11 @@ it.each([
   { timeoutMs: 0 },
   { timeoutMs: 1.5 },
   { timeoutMs: Infinity },
+  { timeoutMs: 2147483648 },
 ])('共享 LLM 配置拒绝无效值 %j', (input) =>
   expect(llmConfig.validate(input).error).toBeDefined(),
 );
+
+it('接受 Node 计时器支持的最大延迟', () => {
+  expect(llmConfig.validate({ timeoutMs: 2147483647 }).error).toBeUndefined();
+});

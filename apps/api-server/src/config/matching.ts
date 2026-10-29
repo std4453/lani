@@ -21,7 +21,11 @@ export const matchingLlmConfig = obj({
     .required() as unknown as D<string>,
   model: str(),
   deadlineMs: opt(
-    Joi.number().integer().positive().required() as unknown as D<number>,
+    Joi.number()
+      .integer()
+      .positive()
+      .max(2147483647)
+      .required() as unknown as D<number>,
     100000,
   ),
   fallbackEnabled: opt(bool(), true),

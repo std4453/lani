@@ -38,7 +38,7 @@ API 的 `config.yaml`：
 ```yaml
 matching:
   enabled: true
-  backend: remote
+  backend: external
   endpoint: http://127.0.0.1:8090
   timezone: Asia/Shanghai
   previousQuarters: 1 # 首轮包含前一公历季度，可设 0–8
@@ -49,7 +49,7 @@ matching:
 
 修改 `catalogDebounceMs` 后重启 API，对随后检测到的目录变化生效；正在等待的窗口保留原截止时间。首次初始化不等待，目录检测仍每分钟执行一次。
 
-选择 `backend: remote` 时必须提供 HTTP worker 的 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
+选择 `backend: external` 时必须提供 HTTP worker 的 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
 
 ## 外部大模型服务
 
@@ -72,9 +72,9 @@ llm:
   timeoutMs: 45000
 ```
 
-该服务先处理近期候选，必要时在全部已录入季度中复核，因此可识别旧季补档。远端故障会保留为任务错误；正常未匹配与网络错误分别记录。作品声明集数和首播日期来自作品元数据同步，已有目录可重新同步作品资料补齐；单集同步不会改变这两个字段。
+该服务先处理近期候选，必要时在全部已录入季度中复核，因此可识别旧季补档。远端故障会保留为任务错误；正常未匹配与网络错误分别记录。作品声明集数和首播日期来自作品元数据，已有目录可通过作品资料同步或该季度的剧集同步补齐。
 
-配置示例与参数见[API 大模型匹配说明](https://github.com/std4453/lani/blob/next/apps/api-server/docs/llm-matching.md)。调用外部模型会产生供应商费用，并向配置的服务发送资源标题及候选作品名称。
+配置示例与参数见[API 大模型匹配说明](https://github.com/std4453/lani/blob/next/apps/api-server/docs/llm-matching.md)。调用外部模型会产生供应商费用。请求包含资源原标题、解析别名、发布时间、集数和发布者季数；首轮发送近期候选目录，启用复核时发送完整已录入季度目录，包含季度 ID、作品名称、年份、季度、声明集数和首播日期。
 
 ## all-in-one
 

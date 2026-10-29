@@ -73,6 +73,19 @@ it('清理模型密钥首尾空白', () => {
   expect(value.apiKey).toBe('synthetic');
 });
 
+it.each([2147483647, 2147483648])(
+  '按 Node 计时器范围校验总期限 %s',
+  (deadlineMs) => {
+    const { error } = matchingLlmConfig.validate({
+      apiBase: 'https://provider.example',
+      apiKey: 'synthetic',
+      model: 'example',
+      deadlineMs,
+    });
+    expect(!!error).toBe(deadlineMs > 2147483647);
+  },
+);
+
 it.each(['bad\nkey', 'bad key', 'bad\u007fkey', 'bad密钥', ' \t'])(
   '拒绝不能用于授权头的模型密钥，且不回显其值',
   (apiKey) => {
