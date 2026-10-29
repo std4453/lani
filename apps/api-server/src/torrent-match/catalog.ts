@@ -28,13 +28,13 @@ export function snapshot(
   const catalog = rows
     .map((row) => {
       const match = /^(\d{4})0([1-4])$/.exec(row.yearAndSemester);
+      const count = row.declaredEpisodeCount;
       return {
         id: String(row.id),
         title: row.title,
         declaredEpisodeCount:
-          Number.isSafeInteger(row.declaredEpisodeCount) &&
-          row.declaredEpisodeCount! > 0
-            ? row.declaredEpisodeCount!
+          typeof count === 'number' && Number.isSafeInteger(count) && count > 0
+            ? count
             : null,
         premiereDate: validPremiereDate(row.premiereDate),
         aliases: [...new Set(row.aliases)].sort(compare),

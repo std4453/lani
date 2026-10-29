@@ -71,6 +71,7 @@ export class TorrentMatchService
   private stopped = false;
   private observationFailed = false;
   private observed = false;
+  private catalogOutdated = false;
   private activating = false;
 
   constructor(
@@ -284,10 +285,15 @@ export class TorrentMatchService
           where: { id: 1 },
         });
         const current = checkpoint ? stateFrom(checkpoint.state) : null;
+        if (live.version !== expectedCatalog.version) {
+          // 回滚后立即观察新目录，避免下个队列周期重复调用旧快照并付费。
+          this.observed = false;
+          this.catalogOutdated = true;
+          throw new QueueWaiting();
+        }
         if (
-          live.version !== expectedCatalog.version ||
           !catalogReady(current) ||
-          current!.active!.version !== expectedCatalog.version
+          current?.active?.version !== expectedCatalog.version
         )
           throw new QueueWaiting();
       }
@@ -369,6 +375,12 @@ export class TorrentMatchService
       });
     });
     return true;
+  }
+
+  settleMatch() {
+    if (!this.catalogOutdated) return;
+    this.catalogOutdated = false;
+    void this.refreshCatalog();
   }
 
   settleCatalog() {

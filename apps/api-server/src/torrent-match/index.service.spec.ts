@@ -166,3 +166,21 @@ it('rejects a result after an observed catalog or worker identity changes', asyn
     expect(f.tx.torrent.update).not.toHaveBeenCalled();
   }
 });
+
+it('blocks another inference until the stale catalog is observed after rollback', async () => {
+  const f = fixture();
+  (f.service as any).observed = true;
+  const commit = await f.service.match(f.job);
+  f.tx.season.findMany.mockResolvedValue([f.season, { ...f.season, id: 2 }]);
+  const refresh = jest
+    .spyOn(f.service, 'refreshCatalog')
+    .mockResolvedValue(undefined);
+  await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
+  expect(await f.service.ready(f.job)).toBe(false);
+  expect(f.transport.match).toHaveBeenCalledTimes(1);
+  expect(refresh).not.toHaveBeenCalled();
+  f.service.settleMatch();
+  expect(refresh).toHaveBeenCalledTimes(1);
+  f.service.settleMatch();
+  expect(refresh).toHaveBeenCalledTimes(1);
+});
