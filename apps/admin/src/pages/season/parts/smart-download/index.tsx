@@ -11,6 +11,7 @@ import {
   Space,
   Spin,
   Switch,
+  Tooltip,
 } from 'antd';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
@@ -216,6 +217,11 @@ export function SettingsDialog({
     [view, draft, now],
   );
   const visible = rows.slice(0, count);
+  const groups: typeof visible[] = [];
+  visible.forEach((row) => {
+    if (row.release || !groups.length) groups.push([]);
+    groups[groups.length - 1].push(row);
+  });
   const more = rows.length > count || view?.preview.hasMore;
   const save = async () => {
     const value = await form.validateFields();
@@ -375,105 +381,116 @@ export function SettingsDialog({
                 )}
               </tr>
             </thead>
-            <tbody>
-              {visible.map((row) => {
-                const torrent = row.torrent as PreviewTorrent | undefined;
-                const reasons = row.decision?.reasons ?? [];
-                const exclusion =
-                  torrent &&
-                  Date.parse(torrent.publishDate) >=
-                    view!.preview.coverage.completeUntil
-                    ? '发布区间的种子尚未加载完整'
-                    : reasons
-                        .map((reason) => exclusionLabels[reason])
-                        .join('；');
-                const release = row.release
-                  ? `${row.release.label} ${dayjs(row.release.at).format(
-                      'YYYY-MM-DD HH:mm:ss',
-                    )}`
-                  : undefined;
-                const reasonId = `smart-download-exclusion-${row.key}`;
-                return (
-                  <Fragment key={row.key}>
-                    {release && (
-                      <tr
-                        className={styles.release}
-                        data-release-ids={row.release?.episodeIds.join(',')}
-                      >
-                        <td colSpan={5}>
-                          <span className={styles.releaseLabel}>{release}</span>
-                        </td>
-                      </tr>
-                    )}
-                    <tr
-                      tabIndex={exclusion ? 0 : undefined}
-                      aria-describedby={exclusion ? reasonId : undefined}
-                      className={clsx(styles.torrentRow, {
-                        [styles.excluded]: !!exclusion || !torrent,
-                      })}
-                    >
-                      {torrent ? (
-                        <>
-                          <td>
-                            <span className={styles.cellContent}>
-                              {typeof torrent.episodeInfo?.index === 'number' ||
-                              typeof torrent.episodeInfo?.index === 'string'
-                                ? String(torrent.episodeInfo.index)
-                                : '-'}
+            {groups.map((group) => (
+              <tbody key={group[0].key}>
+                {group.map((row) => {
+                  const torrent = row.torrent as PreviewTorrent | undefined;
+                  const reasons = row.decision?.reasons ?? [];
+                  const exclusion =
+                    torrent &&
+                    Date.parse(torrent.publishDate) >=
+                      view!.preview.coverage.completeUntil
+                      ? '发布区间的种子尚未加载完整'
+                      : reasons
+                          .map((reason) => exclusionLabels[reason])
+                          .join('；');
+                  const release = row.release
+                    ? `${row.release.label} ${dayjs(row.release.at).format(
+                        'YYYY-MM-DD HH:mm:ss',
+                      )}`
+                    : undefined;
+                  const reasonId = `smart-download-exclusion-${row.key}`;
+                  return (
+                    <Fragment key={row.key}>
+                      {release && (
+                        <tr
+                          className={styles.release}
+                          data-release-ids={row.release?.episodeIds.join(',')}
+                        >
+                          <td colSpan={5}>
+                            <span className={styles.releaseLabel}>
+                              {release}
                             </span>
                           </td>
-                          <td
-                            title={dayjs(torrent.publishDate).format(
-                              'YYYY-MM-DD HH:mm:ss',
-                            )}
-                          >
-                            <span className={styles.cellContent}>
-                              {row.precedingReleaseAt === undefined
-                                ? dayjs(torrent.publishDate).format(
-                                    'YYYY-MM-DD HH:mm:ss',
-                                  )
-                                : relativePublishTime(
-                                    torrent.publishDate,
-                                    row.precedingReleaseAt,
-                                  )}
-                            </span>
-                          </td>
-                          <td className={styles.titleCell}>
-                            <span className={styles.cellContent}>
-                              {torrent.title}
-                            </span>
-                            {exclusion && (
-                              <span
-                                id={reasonId}
-                                className={styles.exclusionReason}
-                              >
-                                <span>{exclusion}</span>
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            <span className={styles.cellContent}>
-                              <TorrentSubtitle
-                                info={torrent.subtitleInfo as SubtitleInfo}
-                              />
-                            </span>
-                          </td>
-                          <td>
-                            <span className={styles.cellContent}>
-                              {prettyBytes(Number(torrent.size))}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <td colSpan={5} className={styles.emptyRow}>
-                          无匹配种子
-                        </td>
+                        </tr>
                       )}
-                    </tr>
-                  </Fragment>
-                );
-              })}
-            </tbody>
+                      <tr
+                        tabIndex={exclusion ? 0 : undefined}
+                        aria-describedby={exclusion ? reasonId : undefined}
+                        className={clsx(styles.torrentRow, {
+                          [styles.excluded]: !!exclusion || !torrent,
+                        })}
+                      >
+                        {torrent ? (
+                          <>
+                            <td>
+                              <span className={styles.cellContent}>
+                                {typeof torrent.episodeInfo?.index ===
+                                  'number' ||
+                                typeof torrent.episodeInfo?.index === 'string'
+                                  ? String(torrent.episodeInfo.index)
+                                  : '-'}
+                              </span>
+                            </td>
+                            <td>
+                              <Tooltip
+                                title={
+                                  row.precedingReleaseAt === undefined
+                                    ? undefined
+                                    : dayjs(torrent.publishDate).format(
+                                        'YYYY-MM-DD HH:mm:ss',
+                                      )
+                                }
+                              >
+                                <span className={styles.cellContent}>
+                                  {row.precedingReleaseAt === undefined
+                                    ? dayjs(torrent.publishDate).format(
+                                        'YYYY-MM-DD HH:mm:ss',
+                                      )
+                                    : relativePublishTime(
+                                        torrent.publishDate,
+                                        row.precedingReleaseAt,
+                                      )}
+                                </span>
+                              </Tooltip>
+                            </td>
+                            <td className={styles.titleCell}>
+                              <span className={styles.cellContent}>
+                                {torrent.title}
+                              </span>
+                              {exclusion && (
+                                <span
+                                  id={reasonId}
+                                  className={styles.exclusionReason}
+                                >
+                                  <span>无法下载原因：{exclusion}</span>
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <span className={styles.cellContent}>
+                                <TorrentSubtitle
+                                  info={torrent.subtitleInfo as SubtitleInfo}
+                                />
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.cellContent}>
+                                {prettyBytes(Number(torrent.size))}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <td colSpan={5} className={styles.emptyRow}>
+                            无匹配种子
+                          </td>
+                        )}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            ))}
           </table>
           {loading && !frozen && (
             <div className={styles.status}>
@@ -505,7 +522,7 @@ export function SettingsDialog({
               </Button>
             </div>
           )}
-          {!!rows.length && (
+          {more && !!rows.length && (
             <div aria-hidden style={{ height: timeline.tailSpace }} />
           )}
         </div>

@@ -1,7 +1,7 @@
 .band {
   margin: 0 -24px 24px;
   padding: 16px 24px;
-  background: var(--lani-highlight-bg);
+  background: var(--lani-selected);
   :global(.ant-form-item) {
     margin-bottom: 0;
   }
@@ -98,6 +98,10 @@
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
+  tbody {
+    // 每集限制自己的吸顶范围，进入下一集后旧角标退出，不用整行底色遮盖。
+    clip-path: inset(0);
+  }
   th,
   td {
     padding: 12px;
@@ -133,9 +137,6 @@
   }
   .torrentRow:not(.excluded) {
     background: var(--lani-selected);
-    &:hover {
-      background: var(--lani-highlight-bg);
-    }
   }
 }
 .excluded {
@@ -173,11 +174,11 @@
 .excluded[tabindex]:focus-visible {
   .titleCell .cellContent {
     visibility: hidden;
-    transition-delay: 350ms;
+    transition-delay: 75ms;
   }
   .exclusionReason {
     visibility: visible;
-    transition-delay: 350ms;
+    transition-delay: 75ms;
   }
 }
 .excluded[tabindex]:focus-visible {
@@ -197,8 +198,8 @@
   border-bottom: 0;
   line-height: 14px;
   text-align: left;
-  // 后一集覆盖前一集时，较长的旧标签不能从右侧透出。
-  background: var(--lani-table-header-bg);
+  background: transparent;
+  pointer-events: none;
 }
 .releaseLabel {
   display: inline-block;

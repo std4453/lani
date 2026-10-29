@@ -20,6 +20,7 @@ export function useTimeline(
   const viewport = useRef<HTMLDivElement>(null);
   const locked = useRef<number>();
   const pending = useRef<{ episodeId?: number }>();
+  const alignedRelease = useRef<{ episodeId: number; scrollTop: number }>();
   const initialized = useRef(false);
   const [count, setCount] = useState(30);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,9 @@ export function useTimeline(
     if (!pending.current)
       pending.current = {
         episodeId: viewport.current
-          ? captureRelease(viewport.current)
+          ? alignedRelease.current?.scrollTop === viewport.current.scrollTop
+            ? alignedRelease.current.episodeId
+            : captureRelease(viewport.current)
           : undefined,
       };
     if (
@@ -113,8 +116,14 @@ export function useTimeline(
   useLayoutEffect(() => {
     if (!view || frozen || loading || !pending.current || !viewport.current)
       return;
-    if (pending.current.episodeId !== undefined)
+    if (pending.current.episodeId !== undefined) {
       restoreRelease(viewport.current, pending.current.episodeId);
+      // 到达列表末尾时浏览器会限制滚动距离；连续调偏移仍跟随同一集。
+      alignedRelease.current = {
+        episodeId: pending.current.episodeId,
+        scrollTop: viewport.current.scrollTop,
+      };
+    }
     pending.current = undefined;
   }, [view, frozen, loading, count, height]);
 
@@ -132,7 +141,7 @@ export function useTimeline(
     beforeOffsetChange,
     retry: () => setRetry((value) => value + 1),
     loadMore: more,
-    // 末尾也保留足够空间，使最后一个分界线能停在顶部下方 48px。
+    // 尚有下一页时允许当前页末尾的分界线对齐，全部展示后移除此空间。
     tailSpace: Math.max(0, height - 48),
     onScroll: () => {
       const element = viewport.current;
@@ -141,7 +150,9 @@ export function useTimeline(
         element.scrollTop = locked.current;
         return;
       }
-      const last = element.querySelector('tbody tr:last-child');
+      if (alignedRelease.current?.scrollTop !== element.scrollTop)
+        alignedRelease.current = undefined;
+      const last = element.querySelector('tbody:last-of-type tr:last-child');
       if (
         last &&
         last.getBoundingClientRect().bottom -

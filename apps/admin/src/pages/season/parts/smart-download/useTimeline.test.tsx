@@ -128,6 +128,24 @@ test('进入后只展示 30 行，翻页从缓存展开，不重复请求', asyn
   expect(container.querySelectorAll('tbody tr')).toHaveLength(60);
   expect(fetch).toHaveBeenCalledTimes(requests);
 });
+test('按最后一集的末行判断翻页，较早分组滚过底部时不提前加载', async () => {
+  const viewport = current.viewport.current!;
+  viewport.getBoundingClientRect = () => ({ bottom: 500 } as DOMRect);
+  const table = viewport.querySelector('table')!;
+  const earlier = document.createElement('tbody');
+  const earlierRow = earlier.insertRow();
+  earlierRow.getBoundingClientRect = () => ({ bottom: 400 } as DOMRect);
+  table.prepend(earlier);
+  const last = table.querySelector('tbody:last-of-type tr:last-child')!;
+  last.getBoundingClientRect = () => ({ bottom: 700 } as DOMRect);
+  act(() => current.onScroll());
+  expect(current.count).toBe(30);
+  last.getBoundingClientRect = () => ({ bottom: 550 } as DOMRect);
+  act(() => current.onScroll());
+  expect(current.count).toBe(60);
+  earlier.remove();
+  await advance(0);
+});
 test('提前越过缓存立即冻结、连续操作合并请求，补齐后按原剧集恢复', async () => {
   const viewport = position();
   const oldView = current.view;
@@ -194,4 +212,47 @@ test('取样点上方没有发布事件，偏移修改后不自动滚动', async
   act(() => offset(1));
   await advance(0);
   expect(viewport.scrollTop).toBe(500);
+});
+
+test('末尾限制滚动距离后连续调整仍跟随原剧集，手动滚动后重新取样', async () => {
+  const viewport = current.viewport.current!;
+  viewport.getBoundingClientRect = () => ({ top: 100 } as DOMRect);
+  let scrollTop = 450;
+  let secondRelease = 490;
+  const requested: number[] = [];
+  Object.defineProperty(viewport, 'scrollTop', {
+    get: () => scrollTop,
+    set: (value: number) => {
+      requested.push(value);
+      scrollTop = Math.max(0, Math.min(500, value));
+    },
+  });
+  jest.spyOn(viewport, 'querySelectorAll').mockImplementation(() => {
+    const fragment = document.createDocumentFragment();
+    [0, secondRelease, 800].forEach((position, i) => {
+      const row = document.createElement('tr');
+      row.dataset.releaseIds = String(i + 1);
+      row.getBoundingClientRect = () =>
+        ({ top: 100 + position - scrollTop } as DOMRect);
+      fragment.append(row);
+    });
+    return fragment.querySelectorAll('tr');
+  });
+  act(() => {
+    offset(1);
+    secondRelease = 750;
+  });
+  await advance(0);
+  expect(scrollTop).toBe(500);
+  expect(requested[requested.length - 1]).toBe(702);
+  act(() => offset(2));
+  await advance(0);
+  expect(scrollTop).toBe(500);
+  expect(requested[requested.length - 1]).toBe(702);
+
+  scrollTop = 200;
+  act(() => offset(3));
+  await advance(0);
+  expect(scrollTop).toBe(0);
+  expect(requested[requested.length - 1]).toBe(-48);
 });

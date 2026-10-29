@@ -236,7 +236,9 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
   const reason = document.getElementById(
     excluded.getAttribute('aria-describedby')!,
   );
-  expect(reason?.textContent).toBe('不符合字幕要求；命中标题或片源屏蔽规则');
+  expect(reason?.textContent).toBe(
+    '无法下载原因：不符合字幕要求；命中标题或片源屏蔽规则',
+  );
   expect(excluded.getAttribute('tabindex')).toBe('0');
   expect(
     rows
@@ -248,6 +250,10 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
       .find((row) => row.textContent?.includes('无匹配种子'))!
       .querySelector('td')?.colSpan,
   ).toBe(5);
+  const table = rows[0].closest('table')!;
+  expect(table.querySelectorAll('tbody')).toHaveLength(2);
+  expect(releases[0].parentElement).not.toBe(releases[1].parentElement);
+  expect(table.parentElement!.lastElementChild).toBe(table);
 });
 
 test('负数天数合并到总偏移，跨零切换方向并以归一后的值保存', async () => {
