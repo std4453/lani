@@ -15,7 +15,7 @@
   color: var(--lani-text);
 }
 .settings {
-  padding: 16px 24px 0;
+  padding: 24px 24px 0;
   max-height: 38vh;
   overflow-y: auto;
   flex: none;
@@ -23,14 +23,42 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 20px;
+  column-gap: 20px;
+
+  > :global(.ant-form-item) {
+    min-width: 0;
+    margin-bottom: 16px;
+  }
+  :global(.ant-form-item-row) {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+  :global(.ant-form-item-label) {
+    padding: 0 8px 0 0;
+    white-space: nowrap;
+    text-align: left;
+    > label {
+      color: var(--lani-text-secondary);
+    }
+  }
+  :global(.ant-form-item-control) {
+    min-width: 0;
+  }
 }
 .grid :global(.ant-input-number-group-wrapper) {
-  width: 100%;
+  width: 132px;
+  max-width: 100%;
+}
+.grid :global(.ant-select) {
+  width: 120px;
+  max-width: 100%;
+}
+.downloadTime {
+  grid-column: ~'1 / -1';
 }
 .footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
 }
 .preview {
@@ -55,10 +83,14 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--lani-surface);
+    background: var(--lani-table-header-bg);
   }
   th:first-child {
     width: 65px;
+  }
+  th:first-child,
+  td:first-child {
+    text-align: center;
   }
   th:nth-child(3) {
     width: 100px;
@@ -72,21 +104,45 @@
   td:nth-child(2) {
     overflow-wrap: anywhere;
   }
-  td {
+  tbody tr {
     position: relative;
+  }
+  tbody tr:not(.excluded):hover {
+    background: var(--lani-selected);
   }
 }
 .excluded {
   color: var(--lani-text-secondary);
   background: var(--lani-muted);
 }
-.excluded:hover .invalid {
-  color: var(--lani-danger);
-  transition: none;
+.exclusionReason {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  color: var(--lani-text);
+  text-align: center;
+  visibility: hidden;
+  pointer-events: none;
+}
+.excluded[tabindex]:hover,
+.excluded[tabindex]:focus {
+  .cellContent,
+  td[data-release]::after {
+    visibility: hidden;
+  }
+  .exclusionReason {
+    visibility: visible;
+  }
 }
 .release {
   td {
     border-bottom: 3px solid var(--lani-primary);
+  }
+  td[data-release] {
+    position: relative;
   }
   td[data-release]::after {
     content: attr(data-release);

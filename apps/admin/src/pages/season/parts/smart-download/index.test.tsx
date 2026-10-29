@@ -2,7 +2,7 @@ const mockQuery = jest.fn();
 const mockClient = { query: mockQuery };
 const mockContext = {
   id: 1,
-  episodes: [],
+  episodes: [] as { id: number; index: number; airTime: string }[],
   formRef: { current: undefined as FormInstance | undefined },
   updateTouched: jest.fn(),
 };
@@ -74,6 +74,7 @@ async function changeHours(hours: string) {
 }
 beforeEach(() => {
   localStorage.clear();
+  mockContext.episodes = [];
   mockQuery.mockReset().mockResolvedValue({
     data: {
       smartDownloadPreview: {
@@ -180,4 +181,60 @@ test('预览请求失败可重试，失败不丢弃设置草稿', async () => {
     )!.value,
   ).toBe('7');
   expect(document.body.textContent).toContain('无匹配种子');
+});
+
+test('无效种子提供完整排除原因，有效种子和空区间保持各自内容', async () => {
+  localStorage.setItem('lani.smart-download.confirmed', 'true');
+  mockContext.episodes = [
+    { id: 1, index: 1, airTime: '2020-01-01T00:00:00Z' },
+    { id: 2, index: 2, airTime: '2020-01-08T00:00:00Z' },
+  ];
+  const torrent = {
+    hash: 'valid',
+    publishDate: '2020-01-01T01:00:00Z',
+    size: '1000',
+    episodeInfo: { type: 'episode', index: 1 },
+    subtitleInfo: { languages: ['zh'] },
+    ready: true,
+  };
+  mockQuery.mockResolvedValueOnce({
+    data: {
+      smartDownloadPreview: {
+        nodes: [
+          { ...torrent, id: 1, title: '有效资源' },
+          {
+            ...torrent,
+            id: 2,
+            hash: 'excluded',
+            title: '资源 v2',
+            subtitleInfo: null,
+          },
+        ],
+        cursor: null,
+        hasMore: false,
+        excludes: [],
+      },
+    },
+  });
+  await click('开启智能下载');
+  const rows = Array.from(
+    document.querySelectorAll('table[aria-label="智能下载种子预览"] tbody tr'),
+  );
+  expect(rows).toHaveLength(3);
+  const excluded = rows.find((row) => row.textContent?.includes('资源 v2'))!;
+  const reason = document.getElementById(
+    excluded.getAttribute('aria-describedby')!,
+  );
+  expect(reason?.textContent).toBe('不符合字幕要求；命中标题或片源屏蔽规则');
+  expect(excluded.getAttribute('tabindex')).toBe('0');
+  expect(
+    rows
+      .find((row) => row.textContent?.includes('有效资源'))!
+      .hasAttribute('aria-describedby'),
+  ).toBe(false);
+  expect(
+    rows
+      .find((row) => row.textContent?.includes('无匹配种子'))!
+      .querySelector('td')?.colSpan,
+  ).toBe(5);
 });

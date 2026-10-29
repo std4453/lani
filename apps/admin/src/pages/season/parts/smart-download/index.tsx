@@ -16,7 +16,11 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import type { SubtitleInfo } from '@lani/parse-torrent-title';
-import { previewRows, SmartEpisode } from '@lani/smart-download';
+import {
+  ExclusionReason,
+  previewRows,
+  SmartEpisode,
+} from '@lani/smart-download';
 import TorrentSubtitle from '@/components/TorrentSubtitle';
 import FormDependency from '@/components/FormDependency';
 import TaskDialog from '@/components/TaskDialog';
@@ -36,6 +40,15 @@ import styles from './index.module.less';
 const FIRST_USE_KEY = 'lani.smart-download.confirmed';
 const RULES_URL = 'https://std4453.github.io/lani/docs/usage/smart-download';
 const PreservedValue = () => null;
+const exclusionLabels: Record<ExclusionReason, string> = {
+  episode: '集数无法唯一匹配本季度正篇单集',
+  time: '发布时间不在对应剧集的下载窗口内',
+  subtitle: '不符合字幕要求',
+  title: '命中标题或片源屏蔽规则',
+  baha: '已优先选择同集的 Baha 资源',
+  'before-first': '早于首集开始下载时间',
+  pending: '种子解析或详情抓取尚未完成',
+};
 
 export default function SmartDownload() {
   const { formRef, updateTouched } = useSeasonPageContext();
@@ -244,7 +257,7 @@ export function SettingsDialog({
       onCancel={onCancel}
       footer={
         <div className={styles.footer}>
-          <span>
+          <Space>
             {initial.smartDownloadEnabled && (
               <Button
                 danger
@@ -256,8 +269,6 @@ export function SettingsDialog({
                 关闭智能下载
               </Button>
             )}
-          </span>
-          <Space>
             <Button onClick={onCancel}>取消</Button>
             <Button
               type="primary"
@@ -274,7 +285,9 @@ export function SettingsDialog({
       <Form
         form={form}
         initialValues={initial}
-        layout="vertical"
+        layout="horizontal"
+        colon={false}
+        requiredMark={false}
         className={styles.settings}
         onValuesChange={(_, values) => setDraft({ ...initial, ...values })}
       >
@@ -330,49 +343,49 @@ export function SettingsDialog({
               addonAfter="分钟"
             />
           </Form.Item>
+          <Form.Item label="下载时间" className={styles.downloadTime}>
+            <Space wrap>
+              基于剧集放送时间，
+              <Form.Item name="downloadOffsetType" noStyle>
+                <Select
+                  style={{ width: 84 }}
+                  options={[
+                    { value: 'advance', label: '提前' },
+                    { value: 'postpone', label: '延后' },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item
+                name="downloadOffsetDays"
+                noStyle
+                rules={[{ required: true, type: 'integer', min: 0, max: 14 }]}
+              >
+                <InputNumber
+                  aria-label="下载偏移天数"
+                  min={0}
+                  max={14}
+                  precision={0}
+                  style={{ width: 64 }}
+                />
+              </Form.Item>
+              天
+              <Form.Item
+                name="downloadOffsetHours"
+                noStyle
+                rules={[{ required: true, type: 'integer', min: 0, max: 24 }]}
+              >
+                <InputNumber
+                  aria-label="下载偏移小时数"
+                  min={0}
+                  max={24}
+                  precision={0}
+                  style={{ width: 64 }}
+                />
+              </Form.Item>
+              小时开始下载
+            </Space>
+          </Form.Item>
         </div>
-        <Form.Item label="下载时间">
-          <Space wrap>
-            基于剧集放送时间，
-            <Form.Item name="downloadOffsetType" noStyle>
-              <Select
-                style={{ width: 84 }}
-                options={[
-                  { value: 'advance', label: '提前' },
-                  { value: 'postpone', label: '延后' },
-                ]}
-              />
-            </Form.Item>
-            <Form.Item
-              name="downloadOffsetDays"
-              noStyle
-              rules={[{ required: true, type: 'integer', min: 0, max: 14 }]}
-            >
-              <InputNumber
-                aria-label="下载偏移天数"
-                min={0}
-                max={14}
-                precision={0}
-                style={{ width: 64 }}
-              />
-            </Form.Item>
-            天
-            <Form.Item
-              name="downloadOffsetHours"
-              noStyle
-              rules={[{ required: true, type: 'integer', min: 0, max: 24 }]}
-            >
-              <InputNumber
-                aria-label="下载偏移小时数"
-                min={0}
-                max={24}
-                precision={0}
-                style={{ width: 64 }}
-              />
-            </Form.Item>
-            小时开始下载
-          </Space>
-        </Form.Item>
       </Form>
       <div
         className={styles.preview}
@@ -401,43 +414,64 @@ export function SettingsDialog({
             {visible.map((row) => {
               const torrent = row.torrent as PreviewTorrent | undefined;
               const reasons = row.decision?.reasons ?? [];
-              const cell = (reason: string) =>
-                clsx({
-                  [styles.invalid]: reasons.includes(
-                    reason as typeof reasons[number],
-                  ),
-                });
+              const exclusion =
+                torrent &&
+                Date.parse(torrent.publishDate) < preview.completeSince
+                  ? '发布区间的种子尚未加载完整'
+                  : reasons.map((reason) => exclusionLabels[reason]).join('；');
+              const reasonId = `smart-download-exclusion-${row.key}`;
               return (
                 <tr
                   key={row.key}
+                  tabIndex={exclusion ? 0 : undefined}
+                  aria-describedby={exclusion ? reasonId : undefined}
                   className={clsx({
-                    [styles.excluded]: reasons.length,
+                    [styles.excluded]: !!exclusion || !torrent,
                     [styles.release]: !!row.release,
                   })}
                 >
                   {torrent ? (
                     <>
-                      <td
-                        data-release={row.release}
-                        className={cell('episode')}
-                      >
-                        {typeof torrent.episodeInfo?.index === 'number' ||
-                        typeof torrent.episodeInfo?.index === 'string'
-                          ? String(torrent.episodeInfo.index)
-                          : '-'}
+                      <td data-release={row.release}>
+                        <span className={styles.cellContent}>
+                          {typeof torrent.episodeInfo?.index === 'number' ||
+                          typeof torrent.episodeInfo?.index === 'string'
+                            ? String(torrent.episodeInfo.index)
+                            : '-'}
+                        </span>
                       </td>
-                      <td className={cell('title')}>{torrent.title}</td>
-                      <td className={cell('subtitle')}>
-                        <TorrentSubtitle
-                          info={torrent.subtitleInfo as SubtitleInfo}
-                        />
-                      </td>
-                      <td className={cell('time')}>
-                        {dayjs(torrent.publishDate).format(
-                          'YYYY-MM-DD HH:mm:ss',
+                      <td>
+                        <span className={styles.cellContent}>
+                          {torrent.title}
+                        </span>
+                        {exclusion && (
+                          <span
+                            id={reasonId}
+                            className={styles.exclusionReason}
+                          >
+                            {exclusion}
+                          </span>
                         )}
                       </td>
-                      <td>{prettyBytes(Number(torrent.size))}</td>
+                      <td>
+                        <span className={styles.cellContent}>
+                          <TorrentSubtitle
+                            info={torrent.subtitleInfo as SubtitleInfo}
+                          />
+                        </span>
+                      </td>
+                      <td>
+                        <span className={styles.cellContent}>
+                          {dayjs(torrent.publishDate).format(
+                            'YYYY-MM-DD HH:mm:ss',
+                          )}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={styles.cellContent}>
+                          {prettyBytes(Number(torrent.size))}
+                        </span>
+                      </td>
                     </>
                   ) : (
                     <td
