@@ -500,7 +500,7 @@ export function SettingsDialog({
               </Button>
             </div>
           )}
-          {!more && !!rows.length && (
+          {!!rows.length && (
             <div aria-hidden style={{ height: timeline.tailSpace }} />
           )}
         </div>
