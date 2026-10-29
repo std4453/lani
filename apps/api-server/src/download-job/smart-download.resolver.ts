@@ -34,12 +34,17 @@ export class SmartDownloadResolver {
     @Args('first', { type: () => Int, defaultValue: 30 }) first: number,
     @Args('snapshot') snapshot: string,
     @Args('after', { nullable: true }) after?: string,
+    @Args('from', { nullable: true }) from?: string,
+    @Args('before', { nullable: true }) before?: string,
   ) {
     if (
       !Number.isInteger(first) ||
       first < 1 ||
       first > 300 ||
-      !Number.isFinite(Date.parse(snapshot))
+      !Number.isFinite(Date.parse(snapshot)) ||
+      (from != null && !Number.isFinite(Date.parse(from))) ||
+      (before != null && !Number.isFinite(Date.parse(before))) ||
+      (before != null && (from != null || after != null))
     )
       throw new LaniError('种子预览参数无效');
     const cursor = decodePreviewCursor(after);
@@ -47,24 +52,33 @@ export class SmartDownloadResolver {
       matchedSeasonId: seasonId,
       matchStatus: 'MATCHED',
       createdAt: { lte: new Date(snapshot) },
-      publishDate: { lte: new Date(snapshot) },
+      publishDate: {
+        lte: new Date(snapshot),
+        ...(from != null ? { gte: new Date(from) } : {}),
+        ...(before != null ? { lt: new Date(before) } : {}),
+      },
       episodeNumberFrom: null,
       episodeNumberTo: null,
       ...(cursor
         ? {
             OR: [
-              { publishDate: { lt: cursor.date } },
-              { publishDate: cursor.date, id: { lt: cursor.id } },
+              { publishDate: { gt: cursor.date } },
+              { publishDate: cursor.date, id: { gt: cursor.id } },
             ],
           }
         : {}),
     };
     const rows = await this.prisma.torrent.findMany({
       where,
-      orderBy: [{ publishDate: 'desc' }, { id: 'desc' }],
+      orderBy: [
+        { publishDate: before != null ? 'desc' : 'asc' },
+        { id: before != null ? 'desc' : 'asc' },
+      ],
       take: first + 1,
     });
     const nodes = rows.slice(0, first);
+    // 向前取首集之前的上下文，返回值仍保持正序。
+    if (before != null) nodes.reverse();
     const last = nodes[nodes.length - 1];
     return {
       nodes: nodes.map((row) => ({

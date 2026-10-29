@@ -335,4 +335,66 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
       new Set([...first.nodes, ...next.nodes].map((row) => row.id)).size,
     ).toBe(35);
   });
+  test('正序查询保留首集之前最近 10 条，from 边界包含同刻种子且游标不漏项', async () => {
+    const before: Awaited<ReturnType<typeof torrent>>[] = [];
+    for (let i = 0; i < 12; i++) before.push(await torrent('Before', -12 + i));
+    const sameTime: Awaited<ReturnType<typeof torrent>>[] = [];
+    for (let i = 0; i < 35; i++) sameTime.push(await torrent('At release', 0));
+    const after = await torrent('After', 1);
+    const resolver = new SmartDownloadResolver(db as any);
+    const snapshot = new Date().toISOString();
+    const context = await resolver.smartDownloadPreview(
+      season,
+      10,
+      snapshot,
+      undefined,
+      undefined,
+      base.toISOString(),
+    );
+    expect(context.hasMore).toBe(true);
+    expect(context.nodes.map((row) => row.id)).toEqual(
+      before.slice(-10).map((row) => row.id),
+    );
+    const first = await resolver.smartDownloadPreview(
+      season,
+      30,
+      snapshot,
+      undefined,
+      base.toISOString(),
+    );
+    const next = await resolver.smartDownloadPreview(
+      season,
+      30,
+      snapshot,
+      first.cursor!,
+      base.toISOString(),
+    );
+    expect([...first.nodes, ...next.nodes].map((row) => row.id)).toEqual(
+      [...sameTime, after].map((row) => row.id),
+    );
+    expect(next.hasMore).toBe(false);
+    await expect(
+      resolver.smartDownloadPreview(season, 10, snapshot, undefined, 'invalid'),
+    ).rejects.toThrow('种子预览参数无效');
+    await expect(
+      resolver.smartDownloadPreview(
+        season,
+        10,
+        snapshot,
+        first.cursor!,
+        undefined,
+        base.toISOString(),
+      ),
+    ).rejects.toThrow('种子预览参数无效');
+    await expect(
+      resolver.smartDownloadPreview(
+        season,
+        10,
+        snapshot,
+        undefined,
+        base.toISOString(),
+        base.toISOString(),
+      ),
+    ).rejects.toThrow('种子预览参数无效');
+  });
 });

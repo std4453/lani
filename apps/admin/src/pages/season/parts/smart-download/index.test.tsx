@@ -70,6 +70,9 @@ async function changeHours(hours: string) {
   act(() => {
     Simulate.change(input, { target: { value: hours } } as any);
   });
+  act(() => {
+    Simulate.blur(input);
+  });
   await settle();
 }
 beforeEach(() => {
@@ -237,4 +240,38 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
       .find((row) => row.textContent?.includes('无匹配种子'))!
       .querySelector('td')?.colSpan,
   ).toBe(5);
+});
+
+test('负数天数合并到总偏移，跨零切换方向并以归一后的值保存', async () => {
+  localStorage.setItem('lani.smart-download.confirmed', 'true');
+  act(() => {
+    mockContext.formRef.current!.setFieldsValue({
+      downloadOffsetType: 'advance',
+      downloadOffsetDays: 0,
+      downloadOffsetHours: 1,
+    });
+  });
+  await click('开启智能下载');
+  const input = document.querySelector<HTMLInputElement>(
+    'input[aria-label="下载偏移天数"]',
+  )!;
+  act(() => {
+    Simulate.change(input, { target: { value: '-1' } } as any);
+  });
+  act(() => {
+    Simulate.blur(input);
+  });
+  await settle();
+  expect(input.value).toBe('0');
+  expect(
+    document.querySelector<HTMLInputElement>(
+      'input[aria-label="下载偏移小时数"]',
+    )!.value,
+  ).toBe('23');
+  await click('确定', document.querySelector('.ant-modal')!);
+  expect(mockContext.formRef.current!.getFieldsValue(true)).toMatchObject({
+    downloadOffsetType: 'postpone',
+    downloadOffsetDays: 0,
+    downloadOffsetHours: 23,
+  });
 });

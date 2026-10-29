@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
@@ -26,11 +26,19 @@ import FormDependency from '@/components/FormDependency';
 import TaskDialog from '@/components/TaskDialog';
 import { SmartDownloadPreviewDocument } from '@/generated/types';
 import { formItemProps, useSeasonPageContext } from '../../help';
-import { PreviewCache, PreviewPage, PreviewTorrent } from './preview';
+import {
+  PreviewCache,
+  PreviewPage,
+  PreviewTorrent,
+  relativePublishTime,
+} from './preview';
+import { useTimeline } from './useTimeline';
+import OffsetInput from './OffsetInput';
 import {
   describeSettings,
   DownloadSettings,
   offsetHours,
+  normalizeOffset,
   settingNames,
   subtitleLabels,
   toSettings,
@@ -151,36 +159,25 @@ export function SettingsDialog({
   const [form] = Form.useForm<DownloadSettings>();
   const [draft, setDraft] = useState(initial);
   const [now] = useState(() => Date.now());
-  const [count, setCount] = useState(30);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
-  const [retry, setRetry] = useState(0);
-  const [preview, setPreview] = useState<{
-    nodes: PreviewTorrent[];
-    completeSince: number;
-    excludes: string[];
-    hasMore: boolean;
-  }>({ nodes: [], completeSince: Infinity, excludes: [], hasMore: true });
   const cache = useMemo(
     () =>
-      new PreviewCache(async (first, after) => {
+      new PreviewCache(async (request, signal) => {
         const result = await client.query({
           query: SmartDownloadPreviewDocument,
           variables: {
             seasonId: id,
-            first,
-            after,
+            ...request,
             snapshot: new Date(now).toISOString(),
           },
           fetchPolicy: 'no-cache',
+          context: { fetchOptions: { signal }, queryDeduplication: false },
         });
         return result.data.smartDownloadPreview as PreviewPage;
       }),
     [client, id, now],
   );
-  const offset = offsetHours(draft);
-  const directory = useMemo<SmartEpisode[]>(
-    () =>
+  const directoryFor = useCallback(
+    (offset: number): SmartEpisode[] =>
       episodes.map((episode) => ({
         id: episode.id,
         type: episode.numbering?.type ?? 'episode',
@@ -198,48 +195,28 @@ export function SettingsDialog({
             ).toISOString()
           : episode.airTime ?? null,
       })),
-    [episodes, offset],
+    [episodes],
   );
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(undefined);
-    void cache
-      .ensure(count, directory, now)
-      .then((completeSince) => {
-        if (active)
-          setPreview({
-            nodes: [...cache.nodes],
-            completeSince,
-            excludes: cache.excludes,
-            hasMore: cache.hasMore,
-          });
-      })
-      .catch((reason) => {
-        if (active)
-          setError(reason instanceof Error ? reason.message : '加载种子失败');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [cache, count, directory, now, retry]);
+  const offset = offsetHours(draft);
+  const directory = useMemo(() => directoryFor(offset), [directoryFor, offset]);
+  const timeline = useTimeline(cache, directory, now);
+  const { view, count, loading, frozen, error } = timeline;
   const rows = useMemo(
     () =>
-      previewRows(
-        directory,
-        preview.nodes,
-        toSettings(draft),
-        now,
-        preview.excludes,
-        preview.completeSince,
-      ),
-    [directory, preview, draft, now],
+      view
+        ? previewRows(
+            view.directory,
+            view.preview.nodes,
+            toSettings(draft),
+            now,
+            view.preview.excludes,
+            view.preview.coverage,
+          )
+        : [],
+    [view, draft, now],
   );
   const visible = rows.slice(0, count);
-  const more = rows.length > count || preview.hasMore;
+  const more = rows.length > count || view?.preview.hasMore;
   const save = async () => {
     const value = await form.validateFields();
     try {
@@ -289,7 +266,13 @@ export function SettingsDialog({
         colon={false}
         requiredMark={false}
         className={styles.settings}
-        onValuesChange={(_, values) => setDraft({ ...initial, ...values })}
+        onValuesChange={(_, values) => {
+          const next = normalizeOffset({ ...initial, ...values });
+          if (offsetHours(next) !== offset)
+            timeline.beforeOffsetChange(directoryFor(offsetHours(next)));
+          form.setFieldsValue(next);
+          setDraft(next);
+        }}
       >
         <div className={styles.grid}>
           <Form.Item
@@ -360,13 +343,7 @@ export function SettingsDialog({
                 noStyle
                 rules={[{ required: true, type: 'integer', min: 0, max: 14 }]}
               >
-                <InputNumber
-                  aria-label="下载偏移天数"
-                  min={0}
-                  max={14}
-                  precision={0}
-                  style={{ width: 64 }}
-                />
+                <OffsetInput label="下载偏移天数" />
               </Form.Item>
               天
               <Form.Item
@@ -374,150 +351,170 @@ export function SettingsDialog({
                 noStyle
                 rules={[{ required: true, type: 'integer', min: 0, max: 24 }]}
               >
-                <InputNumber
-                  aria-label="下载偏移小时数"
-                  min={0}
-                  max={24}
-                  precision={0}
-                  style={{ width: 64 }}
-                />
+                <OffsetInput label="下载偏移小时数" />
               </Form.Item>
               小时开始下载
             </Space>
           </Form.Item>
         </div>
       </Form>
-      <div
-        className={styles.preview}
-        onScroll={(event) => {
-          const target = event.currentTarget;
-          if (
-            more &&
-            !loading &&
-            !error &&
-            target.scrollHeight - target.scrollTop - target.clientHeight < 80
-          )
-            setCount((value) => value + 30);
-        }}
-      >
-        <table className={styles.table} aria-label="智能下载种子预览">
-          <thead>
-            <tr>
-              {['集数', '种子标题', '字幕', '发布时间', '种子大小'].map(
-                (title) => (
-                  <th key={title}>{title}</th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((row) => {
-              const torrent = row.torrent as PreviewTorrent | undefined;
-              const reasons = row.decision?.reasons ?? [];
-              const exclusion =
-                torrent &&
-                Date.parse(torrent.publishDate) < preview.completeSince
-                  ? '发布区间的种子尚未加载完整'
-                  : reasons.map((reason) => exclusionLabels[reason]).join('；');
-              const reasonId = `smart-download-exclusion-${row.key}`;
-              return (
-                <tr
-                  key={row.key}
-                  tabIndex={exclusion ? 0 : undefined}
-                  aria-describedby={exclusion ? reasonId : undefined}
-                  className={clsx({
-                    [styles.excluded]: !!exclusion || !torrent,
-                    [styles.release]: !!row.release,
-                  })}
-                >
-                  {torrent ? (
-                    <>
-                      <td data-release={row.release}>
-                        <span className={styles.cellContent}>
-                          {typeof torrent.episodeInfo?.index === 'number' ||
-                          typeof torrent.episodeInfo?.index === 'string'
-                            ? String(torrent.episodeInfo.index)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className={styles.titleCell}>
-                        <span className={styles.cellContent}>
-                          {torrent.title}
-                        </span>
-                        {exclusion && (
-                          <span
-                            id={reasonId}
-                            className={styles.exclusionReason}
-                          >
-                            <span>{exclusion}</span>
+      <div className={styles.previewContainer}>
+        <div
+          ref={timeline.viewport}
+          className={clsx(styles.preview, { [styles.frozen]: frozen })}
+          aria-busy={loading}
+          onScroll={more || frozen ? timeline.onScroll : undefined}
+        >
+          <table className={styles.table} aria-label="智能下载种子预览">
+            <thead>
+              <tr>
+                {['集数', '发布时间', '种子标题', '字幕', '种子大小'].map(
+                  (title) => (
+                    <th key={title}>{title}</th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((row) => {
+                const torrent = row.torrent as PreviewTorrent | undefined;
+                const reasons = row.decision?.reasons ?? [];
+                const exclusion =
+                  torrent &&
+                  Date.parse(torrent.publishDate) >=
+                    view!.preview.coverage.completeUntil
+                    ? '发布区间的种子尚未加载完整'
+                    : reasons
+                        .map((reason) => exclusionLabels[reason])
+                        .join('；');
+                const release = row.release
+                  ? `${row.release.label} ${dayjs(row.release.at).format(
+                      'YYYY-MM-DD HH:mm:ss',
+                    )}`
+                  : undefined;
+                const reasonId = `smart-download-exclusion-${row.key}`;
+                return (
+                  <tr
+                    key={row.key}
+                    data-release-ids={row.release?.episodeIds.join(',')}
+                    tabIndex={exclusion ? 0 : undefined}
+                    aria-describedby={exclusion ? reasonId : undefined}
+                    className={clsx({
+                      [styles.excluded]: !!exclusion || !torrent,
+                      [styles.release]: !!row.release,
+                    })}
+                  >
+                    {torrent ? (
+                      <>
+                        <td data-release={release}>
+                          <span className={styles.cellContent}>
+                            {typeof torrent.episodeInfo?.index === 'number' ||
+                            typeof torrent.episodeInfo?.index === 'string'
+                              ? String(torrent.episodeInfo.index)
+                              : '-'}
                           </span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={styles.cellContent}>
-                          <TorrentSubtitle
-                            info={torrent.subtitleInfo as SubtitleInfo}
-                          />
-                        </span>
-                      </td>
-                      <td>
-                        <span className={styles.cellContent}>
-                          {dayjs(torrent.publishDate).format(
+                        </td>
+                        <td
+                          title={dayjs(torrent.publishDate).format(
                             'YYYY-MM-DD HH:mm:ss',
                           )}
-                        </span>
+                        >
+                          <span className={styles.cellContent}>
+                            {row.precedingReleaseAt === undefined
+                              ? dayjs(torrent.publishDate).format(
+                                  'YYYY-MM-DD HH:mm:ss',
+                                )
+                              : relativePublishTime(
+                                  torrent.publishDate,
+                                  row.precedingReleaseAt,
+                                )}
+                          </span>
+                        </td>
+                        <td className={styles.titleCell}>
+                          <span className={styles.cellContent}>
+                            {torrent.title}
+                          </span>
+                          {exclusion && (
+                            <span
+                              id={reasonId}
+                              className={styles.exclusionReason}
+                            >
+                              <span>{exclusion}</span>
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={styles.cellContent}>
+                            <TorrentSubtitle
+                              info={torrent.subtitleInfo as SubtitleInfo}
+                            />
+                          </span>
+                        </td>
+                        <td>
+                          <span className={styles.cellContent}>
+                            {prettyBytes(Number(torrent.size))}
+                          </span>
+                        </td>
+                      </>
+                    ) : (
+                      <td
+                        colSpan={5}
+                        data-release={release}
+                        className={styles.emptyRow}
+                      >
+                        无匹配种子
                       </td>
-                      <td>
-                        <span className={styles.cellContent}>
-                          {prettyBytes(Number(torrent.size))}
-                        </span>
-                      </td>
-                    </>
-                  ) : (
-                    <td
-                      colSpan={5}
-                      data-release={row.release}
-                      className={styles.emptyRow}
-                    >
-                      无匹配种子
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {loading && (
-          <div className={styles.status}>
-            <Spin />
-          </div>
-        )}
-        {error && (
-          <Alert
-            type="error"
-            message="加载种子失败"
-            action={
-              <Button
-                size="small"
-                onClick={() => setRetry((value) => value + 1)}
-              >
-                重试
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {loading && !frozen && (
+            <div className={styles.status}>
+              <Spin />
+            </div>
+          )}
+          {error && !frozen && (
+            <Alert
+              type="error"
+              message="加载种子失败"
+              action={
+                <Button size="small" onClick={timeline.retry}>
+                  重试
+                </Button>
+              }
+            />
+          )}
+          {!loading && !error && !rows.length && (
+            <Empty
+              className={styles.empty}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="无匹配种子"
+            />
+          )}
+          {!loading && !error && more && (
+            <div className={styles.status}>
+              <Button type="link" onClick={timeline.loadMore}>
+                加载更多
               </Button>
-            }
-          />
-        )}
-        {!loading && !error && !rows.length && (
-          <Empty
-            className={styles.empty}
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="无匹配种子"
-          />
-        )}
-        {!loading && !error && more && (
-          <div className={styles.status}>
-            <Button type="link" onClick={() => setCount((value) => value + 30)}>
-              加载更多
-            </Button>
+            </div>
+          )}
+          {!more && !!rows.length && (
+            <div aria-hidden style={{ height: timeline.tailSpace }} />
+          )}
+        </div>
+        {frozen && (
+          <div className={styles.loadingOverlay} role="status">
+            {error ? (
+              <Alert
+                type="error"
+                message="加载种子失败"
+                action={<Button onClick={timeline.retry}>重试</Button>}
+              />
+            ) : (
+              <Spin tip="正在补齐种子列表" />
+            )}
           </div>
         )}
       </div>

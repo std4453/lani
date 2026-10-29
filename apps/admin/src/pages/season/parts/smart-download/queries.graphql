@@ -3,11 +3,15 @@ query SmartDownloadPreview(
   $first: Int!
   $snapshot: String!
   $after: String
+  $from: String
+  $before: String
 ) {
   smartDownloadPreview(
     seasonId: $seasonId
     first: $first
     snapshot: $snapshot
     after: $after
+    from: $from
+    before: $before
   )
 }

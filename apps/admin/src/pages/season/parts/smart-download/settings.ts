@@ -41,6 +41,26 @@ export function offsetHours(value: DownloadSettings) {
     ((value.downloadOffsetDays || 0) * 24 + (value.downloadOffsetHours || 0))
   );
 }
+/** 将带符号的天、小时归一为方向和非负时长，跨过零时自动反转方向。 */
+export function normalizeOffset(value: DownloadSettings): DownloadSettings {
+  if (
+    !Number.isInteger(value.downloadOffsetDays) ||
+    !Number.isInteger(value.downloadOffsetHours)
+  )
+    return value;
+  const offset = offsetHours(value);
+  return {
+    ...value,
+    downloadOffsetType:
+      offset === 0
+        ? value.downloadOffsetType
+        : offset > 0
+        ? 'advance'
+        : 'postpone',
+    downloadOffsetDays: Math.floor(Math.abs(offset) / 24),
+    downloadOffsetHours: Math.abs(offset) % 24,
+  };
+}
 export function describeSettings(value: DownloadSettings) {
   const settings = toSettings(value);
   const offset = offsetHours(value);

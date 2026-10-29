@@ -61,8 +61,31 @@
   justify-content: flex-end;
   gap: 8px;
 }
+.previewContainer {
+  position: relative;
+  min-height: 100px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.frozen {
+  overflow: hidden !important;
+  touch-action: none;
+  pointer-events: none;
+}
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lani-loading-mask);
+}
 .preview {
   overflow: auto;
+  overflow-anchor: none;
   min-height: 100px;
   max-height: 460px;
   flex: 1;
@@ -93,20 +116,23 @@
   td:first-child {
     text-align: center;
   }
-  th:nth-child(3) {
+  th:nth-child(4) {
     width: 100px;
   }
-  th:nth-child(4) {
+  th:nth-child(2) {
     width: 175px;
   }
   th:nth-child(5) {
     width: 100px;
   }
-  td:nth-child(2) {
+  td:nth-child(3) {
     overflow-wrap: anywhere;
   }
-  tbody tr:not(.excluded):hover {
+  tbody tr:not(.excluded) {
     background: var(--lani-selected);
+    &:hover {
+      background: var(--lani-highlight-bg);
+    }
   }
 }
 .excluded {
@@ -147,7 +173,8 @@
 }
 .release {
   td {
-    border-bottom: 3px solid var(--lani-primary);
+    padding-top: 18px;
+    border-top: 3px solid var(--lani-primary);
   }
   td[data-release] {
     position: relative;
@@ -155,12 +182,13 @@
   td[data-release]::after {
     content: attr(data-release);
     position: absolute;
-    bottom: 0;
+    top: 0;
+    z-index: 1;
     left: 0;
     padding: 1px 2px;
     color: var(--lani-image-text);
     background: var(--lani-primary);
-    font-size: 8px;
+    font-size: 10px;
     line-height: 1.2;
     white-space: nowrap;
   }
