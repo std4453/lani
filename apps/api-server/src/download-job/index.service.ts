@@ -55,8 +55,26 @@ export class DownloadJobService {
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
+    return this.createDownload(episodeId, torrentLink);
+  }
+  private async createDownload(
+    episodeId: number,
+    torrentLink: string,
+    automatic = false,
+  ) {
     const id = await this.tasks.creationTransaction(async (tx) => {
+      if (automatic) {
+        // 候选查询与入队之间用户可能开启智能下载；与配置更新互斥后再检查。
+        await tx.$queryRaw`SELECT s.id FROM seasons s JOIN episodes e ON e.season_id=s.id WHERE e.id=${episodeId} FOR SHARE OF s`;
+      }
       await lockEpisode(tx, episodeId);
+      if (automatic) {
+        const episode = await tx.episode.findUnique({
+          where: { id: episodeId },
+          include: { season: true },
+        });
+        if (!episode || episode.season.smartDownloadEnabled) return 0;
+      }
       const existing = await tx.task.findFirst({
         where: {
           episodes: { some: { episodeId } },
@@ -82,7 +100,7 @@ export class DownloadJobService {
       );
       return task.id;
     });
-    void this.tasks.start(id);
+    if (id) void this.tasks.start(id);
     return id;
   }
   async findTorrentsToDownload() {
@@ -110,6 +128,7 @@ export class DownloadJobService {
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
         AND seasons.jellyfin_id != ''
+        AND seasons.smart_download_enabled = false
         AND episodes.episode_type = 'EPISODE'
         AND COALESCE(episodes.episode_number, episodes.index) + download_sources.offset = torrents_match_number(torrents)
         AND episodes.jellyfin_episode_id IS NULL
@@ -143,7 +162,7 @@ export class DownloadJobService {
     }
     for (const { episode_id, torrent_link } of result) {
       try {
-        await this.downloadTorrentForEpisode(episode_id, torrent_link);
+        await this.createDownload(episode_id, torrent_link, true);
       } catch (error) {
         this.logger.error(error);
       }

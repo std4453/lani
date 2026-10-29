@@ -3,7 +3,6 @@ import { LaniError } from '@/utils/error';
 import {
   IDownloadClient,
   PreparedTorrent,
-  TorrentInfo,
   TorrentInfoWithStatus,
   TorrentSubmissionOptions,
 } from '@/download-client/IDownloadClient';
@@ -333,9 +332,10 @@ export class QBittorrentClient implements IDownloadClient {
     if (!hashes.length) return [];
     const torrents = await this.qbt.resolveTorrents(hashes);
     return Array.from(torrents, ([hash, torrent]): TorrentInfoWithStatus => {
-      const torrentInfo: TorrentInfo = {
+      const torrentInfo = {
         hash,
         name: torrent.name,
+        addedAt: torrent.added_on,
       };
       switch (torrent.state as QBTTorrentState) {
         case 'error':

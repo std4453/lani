@@ -60,6 +60,11 @@ export class SaveSeasonPatch {
   // createdAt
   description?: string;
   downloadOffsetHours?: number;
+  smartDownloadEnabled?: boolean;
+  smartDownloadSubtitle?: string;
+  smartDownloadPreferBaha?: boolean;
+  smartDownloadWindowHours?: number;
+  smartDownloadTimeoutMinutes?: number;
   episodesAutoSync?: boolean;
   // episodesLastSync
   @Field(() => MetadataSource)

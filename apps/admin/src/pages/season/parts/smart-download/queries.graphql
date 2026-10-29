@@ -1,0 +1,13 @@
+query SmartDownloadPreview(
+  $seasonId: Int!
+  $first: Int!
+  $snapshot: String!
+  $after: String
+) {
+  smartDownloadPreview(
+    seasonId: $seasonId
+    first: $first
+    snapshot: $snapshot
+    after: $after
+  )
+}

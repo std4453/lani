@@ -91,6 +91,7 @@ jobs:
           python3 libs/db/tests/season-match-metadata-migration.py
           python3 libs/db/tests/torrent-retention-migration.py
           python3 libs/db/tests/torrent-matching-migration.py
+          python3 libs/db/tests/smart-download-migration.py
       - name: Test all-in-one startup
         run: node --test apps/all-in-one/wait-matcher.test.cjs
       - name: Test workflow
@@ -98,6 +99,9 @@ jobs:
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
       - name: Test torrent title parser
         working-directory: libs/parse-torrent-title
+        run: node ../../common/scripts/install-run-rushx.js test --runInBand
+      - name: Test smart download rules
+        working-directory: libs/smart-download
         run: node ../../common/scripts/install-run-rushx.js test --runInBand
       - name: Test Nyaa parser
         working-directory: libs/parse-nyaa

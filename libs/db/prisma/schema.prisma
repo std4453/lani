@@ -117,6 +117,11 @@ model Season {
   notifyPublish       Boolean          @default(true) @map("notify_publish")
   downloadSources     DownloadSource[]
   downloadOffsetHours Int              @default(0) @map("download_offset_hours")
+  smartDownloadEnabled Boolean @default(false) @map("smart_download_enabled")
+  smartDownloadSubtitle String @default("chinese") @map("smart_download_subtitle")
+  smartDownloadPreferBaha Boolean @default(false) @map("smart_download_prefer_baha")
+  smartDownloadWindowHours Int @default(48) @map("smart_download_window_hours")
+  smartDownloadTimeoutMinutes Int? @default(120) @map("smart_download_timeout_minutes")
 
   episodesSource   MetadataSource @default(MANUAL) @map("episodes_source")
   episodesLastSync DateTime?      @map("episodes_last_sync") @db.Timestamptz(6)
@@ -188,6 +193,7 @@ model Torrent {
 
   @@index([title, id, torrentLink], map: "torrent_title_idx")
   @@index([matchedSeasonId])
+  @@index([matchedSeasonId, publishDate, id])
   @@index([matchStatus])
   @@map("torrents")
 }
@@ -254,6 +260,10 @@ model Task {
   torrentTitle		String?			@default("") @map("torrent_title")
 
   // 步骤 - 下载
+  isSmartDownload Boolean @default(false) @map("is_smart_download")
+  smartDownloadTorrentHash String? @map("smart_download_torrent_hash")
+  smartDownloadDecision Json? @map("smart_download_decision")
+  downloadTimeoutMinutes Int? @map("download_timeout_minutes")
   downloadPath		String?			@map("download_path")
 
   // 步骤 - 寻找视频文件

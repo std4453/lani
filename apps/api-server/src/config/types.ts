@@ -1,4 +1,5 @@
 import { torrentRetentionConfig } from './torrent-retention';
+import { smartDownloadConfig } from './smart-download';
 import { torrentsConfig } from './torrents';
 import { matchingConfig } from './matching';
 import { llmConfig } from './llm';
@@ -161,6 +162,7 @@ const featuresConfig = opt(
 );
 
 export const rootConfig = root({
+  smartDownload: smartDownloadConfig,
   network: networkConfig,
   torrents: torrentsConfig,
   matching: matchingConfig,

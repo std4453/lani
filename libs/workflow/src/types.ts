@@ -33,6 +33,8 @@ export interface Workflow {
     requestedAt: string;
     stepId: string;
     completedAtoms: string[];
+    reason?: string;
+    code?: "timeout" | "baha";
   };
   error?: {
     operation: "execute" | "cancel";

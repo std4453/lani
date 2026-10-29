@@ -16,7 +16,7 @@ export type TaskInput = Pick<
   | 'filePath'
   | 'nfoPath'
   | 'jellyfinEpisodeId'
->;
+> & { downloadTimeoutMinutes?: number | null };
 export type TaskOutput = Partial<
   Pick<
     TaskInput,
@@ -54,6 +54,7 @@ export interface AtomContext {
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
   wait(milliseconds: number): Promise<void>;
   waitFor<T>(operation: Promise<T>): Promise<T>;
+  requestCancellation?(reason: string, code: 'timeout' | 'baha'): Promise<void>;
 }
 export class ExecutionStopped extends Error {}
 export abstract class AsyncAtom {

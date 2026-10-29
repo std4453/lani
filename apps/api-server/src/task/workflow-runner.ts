@@ -13,6 +13,7 @@ import {
   Workflow,
   isActive,
   parseWorkflow,
+  requestCancellation,
 } from '@lani/workflow';
 
 export type Output = TaskOutput;
@@ -173,6 +174,19 @@ export class WorkflowRunner {
         return checkpoint;
       },
       assertActive,
+      requestCancellation: async (reason, code) => {
+        for (;;) {
+          const latest = await read();
+          checkActive(latest);
+          const next = requestCancellation(
+            latest.workflow,
+            new Date().toISOString(),
+            { reason, code },
+          );
+          if (await this.store.commit(latest, next)) break;
+        }
+        this.wake.get(task.id)?.forEach((wake) => wake());
+      },
       transaction: async (operation) => {
         const committed = await this.store.transaction(task.id, async (tx) => {
           const latest = await read(tx);

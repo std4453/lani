@@ -8,10 +8,27 @@ export class DownloadAtom extends AsyncAtom {
   constructor(private refresh: DownloadRefreshService) {
     super();
   }
-  async run(id: number, { qbtTorrentHash }: TaskInput, context: AtomContext) {
+  async run(
+    id: number,
+    { qbtTorrentHash, downloadTimeoutMinutes }: TaskInput,
+    context: AtomContext,
+  ) {
     if (!qbtTorrentHash) throw new Error('提交下载步骤尚未完成');
     try {
-      return await context.waitFor(this.refresh.enqueue(id, qbtTorrentHash));
+      return await context.waitFor(
+        this.refresh.enqueue(id, {
+          hash: qbtTorrentHash,
+          timeoutMinutes: downloadTimeoutMinutes,
+          cancel: async () => {
+            if (!context.requestCancellation)
+              throw new Error('下载任务缺少取消上下文');
+            await context.requestCancellation(
+              `智能下载任务超时（${downloadTimeoutMinutes} 分钟）`,
+              'timeout',
+            );
+          },
+        }),
+      );
     } finally {
       this.refresh.remove(id);
     }

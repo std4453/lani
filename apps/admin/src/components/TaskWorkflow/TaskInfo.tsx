@@ -6,7 +6,14 @@ import Field from './Field';
 export default function TaskInfo({
   task,
 }: {
-  task: Pick<TaskDetailsFieldsFragment, 'createdAt' | 'type' | 'torrentLink'>;
+  task: Pick<
+    TaskDetailsFieldsFragment,
+    'createdAt' | 'type' | 'torrentLink'
+  > & {
+    isSmartDownload?: boolean;
+    isCancelled?: boolean;
+    workflow?: TaskDetailsFieldsFragment['workflow'];
+  };
 }) {
   return (
     <>
@@ -15,7 +22,15 @@ export default function TaskInfo({
           ? dayjs(task.createdAt).format('YYYY-MM-DD HH:mm:ss')
           : '-'}
       </Field>
-      <Field label="类型">{TASK_TYPE_LABELS[task.type]}</Field>
+      <Field label="类型">
+        {TASK_TYPE_LABELS[task.type]}
+        {task.type === 'DOWNLOAD' && task.isSmartDownload ? '（智能下载）' : ''}
+      </Field>
+      {(task.isCancelled || task.workflow?.cancellation) && (
+        <Field label="取消原因">
+          {task.workflow?.cancellation?.reason ?? '用户手动取消'}
+        </Field>
+      )}
       {['DOWNLOAD', 'BATCH_DOWNLOAD'].includes(task.type) && (
         <Field label="种子地址">{task.torrentLink}</Field>
       )}
