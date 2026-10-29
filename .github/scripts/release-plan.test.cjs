@@ -105,3 +105,20 @@ test("reused external matcher skips only its standalone build", async () => {
   assert.deepEqual(split.llmMatcherMatrix, []);
   assert.deepEqual(split.matrix, [targets[0]]);
 });
+
+
+test("registry authentication can probe a not-yet-published package", async () => {
+  const calls = [];
+  const request = async (url, options) => {
+    calls.push({url, options});
+    return url.includes("/token?")
+      ? {ok: true, json: async () => ({token: "registry-token"})}
+      : {ok: false, status: 404};
+  };
+  assert.equal(await imageExists("owner/new-package", "fp", request, "", {
+    username: "actor", token: "github-token",
+  }), false);
+  assert.equal(calls[0].options.headers.Authorization,
+    "Basic " + Buffer.from("actor:github-token").toString("base64"));
+  assert.equal(calls[1].options.headers.Authorization, "Bearer registry-token");
+});

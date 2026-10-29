@@ -5,10 +5,23 @@ const allowed = ["admin", "api-server", "data-server", "gateway"];
 
 // A 404 is a missing image. Authentication, rate limits and network failures stop
 // planning rather than cause unnecessary builds. GHCR write access is maintainer-only.
-async function imageExists(name, fingerprint, request = fetch, variant = "") {
+async function imageExists(
+  name,
+  fingerprint,
+  request = fetch,
+  variant = "",
+  credentials = process.env.GITHUB_TOKEN && process.env.GITHUB_ACTOR
+    ? { token: process.env.GITHUB_TOKEN, username: process.env.GITHUB_ACTOR }
+    : undefined
+) {
   const auth = await request(
     `https://ghcr.io/token?service=ghcr.io&scope=repository:${name}:pull`,
-    { signal: AbortSignal.timeout(30000) }
+    {
+      signal: AbortSignal.timeout(30000),
+      headers: credentials
+        ? { Authorization: "Basic " + Buffer.from(`${credentials.username}:${credentials.token}`).toString("base64") }
+        : undefined,
+    }
   );
   if (!auth.ok)
     throw new Error(`Registry authorization failed: HTTP ${auth.status}`);
