@@ -1,4 +1,4 @@
-import { matchingConfig } from './matching';
+import { matchingConfig, matchingLlmConfig } from './matching';
 import { validatePolicy } from '../torrent-match/catalog';
 
 it.each([undefined, {}])(
@@ -62,6 +62,29 @@ it('外部后端为默认值，旧配置不需要 LLM 字段', () => {
   expect(value.backend).toBe('external');
   expect(value.llm).toBeUndefined();
 });
+
+it('清理模型密钥首尾空白', () => {
+  const { error, value } = matchingLlmConfig.validate({
+    apiBase: 'https://provider.example',
+    apiKey: ' \tsynthetic\r\n',
+    model: 'example',
+  });
+  expect(error).toBeUndefined();
+  expect(value.apiKey).toBe('synthetic');
+});
+
+it.each(['bad\nkey', 'bad key', 'bad\u007fkey', 'bad密钥', ' \t'])(
+  '拒绝不能用于授权头的模型密钥，且不回显其值',
+  (apiKey) => {
+    const { error } = matchingLlmConfig.validate({
+      apiBase: 'https://provider.example',
+      apiKey,
+      model: 'example',
+    });
+    expect(error).toBeDefined();
+    expect(error?.message).not.toContain(apiKey);
+  },
+);
 
 it('仅在启用内置后端时要求匹配模型配置', () => {
   expect(

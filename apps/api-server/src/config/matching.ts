@@ -14,7 +14,11 @@ export const matchingLlmConfig = obj({
   apiBase: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .required() as unknown as D<string>,
-  apiKey: str(),
+  apiKey: Joi.string()
+    .trim()
+    .pattern(/^[\x21-\x7e]+$/)
+    .messages({ 'string.pattern.base': '模型 API key 包含无效的授权头字符' })
+    .required() as unknown as D<string>,
   model: str(),
   deadlineMs: opt(
     Joi.number().integer().positive().required() as unknown as D<number>,
