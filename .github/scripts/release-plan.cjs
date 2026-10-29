@@ -82,11 +82,6 @@ function imageTargets(manifest, apps = allowed) {
         variant,
       });
   }
-  if (manifest.images["llm-matcher"])
-    images.push({
-      app: "llm-matcher",
-      fingerprint: manifest.images["llm-matcher"].fingerprint,
-    });
   return images;
 }
 

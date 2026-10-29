@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           case "$PROJECT_NAME" in
-            @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway|@lani/db|@lani/all-in-one|@lani/llm-matcher) ;;
+            @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway|@lani/db|@lani/all-in-one) ;;
             *) echo "Unsupported project" >&2; exit 1 ;;
           esac
 
@@ -121,7 +121,7 @@ jobs:
         run: |
           app="${PROJECT_NAME##*/}"
           case "$app" in
-            db|llm-matcher) directory="libs/$app" ;;
+            db) directory="libs/$app" ;;
             *) directory="apps/$app" ;;
           esac
           {

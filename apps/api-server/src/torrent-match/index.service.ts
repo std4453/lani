@@ -25,6 +25,8 @@ import {
 } from './catalog';
 import { CatalogSnapshot, CatalogState } from './protocol';
 import { MatcherTransport } from './transport';
+import { MatcherBackend } from './backend';
+import { LlmMatcher } from './llm/llm-matcher';
 
 import { enqueueTorrentMatch, matchingEnabled } from './producer';
 import { CATALOG_QUEUE, MATCH_QUEUE, TorrentMatchPayload } from './queues';
@@ -66,7 +68,7 @@ export class TorrentMatchService
   implements OnModuleInit, OnApplicationBootstrap, OnApplicationShutdown
 {
   private readonly logger = new Logger(TorrentMatchService.name);
-  private transport?: MatcherTransport;
+  private matcher?: MatcherBackend;
   private observing?: Promise<void>;
   private stopped = false;
   private observationFailed = false;
@@ -78,19 +80,23 @@ export class TorrentMatchService
     private prisma: PrismaService,
     private queues: BackgroundQueueService,
     private http: LocalAxiosService,
+    private llmMatcher: LlmMatcher,
   ) {}
 
   onModuleInit() {
     const enabled = config.matching.enabled;
     if (enabled) {
       validatePolicy(config.matching);
-      this.transport = new MatcherTransport(config.matching, this.http);
+      this.matcher =
+        config.matching.backend === 'llm'
+          ? this.llmMatcher
+          : new MatcherTransport(config.matching, this.http);
     }
   }
 
   async onApplicationBootstrap() {
     await this.queues.initialize();
-    if (this.transport) {
+    if (this.matcher) {
       await this.prisma.torrentMatchCatalog.upsert({
         where: { id: 1 },
         create: { id: 1 },
@@ -102,7 +108,7 @@ export class TorrentMatchService
 
   @Cron('0 * * * * *')
   refreshCatalog(): Promise<void> {
-    if (!this.transport || this.stopped) return Promise.resolve();
+    if (!this.matcher || this.stopped) return Promise.resolve();
     if (this.observing) return this.observing;
     this.observing = this.observe()
       .catch(async () => {
@@ -116,13 +122,8 @@ export class TorrentMatchService
   }
 
   private async observe() {
-    // 在一致快照里读取季度目录；数据库写入路径无需逐一挂事件。
-    const rows = await this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ`;
-      return tx.season.findMany({
-        select: catalogSelect,
-      });
-    });
+    // 单次查询读取季度目录，数据库写入路径无需逐一挂事件。
+    const rows = await this.prisma.season.findMany({ select: catalogSelect });
     const desired = snapshot(rows);
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM torrent_match_catalog WHERE id = 1 FOR UPDATE`;
@@ -174,7 +175,7 @@ export class TorrentMatchService
     )
       throw new QueueWaiting();
     this.activating = true;
-    await this.transport!.load(desired);
+    await this.matcher!.load(desired);
     return async (tx) => {
       await tx.$queryRaw`SELECT id FROM torrent_match_catalog WHERE id = 1 FOR UPDATE`;
       const row = await tx.torrentMatchCatalog.findUnique({
@@ -239,7 +240,7 @@ export class TorrentMatchService
       const ids = candidateSeasons(active, query, config.matching).map(
         (s) => s.id,
       );
-      const response = await this.transport!.match(
+      const response = await this.matcher!.match(
         active,
         query,
         ids,
@@ -376,6 +377,6 @@ export class TorrentMatchService
   async onApplicationShutdown() {
     this.stopped = true;
     await this.observing;
-    await this.transport?.close();
+    await this.matcher?.close();
   }
 }

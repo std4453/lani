@@ -55,7 +55,7 @@ test("only 404 triggers build; registry faults fail planning", async () => {
   }
 });
 
-test("external matcher gets one unvaried image in the generic Node matrix", async () => {
+test("only application and legacy matcher images are planned", async () => {
   const images = Object.fromEntries(
     [
       "admin",
@@ -68,37 +68,19 @@ test("external matcher gets one unvaried image in the generic Node matrix", asyn
     ].map((app) => [app, { fingerprint: app + "-fp" }])
   );
   const targets = imageTargets({ images });
-  assert.deepEqual(
-    targets.filter((x) => x.app === "llm-matcher"),
-    [{ app: "llm-matcher", fingerprint: "llm-matcher-fp" }]
-  );
+  assert(!targets.some((x) => x.app === "llm-matcher"));
   const planned = await planImages("Owner", targets, async () => false);
-  assert.equal(
-    planned.report.find((x) => x.app === "llm-matcher").image,
-    "ghcr.io/owner/lani-llm-matcher:fp-llm-matcher-fp"
-  );
+  assert(!planned.report.some((x) => x.app === "llm-matcher"));
   const split = splitBuildMatrix(planned.matrix);
   assert(!Object.hasOwn(split, "llmMatcherMatrix"));
   assert.deepEqual(
     split.matrix.map((x) => x.app),
-    ["admin", "api-server", "data-server", "gateway", "db", "llm-matcher"]
+    ["admin", "api-server", "data-server", "gateway", "db"]
   );
   assert.deepEqual(
     split.matcherMatrix.map((x) => x.variant),
     ["lexical", "semantic-cpu", "semantic-cu126"]
   );
-});
-
-test("reused external matcher is omitted from the generic Node build", async () => {
-  const targets = [
-    { app: "api-server", fingerprint: "api-fp" },
-    { app: "llm-matcher", fingerprint: "llm-fp" },
-  ];
-  const result = await planImages("owner", targets, async (name) =>
-    name.endsWith("/lani-llm-matcher")
-  );
-  const split = splitBuildMatrix(result.matrix);
-  assert.deepEqual(split.matrix, [targets[0]]);
 });
 
 test("registry authentication can probe a not-yet-published package", async () => {

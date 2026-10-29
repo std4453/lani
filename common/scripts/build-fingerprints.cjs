@@ -8,7 +8,6 @@ const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { readLock } = require("./pnpm-fingerprint.cjs");
 const manifestPath = "build-manifest.json";
-const scriptPath = "common/scripts/build-fingerprints.cjs";
 const lockPath = "common/config/rush/pnpm-lock.yaml";
 const algorithmVersion = 2;
 const apps = [
@@ -18,7 +17,6 @@ const apps = [
   "gateway",
   "db",
   "anime-matcher",
-  "llm-matcher",
 ];
 const sharedBuildInputs = new Set([
   ".dockerignore",
@@ -259,9 +257,6 @@ function generate() {
     throw new Error(
       "Untracked manifest exists; inspect and stage it before generating"
     );
-  for (const script of [scriptPath, "common/scripts/pnpm-fingerprint.cjs"])
-    if (tree.read(script) !== fs.readFileSync(path.join(root, script), "utf8"))
-      throw new Error("Stage fingerprint script changes before generating");
   const content = JSON.stringify(calculate(tree).manifest, null, 2) + "\n";
   const oid = git(["hash-object", "-w", "--stdin"], { input: content }).trim();
   // Only this generated path is updated; partial staging of every other path is preserved.

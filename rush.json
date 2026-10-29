@@ -409,10 +409,6 @@
       "projectFolder": "libs/anime-matcher"
     },
     {
-      "packageName": "@lani/llm-matcher",
-      "projectFolder": "libs/llm-matcher"
-    },
-    {
       "packageName": "@lani/parse-nyaa",
       "projectFolder": "libs/parse-nyaa"
     },

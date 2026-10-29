@@ -8,6 +8,6 @@ manifest 描述源码构建输入，供 CI 复用镜像和部署端比较版本�
 
 算法 v2 按应用截取 pnpm 9 锁文件中的 importer、递归可达的 package 和 snapshot，包含开发依赖、可选依赖及 peer 实例。安装设置、overrides 和 pnpmfile 校验和属于共享输入。这样一个包独有的依赖变化不会让所有镜像失效；升级算法本身会改变全部指纹。
 
-`llm-matcher` 作为 Node.js 包纳入 Rush 依赖图和 pnpm 锁文件，通过通用应用流水线构建。它的目录只影响自己的镜像指纹，all-in-one 继续内置 `anime-matcher`。后者的 Python 源码、依赖声明及模型清单按包目录纳入；Python 尚无传递依赖锁文件，指纹只能证明已提交输入相同，不能证明重新下载的依赖与过去完全一致。
+外部大模型匹配器内置于 API Server，其源码与提示词作为 API 构建输入；提示词由 Nest assets 复制到运行目录。`anime-matcher` 继续提供可独立部署的 Python 服务，all-in-one 仍内置该实现。Python 源码、依赖声明及模型清单按包目录纳入；Python 尚无传递依赖锁文件，指纹只能证明已提交输入相同，不能证明重新下载的依赖与过去完全一致。
 
 CI 仅构建缺失的 `fp-<fingerprint>` 镜像，并以 OCI labels 记录实际构建 SHA、指纹及 run/attempt。标签用于追溯，可信度仍依赖发布权限。保留已发布指纹标签；需要更新基础镜像等外部输入时，修改构建配置产生新指纹。完整重跑会重新规划，避免单独重跑旧 job 覆盖既有产物。

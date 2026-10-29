@@ -1,4 +1,5 @@
 import { LocalAxiosService } from '@/common/axios.service';
+import { MatcherBackend } from './backend';
 import {
   CatalogSnapshot,
   MatchQuery,
@@ -13,7 +14,7 @@ export interface TransportOptions {
 }
 
 /** API 只调用独立服务；一次操作失败即返回，不自动重试。 */
-export class MatcherTransport {
+export class MatcherTransport implements MatcherBackend {
   private serial: Promise<unknown> = Promise.resolve();
   private closed = false;
   private cancel?: () => void;

@@ -1,3 +1,4 @@
+jest.mock('./llm/llm-matcher', () => ({ LlmMatcher: class {} }));
 import { LocalAxiosService } from '@/common/axios.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
@@ -12,6 +13,7 @@ import {
   TorrentMatchService,
 } from './index.service';
 import { MatcherTransport } from './transport';
+import { LlmMatcher } from './llm/llm-matcher';
 import { CatalogState } from './protocol';
 import config from '@/config';
 import { enqueueTorrentMatch, updateWithTorrentMatching } from './producer';
@@ -84,6 +86,7 @@ suite('种子入库、目录等待与结果持久化', () => {
         BackgroundQueueService,
         QueueExplorer,
         TorrentMatchService,
+        { provide: LlmMatcher, useValue: {} },
         MatchCatalogConsumer,
         TorrentMatchConsumer,
       ],

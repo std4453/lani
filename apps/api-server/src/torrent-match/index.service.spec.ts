@@ -1,12 +1,19 @@
+jest.mock('./llm/llm-matcher', () => ({ LlmMatcher: class {} }));
 import { Prisma } from '@lani/db';
 import { QueueWaiting } from '@/background-queue/types';
 import { observeCatalog, snapshot } from './catalog';
 import { TorrentMatchService } from './index.service';
+import config from '@/config';
+import { MatcherTransport } from './transport';
 
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
     matching: {
+      enabled: true,
+      backend: 'external',
+      endpoint: 'http://worker:8090',
+      timeoutMs: 1000,
       timezone: 'Asia/Shanghai',
       previousQuarters: 0,
       nextQuarters: 0,
@@ -50,8 +57,13 @@ function fixture() {
       result: { seasonId: '1' },
     }),
   };
-  const service = new TorrentMatchService(db as any, {} as any, {} as any);
-  (service as any).transport = transport;
+  const service = new TorrentMatchService(
+    db as any,
+    {} as any,
+    {} as any,
+    {} as any,
+  );
+  (service as any).matcher = transport;
   const locks: string[] = [];
   const tx = {
     $executeRaw: jest.fn().mockImplementation(async () => {
@@ -214,4 +226,72 @@ it('waits for a refreshed catalog if the selected season is deleted after the sn
   expect(refresh).not.toHaveBeenCalled();
   f.service.settleMatch();
   expect(refresh).toHaveBeenCalledTimes(1);
+});
+
+it.each(['external', 'llm'] as const)(
+  '运行时选择 %s 后端并关闭所选实例',
+  async (backend) => {
+    const previous = config.matching.backend;
+    config.matching.backend = backend;
+    const builtIn = { close: jest.fn().mockResolvedValue(undefined) };
+    const externalClose = jest
+      .spyOn(MatcherTransport.prototype, 'close')
+      .mockResolvedValue(undefined);
+    try {
+      const service = new TorrentMatchService(
+        {} as any,
+        {} as any,
+        {} as any,
+        builtIn as any,
+      );
+      service.onModuleInit();
+      expect((service as any).matcher).toEqual(
+        backend === 'llm' ? builtIn : expect.any(MatcherTransport),
+      );
+      await service.onApplicationShutdown();
+      expect(builtIn.close).toHaveBeenCalledTimes(backend === 'llm' ? 1 : 0);
+      expect(externalClose).toHaveBeenCalledTimes(
+        backend === 'external' ? 1 : 0,
+      );
+    } finally {
+      config.matching.backend = previous;
+      externalClose.mockRestore();
+    }
+  },
+);
+
+it('目录观察使用单次查询，只有写入检查点才开启事务', async () => {
+  const season = {
+    id: 1,
+    title: '动画',
+    aliases: [],
+    yearAndSemester: '202603',
+  };
+  const tx = {
+    $queryRaw: jest.fn().mockResolvedValue([{ id: 1 }]),
+    torrentMatchCatalog: {
+      findUnique: jest.fn().mockResolvedValue({ state: {} }),
+      update: jest.fn().mockResolvedValue(undefined),
+    },
+    backgroundJob: {
+      upsert: jest.fn().mockResolvedValue({ id: 1 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+  };
+  const db = {
+    season: { findMany: jest.fn().mockResolvedValue([season]) },
+    $transaction: jest.fn(async (callback) => callback(tx)),
+  };
+  const queues = { wake: jest.fn().mockResolvedValue(undefined) };
+  const service = new TorrentMatchService(
+    db as any,
+    queues as any,
+    {} as any,
+    {} as any,
+  );
+  (service as any).matcher = {};
+  await service.refreshCatalog();
+  expect(db.season.findMany).toHaveBeenCalledTimes(1);
+  expect(db.$transaction).toHaveBeenCalledTimes(1);
+  expect(tx.torrentMatchCatalog.update).toHaveBeenCalled();
 });

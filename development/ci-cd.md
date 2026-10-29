@@ -4,7 +4,7 @@
 
 ## 独立测试
 
-构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为 `next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway、Admin 的单元测试，以及使用一次性 PostgreSQL 14 service 的数据库集成测试；外部大模型 matcher 纳入 Rush，与其他 Node 包一起运行单元测试。不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。本机对应命令见[开发指南](local-development.md#单元测试)。
+构建、manifest 检查与独立测试 workflow 均使用 Node.js 22。`test.yaml` 在目标为 `next` 的 PR、`next` push 和手动触发时执行 workflow、解析器、API、Gateway、Admin 的单元测试，以及使用一次性 PostgreSQL 14 service 的数据库集成测试；外部大模型匹配器随 API 单元测试验证。不打包或发布镜像，也不执行 e2e。`[skip-cd]` 不影响测试。本机对应命令见[开发指南](local-development.md#单元测试)。
 
 自动 PR 和 push 若为下文定义的纯文档变更，`test.yaml` 仅执行范围检查，跳过应用测试 job，因而不会构建应用测试依赖或启动数据库 service。manifest 校验和文档隔离规则测试仍运行。
 
@@ -20,7 +20,7 @@
 
 通过变更范围检查后，`default_pipeline.yaml` 为 `next` push 和同仓库、目标为 `next` 的 PR 构建完整的已提交 manifest。PR 使用 head SHA，只构建缺失的 fingerprint 镜像；全部镜像复用时仍发送部署通知。未合并的 fork PR 仅执行独立的 manifest 检查和测试，不通过此流程发布镜像。
 
-`anime-matcher` 保留 lexical、semantic-cpu 和 semantic-cu126 变体；`llm-matcher` 复用通用 Node 构建流程，按 Rush 依赖图构建和部署，无需模型下载，镜像标签为 `ghcr.io/<owner>/lani-llm-matcher:fp-<fingerprint>`。部署通知等待所有缺失镜像完成。all-in-one 继续内置 `anime-matcher`。
+`anime-matcher` 保留 lexical、semantic-cpu 和 semantic-cu126 变体。外部大模型匹配器内置于 API 镜像，无需独立容器或模型下载，提示词随 Nest assets 打包。部署通知等待所有缺失镜像完成。all-in-one 继续内置 `anime-matcher`。
 
 后端、all-in-one 和 Prisma 迁移镜像使用 `node:22-bullseye-slim`。Prisma 3.15.2 的 Linux 引擎链接系统 OpenSSL，Bullseye 使用 `debian-openssl-1.1.x`；不要根据 Node 自带的 OpenSSL 3.x 修改该目标。API 和迁移镜像显式安装 OpenSSL 与 CA 证书，迁移镜像在构建时准备引擎。Bullseye 已归档，需要安装系统包的镜像使用 Debian 官方归档源，保留软件包签名验证。
 

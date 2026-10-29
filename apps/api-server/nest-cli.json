@@ -2,7 +2,7 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["**/*.graphql"],
+    "assets": ["**/*.graphql", "torrent-match/llm/prompts/*.txt"],
     "plugins": ["@nestjs/graphql"]
   }
 }

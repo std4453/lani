@@ -70,10 +70,7 @@ jobs:
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
       - name: Build test dependencies
-        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --to @lani/llm-matcher --parallelism 1
-      - name: Test external LLM matcher
-        working-directory: libs/llm-matcher
-        run: node ../../common/scripts/install-run-rushx.js test
+        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --parallelism 1
       - name: Prepare isolated test database
         working-directory: libs/db
         env:

@@ -23,8 +23,7 @@
     "@lani/gateway",
     "@lani/admin",
     "@lani/all-in-one",
-    "@lani/db",
-    "@lani/llm-matcher"
+    "@lani/db"
   ],
 
   /**

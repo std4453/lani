@@ -3,6 +3,8 @@ const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { calculate } = require("./build-fingerprints.cjs");
 
 // 覆盖当前工作树，新增 Rush 项目在提交前也能验证依赖图及输入范围。
@@ -77,7 +79,6 @@ for (const file of [
   "apps/gateway/DESIGN.md",
   "libs/db/AGENTS.md",
   "libs/anime-matcher/PROTOCOL.md",
-  "libs/llm-matcher/README.md",
   "apps/admin/docs/screenshots/theme-desktop-light.png",
 ]) {
   test(`${file} changes do not invalidate any application fingerprint`, () => {
@@ -131,9 +132,11 @@ for (const [file, owner] of [
   ["apps/admin/public/logo.svg", "admin"],
   ["libs/db/prisma/migrations/new_change/migration.sql", "db"],
   ["libs/anime-matcher/python/model.bin", "anime-matcher"],
-  ["libs/llm-matcher/src/index.ts", "llm-matcher"],
-  ["libs/llm-matcher/Dockerfile", "llm-matcher"],
-  ["libs/llm-matcher/prompts/first.system.txt", "llm-matcher"],
+  ["apps/api-server/src/torrent-match/llm/index.service.ts", "api-server"],
+  [
+    "apps/api-server/src/torrent-match/llm/prompts/first.system.txt",
+    "api-server",
+  ],
 ]) {
   test(`${file} remains a build input`, () => {
     assert.notEqual(
@@ -169,33 +172,25 @@ test("application source changes still invalidate the owning application", () =>
   assert.deepEqual(affected, ["admin"]);
 });
 
-test("external matcher source only invalidates its independent image", () => {
+test("embedded matcher prompts only invalidate the API image", () => {
   const changed = withChange(
-    "libs/llm-matcher/src/index.ts",
-    "export const updated = true;\n"
+    "apps/api-server/src/torrent-match/llm/prompts/first.system.txt",
+    "Updated system prompt\n"
   );
   const affected = Object.keys(baseline.images).filter(
     (app) =>
       baseline.images[app].fingerprint !== changed.images[app].fingerprint
   );
-  assert.deepEqual(affected, ["llm-matcher"]);
+  assert.deepEqual(affected, ["api-server"]);
 });
 
-test("external matcher includes its Rush importer and compiler dependencies", () => {
-  const detail = calculate(tree).details["llm-matcher"];
-  assert.deepEqual(detail.projects, ["@lani/llm-matcher"]);
+test("embedded matcher does not introduce a standalone image", () => {
+  assert(!Object.hasOwn(baseline.images, "llm-matcher"));
   assert(
-    detail.inputs.some(([file]) =>
-      file.endsWith("#importers/../../libs/llm-matcher")
+    !calculate(tree).details["api-server"].projects.includes(
+      "@lani/llm-matcher"
     )
   );
-  assert(
-    detail.inputs.some(([file]) => file.includes("#packages/typescript@"))
-  );
-  assert(
-    !detail.inputs.some(([file]) => file.startsWith("libs/anime-matcher/"))
-  );
-  assert(!detail.inputs.some(([file]) => file.startsWith("apps/all-in-one/")));
 });
 
 for (const file of [
@@ -236,5 +231,69 @@ test("generic tooling sources are absent from every explained input list", () =>
     assert(!detail.inputs.some(([file]) => file.startsWith(".github/")));
     assert(!detail.inputs.some(([file]) => file.startsWith("common/scripts/")));
     assert(!detail.inputs.some(([file]) => file.startsWith("tools/cli/src/")));
+  }
+});
+
+test("generating from the index tolerates unstaged tool edits and protects partial staging", () => {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), "lani-manifest-index-")
+  );
+  const git = (...args) =>
+    execFileSync("git", args, { cwd: directory, encoding: "utf8" });
+  const write = (file, content) => {
+    const target = path.join(directory, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  };
+  try {
+    git("init", "--quiet");
+    for (const file of tree.entries.keys())
+      if (
+        file === "rush.json" ||
+        file === "common/config/rush/deploy.json" ||
+        file === "common/config/rush/pnpm-lock.yaml" ||
+        file.endsWith("/package.json")
+      )
+        write(file, tree.read(file));
+    write("common/scripts/build-fingerprints.cjs", "staged tool source\n");
+    write("apps/api-server/partial.ts", "staged application source\n");
+    git("add", ".");
+    write("common/scripts/build-fingerprints.cjs", "unstaged tool source\n");
+    write("apps/api-server/partial.ts", "unstaged application source\n");
+    const generator = path.join(__dirname, "build-fingerprints.cjs");
+    execFileSync(process.execPath, [generator, "generate", "--staged"], {
+      cwd: directory,
+    });
+    assert.equal(
+      git("show", ":apps/api-server/partial.ts"),
+      "staged application source\n"
+    );
+    assert.equal(
+      fs.readFileSync(
+        path.join(directory, "apps/api-server/partial.ts"),
+        "utf8"
+      ),
+      "unstaged application source\n"
+    );
+    assert.equal(
+      git("show", ":common/scripts/build-fingerprints.cjs"),
+      "staged tool source\n"
+    );
+    const manifest = fs.readFileSync(
+      path.join(directory, "build-manifest.json"),
+      "utf8"
+    );
+    assert.equal(git("show", ":build-manifest.json"), manifest);
+    write("build-manifest.json", manifest + " ");
+    assert.throws(
+      () =>
+        execFileSync(process.execPath, [generator, "generate", "--staged"], {
+          cwd: directory,
+          stdio: "pipe",
+        }),
+      /Manifest has unstaged changes/
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
   }
 });
