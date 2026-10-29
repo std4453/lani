@@ -105,9 +105,6 @@
   td:nth-child(2) {
     overflow-wrap: anywhere;
   }
-  tbody tr {
-    position: relative;
-  }
   tbody tr:not(.excluded):hover {
     background: var(--lani-selected);
   }
@@ -116,22 +113,32 @@
   color: var(--lani-text-secondary);
   background: var(--lani-muted);
 }
+.titleCell {
+  position: relative;
+}
 .exclusionReason {
   position: absolute;
-  inset: 0;
+  inset: 0 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  overflow: hidden;
   color: var(--lani-text);
   text-align: center;
   visibility: hidden;
   pointer-events: none;
+
+  > span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: 100%;
+    overflow: hidden;
+  }
 }
 .excluded[tabindex]:hover,
 .excluded[tabindex]:focus {
-  .cellContent,
-  td[data-release]::after {
+  .titleCell .cellContent {
     visibility: hidden;
   }
   .exclusionReason {

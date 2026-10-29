@@ -440,7 +440,7 @@ export function SettingsDialog({
                             : '-'}
                         </span>
                       </td>
-                      <td>
+                      <td className={styles.titleCell}>
                         <span className={styles.cellContent}>
                           {torrent.title}
                         </span>
@@ -449,7 +449,7 @@ export function SettingsDialog({
                             id={reasonId}
                             className={styles.exclusionReason}
                           >
-                            {exclusion}
+                            <span>{exclusion}</span>
                           </span>
                         )}
                       </td>
