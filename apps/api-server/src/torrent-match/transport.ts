@@ -1,4 +1,5 @@
 import { LocalAxiosService } from '@/common/axios.service';
+import { MatcherBackend } from './backend';
 import {
   CatalogSnapshot,
   MatchQuery,
@@ -13,7 +14,7 @@ export interface TransportOptions {
 }
 
 /** API 只调用独立服务；一次操作失败即返回，不自动重试。 */
-export class MatcherTransport {
+export class MatcherTransport implements MatcherBackend {
   private serial: Promise<unknown> = Promise.resolve();
   private closed = false;
   private cancel?: () => void;
@@ -47,9 +48,9 @@ export class MatcherTransport {
     requestId: string,
   ): Promise<MatchResponse> {
     return this.exclusive(async () => {
-      const status = await this.ensure(catalog);
+      await this.ensure(catalog);
       const response = (await this.request('match', {
-        protocolVersion: 1,
+        protocolVersion: 2,
         catalogVersion: catalog.version,
         query,
         candidateIds,
@@ -59,29 +60,27 @@ export class MatcherTransport {
       if (
         response.catalogVersion !== catalog.version ||
         response.requestId !== requestId ||
-        response.modelVersion !== status.modelVersion ||
-        response.mode !== status.mode ||
         !response.result ||
         (response.result.seasonId !== null &&
-          !candidateIds.includes(response.result.seasonId)) ||
-        (response.result.score != null &&
-          (typeof response.result.score !== 'number' ||
-            !Number.isFinite(response.result.score))) ||
-        (response.result.reason != null &&
-          typeof response.result.reason !== 'string')
+          !catalog.catalog.some(
+            (season) => season.id === response.result.seasonId,
+          ))
       )
         throw new Error('Invalid matcher result');
       return response;
     });
   }
 
+  private async readStatus() {
+    const status = (await this.request('status', {})) as WorkerStatus;
+    this.validateStatus(status);
+    return status;
+  }
+
   private validateStatus(value: WorkerStatus) {
     if (
       !value ||
-      value.protocolVersion !== 1 ||
-      !['lexical', 'semantic'].includes(value.mode) ||
-      typeof value.modelVersion !== 'string' ||
-      !value.modelVersion ||
+      value.protocolVersion !== 2 ||
       (value.catalogVersion !== null &&
         typeof value.catalogVersion !== 'string')
     )
@@ -89,12 +88,11 @@ export class MatcherTransport {
   }
 
   private async ensure(catalog: CatalogSnapshot): Promise<WorkerStatus> {
-    const status = (await this.request('status', {})) as WorkerStatus;
-    this.validateStatus(status);
+    const status = await this.readStatus();
     if (status.catalogVersion === catalog.version) return status;
     // 明确的缓存同步，不是匹配失败后的重试。worker 可随时丢弃派生缓存。
     const loaded = (await this.request('configure', {
-      protocolVersion: 1,
+      protocolVersion: 2,
       catalogVersion: catalog.version,
       catalog: catalog.catalog,
     })) as WorkerStatus;
@@ -114,7 +112,7 @@ export class MatcherTransport {
   }
 
   private async requestHttp(method: string, payload: object): Promise<unknown> {
-    const url = `${this.options.endpoint.replace(/\/$/, '')}/v1/${
+    const url = `${this.options.endpoint.replace(/\/$/, '')}/v2/${
       method === 'configure' ? 'catalog' : method
     }`;
     const body = method === 'status' ? undefined : JSON.stringify(payload);

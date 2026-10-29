@@ -2,6 +2,8 @@ import { enqueueJob } from '@/background-queue/producer';
 import config from '@/config';
 import { Prisma } from '@lani/db';
 import { MATCH_QUEUE } from './queues';
+import { digest } from './catalog';
+import { torrentQuery } from './query';
 
 export const matchingEnabled = () => config.matching?.enabled === true;
 
@@ -47,6 +49,7 @@ export async function enqueueTorrentMatch(
 const inputs = {
   id: true,
   title: true,
+  parseResult: true,
   publishDate: true,
   seasonTitleRaw: true,
   seasonTitleAliases: true,
@@ -75,11 +78,13 @@ export async function updateWithTorrentMatching(
     where: { id: { in: ids } },
     select: inputs,
   });
-  const previous = new Map(before.map((row) => [row.id, JSON.stringify(row)]));
+  const previous = new Map(
+    before.map((row) => [row.id, digest(torrentQuery(row))]),
+  );
   await enqueueTorrentMatch(
     tx,
     after
-      .filter((row) => previous.get(row.id) !== JSON.stringify(row))
+      .filter((row) => previous.get(row.id) !== digest(torrentQuery(row)))
       .map((row) => row.id),
   );
   return result;

@@ -4,29 +4,30 @@ export interface CatalogSeason {
   aliases: string[];
   year: number | null;
   quarter: number | null;
-  episodes?: { number: number; airDate: string }[];
+  declaredEpisodeCount?: number | null;
+  premiereDate?: string | null;
 }
 export interface CatalogSnapshot {
   version: string;
   catalog: CatalogSeason[];
 }
 export interface MatchQuery {
+  rawTitle: string;
   aliases: string[];
   publishedAt: string;
   episode?: number;
+  publisherSeason?: number;
 }
 export interface WorkerStatus {
-  protocolVersion: 1;
+  protocolVersion: 2;
   catalogVersion: string | null;
-  modelVersion: string;
-  mode: 'lexical' | 'semantic';
+  [key: string]: unknown;
 }
 export interface MatchResponse extends WorkerStatus {
   requestId: string;
   result: {
     seasonId: string | null;
-    reason?: string | null;
-    score?: number | null;
+    [key: string]: unknown;
   };
 }
 export interface CatalogState {

@@ -88,6 +88,7 @@ jobs:
           python3 libs/db/tests/torrent-channel-migration.py
           python3 libs/db/tests/nyaa-metadata-migration.py
           python3 libs/db/tests/season-aliases-migration.py
+          python3 libs/db/tests/season-match-metadata-migration.py
           python3 libs/db/tests/torrent-retention-migration.py
           python3 libs/db/tests/torrent-matching-migration.py
       - name: Test all-in-one startup

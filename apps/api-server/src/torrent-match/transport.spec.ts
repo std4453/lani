@@ -13,6 +13,12 @@ let client: MatcherTransport;
 let version: string | null;
 let requests: string[];
 let resultId: string | null;
+let stage: 'primary' | 'fallback';
+let modelVersion: string;
+let mode: string;
+let matchModelVersion: string | undefined;
+let mutateResponse: ((response: any) => void) | undefined;
+let bodies: any[];
 let fail: boolean;
 let responseOverride: string | undefined;
 let hold: boolean;
@@ -28,16 +34,25 @@ const catalog = {
       aliases: ['Anime'],
       year: 2026,
       quarter: 4,
-      episodes: [],
     },
   ],
 };
-const query = { aliases: ['动画'], publishedAt: '2026-10-21T00:00:00Z' };
+const query = {
+  rawTitle: '动画 03',
+  aliases: ['动画'],
+  publishedAt: '2026-10-21T00:00:00Z',
+};
 
 beforeEach(async () => {
   version = null;
   requests = [];
   resultId = '1';
+  stage = 'primary';
+  modelVersion = 'test-model';
+  mode = 'lexical';
+  matchModelVersion = undefined;
+  mutateResponse = undefined;
+  bodies = [];
   fail = false;
   hold = false;
   responseOverride = undefined;
@@ -63,25 +78,27 @@ beforeEach(async () => {
       const body = chunks.length
         ? JSON.parse(Buffer.concat(chunks).toString())
         : {};
-      if (req.url === '/v1/catalog') version = body.catalogVersion;
+      bodies.push(body);
+      if (req.url === '/v2/catalog') version = body.catalogVersion;
       const status = {
-        protocolVersion: 1,
-        mode: 'lexical',
-        modelVersion: 'test-model',
+        protocolVersion: 2,
+        mode,
+        modelVersion,
         catalogVersion: version,
       };
       res.setHeader('content-type', 'application/json');
-      res.end(
-        JSON.stringify(
-          req.url === '/v1/match'
-            ? {
-                ...status,
-                requestId: body.requestId,
-                result: { seasonId: resultId },
-              }
-            : status,
-        ),
-      );
+      const response =
+        req.url === '/v2/match'
+          ? {
+              ...status,
+              requestId: body.requestId,
+              decision: { stage },
+              modelVersion: matchModelVersion ?? modelVersion,
+              result: { seasonId: resultId },
+            }
+          : status;
+      if (req.url === '/v2/match') mutateResponse?.(response);
+      res.end(JSON.stringify(response));
     });
   });
   server.on('connection', (socket) => {
@@ -106,10 +123,10 @@ afterEach(async () => {
 it('uploads once, then restores a lost cache before the next match', async () => {
   await client.match(catalog, query, ['1'], 'first');
   await client.match(catalog, query, ['1'], 'second');
-  expect(requests.filter((r) => r === 'PUT /v1/catalog')).toHaveLength(1);
+  expect(requests.filter((r) => r === 'PUT /v2/catalog')).toHaveLength(1);
   version = null;
   await client.match(catalog, query, ['1'], 'third');
-  expect(requests.filter((r) => r === 'PUT /v1/catalog')).toHaveLength(2);
+  expect(requests.filter((r) => r === 'PUT /v2/catalog')).toHaveLength(2);
 });
 it('accepts refusal and rejects IDs outside the requested candidates', async () => {
   resultId = null;
@@ -128,14 +145,14 @@ it('does not retry service failures', async () => {
   ).rejects.toMatchObject({
     status: 503,
   });
-  expect(requests).toEqual(['GET /v1/status']);
+  expect(requests).toEqual(['GET /v2/status']);
 });
 
 it('cancels a stalled request at the matching timeout and preserves the error code', async () => {
   hold = true;
   const result = client.load(catalog);
   await expect(result).rejects.toMatchObject({ code: 'ETIMEDOUT' });
-  expect(requests).toEqual(['GET /v1/status']);
+  expect(requests).toEqual(['GET /v2/status']);
 });
 
 it('close cancels the active request and prevents queued requests from starting', async () => {
@@ -146,7 +163,7 @@ it('close cancels the active request and prevents queued requests from starting'
   await client.close();
   expect(axios.isCancel(await active)).toBe(true);
   expect(await queued).toEqual(new Error('Matcher transport is closed'));
-  expect(requests).toEqual(['GET /v1/status']);
+  expect(requests).toEqual(['GET /v2/status']);
 });
 
 it('rejects malformed JSON rather than treating it as a successful response', async () => {
@@ -157,7 +174,7 @@ it('rejects malformed JSON rather than treating it as a successful response', as
 it('rejects oversized responses and requests without retrying', async () => {
   responseOverride = 'x'.repeat(16 * 1024 * 1024 + 1);
   await expect(client.load(catalog)).rejects.toBeInstanceOf(HttpRequestError);
-  expect(requests).toEqual(['GET /v1/status']);
+  expect(requests).toEqual(['GET /v2/status']);
   responseOverride = undefined;
   version = catalog.version;
   await expect(
@@ -168,5 +185,115 @@ it('rejects oversized responses and requests without retrying', async () => {
       'large',
     ),
   ).rejects.toThrow('Matcher request too large');
-  expect(requests).toEqual(['GET /v1/status', 'GET /v1/status']);
+  expect(requests).toEqual(['GET /v2/status', 'GET /v2/status']);
+});
+
+it('sends only recent candidate IDs and accepts a result from the full catalog', async () => {
+  const expanded = {
+    ...catalog,
+    catalog: [
+      ...catalog.catalog,
+      { ...catalog.catalog[0], id: '2', year: 2000 },
+    ],
+  };
+  stage = 'primary';
+  resultId = '2';
+  expect(
+    (await client.match(expanded, query, ['1'], 'catalog-match')).result
+      .seasonId,
+  ).toBe('2');
+  const body = bodies.find((body) => body.requestId === 'catalog-match');
+  expect(body).toEqual({
+    protocolVersion: 2,
+    catalogVersion: 'abc',
+    candidateIds: ['1'],
+    query,
+    requestId: 'catalog-match',
+  });
+  expect(body).not.toHaveProperty('primaryCandidateIds');
+  expect(body).not.toHaveProperty('fallbackCandidateIds');
+});
+
+it('accepts optional backend fields unchanged without checking identity or stage', async () => {
+  matchModelVersion = 'another-model';
+  mutateResponse = (response) => {
+    response.decision = { stage: 'custom', detail: ['backend-owned'] };
+    response.diagnostics = {
+      attempts: Array(5).fill({ vendorUnits: 'unknown' }),
+      anotherField: true,
+    };
+    response.result.explanation = { opaque: [1, null, 'value'] };
+    response.result.score = { custom: 'uncalibrated' };
+    response.extra = { nested: ['kept'] };
+    modelVersion = 'changed-during-request';
+  };
+  const response = await client.match(catalog, query, ['1'], 'extensions');
+  expect(response).toMatchObject({
+    modelVersion: 'another-model',
+    decision: { stage: 'custom', detail: ['backend-owned'] },
+    diagnostics: {
+      attempts: Array(5).fill({ vendorUnits: 'unknown' }),
+      anotherField: true,
+    },
+    extra: { nested: ['kept'] },
+    result: {
+      explanation: { opaque: [1, null, 'value'] },
+      score: { custom: 'uncalibrated' },
+    },
+  });
+  expect(requests).toEqual([
+    'GET /v2/status',
+    'PUT /v2/catalog',
+    'POST /v2/match',
+  ]);
+});
+
+it('accepts core status and match responses without model identity or extensions', async () => {
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce({
+      data: JSON.stringify({ protocolVersion: 2, catalogVersion: 'abc' }),
+    })
+    .mockResolvedValueOnce({
+      data: JSON.stringify({
+        protocolVersion: 2,
+        catalogVersion: 'abc',
+        requestId: 'core',
+        result: { seasonId: '1' },
+      }),
+    });
+  const core = new MatcherTransport(
+    { endpoint: 'http://example.test', timeoutMs: 1000 },
+    { request } as any,
+  );
+  expect(await core.match(catalog, query, ['1'], 'core')).toEqual({
+    protocolVersion: 2,
+    catalogVersion: 'abc',
+    requestId: 'core',
+    result: { seasonId: '1' },
+  });
+  expect(request).toHaveBeenCalledTimes(2);
+  await core.close();
+});
+
+it.each(['requestId', 'catalogVersion'])(
+  'rejects a mismatched %s even when the result ID is valid',
+  async (field) => {
+    mutateResponse = (response) => {
+      response[field] = 'different';
+    };
+    await expect(
+      client.match(catalog, query, ['1'], 'expected'),
+    ).rejects.toThrow('Invalid matcher result');
+  },
+);
+
+it('rejects the legacy protocol', async () => {
+  responseOverride = JSON.stringify({
+    protocolVersion: 1,
+    catalogVersion: 'abc',
+  });
+  await expect(client.load(catalog)).rejects.toThrow(
+    'Incompatible matcher protocol',
+  );
 });

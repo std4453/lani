@@ -1,6 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { planImages, imageExists } = require("./release-plan.cjs");
+const {
+  planImages,
+  imageExists,
+  imageTargets,
+  splitBuildMatrix,
+} = require("./release-plan.cjs");
 test("matcher reuse is keyed by fingerprint and variant", async () => {
   const variants = ["lexical", "semantic-cpu", "semantic-cu126"];
   const calls = [];
@@ -48,4 +53,54 @@ test("only 404 triggers build; registry faults fail planning", async () => {
       assert.equal(await imageExists("owner/image", "fp", request), false);
     else await assert.rejects(imageExists("owner/image", "fp", request));
   }
+});
+
+test("only application and legacy matcher images are planned", async () => {
+  const images = Object.fromEntries(
+    [
+      "admin",
+      "api-server",
+      "data-server",
+      "gateway",
+      "db",
+      "anime-matcher",
+      "llm-matcher",
+    ].map((app) => [app, { fingerprint: app + "-fp" }])
+  );
+  const targets = imageTargets({ images });
+  assert(!targets.some((x) => x.app === "llm-matcher"));
+  const planned = await planImages("Owner", targets, async () => false);
+  assert(!planned.report.some((x) => x.app === "llm-matcher"));
+  const split = splitBuildMatrix(planned.matrix);
+  assert(!Object.hasOwn(split, "llmMatcherMatrix"));
+  assert.deepEqual(
+    split.matrix.map((x) => x.app),
+    ["admin", "api-server", "data-server", "gateway", "db"]
+  );
+  assert.deepEqual(
+    split.matcherMatrix.map((x) => x.variant),
+    ["lexical", "semantic-cpu", "semantic-cu126"]
+  );
+});
+
+test("registry authentication can probe a not-yet-published package", async () => {
+  const calls = [];
+  const request = async (url, options) => {
+    calls.push({ url, options });
+    return url.includes("/token?")
+      ? { ok: true, json: async () => ({ token: "registry-token" }) }
+      : { ok: false, status: 404 };
+  };
+  assert.equal(
+    await imageExists("owner/new-package", "fp", request, "", {
+      username: "actor",
+      token: "github-token",
+    }),
+    false
+  );
+  assert.equal(
+    calls[0].options.headers.Authorization,
+    "Basic " + Buffer.from("actor:github-token").toString("base64")
+  );
+  assert.equal(calls[1].options.headers.Authorization, "Bearer registry-token");
 });

@@ -5,10 +5,29 @@ const allowed = ["admin", "api-server", "data-server", "gateway"];
 
 // A 404 is a missing image. Authentication, rate limits and network failures stop
 // planning rather than cause unnecessary builds. GHCR write access is maintainer-only.
-async function imageExists(name, fingerprint, request = fetch, variant = "") {
+async function imageExists(
+  name,
+  fingerprint,
+  request = fetch,
+  variant = "",
+  credentials = process.env.GITHUB_TOKEN && process.env.GITHUB_ACTOR
+    ? { token: process.env.GITHUB_TOKEN, username: process.env.GITHUB_ACTOR }
+    : undefined
+) {
   const auth = await request(
     `https://ghcr.io/token?service=ghcr.io&scope=repository:${name}:pull`,
-    { signal: AbortSignal.timeout(30000) }
+    {
+      signal: AbortSignal.timeout(30000),
+      headers: credentials
+        ? {
+            Authorization:
+              "Basic " +
+              Buffer.from(
+                `${credentials.username}:${credentials.token}`
+              ).toString("base64"),
+          }
+        : undefined,
+    }
   );
   if (!auth.ok)
     throw new Error(`Registry authorization failed: HTTP ${auth.status}`);
@@ -50,14 +69,7 @@ async function planImages(owner, images, exists = imageExists) {
   return { matrix, report };
 }
 
-async function main() {
-  if (process.argv[2] !== "select")
-    throw new Error("Usage: release-plan.cjs select");
-  const apps = allowed;
-  const revision = execFileSync("git", ["rev-parse", "HEAD"], {
-    encoding: "utf8",
-  }).trim();
-  const { manifest } = check(revision);
+function imageTargets(manifest, apps = allowed) {
   const images = [
     ...apps,
     ...(apps.some((app) => app !== "admin") ? ["db"] : []),
@@ -70,19 +82,35 @@ async function main() {
         variant,
       });
   }
+  return images;
+}
+
+function splitBuildMatrix(matrix) {
+  return {
+    matrix: matrix.filter((x) => x.app !== "anime-matcher"),
+    matcherMatrix: matrix.filter((x) => x.app === "anime-matcher"),
+  };
+}
+
+async function main() {
+  if (process.argv[2] !== "select")
+    throw new Error("Usage: release-plan.cjs select");
+  const apps = allowed;
+  const revision = execFileSync("git", ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  const { manifest } = check(revision);
+  const images = imageTargets(manifest, apps);
   const { matrix, report } = await planImages(
     process.env.GITHUB_REPOSITORY.split("/")[0],
     images
   );
   await fs.appendFile(
     process.env.GITHUB_OUTPUT,
-    `apps=${JSON.stringify(
-      apps
-    )}\nrevision=${revision}\nmatrix=${JSON.stringify(
-      matrix.filter((x) => x.app !== "anime-matcher")
-    )}\nmatcherMatrix=${JSON.stringify(
-      matrix.filter((x) => x.app === "anime-matcher")
-    )}\n`
+    `apps=${JSON.stringify(apps)}\nrevision=${revision}\n` +
+      Object.entries(splitBuildMatrix(matrix))
+        .map(([key, value]) => `${key}=${JSON.stringify(value)}\n`)
+        .join("")
   );
   await fs.appendFile(
     process.env.GITHUB_STEP_SUMMARY,
@@ -91,7 +119,7 @@ async function main() {
       "\n```\n"
   );
 }
-module.exports = { imageExists, planImages };
+module.exports = { imageExists, planImages, imageTargets, splitBuildMatrix };
 if (require.main === module)
   main().catch((error) => {
     console.error(error.message);

@@ -2,12 +2,46 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
-const { calculate, snapshot } = require("./build-fingerprints.cjs");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { calculate } = require("./build-fingerprints.cjs");
 
-const ref = execFileSync("git", ["rev-parse", "HEAD"], {
-  encoding: "utf8",
-}).trim();
-const tree = snapshot(ref);
+// 覆盖当前工作树，新增 Rush 项目在提交前也能验证依赖图及输入范围。
+const files = execFileSync(
+  "git",
+  ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+  {
+    encoding: "utf8",
+  }
+)
+  .split("\0")
+  .filter(Boolean);
+const entries = new Map(),
+  contents = new Map();
+for (const file of files) {
+  if (!fs.existsSync(file)) continue;
+  const stat = fs.lstatSync(file);
+  const content = stat.isSymbolicLink()
+    ? Buffer.from(fs.readlinkSync(file))
+    : fs.readFileSync(file);
+  entries.set(file, {
+    mode: stat.isSymbolicLink()
+      ? "120000"
+      : stat.mode & 0o111
+      ? "100755"
+      : "100644",
+    oid: createHash("sha1").update(content).digest("hex"),
+  });
+  contents.set(file, content.toString("utf8"));
+}
+const tree = {
+  entries,
+  read: (file) => {
+    if (!contents.has(file)) throw new Error(`Missing test input: ${file}`);
+    return contents.get(file);
+  },
+};
 const baseline = calculate(tree).manifest;
 
 function withChange(file, content) {
@@ -98,6 +132,11 @@ for (const [file, owner] of [
   ["apps/admin/public/logo.svg", "admin"],
   ["libs/db/prisma/migrations/new_change/migration.sql", "db"],
   ["libs/anime-matcher/python/model.bin", "anime-matcher"],
+  ["apps/api-server/src/torrent-match/llm/index.service.ts", "api-server"],
+  [
+    "apps/api-server/src/torrent-match/llm/prompts/first.system.txt",
+    "api-server",
+  ],
 ]) {
   test(`${file} remains a build input`, () => {
     assert.notEqual(
@@ -133,14 +172,128 @@ test("application source changes still invalidate the owning application", () =>
   assert.deepEqual(affected, ["admin"]);
 });
 
-test("application build workflows remain shared fingerprint inputs", () => {
+test("embedded matcher prompts only invalidate the API image", () => {
   const changed = withChange(
-    ".github/workflows/build_generic.yaml",
-    "name: Updated application build\n"
+    "apps/api-server/src/torrent-match/llm/prompts/first.system.txt",
+    "Updated system prompt\n"
   );
-  for (const app of Object.keys(baseline.images))
-    assert.notEqual(
-      changed.images[app].fingerprint,
-      baseline.images[app].fingerprint
+  const affected = Object.keys(baseline.images).filter(
+    (app) =>
+      baseline.images[app].fingerprint !== changed.images[app].fingerprint
+  );
+  assert.deepEqual(affected, ["api-server"]);
+});
+
+test("embedded matcher does not introduce a standalone image", () => {
+  assert(!Object.hasOwn(baseline.images, "llm-matcher"));
+  assert(
+    !calculate(tree).details["api-server"].projects.includes(
+      "@lani/llm-matcher"
+    )
+  );
+});
+
+for (const file of [
+  ".github/workflows/build_generic.yaml",
+  ".github/workflows/default_pipeline.yaml",
+  ".github/workflows/test.yaml",
+  ".github/scripts/release-plan.cjs",
+  "common/scripts/build-fingerprints.cjs",
+  "common/scripts/pnpm-fingerprint.cjs",
+  "common/scripts/docs-only.cjs",
+  "tools/cli/src/commands/build/index.ts",
+  "tools/cli/bin/run",
+  "tools/cli/scripts/generate-type.js",
+  "start_tmux.sh",
+  "tmux.conf",
+  "lani.code-workspace",
+  ".prettierrc.json",
+]) {
+  test(`${file} tooling changes do not invalidate applications`, () => {
+    assert.deepEqual(withChange(file, "Changed tooling\n"), baseline);
+    assert.deepEqual(withChange(file, null), baseline);
+  });
+}
+
+for (const file of [".dockerignore", ".nvmrc", "common/config/rush/.npmrc"]) {
+  test(`${file} remains a shared build input`, () => {
+    const changed = withChange(file, "Changed build input\n");
+    for (const app of Object.keys(baseline.images))
+      assert.notEqual(
+        changed.images[app].fingerprint,
+        baseline.images[app].fingerprint
+      );
+  });
+}
+
+test("generic tooling sources are absent from every explained input list", () => {
+  for (const detail of Object.values(calculate(tree).details)) {
+    assert(!detail.inputs.some(([file]) => file.startsWith(".github/")));
+    assert(!detail.inputs.some(([file]) => file.startsWith("common/scripts/")));
+    assert(!detail.inputs.some(([file]) => file.startsWith("tools/cli/src/")));
+  }
+});
+
+test("generating from the index tolerates unstaged tool edits and protects partial staging", () => {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), "lani-manifest-index-")
+  );
+  const git = (...args) =>
+    execFileSync("git", args, { cwd: directory, encoding: "utf8" });
+  const write = (file, content) => {
+    const target = path.join(directory, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  };
+  try {
+    git("init", "--quiet");
+    for (const file of tree.entries.keys())
+      if (
+        file === "rush.json" ||
+        file === "common/config/rush/deploy.json" ||
+        file === "common/config/rush/pnpm-lock.yaml" ||
+        file.endsWith("/package.json")
+      )
+        write(file, tree.read(file));
+    write("common/scripts/build-fingerprints.cjs", "staged tool source\n");
+    write("apps/api-server/partial.ts", "staged application source\n");
+    git("add", ".");
+    write("common/scripts/build-fingerprints.cjs", "unstaged tool source\n");
+    write("apps/api-server/partial.ts", "unstaged application source\n");
+    const generator = path.join(__dirname, "build-fingerprints.cjs");
+    execFileSync(process.execPath, [generator, "generate", "--staged"], {
+      cwd: directory,
+    });
+    assert.equal(
+      git("show", ":apps/api-server/partial.ts"),
+      "staged application source\n"
     );
+    assert.equal(
+      fs.readFileSync(
+        path.join(directory, "apps/api-server/partial.ts"),
+        "utf8"
+      ),
+      "unstaged application source\n"
+    );
+    assert.equal(
+      git("show", ":common/scripts/build-fingerprints.cjs"),
+      "staged tool source\n"
+    );
+    const manifest = fs.readFileSync(
+      path.join(directory, "build-manifest.json"),
+      "utf8"
+    );
+    assert.equal(git("show", ":build-manifest.json"), manifest);
+    write("build-manifest.json", manifest + " ");
+    assert.throws(
+      () =>
+        execFileSync(process.execPath, [generator, "generate", "--staged"], {
+          cwd: directory,
+          stdio: "pipe",
+        }),
+      /Manifest has unstaged changes/
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });

@@ -1,3 +1,4 @@
+jest.mock('./llm/llm-matcher', () => ({ LlmMatcher: class {} }));
 import { LocalAxiosService } from '@/common/axios.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
@@ -12,6 +13,7 @@ import {
   TorrentMatchService,
 } from './index.service';
 import { MatcherTransport } from './transport';
+import { LlmMatcher } from './llm/llm-matcher';
 import { CatalogState } from './protocol';
 import config from '@/config';
 import { enqueueTorrentMatch, updateWithTorrentMatching } from './producer';
@@ -84,6 +86,7 @@ suite('种子入库、目录等待与结果持久化', () => {
         BackgroundQueueService,
         QueueExplorer,
         TorrentMatchService,
+        { provide: LlmMatcher, useValue: {} },
         MatchCatalogConsumer,
         TorrentMatchConsumer,
       ],
@@ -146,7 +149,7 @@ suite('种子入库、目录等待与结果持久化', () => {
     });
     seasonId = season.id;
     load = jest.spyOn(MatcherTransport.prototype, 'load').mockResolvedValue({
-      protocolVersion: 1,
+      protocolVersion: 2,
       catalogVersion: '',
       modelVersion: 'test',
       mode: 'lexical',
@@ -154,10 +157,11 @@ suite('种子入库、目录等待与结果持久化', () => {
     match = jest
       .spyOn(MatcherTransport.prototype, 'match')
       .mockImplementation(async (catalog, _query, ids, requestId) => ({
-        protocolVersion: 1,
+        protocolVersion: 2,
         catalogVersion: catalog.version,
         modelVersion: 'test',
         mode: 'lexical',
+        decision: { stage: 'primary' },
         requestId,
         result: {
           seasonId: ids.includes(String(seasonId)) ? String(seasonId) : null,
@@ -213,7 +217,11 @@ suite('种子入库、目录等待与结果持久化', () => {
     await queues.wake(MATCH_QUEUE);
     expect(match).toHaveBeenCalledWith(
       expect.anything(),
-      { aliases: ['动画', 'Anime'], publishedAt: '2026-10-21T00:00:00.000Z' },
+      {
+        rawTitle: '动画 03',
+        aliases: ['动画', 'Anime'],
+        publishedAt: '2026-10-21T00:00:00.000Z',
+      },
       expect.anything(),
       expect.anything(),
     );
@@ -368,7 +376,11 @@ suite('种子入库、目录等待与结果持久化', () => {
 
   it('distinguishes unsupported input from refusal, and skips unrelated updates', async () => {
     const torrent = await insert();
-    await update(torrent.id, { seasonTitleRaw: null, seasonTitleAliases: [] });
+    await update(torrent.id, {
+      title: ' ',
+      seasonTitleRaw: null,
+      seasonTitleAliases: [],
+    });
     await queues.wake(MATCH_QUEUE);
     expect(
       (await db.torrent.findUnique({ where: { id: torrent.id } }))!.matchStatus,
@@ -445,7 +457,7 @@ suite('种子入库、目录等待与结果持久化', () => {
   });
 
   it('does not restore an old worker cache during catalog activation', async () => {
-    // 变化在其他季度，普通 debounce 期间本可继续匹配；构建期间仍需短暂等待。
+    // 变化在回退目录中的其他季度；debounce 与激活期间都必须等待。
     await db.season.create({
       data: {
         title: 'Future anime',
@@ -484,10 +496,11 @@ suite('种子入库、目录等待与结果持久化', () => {
 
   it('treats no_match as completed and does not rematch after catalog changes', async () => {
     match.mockImplementation(async (catalog, _query, _ids, requestId) => ({
-      protocolVersion: 1,
+      protocolVersion: 2,
       catalogVersion: catalog.version,
       modelVersion: 'test',
       mode: 'lexical',
+      decision: { stage: 'primary' },
       requestId,
       result: { seasonId: null },
     }));
@@ -537,10 +550,11 @@ suite('种子入库、目录等待与结果持久化', () => {
       entered();
       await gate;
       return {
-        protocolVersion: 1,
+        protocolVersion: 2,
         catalogVersion: catalog.version,
         modelVersion: 'stale',
         mode: 'lexical',
+        decision: { stage: 'primary' },
         requestId,
         result: { seasonId: null },
       };
@@ -556,5 +570,100 @@ suite('种子入库、目录等待与结果持久化', () => {
       (await db.torrent.findUnique({ where: { id: torrent.id } }))!
         .matchDetails,
     ).toMatchObject({ modelVersion: 'test' });
+  });
+
+  it('uses raw titles without aliases and carries parser season hints', async () => {
+    const torrent = await insert();
+    await update(torrent.id, {
+      seasonTitleRaw: null,
+      seasonTitleAliases: [],
+      parseResult: { publisherSeason: 2 },
+    });
+    await queues.wake(MATCH_QUEUE);
+    expect(match.mock.calls[0][1]).toMatchObject({
+      rawTitle: '动画 03',
+      aliases: [],
+      publisherSeason: 2,
+    });
+    expect(
+      (await db.torrent.findUnique({ where: { id: torrent.id } }))!.matchStatus,
+    ).toBe('MATCHED');
+  });
+
+  it('accepts an old season selected by the fallback stage', async () => {
+    await db.season.update({
+      where: { id: seasonId },
+      data: { yearAndSemester: '200004' },
+    });
+    await service.refreshCatalog();
+    await mature();
+    match.mockImplementation(async (catalog, _query, ids, requestId) => {
+      expect(ids).not.toContain(String(seasonId));
+      expect(
+        catalog.catalog.some((season) => season.id === String(seasonId)),
+      ).toBe(true);
+      return {
+        protocolVersion: 2,
+        catalogVersion: catalog.version,
+        modelVersion: 'test',
+        mode: 'external',
+        requestId,
+        decision: { stage: 'fallback', fallbackReason: 'primary_refused' },
+        result: { seasonId: String(seasonId) },
+      };
+    });
+    const torrent = await insert();
+    await queues.wake(MATCH_QUEUE);
+    expect(
+      await db.torrent.findUnique({ where: { id: torrent.id } }),
+    ).toMatchObject({
+      matchedSeasonId: seasonId,
+      matchDetails: {
+        decision: { stage: 'fallback', fallbackReason: 'primary_refused' },
+      },
+    });
+  });
+
+  it('discards an in-flight result when an unobserved fallback candidate changes', async () => {
+    const torrent = await insert();
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = match.getMockImplementation()!;
+    match.mockImplementationOnce(async (...args) => {
+      entered();
+      await gate;
+      return original(...args);
+    });
+    const running = queues.wake(MATCH_QUEUE);
+    await started;
+    await db.season.create({
+      data: {
+        title: 'Old candidate',
+        aliases: [],
+        tags: [],
+        yearAndSemester: '200004',
+        jellyfinFolderId: folderId,
+      },
+    });
+    release();
+    await running;
+    expect(
+      await db.torrent.findUnique({ where: { id: torrent.id } }),
+    ).toMatchObject({
+      matchStatus: 'PENDING',
+      matchedSeasonId: null,
+    });
+    await service.refreshCatalog();
+    await mature();
+    await queues.wake(MATCH_QUEUE);
+    expect(
+      (await db.torrent.findUnique({ where: { id: torrent.id } }))!.matchStatus,
+    ).toBe('MATCHED');
   });
 });

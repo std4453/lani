@@ -190,7 +190,15 @@ export class EpisodeScrapeService {
       ...updates,
       this.prisma.season.update({
         where: { id: seasonId },
-        data: { episodesLastSync: new Date() },
+        data: {
+          episodesLastSync: new Date(),
+          ...(result.matchMetadata
+            ? {
+                declaredEpisodeCount: result.matchMetadata.declaredEpisodeCount,
+                premiereDate: result.matchMetadata.premiereDate,
+              }
+            : {}),
+        },
       }),
     ]);
     await this.emit.writeEpisodeMetadata(seasonId);

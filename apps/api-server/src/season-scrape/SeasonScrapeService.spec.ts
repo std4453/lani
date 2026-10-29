@@ -127,3 +127,53 @@ it('作品映射变化时清除旧的单集映射', async () => {
     episodes: { updateMany: { data: { dandanplayEpisodeId: null } } },
   });
 });
+
+it('元数据同步保存独立声明集数和首播日期', async () => {
+  const { season, service, prisma, fetch } = setup('BGM_CN');
+  fetch.mockResolvedValue({
+    info: {
+      aliases: [],
+      declaredEpisodeCount: 12,
+      premiereDate: '2024-02-29',
+    },
+  });
+  await service.syncMetadata(season);
+  expect(prisma.season.update.mock.calls[0][0].data).toMatchObject({
+    declaredEpisodeCount: 12,
+    premiereDate: '2024-02-29',
+  });
+});
+
+it.each(['BGM_CN', 'SKYHOOK'])(
+  '%s 没有独立元数据时清空声明值，不从单集列表推断',
+  async (source) => {
+    const { season, service, prisma, fetch } = setup(source);
+    season.declaredEpisodeCount = 12;
+    season.premiereDate = '2025-01-01';
+    fetch.mockResolvedValue({
+      info: { aliases: [], year: 2026, semester: 3 },
+      episodes: [{ index: 1, airDate: '20260701' }],
+    });
+    await service.syncMetadata(season);
+    expect(prisma.season.update.mock.calls[0][0].data).toMatchObject({
+      declaredEpisodeCount: null,
+      premiereDate: null,
+    });
+  },
+);
+
+it('元数据写入前也拒绝无效的集数和日期', async () => {
+  const { season, service, prisma, fetch } = setup('BGM_CN');
+  fetch.mockResolvedValue({
+    info: {
+      aliases: [],
+      declaredEpisodeCount: 0,
+      premiereDate: '2026-02-29',
+    },
+  });
+  await service.syncMetadata(season);
+  expect(prisma.season.update.mock.calls[0][0].data).toMatchObject({
+    declaredEpisodeCount: null,
+    premiereDate: null,
+  });
+});

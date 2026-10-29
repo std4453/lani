@@ -4,15 +4,17 @@
 
 种子列表的「季度」列会将识别成功的结果显示为季度链接；尚未识别时保留解析出的名称标签。将鼠标移到链接上，点击红色删除图标可取消关联。取消后恢复名称标签，后续自动匹配不会重新关联该种子。
 
-## 配置与本机语义服务
+## 配置与匹配服务
 
-独立 API 默认关闭匹配。本机部署建议使用独立语义服务，API 镜像无需 Python。成品镜像 tag 使用 `fp-<fingerprint>-<variant>`，fingerprint 可从对应提交的 `build-manifest.json` 中读取 `images.anime-matcher.fingerprint`。
+独立 API 默认关闭匹配，可选择远端本机模型服务或 API 内置的外部大模型后端，API 镜像无需 Python。远端服务使用 v2 协议，升级时需同步更新 API 与 matcher。
 
-| 变体后缀 | 默认行为 | 内置模型 |
-| --- | --- | --- |
-| `lexical` | 词法匹配，无神经推理依赖 | 无 |
-| `semantic-cpu` | CPU、float32 | 固定版本 E5-base 和 Qwen3-Reranker-0.6B |
-| `semantic-cu126` | CUDA、float32 | 同上 |
+本机模型的成品镜像 tag 使用 `fp-<fingerprint>-<variant>`，fingerprint 可从对应提交的 `build-manifest.json` 中读取 `images.anime-matcher.fingerprint`。
+
+| 变体后缀         | 默认行为                 | 内置模型                                |
+| ---------------- | ------------------------ | --------------------------------------- |
+| `lexical`        | 词法匹配，无神经推理依赖 | 无                                      |
+| `semantic-cpu`   | CPU、float32             | 固定版本 E5-base 和 Qwen3-Reranker-0.6B |
+| `semantic-cu126` | CUDA、float32            | 同上                                    |
 
 将下面 `<fingerprint>` 替换为所需版本：
 
@@ -36,9 +38,10 @@ API 的 `config.yaml`：
 ```yaml
 matching:
   enabled: true
+  backend: external
   endpoint: http://127.0.0.1:8090
   timezone: Asia/Shanghai
-  previousQuarters: 0 # 前几个公历季度，0–8
+  previousQuarters: 1 # 首轮包含前一公历季度，可设 0–8
   nextQuarters: 0 # 后几个公历季度，0–8
   catalogDebounceMs: 1800000 # 目录静默窗口，毫秒；默认 30 分钟，0 表示不额外等待
   timeoutMs: 120000 # 每次协议操作的超时，冷目录较大时可调高
@@ -46,7 +49,32 @@ matching:
 
 修改 `catalogDebounceMs` 后重启 API，对随后检测到的目录变化生效；正在等待的窗口保留原截止时间。首次初始化不等待，目录检测仍每分钟执行一次。
 
-API 只连接 HTTP worker；开启后必须提供 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
+选择 `backend: external` 时必须提供 HTTP worker 的 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
+
+## 外部大模型服务
+
+外部大模型后端内置于 API。选择 `matching.backend: llm`，在 `matching.llm` 中配置兼容 Chat Completions 的 API 基础地址、模型和密钥，无需另建匹配器容器。供应商参数及匹配总期限也放在 `matching.llm`；共享调用并发与单次超时由顶层 `llm` 配置。
+
+```yaml
+matching:
+  enabled: true
+  backend: llm
+  llm:
+    apiBase: https://your-provider.example/v1
+    apiKey: your-api-key
+    model: your-model
+    deadlineMs: 100000
+    fallbackEnabled: true
+    firstParameters: {}
+    reviewParameters: {}
+llm:
+  concurrency: 2
+  timeoutMs: 45000
+```
+
+该服务先处理近期候选，必要时在全部已录入季度中复核，因此可识别旧季补档。远端故障会保留为任务错误；正常未匹配与网络错误分别记录。作品声明集数和首播日期来自作品元数据，已有目录可通过作品资料同步或该季度的剧集同步补齐。
+
+配置示例与参数见[API 大模型匹配说明](https://github.com/std4453/lani/blob/next/apps/api-server/docs/llm-matching.md)。调用外部模型会产生供应商费用。请求包含资源原标题、解析别名、发布时间、集数和发布者季数；首轮发送近期候选目录，启用复核时发送完整已录入季度目录，包含季度 ID、作品名称、年份、季度、声明集数和首播日期。
 
 ## all-in-one
 

@@ -1,8 +1,42 @@
-# 季度匹配 v1 接入说明
+# 季度匹配接入协议
 
 worker 只保存可丢弃的全目录索引，不访问数据库、不管理任务、不自行筛选季度、不持久化请求历史。每个实例服务一个目录发布者。目录事实、激活版本、待更新快照、debounce、候选计算与队列恢复由调用方负责。
 
-## 类型与端点
+## v2：可替换匹配器接口
+
+业务侧通过同一协议使用本包或其他兼容匹配器。HTTP 提供 `GET /v2/status`、`PUT /v2/catalog` 和 `POST /v2/match`；JSONL 沿用下文的 envelope，在每次请求中传 `protocolVersion: 2`。HTTP 请求正文版本必须与路径一致。
+
+npm 客户端导出 `MatchQueryV2`、`WorkerStatusV2`、`ConfigureRequestV2`、`MatchRequestV2` 和 `MatchResponseV2`；使用 `status(2)`，`configure()` 和 `match()` 根据请求版本选择协议。`status()` 默认 v1，保留既有调用行为。
+
+目录上传结构为 `{ protocolVersion: 2, catalogVersion, catalog }`。目录条目沿用下文的 ID、标题、别名、年、季度与可选静态总集数字段，并允许 `premiereDate?: string | null` 表示 `YYYY-MM-DD` 首播日期。v2 无需逐集 `episodes`。本包模型忽略 `premiereDate` 和 `episodes`；它们不会进入本包推理输入。
+
+```json
+{
+  "protocolVersion": 2,
+  "requestId": "torrent:123:input-version",
+  "catalogVersion": "caller-owned-content-version",
+  "query": {
+    "rawTitle": "[发布组] 示例动画 - 01.5",
+    "aliases": ["示例动画"],
+    "publishedAt": "2026-10-21T12:00:00+08:00",
+    "episode": 1.5,
+    "publisherSeason": null
+  },
+  "candidateIds": ["season-1"]
+}
+```
+
+`rawTitle` 是必填字符串，最长 2048 个 Unicode 字符；API 发送未经解析的资源标题，超长时仅截取传输值，数据库保留原文。其余查询字段沿用 v1 校验。`candidateIds` 是调用方计算的近期候选，必须显式提供，ID 不重复且属于当前目录。`catalogVersion` 标识已经上传的完整目录；兼容实现可以根据服务端策略使用此目录中的其他季度，返回的非空 `seasonId` 必须属于该版本的完整目录。本包保留原模型行为，只匹配 `candidateIds`，空列表时拒答，并忽略 `rawTitle`。
+
+状态与目录成功响应的必填字段为 `{ protocolVersion: 2, catalogVersion }`；匹配响应另含 `requestId` 和 `result: { seasonId }`。`mode`、`modelVersion`、`decision`、`diagnostics` 及 `result` 内诊断字段都是可选 JSON 扩展，客户端原样传递，不校验具体实现的模式、模型身份或决策阶段。客户端核对协议版本、请求关联、目录版本及所选 ID 的完整目录范围。
+
+npm 客户端通过成功的 `configure()` 记录完整目录 ID。新客户端即使从 `status(2)` 得到相同目录版本，也须先显式 `configure()` 才能执行 v2 匹配；同版本上传由服务端幂等处理。失败的目录上传不替换客户端已确认的目录。
+
+两版协议的运行模式均由服务端启动配置决定，请求中可选的 `mode` 字段被忽略。Node 客户端的 `semantic` 等选项仅用于启动本地 JSONL 子进程，HTTP 调用不会据此限制或切换远端模式。
+
+目录缓存、原子替换、请求大小和错误恢复规则与 v1 相同。HTTP 错误 envelope 的 `protocolVersion` 对应请求路径；JSONL 错误仍使用统一 envelope。两版接口共用当前进程的目录缓存，版本内容仍由唯一目录发布者保证一致。
+
+## v1 类型与端点
 
 npm 导出 `CatalogSeason`、`MatchQuery`、`WorkerStatus`、`ConfigureRequest`、`MatchRequest`、`MatchResponse`、`AnimeMatcherClient` 和 `AnimeMatcherError`。客户端方法与传输一一对应：
 
@@ -20,7 +54,7 @@ npm 导出 `CatalogSeason`、`MatchQuery`、`WorkerStatus`、`ConfigureRequest`�
 
 `configure` 接收 `{ protocolVersion: 1, catalogVersion, catalog }`。目录版本由调用方计算并保存，worker 不实现跨语言内容规范化；相同版本应代表相同内容。完整索引构建成功后才替换旧缓存，失败保留旧版本；相同版本再次上传不会重建。
 
-`status` 和 `configure` 成功响应均为 `{ protocolVersion: 1, catalogVersion: string | null, modelVersion: string, mode: 'lexical' | 'semantic' }`。未加载目录时状态查询正常返回 null，不加载数值库／神经模型。`modelVersion` 包含模式、适配／推理代码、固定模型清单／树权重、设备与精度配置及相关依赖版本；相同环境跨进程重启稳定。目录刷新复用已经加载的语义模型及可丢弃的标题缓存。
+`status` 和 `configure` 成功响应必填 `{ protocolVersion: 1, catalogVersion: string | null }`。本包另提供可选的 `modelVersion` 与 `mode` 扩展，后者为 `lexical` 或 `semantic`；客户端不依赖这些字段。未加载目录时状态查询正常返回 null，不加载数值库／神经模型。本包的 `modelVersion` 包含模式、适配／推理代码、固定模型清单／树权重、设备与精度配置及相关依赖版本，相同环境跨进程重启稳定。目录刷新复用已经加载的语义模型及可丢弃的标题缓存。
 
 `match` 接收：
 
@@ -49,11 +83,11 @@ npm 导出 `CatalogSeason`、`MatchQuery`、`WorkerStatus`、`ConfigureRequest`�
 }
 ```
 
-`seasonId: null` 是正常拒答（HTTP 200）。`reason`、`score` 仅用于诊断，可省略或 null；树分数没有通过 99% 精度校准，不能把 0.99 解读为 99% 正确率。requestId 只用于关联，重复提交会重新推理；幂等落库由工程侧负责。
+`seasonId: null` 是正常拒答（HTTP 200）。`reason`、`score` 及其他扩展仅用于诊断，客户端不要求或解释其结构；本包提供字符串原因与数值分数。树分数没有通过 99% 精度校准，不能把 0.99 解读为 99% 正确率。requestId 只用于关联，重复提交会重新推理；幂等落库由工程侧负责。
 
 ## 错误与恢复
 
-HTTP 错误响应为 `{ protocolVersion: 1, error: { code, message } }`：
+HTTP 错误响应为 `{ protocolVersion, error: { code, message } }`：
 
 | HTTP | code | 行为 |
 | --- | --- | --- |
@@ -63,13 +97,13 @@ HTTP 错误响应为 `{ protocolVersion: 1, error: { code, message } }`：
 | 422 | `PROTOCOL_UNSUPPORTED` | 不支持请求中的协议版本 |
 | 500 | `INTERNAL_ERROR` | 构建／推理内部故障；不泄露 traceback 或输入 |
 
-错误时不返回虚构的匹配版本，成功响应才报告实际版本；可通过 status 核对。客户端额外用 `UNAVAILABLE` 表示传输／子进程故障，`TIMEOUT` 表示超时，`INVALID_RESPONSE` 表示响应结构或关联信息不符，`MODE_MISMATCH` 表示配置模式不符。HTTP 错误保留 `AnimeMatcherError.status`，JSONL 不携带 HTTP 状态码。
+错误时不返回虚构的匹配版本，成功响应才报告实际版本；可通过 status 核对。客户端额外用 `UNAVAILABLE` 表示传输／子进程故障，`TIMEOUT` 表示超时，`INVALID_RESPONSE` 表示核心响应结构、关联信息或结果范围不符；本地尚未记录 v2 目录时返回 `CATALOG_MISSING`。HTTP 错误保留 `AnimeMatcherError.status`，JSONL 不携带 HTTP 状态码。
 
 客户端不自动重试、重建目录或重放匹配。子进程退出后 `match()` 直接失败；后续显式调用 `status()` 或 `configure()` 可启动新进程。HTTP 操作超时可能发生在目录已激活但回复未送达时，恢复先查 status，再决定是否重传。调用方负责暂停队列、保存错误和显式恢复；本库没有任务级重试。
 
 ## JSONL 与资源边界
 
-每行请求 `{ id: number, method: 'status' | 'configure' | 'match', ...payload }`，成功响应 `{ id, result: <HTTP 成功响应> }`，错误 `{ id, error: { code, message } }`。`id` 为 JS 安全整数；无法解析或没有有效 ID 时响应 `id: null`。`status` 可只传 id/method；若提供 protocolVersion 则校验。其他方法必须提供 protocolVersion。
+每行请求 `{ id: number, method: 'status' | 'configure' | 'match', ...payload }`，成功响应 `{ id, result: <HTTP 成功响应> }`，错误 `{ id, error: { code, message } }`。`id` 为 JS 安全整数；无法解析或没有有效 ID 时响应 `id: null`。`status` 可只传 id/method，此时返回 v1；若提供 protocolVersion 则校验并返回对应版本。其他方法必须提供 protocolVersion，当前支持 1 和 2。
 
 UTF-8 编码，stdin/stdout 仅用于协议，日志写 stderr。每个 worker 顺序执行；请求／响应上限 16 MiB，JSONL 包含 envelope 和换行。HTTP 写请求需 Content-Length，不接受 chunked。客户端默认绝对超时 120 秒，可配置；HTTP socket 读写超时 30 秒。HTTP 客户端超时不保证取消已经开始的计算；业务侧不得据此推断目录一定未激活。实例只面向内部服务网络。
 

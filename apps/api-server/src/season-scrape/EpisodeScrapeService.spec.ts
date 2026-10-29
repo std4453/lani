@@ -49,6 +49,26 @@ function setup(existing: any[], episodes: any[]) {
       } as any),
   };
 }
+it.each(['BGM_CN', 'SKYHOOK'])(
+  '%s 没有作品元数据时不从剧集推导声明集数和首播日期',
+  async (episodesSource) => {
+    const { prisma, sync } = setup(
+      [],
+      [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
+    );
+    await sync({
+      episodesSource,
+      tvdbId: '1',
+      tvdbSeason: 1,
+      declaredEpisodeCount: 12,
+      premiereDate: '2026-10-01',
+    });
+    expect(prisma.season.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { episodesLastSync: expect.any(Date) },
+    });
+  },
+);
 it('binds legacy rows without recreating them', async () => {
   const { prisma, sync } = setup(
     [
@@ -350,4 +370,65 @@ it('停用查询后更新元数据时不清除已有单集身份，仍刷新NFO'
     'dandanplayEpisodeId',
   );
   expect((service as any).emit.writeEpisodeMetadata).toHaveBeenCalledWith(1);
+});
+
+it('同步剧集时只额外保存独立声明集数和首播日期', async () => {
+  const { prisma, service, sync } = setup([], []);
+  (service as any).bangumi.fetch = jest.fn().mockResolvedValue({
+    episodes: [],
+    matchMetadata: { declaredEpisodeCount: 24, premiereDate: '2026-10-01' },
+    info: {
+      aliases: ['new'],
+      year: 2026,
+      semester: 3,
+      weekday: 1,
+      time: '01:00',
+      description: 'new',
+    },
+  });
+  await sync();
+  expect((service as any).bangumi.fetch).toHaveBeenCalledWith(
+    { episodes: true },
+    '1',
+  );
+  expect(prisma.season.update).toHaveBeenCalledWith({
+    where: { id: 1 },
+    data: {
+      episodesLastSync: expect.any(Date),
+      declaredEpisodeCount: 24,
+      premiereDate: '2026-10-01',
+    },
+  });
+  expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+});
+
+it('作品接口返回未知元数据时清空声明值，不复用旧的已同步剧集数量', async () => {
+  const { prisma, service, sync } = setup(
+    [],
+    [{ episodeNumber: '1', title: 'one' }],
+  );
+  (service as any).bangumi.fetch = jest.fn().mockResolvedValue({
+    episodes: [],
+    matchMetadata: { declaredEpisodeCount: null, premiereDate: null },
+  });
+  await sync({ declaredEpisodeCount: 12, premiereDate: '2025-01-01' });
+  expect(prisma.season.update).toHaveBeenCalledWith({
+    where: { id: 1 },
+    data: {
+      episodesLastSync: expect.any(Date),
+      declaredEpisodeCount: null,
+      premiereDate: null,
+    },
+  });
+});
+
+it('额外作品请求失败时不保存部分剧集或同步标记', async () => {
+  const { prisma, service, sync } = setup([], []);
+  (service as any).bangumi.fetch = jest
+    .fn()
+    .mockRejectedValue(new Error('subject unavailable'));
+  await expect(sync()).rejects.toThrow('subject unavailable');
+  expect(prisma.season.update).not.toHaveBeenCalled();
+  expect(prisma.episode.create).not.toHaveBeenCalled();
+  expect(prisma.$transaction).not.toHaveBeenCalled();
 });

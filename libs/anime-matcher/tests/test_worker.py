@@ -1,4 +1,4 @@
-"""HTTP 与 JSONL 的 v1 契约、故障恢复和真实模型适配。"""
+"""HTTP 与 JSONL 的 v1/v2 契约、故障恢复和真实模型适配。"""
 
 import copy
 import http.client
@@ -59,6 +59,12 @@ def match(**updates):
     return {**copy.deepcopy(MATCH), **updates}
 
 
+def match_v2(**updates):
+    request = match(protocolVersion=2)
+    request["query"]["rawTitle"] = "[发布组] 别名 - 01.5"
+    return {**request, **updates}
+
+
 class ContractTests(unittest.TestCase):
     def http_sequence(self, operations, factory):
         server = worker.make_http_server("127.0.0.1", 0, matcher_factory=factory)
@@ -72,6 +78,8 @@ class ContractTests(unittest.TestCase):
                     "configure": ("PUT", "/v1/catalog"),
                     "match": ("POST", "/v1/match"),
                 }[method]
+                if payload.get("protocolVersion") == 2:
+                    path = path.replace("/v1/", "/v2/")
                 conn = http.client.HTTPConnection(
                     "127.0.0.1", server.server_port, timeout=2
                 )
@@ -201,8 +209,8 @@ class ContractTests(unittest.TestCase):
                 ("configure", broken),
                 ("status", {}),
                 ("match", match()),
-                ("configure", config(protocolVersion=2)),
-                ("match", match(protocolVersion=2)),
+                ("configure", config(protocolVersion=3)),
+                ("match", match(protocolVersion=3)),
             ]
         )
         for i, status, code in [
@@ -221,6 +229,68 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(replies[8][1]["catalogVersion"], CONFIG["catalogVersion"])
         self.assertEqual(replies[9][0], 200)
         self.assertEqual(len(created), 1)
+
+    def test_v2_candidate_scope_and_ignored_model_metadata(self):
+        cfg = config(protocolVersion=2)
+        cfg["catalog"][0].update(premiereDate="2026-10-01", episodes="ignored")
+        request = match_v2()
+        request["query"]["rawTitle"] = "escape"
+        replies, created = self.both([
+            ("status", {"protocolVersion": 2}),
+            ("configure", cfg),
+            ("match", request),
+            ("match", match_v2(candidateIds=["s2"])),
+            ("match", match_v2(candidateIds=[])),
+        ])
+        self.assertTrue(all(status == 200 for status, _ in replies))
+        self.assertTrue(all(payload["protocolVersion"] == 2 for _, payload in replies))
+        self.assertEqual(created[0].catalog[0]["episodes"], [])
+        self.assertNotIn("premiereDate", created[0].catalog[0])
+        self.assertNotIn("rawTitle", created[0].last_query)
+        for index, sid in ((2, "s1"), (3, "s2"), (4, None)):
+            self.assertEqual(replies[index][1]["result"]["seasonId"], sid)
+
+    def test_v2_requires_raw_title_and_explicit_unique_candidates(self):
+        no_raw_title = match_v2()
+        del no_raw_title["query"]["rawTitle"]
+        no_candidates = match_v2()
+        del no_candidates["candidateIds"]
+        requests = [no_raw_title, no_candidates, *[
+            match_v2(candidateIds=ids)
+            for ids in (None, ["s1", "s1"], ["outside"])
+        ]]
+        replies, _ = self.both([
+            ("configure", config(protocolVersion=2)),
+            *[("match", request) for request in requests],
+        ])
+        for status, payload in replies[1:]:
+            self.assertEqual(status, 400)
+            self.assertEqual(payload["error"]["code"], "INVALID_REQUEST")
+
+    def test_v2_legacy_model_only_returns_from_requested_candidates(self):
+        class EscapingMatcher(FakeMatcher):
+            def match(self, query, candidates):
+                return {"seasonId": "s2"}
+
+        replies = self.http_sequence([
+            ("configure", config(protocolVersion=2)),
+            ("match", match_v2()),
+        ], EscapingMatcher)
+        self.assertEqual(replies[1][0], 500)
+        self.assertEqual(replies[1][1]["error"]["code"], "INTERNAL_ERROR")
+
+    def test_request_mode_is_ignored_in_both_protocols(self):
+        for protocol_version in (1, 2):
+            request = match_v2() if protocol_version == 2 else match()
+            replies, _ = self.both([
+                ("status", {"protocolVersion": protocol_version, "mode": "semantic"}),
+                ("configure", config(protocolVersion=protocol_version, mode={"ignored": True})),
+                ("match", {**request, "mode": "semantic"}),
+            ])
+            self.assertTrue(all(status == 200 for status, _ in replies))
+            self.assertTrue(all(payload["mode"] == "lexical" for _, payload in replies))
+        state = worker.WorkerState(semantic=True, matcher_factory=FakeMatcher)
+        self.assertEqual(state.dispatch("status", {"mode": "lexical"})["mode"], "semantic")
 
     def test_errors_are_not_business_rejections_and_results_cannot_escape(self):
         replies, _ = self.both(
@@ -372,6 +442,25 @@ class ContractTests(unittest.TestCase):
                         json.loads(res.read())["error"]["code"], "INVALID_REQUEST"
                     )
                     conn.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_http_path_and_request_protocol_versions_must_agree(self):
+        server = worker.make_http_server("127.0.0.1", 0, matcher_factory=FakeMatcher)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            for path_version, request_version in ((1, 2), (2, 1)):
+                conn = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+                conn.request("PUT", f"/v{path_version}/catalog", json.dumps(config(protocolVersion=request_version)))
+                response = conn.getresponse()
+                payload = json.loads(response.read())
+                conn.close()
+                self.assertEqual(response.status, 422)
+                self.assertEqual(payload["protocolVersion"], path_version)
+                self.assertEqual(payload["error"]["code"], "PROTOCOL_UNSUPPORTED")
         finally:
             server.shutdown()
             server.server_close()

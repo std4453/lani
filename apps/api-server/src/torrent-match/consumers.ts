@@ -40,4 +40,8 @@ export class TorrentMatchConsumer implements QueueHandler<TorrentMatchPayload> {
   execute(job: QueueJob<TorrentMatchPayload>) {
     return this.matching.match(job);
   }
+
+  settled() {
+    this.matching.settleMatch();
+  }
 }

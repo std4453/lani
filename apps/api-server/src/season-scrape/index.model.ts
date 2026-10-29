@@ -1,4 +1,4 @@
-import { HideField, InputType, ObjectType } from '@nestjs/graphql';
+import { Field, HideField, InputType, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class SeasonInfo {
@@ -8,6 +8,10 @@ export class SeasonInfo {
   genres: string[];
   year?: number;
   semester?: number;
+  @Field(() => Int, { nullable: true })
+  declaredEpisodeCount?: number | null;
+  @Field(() => String, { nullable: true })
+  premiereDate?: string | null;
   // TODO: 卡司
   /**
    * 0 (Monday) - 6 (Sunday)
@@ -56,6 +60,8 @@ export class SeasonImages {
 
 @ObjectType()
 export class PartialSeason {
+  @HideField()
+  matchMetadata?: Pick<SeasonInfo, 'declaredEpisodeCount' | 'premiereDate'>;
   info?: SeasonInfo;
   episodes?: SeasonEpisode[];
   characters?: SeasonCharacter[];

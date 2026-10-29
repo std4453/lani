@@ -19,6 +19,7 @@ const row = (id = 1, yearAndSemester = '202603') => ({
   episodes: [],
 });
 const query = {
+  rawTitle: '动画 03',
   aliases: ['动画'],
   publishedAt: '2026-10-21T00:00:00Z',
   episode: 3,
@@ -72,7 +73,7 @@ it('ignores episode metadata changes when computing catalog content and candidat
   };
   const catalog = snapshot([changed]);
   expect(catalog.version).toBe(snapshot([initial]).version);
-  expect(catalog.catalog[0].episodes).toBeUndefined();
+  expect(catalog.catalog[0]).not.toHaveProperty('episodes');
   expect(candidateSeasons(catalog, query, policy)).toHaveLength(1);
 });
 
@@ -97,25 +98,21 @@ it('persists a trailing debounce across restarts without resetting unchanged inp
   ).toBe(+time + 3000 + debounceMs);
 });
 
-it('waits for pending candidate changes but permits unrelated quarters', () => {
+it('waits for every pending catalog change, including fallback-only quarters', () => {
   const a = snapshot([row()]);
   const state = observeCatalog(null, a, new Date(), debounceMs);
-  expect(catalogReady(state, query, policy)).toBe(false);
+  expect(catalogReady(state)).toBe(false);
   state.active = a;
+  expect(catalogReady(state)).toBe(true);
   const next = observeCatalog(
     state,
     snapshot([row(), row(2, '202704')]),
     new Date(),
     debounceMs,
   );
-  expect(catalogReady(next, query, policy)).toBe(true);
-  expect(catalogReady(next, query, { ...policy, nextQuarters: 1 })).toBe(false);
+  expect(catalogReady(next)).toBe(false);
   expect(
-    catalogReady(
-      observeCatalog(state, snapshot([]), new Date(), debounceMs),
-      query,
-      policy,
-    ),
+    catalogReady(observeCatalog(state, snapshot([]), new Date(), debounceMs)),
   ).toBe(false);
 });
 
@@ -143,3 +140,21 @@ it.each([0, 5000, 60000])(
     ).toBe(changed);
   },
 );
+
+it('projects persisted metadata directly without a second validation policy', () => {
+  const stored = {
+    ...row(),
+    declaredEpisodeCount: 0,
+    premiereDate: 'stored-value',
+  };
+  const projected = snapshot([stored]);
+  expect(projected.catalog[0]).toMatchObject({
+    declaredEpisodeCount: 0,
+    premiereDate: 'stored-value',
+  });
+  expect(projected.version).not.toBe(snapshot([row()]).version);
+  expect(snapshot([row()]).catalog[0]).toMatchObject({
+    declaredEpisodeCount: null,
+    premiereDate: null,
+  });
+});

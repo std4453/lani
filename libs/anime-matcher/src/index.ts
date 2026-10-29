@@ -11,6 +11,8 @@ export interface CatalogSeason {
   quarter: 1 | 2 | 3 | 4 | null;
   /** 作品级静态总集数；未知时省略或 null，不随每集更新。 */
   declaredEpisodeCount?: number | null;
+  /** 作品首播日期；v2 为 YYYY-MM-DD，旧模型忽略此字段。 */
+  premiereDate?: string | null;
   episodes?: { number: number; airDate: string }[];
 }
 
@@ -22,17 +24,38 @@ export interface MatchQuery {
   publisherSeason?: number | null;
 }
 
+export interface MatchQueryV2 extends MatchQuery {
+  rawTitle: string;
+}
+
 export interface WorkerStatus {
   protocolVersion: 1;
   catalogVersion: string | null;
-  modelVersion: string;
-  mode: "lexical" | "semantic";
+  modelVersion?: unknown;
+  mode?: unknown;
+  [extension: string]: unknown;
+}
+
+export interface WorkerStatusV2 {
+  protocolVersion: 2;
+  catalogVersion: string | null;
+  modelVersion?: unknown;
+  mode?: unknown;
+  [extension: string]: unknown;
 }
 
 export interface ConfigureRequest {
   protocolVersion: 1;
   catalogVersion: string;
   catalog: CatalogSeason[];
+  mode?: unknown;
+}
+
+export interface ConfigureRequestV2 {
+  protocolVersion: 2;
+  catalogVersion: string;
+  catalog: CatalogSeason[];
+  mode?: unknown;
 }
 
 export interface MatchRequest {
@@ -41,12 +64,23 @@ export interface MatchRequest {
   catalogVersion: string;
   query: MatchQuery;
   candidateIds: string[];
+  mode?: unknown;
+}
+
+export interface MatchRequestV2 {
+  protocolVersion: 2;
+  requestId: string;
+  catalogVersion: string;
+  query: MatchQueryV2;
+  candidateIds: string[];
+  mode?: unknown;
 }
 
 export interface MatchResult {
   seasonId: string | null;
-  reason?: string | null;
-  score?: number | null;
+  reason?: unknown;
+  score?: unknown;
+  [extension: string]: unknown;
 }
 
 export interface MatchResponse extends WorkerStatus {
@@ -55,7 +89,16 @@ export interface MatchResponse extends WorkerStatus {
   result: MatchResult;
 }
 
+export interface MatchResponseV2 extends WorkerStatusV2 {
+  requestId: string;
+  catalogVersion: string;
+  decision?: unknown;
+  diagnostics?: unknown;
+  result: MatchResult;
+}
+
 export interface AnimeMatcherOptions {
+  /** 仅控制本地 JSONL 子进程的启动模式，不约束 HTTP 服务端。 */
   semantic?: boolean;
   python?: string;
   modelDir?: string;
@@ -82,6 +125,7 @@ export class AnimeMatcherError extends Error {
 const MAX_BYTES = 16 * 1024 * 1024;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 type Method = "status" | "configure" | "match";
+type ProtocolVersion = 1 | 2;
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -105,7 +149,7 @@ function remoteError(value: unknown, status?: number): AnimeMatcherError {
   return new AnimeMatcherError(value.code, value.message, status);
 }
 
-/** v1 传输客户端。目录同步与失败恢复由调用方显式发起，不自动重试。 */
+/** v1/v2 传输客户端。目录同步与失败恢复由调用方显式发起，不自动重试。 */
 export class AnimeMatcherClient {
   private readonly options: AnimeMatcherOptions;
   private readonly timeoutMs: number;
@@ -120,6 +164,7 @@ export class AnimeMatcherClient {
     }
   >();
   private queue: Promise<unknown> = Promise.resolve();
+  private catalog?: { version: string; ids: Set<string> };
   private closed = false;
   private closePromise?: Promise<void>;
 
@@ -143,60 +188,89 @@ export class AnimeMatcherClient {
     }
   }
 
-  status(): Promise<WorkerStatus> {
-    return this.operation("status", { protocolVersion: 1 }, (value) =>
-      this.validateStatus(value)
+  status(protocolVersion?: 1): Promise<WorkerStatus>;
+  status(protocolVersion: 2): Promise<WorkerStatusV2>;
+  status(
+    protocolVersion: ProtocolVersion = 1
+  ): Promise<WorkerStatus | WorkerStatusV2> {
+    return this.operation("status", { protocolVersion }, (value) =>
+      this.validateStatus(value, protocolVersion)
     );
   }
 
-  configure(request: ConfigureRequest): Promise<WorkerStatus> {
+  configure(request: ConfigureRequest): Promise<WorkerStatus>;
+  configure(request: ConfigureRequestV2): Promise<WorkerStatusV2>;
+  configure(
+    request: ConfigureRequest | ConfigureRequestV2
+  ): Promise<WorkerStatus | WorkerStatusV2> {
     const version = request.catalogVersion;
+    const protocolVersion = request.protocolVersion;
+    const ids = new Set(request.catalog.map((season) => season.id));
     return this.operation("configure", request, (value) => {
-      const status = this.validateStatus(value);
+      const status = this.validateStatus(value, protocolVersion);
       if (status.catalogVersion !== version) throw badResponse();
+      this.catalog = { version, ids };
       return status;
     });
   }
 
-  match(request: MatchRequest): Promise<MatchResponse> {
-    const { requestId, catalogVersion } = request;
+  match(request: MatchRequest): Promise<MatchResponse>;
+  match(request: MatchRequestV2): Promise<MatchResponseV2>;
+  match(
+    request: MatchRequest | MatchRequestV2
+  ): Promise<MatchResponse | MatchResponseV2> {
+    const { requestId, catalogVersion, protocolVersion } = request;
     const candidates = new Set(request.candidateIds);
-    return this.operation("match", request, (value) => {
-      const status = this.validateStatus(value);
-      if (
-        !object(value) ||
-        value.requestId !== requestId ||
-        status.catalogVersion !== catalogVersion ||
-        !object(value.result)
-      ) {
-        throw badResponse();
-      }
-      const result = value.result;
-      if (
-        (result.seasonId !== null &&
-          (typeof result.seasonId !== "string" ||
-            !candidates.has(result.seasonId))) ||
-        (result.reason != null && typeof result.reason !== "string") ||
-        (result.score != null &&
-          (typeof result.score !== "number" || !Number.isFinite(result.score)))
-      ) {
-        throw badResponse();
-      }
-      return value as unknown as MatchResponse;
-    });
+    const catalogScope = () => {
+      if (!this.catalog || this.catalog.version !== catalogVersion)
+        throw new AnimeMatcherError(
+          "CATALOG_MISSING",
+          "客户端尚未记录此目录，请显式上传目录"
+        );
+      return this.catalog.ids;
+    };
+    return this.operation(
+      "match",
+      request,
+      (value) => {
+        const status = this.validateStatus(value, protocolVersion);
+        if (
+          !object(value) ||
+          value.requestId !== requestId ||
+          status.catalogVersion !== catalogVersion ||
+          !object(value.result)
+        ) {
+          throw badResponse();
+        }
+        const scope = protocolVersion === 2 ? catalogScope() : candidates;
+        const result = value.result;
+        if (
+          result.seasonId !== null &&
+          (typeof result.seasonId !== "string" || !scope.has(result.seasonId))
+        ) {
+          throw badResponse();
+        }
+        return value as unknown as MatchResponse | MatchResponseV2;
+      },
+      protocolVersion === 2 ? catalogScope : undefined
+    );
   }
 
   private operation<T>(
     method: Method,
-    payload: object,
-    validate: (value: unknown) => T
+    payload: { protocolVersion: ProtocolVersion },
+    validate: (value: unknown) => T,
+    before?: () => unknown
   ): Promise<T> {
     if (this.closed)
       return Promise.reject(
         new AnimeMatcherError("UNAVAILABLE", "匹配客户端已关闭")
       );
     let body: string;
+    const protocolVersion = payload.protocolVersion;
     try {
+      if (protocolVersion !== 1 && protocolVersion !== 2)
+        throw new AnimeMatcherError("INVALID_REQUEST", "不支持此协议版本");
       // 排队前固化输入，调用方后续修改对象不会改变请求。
       body = JSON.stringify(payload);
       if (Buffer.byteLength(body) > MAX_BYTES)
@@ -205,8 +279,9 @@ export class AnimeMatcherClient {
       return Promise.reject(error);
     }
     const operation = async () => {
+      before?.();
       const result = this.options.endpoint
-        ? await this.sendHttp(method, body)
+        ? await this.sendHttp(method, body, protocolVersion)
         : await this.sendWorker(method, body);
       return validate(result);
     };
@@ -376,16 +451,19 @@ export class AnimeMatcherClient {
       worker.kill("SIGKILL");
   }
 
-  private sendHttp(method: Method, body: string): Promise<unknown> {
+  private sendHttp(
+    method: Method,
+    body: string,
+    protocolVersion: ProtocolVersion
+  ): Promise<unknown> {
     const routes = {
       status: ["GET", "status"],
       configure: ["PUT", "catalog"],
       match: ["POST", "match"],
     };
     const [verb, route] = routes[method];
-    const endpoint = new URL(
-      `${this.options.endpoint!.replace(/\/$/, "")}/v1/${route}`
-    );
+    const base = this.options.endpoint!.replace(/\/$/, "");
+    const endpoint = new URL(`${base}/v${protocolVersion}/${route}`);
     const transport = endpoint.protocol === "https:" ? https : http;
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -439,7 +517,7 @@ export class AnimeMatcherClient {
               const value: unknown = JSON.parse(
                 utf8.decode(Buffer.concat(chunks))
               );
-              if (!object(value) || value.protocolVersion !== 1)
+              if (!object(value) || value.protocolVersion !== protocolVersion)
                 throw badResponse();
               if (response.statusCode !== 200)
                 throw remoteError(value.error, response.statusCode);
@@ -460,26 +538,17 @@ export class AnimeMatcherClient {
     });
   }
 
-  private validateStatus(value: unknown): WorkerStatus {
+  private validateStatus(
+    value: unknown,
+    protocolVersion: ProtocolVersion
+  ): WorkerStatus | WorkerStatusV2 {
     if (
       !object(value) ||
-      value.protocolVersion !== 1 ||
+      value.protocolVersion !== protocolVersion ||
       (value.catalogVersion !== null &&
-        (typeof value.catalogVersion !== "string" || !value.catalogVersion)) ||
-      typeof value.modelVersion !== "string" ||
-      !value.modelVersion ||
-      (value.mode !== "lexical" && value.mode !== "semantic")
+        (typeof value.catalogVersion !== "string" || !value.catalogVersion))
     )
       throw badResponse();
-    if (
-      this.options.semantic !== undefined &&
-      value.mode !== (this.options.semantic ? "semantic" : "lexical")
-    ) {
-      throw new AnimeMatcherError(
-        "MODE_MISMATCH",
-        "匹配 worker 模式与客户端配置不符"
-      );
-    }
-    return value as unknown as WorkerStatus;
+    return value as unknown as WorkerStatus | WorkerStatusV2;
   }
 }

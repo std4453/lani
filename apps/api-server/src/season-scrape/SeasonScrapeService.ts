@@ -12,6 +12,10 @@ import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import md5 from 'md5';
 import { ImageThumbnailService } from '@/image-thumbnail/index.service';
 import { DandanplayService } from './dandanplay.service';
+import {
+  normalizeDeclaredEpisodeCount,
+  normalizePremiereDate,
+} from './match-metadata';
 
 @Injectable()
 export class SeasonScrapeService {
@@ -119,6 +123,10 @@ export class SeasonScrapeService {
       aliases: info?.aliases ?? [],
       description: info?.description ?? '',
       tags: info?.tags ?? info?.genres ?? [],
+      declaredEpisodeCount: normalizeDeclaredEpisodeCount(
+        info?.declaredEpisodeCount,
+      ),
+      premiereDate: normalizePremiereDate(info?.premiereDate),
       weekday: info?.weekday ?? null,
       airTime: info?.time ?? '',
       yearAndSemester:

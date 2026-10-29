@@ -11,6 +11,8 @@ export function snapshot(
     title: string;
     aliases: string[];
     yearAndSemester: string;
+    declaredEpisodeCount?: number | null;
+    premiereDate?: string | null;
   }[],
 ): CatalogSnapshot {
   const catalog = rows
@@ -19,6 +21,8 @@ export function snapshot(
       return {
         id: String(row.id),
         title: row.title,
+        declaredEpisodeCount: row.declaredEpisodeCount ?? null,
+        premiereDate: row.premiereDate ?? null,
         aliases: [...new Set(row.aliases)].sort(compare),
         year: match ? Number(match[1]) : null,
         quarter: match
@@ -88,14 +92,7 @@ export function candidateSeasons(
   });
 }
 
-export function catalogReady(
-  state: CatalogState | null,
-  query: MatchQuery,
-  policy: CandidatePolicy,
-) {
-  return (
-    !!state?.active &&
-    digest(candidateSeasons(state.active, query, policy)) ===
-      digest(candidateSeasons(state.desired, query, policy))
-  );
+export function catalogReady(state: CatalogState | null) {
+  // 任一季度都可能成为回退候选，窗口外变化也必须先激活完整新快照。
+  return !!state?.active && state.active.version === state.desired.version;
 }
