@@ -43,7 +43,7 @@ export function settingsFromEnv(env = process.env): Settings {
   return validateSettings({
     endpoint: get("ENDPOINT"),
     model: get("MODEL"),
-    apiKey: get("API_KEY"),
+    apiKey: get("API_KEY").trim(),
     deadlineSeconds: Number(get("DEADLINE_SECONDS", "100")),
     attemptSeconds: Number(get("ATTEMPT_SECONDS", "45")),
     concurrency: Number(get("CONCURRENCY", "2")),
@@ -61,7 +61,7 @@ export function validateSettings(settings: Settings): Settings {
     url.password ||
     url.hash ||
     !settings.model.trim() ||
-    !settings.apiKey.trim() ||
+    !/^[\x21-\x7e]+$/.test(settings.apiKey) ||
     !Number.isFinite(settings.deadlineSeconds) ||
     !Number.isFinite(settings.attemptSeconds) ||
     settings.attemptSeconds <= 0 ||

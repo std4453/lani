@@ -132,6 +132,14 @@ test("environment uses one prefix and validates configuration", () => {
     LANI_LLM_MATCHER_API_KEY: "key",
   };
   assert.equal(settingsFromEnv(env).concurrency, 2);
+  assert.equal(
+    settingsFromEnv({ ...env, LANI_LLM_MATCHER_API_KEY: " \tkey\r\n" }).apiKey,
+    "key"
+  );
+  for (const apiKey of ["key\nembedded", "key with space", "密钥", "key\x7f"])
+    assert.throws(() =>
+      settingsFromEnv({ ...env, LANI_LLM_MATCHER_API_KEY: apiKey })
+    );
   for (const [value, expected] of [
     ["true", true],
     [" 1 ", true],
