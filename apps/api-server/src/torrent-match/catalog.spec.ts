@@ -19,6 +19,7 @@ const row = (id = 1, yearAndSemester = '202603') => ({
   episodes: [],
 });
 const query = {
+  rawTitle: '动画 03',
   aliases: ['动画'],
   publishedAt: '2026-10-21T00:00:00Z',
   episode: 3,
@@ -72,7 +73,7 @@ it('ignores episode metadata changes when computing catalog content and candidat
   };
   const catalog = snapshot([changed]);
   expect(catalog.version).toBe(snapshot([initial]).version);
-  expect(catalog.catalog[0].episodes).toBeUndefined();
+  expect(catalog.catalog[0]).not.toHaveProperty('episodes');
   expect(candidateSeasons(catalog, query, policy)).toHaveLength(1);
 });
 
@@ -97,25 +98,21 @@ it('persists a trailing debounce across restarts without resetting unchanged inp
   ).toBe(+time + 3000 + debounceMs);
 });
 
-it('waits for pending candidate changes but permits unrelated quarters', () => {
+it('waits for every pending catalog change, including fallback-only quarters', () => {
   const a = snapshot([row()]);
   const state = observeCatalog(null, a, new Date(), debounceMs);
-  expect(catalogReady(state, query, policy)).toBe(false);
+  expect(catalogReady(state)).toBe(false);
   state.active = a;
+  expect(catalogReady(state)).toBe(true);
   const next = observeCatalog(
     state,
     snapshot([row(), row(2, '202704')]),
     new Date(),
     debounceMs,
   );
-  expect(catalogReady(next, query, policy)).toBe(true);
-  expect(catalogReady(next, query, { ...policy, nextQuarters: 1 })).toBe(false);
+  expect(catalogReady(next)).toBe(false);
   expect(
-    catalogReady(
-      observeCatalog(state, snapshot([]), new Date(), debounceMs),
-      query,
-      policy,
-    ),
+    catalogReady(observeCatalog(state, snapshot([]), new Date(), debounceMs)),
   ).toBe(false);
 });
 
@@ -143,3 +140,40 @@ it.each([0, 5000, 60000])(
     ).toBe(changed);
   },
 );
+
+it('projects independently declared counts and valid premiere dates into the catalog identity', () => {
+  const base = snapshot([row()]);
+  const declared = snapshot([
+    { ...row(), declaredEpisodeCount: 12, premiereDate: '2026-10-02' },
+  ]);
+  expect(declared.catalog[0]).toMatchObject({
+    declaredEpisodeCount: 12,
+    premiereDate: '2026-10-02',
+  });
+  expect(declared.version).not.toBe(base.version);
+  expect(
+    snapshot([
+      { ...row(), declaredEpisodeCount: -1, premiereDate: '2026-02-30' },
+    ]),
+  ).toEqual(base);
+  expect(
+    snapshot([
+      { ...row(), declaredEpisodeCount: 1.5, premiereDate: '2026-1-1' },
+    ]),
+  ).toEqual(base);
+});
+
+it('normalizes zero declared counts and out-of-range premiere years to unknown', () => {
+  expect(
+    snapshot([
+      { ...row(), declaredEpisodeCount: 0, premiereDate: '0000-01-01' },
+    ]),
+  ).toEqual(snapshot([row()]));
+  expect(snapshot([{ ...row(), premiereDate: '10000-01-01' }])).toEqual(
+    snapshot([row()]),
+  );
+  expect(
+    snapshot([{ ...row(), premiereDate: '0001-01-01' }]).catalog[0]
+      .premiereDate,
+  ).toBe('0001-01-01');
+});

@@ -11,6 +11,8 @@ export interface CatalogSeason {
   quarter: 1 | 2 | 3 | 4 | null;
   /** 作品级静态总集数；未知时省略或 null，不随每集更新。 */
   declaredEpisodeCount?: number | null;
+  /** 作品首播日期；v2 为 YYYY-MM-DD，旧模型忽略此字段。 */
+  premiereDate?: string | null;
   episodes?: { number: number; airDate: string }[];
 }
 
@@ -22,6 +24,10 @@ export interface MatchQuery {
   publisherSeason?: number | null;
 }
 
+export interface MatchQueryV2 extends MatchQuery {
+  rawTitle: string;
+}
+
 export interface WorkerStatus {
   protocolVersion: 1;
   catalogVersion: string | null;
@@ -29,8 +35,21 @@ export interface WorkerStatus {
   mode: "lexical" | "semantic";
 }
 
+export interface WorkerStatusV2 {
+  protocolVersion: 2;
+  catalogVersion: string | null;
+  modelVersion: string;
+  mode: string;
+}
+
 export interface ConfigureRequest {
   protocolVersion: 1;
+  catalogVersion: string;
+  catalog: CatalogSeason[];
+}
+
+export interface ConfigureRequestV2 {
+  protocolVersion: 2;
   catalogVersion: string;
   catalog: CatalogSeason[];
 }
@@ -43,6 +62,15 @@ export interface MatchRequest {
   candidateIds: string[];
 }
 
+export interface MatchRequestV2 {
+  protocolVersion: 2;
+  requestId: string;
+  catalogVersion: string;
+  query: MatchQueryV2;
+  primaryCandidateIds: string[];
+  fallbackCandidateIds: string[];
+}
+
 export interface MatchResult {
   seasonId: string | null;
   reason?: string | null;
@@ -52,6 +80,13 @@ export interface MatchResult {
 export interface MatchResponse extends WorkerStatus {
   requestId: string;
   catalogVersion: string;
+  result: MatchResult;
+}
+
+export interface MatchResponseV2 extends WorkerStatusV2 {
+  requestId: string;
+  catalogVersion: string;
+  decision: { stage: "primary" | "fallback" };
   result: MatchResult;
 }
 
@@ -82,6 +117,7 @@ export class AnimeMatcherError extends Error {
 const MAX_BYTES = 16 * 1024 * 1024;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 type Method = "status" | "configure" | "match";
+type ProtocolVersion = 1 | 2;
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -105,7 +141,7 @@ function remoteError(value: unknown, status?: number): AnimeMatcherError {
   return new AnimeMatcherError(value.code, value.message, status);
 }
 
-/** v1 传输客户端。目录同步与失败恢复由调用方显式发起，不自动重试。 */
+/** v1/v2 传输客户端。目录同步与失败恢复由调用方显式发起，不自动重试。 */
 export class AnimeMatcherClient {
   private readonly options: AnimeMatcherOptions;
   private readonly timeoutMs: number;
@@ -143,26 +179,44 @@ export class AnimeMatcherClient {
     }
   }
 
-  status(): Promise<WorkerStatus> {
-    return this.operation("status", { protocolVersion: 1 }, (value) =>
-      this.validateStatus(value)
+  status(protocolVersion?: 1): Promise<WorkerStatus>;
+  status(protocolVersion: 2): Promise<WorkerStatusV2>;
+  status(
+    protocolVersion: ProtocolVersion = 1
+  ): Promise<WorkerStatus | WorkerStatusV2> {
+    return this.operation("status", { protocolVersion }, (value) =>
+      this.validateStatus(value, protocolVersion)
     );
   }
 
-  configure(request: ConfigureRequest): Promise<WorkerStatus> {
+  configure(request: ConfigureRequest): Promise<WorkerStatus>;
+  configure(request: ConfigureRequestV2): Promise<WorkerStatusV2>;
+  configure(
+    request: ConfigureRequest | ConfigureRequestV2
+  ): Promise<WorkerStatus | WorkerStatusV2> {
     const version = request.catalogVersion;
+    const protocolVersion = request.protocolVersion;
     return this.operation("configure", request, (value) => {
-      const status = this.validateStatus(value);
+      const status = this.validateStatus(value, protocolVersion);
       if (status.catalogVersion !== version) throw badResponse();
       return status;
     });
   }
 
-  match(request: MatchRequest): Promise<MatchResponse> {
-    const { requestId, catalogVersion } = request;
-    const candidates = new Set(request.candidateIds);
+  match(request: MatchRequest): Promise<MatchResponse>;
+  match(request: MatchRequestV2): Promise<MatchResponseV2>;
+  match(
+    request: MatchRequest | MatchRequestV2
+  ): Promise<MatchResponse | MatchResponseV2> {
+    const { requestId, catalogVersion, protocolVersion } = request;
+    const candidates = new Set(
+      protocolVersion === 2 ? request.primaryCandidateIds : request.candidateIds
+    );
+    const fallback = new Set(
+      protocolVersion === 2 ? request.fallbackCandidateIds : []
+    );
     return this.operation("match", request, (value) => {
-      const status = this.validateStatus(value);
+      const status = this.validateStatus(value, protocolVersion);
       if (
         !object(value) ||
         value.requestId !== requestId ||
@@ -171,24 +225,34 @@ export class AnimeMatcherClient {
       ) {
         throw badResponse();
       }
+      let scope = candidates;
+      if (protocolVersion === 2) {
+        if (
+          !object(value.decision) ||
+          !["primary", "fallback"].includes(value.decision.stage as string)
+        ) {
+          throw badResponse();
+        }
+        if (value.decision.stage === "fallback") scope = fallback;
+      }
       const result = value.result;
       if (
         (result.seasonId !== null &&
           (typeof result.seasonId !== "string" ||
-            !candidates.has(result.seasonId))) ||
+            !scope.has(result.seasonId))) ||
         (result.reason != null && typeof result.reason !== "string") ||
         (result.score != null &&
           (typeof result.score !== "number" || !Number.isFinite(result.score)))
       ) {
         throw badResponse();
       }
-      return value as unknown as MatchResponse;
+      return value as unknown as MatchResponse | MatchResponseV2;
     });
   }
 
   private operation<T>(
     method: Method,
-    payload: object,
+    payload: { protocolVersion: ProtocolVersion },
     validate: (value: unknown) => T
   ): Promise<T> {
     if (this.closed)
@@ -196,7 +260,10 @@ export class AnimeMatcherClient {
         new AnimeMatcherError("UNAVAILABLE", "匹配客户端已关闭")
       );
     let body: string;
+    const protocolVersion = payload.protocolVersion;
     try {
+      if (protocolVersion !== 1 && protocolVersion !== 2)
+        throw new AnimeMatcherError("INVALID_REQUEST", "不支持此协议版本");
       // 排队前固化输入，调用方后续修改对象不会改变请求。
       body = JSON.stringify(payload);
       if (Buffer.byteLength(body) > MAX_BYTES)
@@ -206,7 +273,7 @@ export class AnimeMatcherClient {
     }
     const operation = async () => {
       const result = this.options.endpoint
-        ? await this.sendHttp(method, body)
+        ? await this.sendHttp(method, body, protocolVersion)
         : await this.sendWorker(method, body);
       return validate(result);
     };
@@ -376,16 +443,19 @@ export class AnimeMatcherClient {
       worker.kill("SIGKILL");
   }
 
-  private sendHttp(method: Method, body: string): Promise<unknown> {
+  private sendHttp(
+    method: Method,
+    body: string,
+    protocolVersion: ProtocolVersion
+  ): Promise<unknown> {
     const routes = {
       status: ["GET", "status"],
       configure: ["PUT", "catalog"],
       match: ["POST", "match"],
     };
     const [verb, route] = routes[method];
-    const endpoint = new URL(
-      `${this.options.endpoint!.replace(/\/$/, "")}/v1/${route}`
-    );
+    const base = this.options.endpoint!.replace(/\/$/, "");
+    const endpoint = new URL(`${base}/v${protocolVersion}/${route}`);
     const transport = endpoint.protocol === "https:" ? https : http;
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -439,7 +509,7 @@ export class AnimeMatcherClient {
               const value: unknown = JSON.parse(
                 utf8.decode(Buffer.concat(chunks))
               );
-              if (!object(value) || value.protocolVersion !== 1)
+              if (!object(value) || value.protocolVersion !== protocolVersion)
                 throw badResponse();
               if (response.statusCode !== 200)
                 throw remoteError(value.error, response.statusCode);
@@ -460,18 +530,24 @@ export class AnimeMatcherClient {
     });
   }
 
-  private validateStatus(value: unknown): WorkerStatus {
+  private validateStatus(
+    value: unknown,
+    protocolVersion: ProtocolVersion
+  ): WorkerStatus | WorkerStatusV2 {
     if (
       !object(value) ||
-      value.protocolVersion !== 1 ||
+      value.protocolVersion !== protocolVersion ||
       (value.catalogVersion !== null &&
         (typeof value.catalogVersion !== "string" || !value.catalogVersion)) ||
       typeof value.modelVersion !== "string" ||
       !value.modelVersion ||
-      (value.mode !== "lexical" && value.mode !== "semantic")
+      (protocolVersion === 1
+        ? value.mode !== "lexical" && value.mode !== "semantic"
+        : typeof value.mode !== "string" || !value.mode.trim())
     )
       throw badResponse();
     if (
+      protocolVersion === 1 &&
       this.options.semantic !== undefined &&
       value.mode !== (this.options.semantic ? "semantic" : "lexical")
     ) {
@@ -480,6 +556,6 @@ export class AnimeMatcherClient {
         "匹配 worker 模式与客户端配置不符"
       );
     }
-    return value as unknown as WorkerStatus;
+    return value as unknown as WorkerStatus | WorkerStatusV2;
   }
 }

@@ -91,3 +91,55 @@ it('禁用、无效批次和事务失败均不会唤醒消费者', async () => {
   await expect(service.enqueueBatch([1])).rejects.toThrow('rollback');
   expect(queues.wake).not.toHaveBeenCalled();
 });
+
+it.each([
+  { title: '[Group] New raw title 03' },
+  { parseResult: { publisherSeason: 2 } },
+])('实际原始标题或发布者季数变化时重新入队: %j', async (change) => {
+  const row = {
+    id: 1,
+    title: '[Group] Anime 03',
+    parseResult: { publisherSeason: 1 },
+    seasonTitleRaw: 'Anime',
+    seasonTitleAliases: [],
+    publishDate: new Date('2026-10-21T00:00:00Z'),
+    episodeType: 'EPISODE',
+    episodeNumber: 3,
+    episodeNumberFrom: null,
+    episodeNumberTo: null,
+  };
+  const tx = {
+    ...transaction(),
+    $queryRaw: jest.fn().mockResolvedValue([]),
+  };
+  (tx.torrent as any).findMany = jest
+    .fn()
+    .mockResolvedValueOnce([row])
+    .mockResolvedValueOnce([{ ...row, ...change }]);
+  await updateWithTorrentMatching(tx as any, [1], async () => undefined);
+  expect(tx.backgroundJob.upsert).toHaveBeenCalledTimes(1);
+});
+
+it('解析器无关字段变化不会重新调用模型', async () => {
+  const row = {
+    id: 1,
+    title: '[Group] Anime 03',
+    parseResult: { publisherSeason: 1, subtitleInfo: { languages: ['zh'] } },
+    seasonTitleRaw: 'Anime',
+    seasonTitleAliases: [],
+    publishDate: new Date('2026-10-21T00:00:00Z'),
+    episodeType: 'EPISODE',
+    episodeNumber: 3,
+    episodeNumberFrom: null,
+    episodeNumberTo: null,
+  };
+  const tx = { ...transaction(), $queryRaw: jest.fn().mockResolvedValue([]) };
+  (tx.torrent as any).findMany = jest
+    .fn()
+    .mockResolvedValueOnce([row])
+    .mockResolvedValueOnce([
+      { ...row, parseResult: { ...row.parseResult, subtitleInfo: null } },
+    ]);
+  await updateWithTorrentMatching(tx as any, [1], async () => undefined);
+  expect(tx.backgroundJob.upsert).not.toHaveBeenCalled();
+});

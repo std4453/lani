@@ -49,6 +49,26 @@ function setup(existing: any[], episodes: any[]) {
       } as any),
   };
 }
+it.each(['BGM_CN', 'SKYHOOK'])(
+  '%s 单集同步不修改独立声明集数和首播日期',
+  async (episodesSource) => {
+    const { prisma, sync } = setup(
+      [],
+      [{ episodeNumber: '1', title: 'one', airDate: '20261002' }],
+    );
+    await sync({
+      episodesSource,
+      tvdbId: '1',
+      tvdbSeason: 1,
+      declaredEpisodeCount: 12,
+      premiereDate: '2026-10-01',
+    });
+    expect(prisma.season.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { episodesLastSync: expect.any(Date) },
+    });
+  },
+);
 it('binds legacy rows without recreating them', async () => {
   const { prisma, sync } = setup(
     [

@@ -46,6 +46,28 @@ const response = (request, extra = {}) => ({
 });
 const hasCode = (code) => (error) =>
   error instanceof AnimeMatcherError && error.code === code;
+const configureV2 = () => ({ ...configure(), protocolVersion: 2 });
+const matchV2 = (extra = {}) => {
+  const { candidateIds, ...request } = match();
+  return {
+    ...request,
+    protocolVersion: 2,
+    query: { ...request.query, rawTitle: "[发布组] 独立候选火星邮递员 XYZ - 01.5" },
+    primaryCandidateIds: candidateIds,
+    fallbackCandidateIds: [...candidateIds, "s2"],
+    ...extra,
+  };
+};
+const statusV2 = (version = null) => ({
+  ...status(version), protocolVersion: 2, mode: "external-openai-compatible",
+});
+const responseV2 = (request, extra = {}) => ({
+  ...statusV2(request.catalogVersion),
+  requestId: request.requestId,
+  decision: { stage: "primary" },
+  result: { seasonId: request.primaryCandidateIds[0] ?? null },
+  ...extra,
+});
 
 function fakeWorker(t, behavior = "normal") {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "anime-v1-"));
@@ -63,21 +85,21 @@ const capture = ${JSON.stringify(capture)};
 fs.appendFileSync(${JSON.stringify(starts)}, 'start\\n');
 fs.writeFileSync(${JSON.stringify(argv)}, JSON.stringify(process.argv.slice(2)));
 let version = null;
-const status = () => ({protocolVersion:1,catalogVersion:version,modelVersion:'test-model-v1',mode:'lexical'});
+const status = (protocolVersion=1) => ({protocolVersion,catalogVersion:version,modelVersion:'test-model-v1',mode:'lexical'});
 rl.createInterface({input:process.stdin}).on('line', line => {
   const r = JSON.parse(line); fs.appendFileSync(capture,line+'\\n');
   if (behavior === 'null') { process.stdout.write('null\\n'); return; }
   if (behavior === 'wrong-id') { process.stdout.write(JSON.stringify({id:r.id+1,result:status()})+'\\n'); return; }
   let reply;
-  if (r.method === 'status') reply = {id:r.id,result:status()};
+  if (r.method === 'status') reply = {id:r.id,result:status(r.protocolVersion)};
   else if (r.method === 'configure') {
     if (behavior === 'configure-error') reply = {id:r.id,error:{code:'INTERNAL_ERROR',message:'构建失败'}};
-    else { version = r.catalogVersion; reply = {id:r.id,result:status()}; }
+    else { version = r.catalogVersion; reply = {id:r.id,result:status(r.protocolVersion)}; }
   } else {
     if (behavior === 'hang') return;
     if (!version) reply = {id:r.id,error:{code:'CATALOG_MISSING',message:'目录为空'}};
     else if (version !== r.catalogVersion) reply = {id:r.id,error:{code:'CATALOG_MISMATCH',message:'目录版本不符'}};
-    else reply = {id:r.id,result:{...status(),requestId:r.requestId,result:{seasonId:r.candidateIds[0]??null,reason:'中文原因'}}};
+    else reply = {id:r.id,result:{...status(r.protocolVersion),requestId:r.requestId,...(r.protocolVersion===2?{decision:{stage:'primary'}}:{}),result:{seasonId:(r.primaryCandidateIds??r.candidateIds)[0]??null,reason:'中文原因'}}};
   }
   const bytes = Buffer.from(JSON.stringify(reply)+'\\n');
   if (behavior === 'split-utf8') {
@@ -267,6 +289,64 @@ test("HTTP routes use full v1 payloads and never resend catalog on match", async
   assert.deepEqual(fixture.requests[2].body, match());
 });
 
+test("v2 HTTP routes preserve metadata and accept arbitrary nonempty backend mode", async (t) => {
+  let version = null;
+  const fixture = await httpFixture(t, (req, res, body) => {
+    if (req.method === "GET") send(res, statusV2(version));
+    else if (req.method === "PUT") {
+      version = body.catalogVersion;
+      send(res, statusV2(version));
+    } else send(res, responseV2(body));
+  });
+  const client = new AnimeMatcherClient({ endpoint: fixture.endpoint, semantic: false });
+  t.after(() => client.close());
+  assert.equal((await client.status(2)).protocolVersion, 2);
+  const cfg = configureV2();
+  cfg.catalog[0].premiereDate = "2026-10-01";
+  await client.configure(cfg);
+  assert.equal((await client.match(matchV2())).result.seasonId, "s1");
+  assert.deepEqual(fixture.requests.map((r) => [r.method, r.path]), [
+    ["GET", "/v2/status"], ["PUT", "/v2/catalog"], ["POST", "/v2/match"],
+  ]);
+  assert.deepEqual(fixture.requests[1].body, cfg);
+  assert.deepEqual(fixture.requests[2].body, matchV2());
+});
+
+test("v2 JSONL envelopes retain both explicit candidate scopes", async (t) => {
+  const fake = fakeWorker(t);
+  const client = new AnimeMatcherClient({ python: fake.file });
+  t.after(() => client.close());
+  assert.equal((await client.status(2)).protocolVersion, 2);
+  await client.configure(configureV2());
+  assert.equal((await client.match(matchV2())).result.seasonId, "s1");
+  assert.deepEqual(fake.requests().map((r) => r.protocolVersion), [2, 2, 2]);
+  assert.deepEqual(fake.requests()[2].fallbackCandidateIds, ["s1", "s2"]);
+});
+
+test("v2 response validation enforces requested version and stage-specific scope", async (t) => {
+  const request = matchV2();
+  const malformed = [
+    responseV2(request, { protocolVersion: 1 }),
+    responseV2(request, { mode: "" }),
+    responseV2(request, { decision: undefined }),
+    responseV2(request, { decision: { stage: "unknown" } }),
+    responseV2(request, { result: { seasonId: "s2" } }),
+    responseV2(request, { decision: { stage: "fallback" }, result: { seasonId: "outside" } }),
+  ];
+  for (const body of malformed) {
+    const fixture = await httpFixture(t, (_req, res) => send(res, body));
+    const client = new AnimeMatcherClient({ endpoint: fixture.endpoint });
+    await assert.rejects(client.match(request), hasCode("INVALID_RESPONSE"));
+    await client.close();
+  }
+  const fixture = await httpFixture(t, (_req, res) => send(res, responseV2(request, {
+    decision: { stage: "fallback" }, result: { seasonId: "s2" },
+  })));
+  const client = new AnimeMatcherClient({ endpoint: fixture.endpoint });
+  assert.equal((await client.match(request)).result.seasonId, "s2");
+  await client.close();
+});
+
 test("HTTP errors retain code and HTTP status, with exactly one attempt", async (t) => {
   const fixture = await httpFixture(t, (_req, res) =>
     send(
@@ -388,6 +468,24 @@ test(
       client.match(match({ catalogVersion: "stale" })),
       hasCode("CATALOG_MISMATCH")
     );
+  }
+);
+
+test(
+  "real Python JSONL v2 preserves primary-only legacy decisions",
+  { skip: !process.env.MATCHER_TEST_PYTHON },
+  async (t) => {
+    const client = new AnimeMatcherClient({ python: process.env.MATCHER_TEST_PYTHON });
+    t.after(() => client.close());
+    assert.equal((await client.status(2)).protocolVersion, 2);
+    await client.configure(configureV2());
+    const request = matchV2({ fallbackCandidateIds: ["s1"] });
+    const result = await client.match(request);
+    assert.equal(result.result.seasonId, "s1");
+    assert.deepEqual(result.decision, { stage: "primary" });
+    const rejected = await client.match({ ...request, primaryCandidateIds: [] });
+    assert.equal(rejected.result.seasonId, null);
+    assert.deepEqual(rejected.decision, { stage: "primary" });
   }
 );
 

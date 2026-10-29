@@ -45,6 +45,7 @@ for (const file of [
   "apps/gateway/DESIGN.md",
   "libs/db/AGENTS.md",
   "libs/anime-matcher/PROTOCOL.md",
+  "libs/llm-matcher/README.md",
   "apps/admin/docs/screenshots/theme-desktop-light.png",
 ]) {
   test(`${file} changes do not invalidate any application fingerprint`, () => {
@@ -98,6 +99,7 @@ for (const [file, owner] of [
   ["apps/admin/public/logo.svg", "admin"],
   ["libs/db/prisma/migrations/new_change/migration.sql", "db"],
   ["libs/anime-matcher/python/model.bin", "anime-matcher"],
+  ["libs/llm-matcher/lani_llm_matcher/server.py", "llm-matcher"],
 ]) {
   test(`${file} remains a build input`, () => {
     assert.notEqual(
@@ -131,6 +133,26 @@ test("application source changes still invalidate the owning application", () =>
       baseline.images[app].fingerprint !== changed.images[app].fingerprint
   );
   assert.deepEqual(affected, ["admin"]);
+});
+
+test("external matcher source only invalidates its independent image", () => {
+  const changed = withChange(
+    "libs/llm-matcher/lani_llm_matcher/server.py",
+    "print('updated matcher')\n"
+  );
+  const affected = Object.keys(baseline.images).filter(
+    (app) =>
+      baseline.images[app].fingerprint !== changed.images[app].fingerprint
+  );
+  assert.deepEqual(affected, ["llm-matcher"]);
+});
+
+test("external matcher has no Rush importer or npm lockfile inputs", () => {
+  const detail = calculate(tree).details["llm-matcher"];
+  assert.deepEqual(detail.projects, ["@lani/llm-matcher"]);
+  assert(!detail.inputs.some(([file]) => file.includes("pnpm-lock.yaml#")));
+  assert(!detail.inputs.some(([file]) => file.startsWith("libs/anime-matcher/")));
+  assert(!detail.inputs.some(([file]) => file.startsWith("apps/all-in-one/")));
 });
 
 test("application build workflows remain shared fingerprint inputs", () => {

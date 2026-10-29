@@ -3,6 +3,7 @@ import {
   CatalogSnapshot,
   MatchQuery,
   MatchResponse,
+  MatchDiagnostics,
   WorkerStatus,
 } from './protocol';
 
@@ -16,6 +17,7 @@ export interface TransportOptions {
 export class MatcherTransport {
   private serial: Promise<unknown> = Promise.resolve();
   private closed = false;
+  private status?: WorkerStatus;
   private cancel?: () => void;
 
   constructor(
@@ -43,27 +45,36 @@ export class MatcherTransport {
   match(
     catalog: CatalogSnapshot,
     query: MatchQuery,
-    candidateIds: string[],
+    primaryCandidateIds: string[],
     requestId: string,
   ): Promise<MatchResponse> {
     return this.exclusive(async () => {
       const status = await this.ensure(catalog);
+      const fallbackCandidateIds = catalog.catalog.map((season) => season.id);
       const response = (await this.request('match', {
-        protocolVersion: 1,
+        protocolVersion: 2,
         catalogVersion: catalog.version,
         query,
-        candidateIds,
+        primaryCandidateIds,
+        fallbackCandidateIds,
         requestId,
       })) as MatchResponse;
       this.validateStatus(response);
+      const stage = response.decision?.stage;
+      const ids =
+        stage === 'primary' ? primaryCandidateIds : fallbackCandidateIds;
       if (
         response.catalogVersion !== catalog.version ||
         response.requestId !== requestId ||
         response.modelVersion !== status.modelVersion ||
         response.mode !== status.mode ||
+        !['primary', 'fallback'].includes(stage) ||
+        (response.decision.fallbackReason !== undefined &&
+          (typeof response.decision.fallbackReason !== 'string' ||
+            response.decision.fallbackReason.length > 128)) ||
         !response.result ||
         (response.result.seasonId !== null &&
-          !candidateIds.includes(response.result.seasonId)) ||
+          !ids.includes(response.result.seasonId)) ||
         (response.result.score != null &&
           (typeof response.result.score !== 'number' ||
             !Number.isFinite(response.result.score))) ||
@@ -71,15 +82,116 @@ export class MatcherTransport {
           typeof response.result.reason !== 'string')
       )
         throw new Error('Invalid matcher result');
-      return response;
+      // 模型或路由配置可能在长请求期间变更，旧响应不得进入提交阶段。
+      const current = await this.readStatus();
+      if (!this.sameIdentity(current, response))
+        throw new Error('Matcher identity changed during matching');
+      return {
+        ...response,
+        diagnostics: this.diagnostics(response.diagnostics),
+      };
     });
+  }
+
+  private sameIdentity(a: WorkerStatus, b: WorkerStatus) {
+    return (
+      a.catalogVersion === b.catalogVersion &&
+      a.modelVersion === b.modelVersion &&
+      a.mode === b.mode
+    );
+  }
+
+  isCurrent(response: WorkerStatus) {
+    return !!this.status && this.sameIdentity(this.status, response);
+  }
+
+  private async readStatus() {
+    const status = (await this.request('status', {})) as WorkerStatus;
+    this.validateStatus(status);
+    this.status = status;
+    return status;
+  }
+
+  private diagnostics(value: MatchDiagnostics | undefined) {
+    if (value === undefined) return undefined;
+    const duration = (number: number) =>
+      typeof number === 'number' && Number.isFinite(number) && number >= 0;
+    const text = (text: string | undefined) =>
+      text === undefined || (typeof text === 'string' && text.length <= 128);
+    if (
+      !value ||
+      !duration(value.elapsedMs) ||
+      !Array.isArray(value.attempts) ||
+      value.attempts.length > 4
+    )
+      throw new Error('Invalid matcher diagnostics');
+    const attempts = value.attempts.map((attempt) => {
+      if (
+        !attempt ||
+        !['primary', 'fallback'].includes(attempt.stage) ||
+        ![1, 2].includes(attempt.attempt) ||
+        !duration(attempt.elapsedMs) ||
+        !text(attempt.model) ||
+        !text(attempt.error)
+      )
+        throw new Error('Invalid matcher diagnostics');
+      const counts: Partial<MatchDiagnostics['attempts'][number]> = {};
+      for (const field of [
+        'promptTokens',
+        'completionTokens',
+        'cacheHitTokens',
+        'cacheMissTokens',
+        'reasoningTokens',
+      ] as const) {
+        const count = attempt[field];
+        if (count === undefined) continue;
+        if (!Number.isSafeInteger(count) || count < 0)
+          throw new Error('Invalid matcher diagnostics');
+        counts[field] = count;
+      }
+      return {
+        stage: attempt.stage,
+        attempt: attempt.attempt,
+        elapsedMs: attempt.elapsedMs,
+        ...(attempt.model === undefined ? {} : { model: attempt.model }),
+        ...(attempt.error === undefined ? {} : { error: attempt.error }),
+        ...counts,
+      };
+    });
+    const hashes = value.promptHashes;
+    if (
+      hashes !== undefined &&
+      (!hashes ||
+        typeof hashes !== 'object' ||
+        Array.isArray(hashes) ||
+        !text(hashes.primary) ||
+        !text(hashes.fallback))
+    )
+      throw new Error('Invalid matcher diagnostics');
+    return {
+      elapsedMs: value.elapsedMs,
+      attempts,
+      ...(hashes === undefined
+        ? {}
+        : {
+            promptHashes: {
+              ...(hashes.primary === undefined
+                ? {}
+                : { primary: hashes.primary }),
+              ...(hashes.fallback === undefined
+                ? {}
+                : { fallback: hashes.fallback }),
+            },
+          }),
+    };
   }
 
   private validateStatus(value: WorkerStatus) {
     if (
       !value ||
-      value.protocolVersion !== 1 ||
-      !['lexical', 'semantic'].includes(value.mode) ||
+      value.protocolVersion !== 2 ||
+      typeof value.mode !== 'string' ||
+      !value.mode.trim() ||
       typeof value.modelVersion !== 'string' ||
       !value.modelVersion ||
       (value.catalogVersion !== null &&
@@ -89,18 +201,18 @@ export class MatcherTransport {
   }
 
   private async ensure(catalog: CatalogSnapshot): Promise<WorkerStatus> {
-    const status = (await this.request('status', {})) as WorkerStatus;
-    this.validateStatus(status);
+    const status = await this.readStatus();
     if (status.catalogVersion === catalog.version) return status;
     // 明确的缓存同步，不是匹配失败后的重试。worker 可随时丢弃派生缓存。
     const loaded = (await this.request('configure', {
-      protocolVersion: 1,
+      protocolVersion: 2,
       catalogVersion: catalog.version,
       catalog: catalog.catalog,
     })) as WorkerStatus;
     this.validateStatus(loaded);
     if (loaded.catalogVersion !== catalog.version)
       throw new Error('Matcher catalog was not activated');
+    this.status = loaded;
     return loaded;
   }
 
@@ -114,7 +226,7 @@ export class MatcherTransport {
   }
 
   private async requestHttp(method: string, payload: object): Promise<unknown> {
-    const url = `${this.options.endpoint.replace(/\/$/, '')}/v1/${
+    const url = `${this.options.endpoint.replace(/\/$/, '')}/v2/${
       method === 'configure' ? 'catalog' : method
     }`;
     const body = method === 'status' ? undefined : JSON.stringify(payload);

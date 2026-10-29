@@ -5,12 +5,24 @@ export const digest = (value: unknown) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
+function validPremiereDate(value: string | null | undefined) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000'))
+    return null;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
 export function snapshot(
   rows: {
     id: number;
     title: string;
     aliases: string[];
     yearAndSemester: string;
+    declaredEpisodeCount?: number | null;
+    premiereDate?: string | null;
   }[],
 ): CatalogSnapshot {
   const catalog = rows
@@ -19,6 +31,12 @@ export function snapshot(
       return {
         id: String(row.id),
         title: row.title,
+        declaredEpisodeCount:
+          Number.isSafeInteger(row.declaredEpisodeCount) &&
+          row.declaredEpisodeCount! > 0
+            ? row.declaredEpisodeCount!
+            : null,
+        premiereDate: validPremiereDate(row.premiereDate),
         aliases: [...new Set(row.aliases)].sort(compare),
         year: match ? Number(match[1]) : null,
         quarter: match
@@ -88,14 +106,7 @@ export function candidateSeasons(
   });
 }
 
-export function catalogReady(
-  state: CatalogState | null,
-  query: MatchQuery,
-  policy: CandidatePolicy,
-) {
-  return (
-    !!state?.active &&
-    digest(candidateSeasons(state.active, query, policy)) ===
-      digest(candidateSeasons(state.desired, query, policy))
-  );
+export function catalogReady(state: CatalogState | null) {
+  // 任一季度都可能成为回退候选，窗口外变化也必须先激活完整新快照。
+  return !!state?.active && state.active.version === state.desired.version;
 }

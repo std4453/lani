@@ -4,9 +4,11 @@
 
 种子列表的「季度」列会将识别成功的结果显示为季度链接；尚未识别时保留解析出的名称标签。将鼠标移到链接上，点击红色删除图标可取消关联。取消后恢复名称标签，后续自动匹配不会重新关联该种子。
 
-## 配置与本机语义服务
+## 配置与匹配服务
 
-独立 API 默认关闭匹配。本机部署建议使用独立语义服务，API 镜像无需 Python。成品镜像 tag 使用 `fp-<fingerprint>-<variant>`，fingerprint 可从对应提交的 `build-manifest.json` 中读取 `images.anime-matcher.fingerprint`。
+独立 API 默认关闭匹配，支持使用本机模型或外部大模型服务，API 镜像无需 Python。两个实现都使用 v2 协议，升级时需同步更新 API 与 matcher。
+
+本机模型的成品镜像 tag 使用 `fp-<fingerprint>-<variant>`，fingerprint 可从对应提交的 `build-manifest.json` 中读取 `images.anime-matcher.fingerprint`。
 
 | 变体后缀 | 默认行为 | 内置模型 |
 | --- | --- | --- |
@@ -38,7 +40,7 @@ matching:
   enabled: true
   endpoint: http://127.0.0.1:8090
   timezone: Asia/Shanghai
-  previousQuarters: 0 # 前几个公历季度，0–8
+  previousQuarters: 1 # 首轮包含前一公历季度，可设 0–8
   nextQuarters: 0 # 后几个公历季度，0–8
   catalogDebounceMs: 1800000 # 目录静默窗口，毫秒；默认 30 分钟，0 表示不额外等待
   timeoutMs: 120000 # 每次协议操作的超时，冷目录较大时可调高
@@ -47,6 +49,14 @@ matching:
 修改 `catalogDebounceMs` 后重启 API，对随后检测到的目录变化生效；正在等待的窗口保留原截止时间。首次初始化不等待，目录检测仍每分钟执行一次。
 
 API 只连接 HTTP worker；开启后必须提供 `endpoint`。设置 `enabled: false` 时停止接收和消费匹配任务，新种子保持未识别状态；已有关联仍可展示、取消。重新启用不会自动回填关闭期间新增的种子。模型模式与权重目录由 worker 的 `--semantic`、`--model-dir` 或 `LANI_MATCHER_MODEL_DIR` 配置。
+
+## 外部大模型服务
+
+外部 matcher 的镜像使用 `ghcr.io/std4453/lani-llm-matcher:fp-<fingerprint>`，对应 `images.llm-matcher.fingerprint`。在服务中配置兼容 Chat Completions 的端点、模型和密钥，再把 API 的 `matching.endpoint` 指向该服务；API 无需额外选择后端类型。供应商特定参数、并发和重试预算在外部 matcher 中配置。
+
+该服务先处理近期候选，必要时在全部已录入季度中复核，因此可识别旧季补档。远端故障会保留为任务错误；正常未匹配与网络错误分别记录。作品声明集数和首播日期来自作品元数据同步，已有目录可重新同步作品资料补齐；单集同步不会改变这两个字段。
+
+配置示例与参数见[外部 matcher README](https://github.com/std4453/lani/tree/next/libs/llm-matcher)。调用外部模型会产生供应商费用，并向配置的服务发送资源标题及候选作品名称。
 
 ## all-in-one
 

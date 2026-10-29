@@ -9,6 +9,10 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { bangumiAliases } from '../aliases';
+import {
+  normalizeDeclaredEpisodeCount,
+  normalizePremiereDate,
+} from '../match-metadata';
 
 @Injectable()
 export class BangumiSeasonService {
@@ -24,9 +28,13 @@ export class BangumiSeasonService {
         .filter((tag) => tag.count > 20)
         .map((tag) => tag.name)
         .filter((tag) => !tag.match(/[\u0001-\u001F]/)), // 不包含控制字符，否则无法写入 XML
+      declaredEpisodeCount: normalizeDeclaredEpisodeCount(season.eps),
+      premiereDate: normalizePremiereDate(season.date),
     };
-    if (season.date) {
-      const { semester, weekday, year } = decomposeAirDate(season.date);
+    if (result.info.premiereDate) {
+      const { semester, weekday, year } = decomposeAirDate(
+        result.info.premiereDate,
+      );
       result.info.year = year;
       result.info.semester = semester;
       result.info.weekday = weekday;

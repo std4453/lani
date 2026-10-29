@@ -4,7 +4,7 @@ import { enqueueJob } from '@/background-queue/producer';
 import { QueueCommit, QueueJob, QueueWaiting } from '@/background-queue/types';
 import { PrismaService } from '@/common/prisma.service';
 import config from '@/config';
-import { Prisma, Torrent, TorrentMatchStatus } from '@lani/db';
+import { Prisma, TorrentMatchStatus } from '@lani/db';
 import {
   BadRequestException,
   Injectable,
@@ -23,11 +23,13 @@ import {
   snapshot,
   validatePolicy,
 } from './catalog';
-import { CatalogSnapshot, CatalogState, MatchQuery } from './protocol';
+import { CatalogSnapshot, CatalogState, MatchResponse } from './protocol';
 import { MatcherTransport } from './transport';
 
 import { enqueueTorrentMatch, matchingEnabled } from './producer';
 import { CATALOG_QUEUE, MATCH_QUEUE, TorrentMatchPayload } from './queues';
+import { torrentQuery } from './query';
+export { torrentQuery } from './query';
 export { CATALOG_QUEUE, MATCH_QUEUE } from './queues';
 
 function stateFrom(value: Prisma.JsonValue): CatalogState | null {
@@ -49,38 +51,14 @@ function stateFrom(value: Prisma.JsonValue): CatalogState | null {
   return state;
 }
 
-export function torrentQuery(
-  torrent: Pick<
-    Torrent,
-    | 'seasonTitleAliases'
-    | 'seasonTitleRaw'
-    | 'publishDate'
-    | 'episodeType'
-    | 'episodeNumber'
-    | 'episodeNumberFrom'
-    | 'episodeNumberTo'
-  >,
-): MatchQuery | null {
-  const aliases = [
-    ...new Set(
-      [torrent.seasonTitleRaw ?? '', ...torrent.seasonTitleAliases]
-        .map((v) => v.trim())
-        .filter(Boolean),
-    ),
-  ];
-  if (!aliases.length) return null;
-  const single =
-    torrent.episodeType === 'EPISODE' &&
-    torrent.episodeNumber != null &&
-    torrent.episodeNumberFrom == null &&
-    torrent.episodeNumberTo == null;
-  const episode = single ? Number(torrent.episodeNumber) : undefined;
-  return {
-    aliases,
-    publishedAt: torrent.publishDate.toISOString(),
-    ...(episode !== undefined && Number.isFinite(episode) ? { episode } : {}),
-  };
-}
+const catalogSelect = {
+  id: true,
+  title: true,
+  aliases: true,
+  yearAndSemester: true,
+  declaredEpisodeCount: true,
+  premiereDate: true,
+} as const;
 
 /** 工程层只选择候选、等待目录并保存结果，不决定时间／集数的模型权重。 */
 @Injectable()
@@ -141,12 +119,7 @@ export class TorrentMatchService
     const rows = await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ`;
       return tx.season.findMany({
-        select: {
-          id: true,
-          title: true,
-          aliases: true,
-          yearAndSemester: true,
-        },
+        select: catalogSelect,
       });
     });
     const desired = snapshot(rows);
@@ -242,29 +215,31 @@ export class TorrentMatchService
       return false;
     const { torrent, query } = await this.input(job);
     if (!torrent || !query || torrent.matchStatus === 'DISMISSED') return true;
-    return catalogReady(await this.currentCatalog(), query, config.matching);
+    return catalogReady(await this.currentCatalog());
   }
 
   async match(job: QueueJob<TorrentMatchPayload>): Promise<QueueCommit> {
     const { torrent, query } = await this.input(job);
     if (!torrent || torrent.matchStatus === 'DISMISSED')
       return async () => undefined;
+    const inputVersion = digest(query);
+    let expectedCatalog: CatalogSnapshot | undefined;
+    let response: MatchResponse | undefined;
     let matchedSeasonId: number | null = null;
     let matchStatus: TorrentMatchStatus = 'UNSUPPORTED';
     let result: Prisma.InputJsonValue = {
-      reason: 'no_parsed_title',
+      reason: 'no_title',
     };
     if (query) {
       const state = await this.currentCatalog();
       // ready 与执行之间只可能有目录更新；交给等待结果而不是用旧候选拒答。
-      if (this.activating || !catalogReady(state, query, config.matching))
-        throw new QueueWaiting();
+      if (this.activating || !catalogReady(state)) throw new QueueWaiting();
       const active = state!.active!;
+      expectedCatalog = active;
       const ids = candidateSeasons(active, query, config.matching).map(
         (s) => s.id,
       );
-      const inputVersion = digest(query);
-      const response = await this.transport!.match(
+      response = await this.transport!.match(
         active,
         query,
         ids,
@@ -282,9 +257,40 @@ export class TorrentMatchService
         mode: response.mode,
         reason: response.result.reason ?? null,
         score: response.result.score ?? null,
+        decision: {
+          stage: response.decision.stage,
+          ...(response.decision.fallbackReason === undefined
+            ? {}
+            : { fallbackReason: response.decision.fallbackReason }),
+        },
+        ...(response.diagnostics
+          ? {
+              diagnostics:
+                response.diagnostics as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
       };
     }
     return async (tx) => {
+      if (expectedCatalog) {
+        // 短暂阻止季度写入，避免校验完整快照后又出现更新或新增候选。
+        // 在季度父行、种子和任务锁之前获取，保持删除路径的锁顺序。
+        await tx.$executeRaw`LOCK TABLE seasons IN SHARE MODE`;
+        const live = snapshot(
+          await tx.season.findMany({ select: catalogSelect }),
+        );
+        await tx.$queryRaw`SELECT id FROM torrent_match_catalog WHERE id = 1 FOR SHARE`;
+        const checkpoint = await tx.torrentMatchCatalog.findUnique({
+          where: { id: 1 },
+        });
+        const current = checkpoint ? stateFrom(checkpoint.state) : null;
+        if (
+          live.version !== expectedCatalog.version ||
+          !catalogReady(current) ||
+          current!.active!.version !== expectedCatalog.version
+        )
+          throw new QueueWaiting();
+      }
       // 先锁外键父行，避免与季度删除的父行 -> 种子顺序形成死锁。
       const seasons =
         matchedSeasonId === null
@@ -297,6 +303,23 @@ export class TorrentMatchService
         { id: number; matchStatus: TorrentMatchStatus | null }[]
       >`SELECT id, match_status AS "matchStatus" FROM torrents WHERE id = ${torrent.id} FOR UPDATE`;
       if (!existing.length || existing[0].matchStatus === 'DISMISSED') return;
+      const currentTorrent = await tx.torrent.findUnique({
+        where: { id: torrent.id },
+      });
+      if (
+        !currentTorrent ||
+        digest(torrentQuery(currentTorrent)) !== inputVersion
+      ) {
+        // 已重新入队的输入继续交给队列 revision 检查回滚，并立即消费新版。
+        const latest = await tx.backgroundJob.findUnique({
+          where: { id: job.id },
+          select: { revision: true },
+        });
+        if (latest?.revision !== job.revision) return;
+        throw new QueueWaiting();
+      }
+      if (response && (this.activating || !this.transport!.isCurrent(response)))
+        throw new QueueWaiting();
       await tx.torrent.update({
         where: { id: torrent.id },
         data: {

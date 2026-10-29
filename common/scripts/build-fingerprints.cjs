@@ -19,7 +19,9 @@ const apps = [
   "gateway",
   "db",
   "anime-matcher",
+  "llm-matcher",
 ];
+const standaloneProjects = new Map([["@lani/llm-matcher", "libs/llm-matcher"]]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const git = (args, options = {}) =>
   execFileSync("git", args, {
@@ -158,7 +160,10 @@ function calculate(tree) {
     file.startsWith("common/git-hooks/") ||
     file === ".github/workflows/manifest-check.yaml";
   const owner = (file) =>
-    [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0];
+    [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0] ||
+    [...standaloneProjects].find(([, folder]) =>
+      file.startsWith(`${folder}/`)
+    )?.[0];
   const global = [...tree.entries.keys()].filter(
     (file) => file !== lockPath && !excluded(file) && !owner(file)
   );
@@ -168,6 +173,10 @@ function calculate(tree) {
     const closure = new Set();
     function visit(name) {
       if (closure.has(name)) return;
+      if (standaloneProjects.has(name)) {
+        closure.add(name);
+        return;
+      }
       const project = projects.get(name);
       if (!project) throw new Error(`Missing application project: ${name}`);
       closure.add(name);
@@ -186,9 +195,10 @@ function calculate(tree) {
         tree.entries.get(file).mode,
         tree.entries.get(file).oid,
       ]);
-    const dependencies = selectDependencies(
-      [...closure].map((name) => projects.get(name).folder)
-    );
+    const folders = [...closure]
+      .filter((name) => projects.has(name))
+      .map((name) => projects.get(name).folder);
+    const dependencies = folders.length ? selectDependencies(folders) : [];
     for (const [key, value] of dependencies)
       inputs.push([
         `${lockPath}#${key}`,

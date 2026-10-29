@@ -1,4 +1,4 @@
-"""无权威状态的 v1 HTTP / JSONL 匹配协议；目录仅作为可丢弃缓存。"""
+"""无权威状态的 HTTP / JSONL 匹配协议；目录仅作为可丢弃缓存。"""
 
 import argparse
 import os
@@ -77,7 +77,7 @@ def optional_integer(value, name, minimum):
     return value
 
 
-def adapt_catalog(catalog):
+def adapt_catalog(catalog, protocol_version=1):
     if not isinstance(catalog, list) or len(catalog) > 10000:
         invalid("季度目录必须是最多 10000 项的列表")
     result, ids = [], set()
@@ -106,7 +106,8 @@ def adapt_catalog(catalog):
             )
         ):
             invalid("quarter 必须是 1 至 4 或 null")
-        episodes = season.get("episodes", [])
+        # v2 不消费逐集信息；旧调用方附带该字段也不会影响静态模型。
+        episodes = season.get("episodes", []) if protocol_version == 1 else []
         if not isinstance(episodes, list) or len(episodes) > 10000:
             invalid("季度剧集列表无效")
         adapted = []
@@ -136,9 +137,12 @@ def create_matcher(catalog, *, semantic=False, model_dir=None):
     return RuntimeFactory()(catalog, semantic=semantic, model_dir=model_dir)
 
 
-def adapt_query(query):
+def adapt_query(query, protocol_version=1):
     if not isinstance(query, dict):
         invalid("query 必须是对象")
+    if protocol_version == 2:
+        # 原始标题供其他兼容实现使用；本模型仍只消费调用方给出的别名。
+        text(query.get("rawTitle"), "种子标题", empty=True)
     adapted = {
         "aliases": [a for a in titles(query.get("aliases"), 32) if a],
         "publishedAt": date(query.get("publishedAt")),
@@ -204,15 +208,15 @@ class WorkerState:
         self.ids = set()
         self.model_version = model_version(semantic, device=device, dtype=dtype, profile_path=profile_path)
 
-    def status(self):
+    def status(self, protocol_version=1):
         return {
-            "protocolVersion": 1,
+            "protocolVersion": protocol_version,
             "catalogVersion": self.catalog_version,
             "modelVersion": self.model_version,
             "mode": "semantic" if self.semantic else "lexical",
         }
 
-    def dispatch(self, method, request):
+    def dispatch(self, method, request, *, protocol_version=None):
         if not isinstance(request, dict):
             invalid("请求必须是 JSON 对象")
         if method != "status" or "protocolVersion" in request:
@@ -220,37 +224,48 @@ class WorkerState:
                 invalid("缺少 protocolVersion")
             if (
                 type(request["protocolVersion"]) is not int
-                or request["protocolVersion"] != 1
+                or request["protocolVersion"] not in (1, 2)
             ):
                 raise ProtocolError("PROTOCOL_UNSUPPORTED", "不支持此协议版本", 422)
+        requested_version = request.get("protocolVersion", 1)
+        if protocol_version is not None and requested_version != protocol_version:
+            raise ProtocolError("PROTOCOL_UNSUPPORTED", "请求版本与路径不符", 422)
         if method == "status":
-            return self.status()
+            return self.status(requested_version)
         if method not in ("configure", "match"):
             invalid("未知请求方法")
         version = text(request.get("catalogVersion"), "目录版本", 256)
         if method == "configure":
-            catalog, ids = adapt_catalog(request.get("catalog"))
+            catalog, ids = adapt_catalog(request.get("catalog"), requested_version)
             if version != self.catalog_version:
                 replacement = self.factory(
                     catalog, semantic=self.semantic, model_dir=self.model_dir
                 )
                 # 完整构建成功后才发布；同版本由调用方保证同内容。
                 self.matcher, self.ids, self.catalog_version = replacement, ids, version
-            return self.status()
+            return self.status(requested_version)
         request_id = text(request.get("requestId"), "请求 ID", 2048)
-        adapted = adapt_query(request.get("query"))
-        candidates = request.get("candidateIds")
-        if not isinstance(candidates, list) or len(candidates) > 10000:
-            invalid("必须显式提供 candidateIds 列表")
-        candidates = [text(c, "候选 ID", 200) for c in candidates]
-        if len(set(candidates)) != len(candidates):
-            invalid("候选 ID 不能重复")
+        adapted = adapt_query(request.get("query"), requested_version)
+
+        def candidate_ids(field):
+            candidates = request.get(field)
+            if not isinstance(candidates, list) or len(candidates) > 10000:
+                invalid(f"必须显式提供 {field} 列表")
+            candidates = [text(c, "候选 ID", 200) for c in candidates]
+            if len(set(candidates)) != len(candidates):
+                invalid("候选 ID 不能重复")
+            return candidates
+
+        candidates = candidate_ids("primaryCandidateIds" if requested_version == 2 else "candidateIds")
+        fallback = candidate_ids("fallbackCandidateIds") if requested_version == 2 else None
         if self.matcher is None:
             raise ProtocolError("CATALOG_MISSING", "目录缓存为空，请显式恢复目录", 409)
         if version != self.catalog_version:
             raise ProtocolError("CATALOG_MISMATCH", "请求版本与当前目录不同", 409)
         if not set(candidates).issubset(self.ids):
             invalid("候选 ID 不在当前目录中")
+        if fallback is not None and set(fallback) != self.ids:
+            invalid("fallbackCandidateIds 必须完整覆盖当前目录")
         result = (
             self.matcher.match(adapted, candidates)
             if candidates
@@ -263,8 +278,9 @@ class WorkerState:
         ):
             raise RuntimeError("Matcher returned an out-of-scope result")
         return {
-            **self.status(),
+            **self.status(requested_version),
             "requestId": request_id,
+            **({"decision": {"stage": "primary"}} if requested_version == 2 else {}),
             "result": {
                 k: result[k] for k in ("seasonId", "reason", "score") if k in result
             },
@@ -367,11 +383,12 @@ def make_http_server(host="127.0.0.1", port=8090, **options):
             self.wfile.write(body)
             self.close_connection = True
 
-        def handle_operation(self, method, path):
+        def handle_operation(self, method, route):
+            protocol_version = 2 if self.path.startswith("/v2/") else 1
             try:
-                if self.path != path:
+                if self.path != f"/v{protocol_version}/{route}":
                     raise ProtocolError("INVALID_REQUEST", "未找到请求路径", 404)
-                payload = {}
+                payload = {"protocolVersion": protocol_version}
                 if method != "status":
                     lengths = self.headers.get_all("Content-Length", [])
                     if (
@@ -391,22 +408,22 @@ def make_http_server(host="127.0.0.1", port=8090, **options):
                     if len(raw) != length:
                         invalid("请求正文不完整")
                     payload = decode(raw)
-                self.send_payload(200, state.dispatch(method, payload))
+                self.send_payload(200, state.dispatch(method, payload, protocol_version=protocol_version))
             except Exception as error:
                 failure_value = failure(error)
                 self.send_payload(
                     failure_value.status,
-                    {"protocolVersion": 1, "error": failure_value.payload()},
+                    {"protocolVersion": protocol_version, "error": failure_value.payload()},
                 )
 
         def do_GET(self):
-            self.handle_operation("status", "/v1/status")
+            self.handle_operation("status", "status")
 
         def do_PUT(self):
-            self.handle_operation("configure", "/v1/catalog")
+            self.handle_operation("configure", "catalog")
 
         def do_POST(self):
-            self.handle_operation("match", "/v1/match")
+            self.handle_operation("match", "match")
 
     return _TimedHTTPServer((host, port), Handler)
 

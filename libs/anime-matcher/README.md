@@ -1,6 +1,6 @@
 # 动画季度匹配器
 
-将一条单集种子的完整解析标题／别名、发布时间和 `episodeIndex` 匹配到**调用方明确传入的候选动画**，返回 top-1 或拒答。提供独立 Python worker、v1 HTTP／JSONL 协议、Node.js 客户端和最终效果报告。
+将一条单集种子的完整解析标题／别名、发布时间和 `episodeIndex` 匹配到**调用方明确传入的候选动画**，返回 top-1 或拒答。提供独立 Python worker、v1/v2 HTTP／JSONL 协议、Node.js 客户端和最终效果报告。
 
 目录输入使用数据库标题与完整 Bangumi 别名，不依赖逐集发布日期或逐集元数据。匹配器不访问数据库、不扩大候选、不添加动画，也不管理业务队列。工程侧负责已添加目录、目录版本／debounce、发布时间对应季度及可配置相邻季度的候选列表。
 
@@ -75,6 +75,8 @@ try {
 完整字段、错误码、响应、长度限制和客户端生命周期见 [PROTOCOL.md](PROTOCOL.md)。HTTP 与 JSONL 使用相同合同。`candidateIds` 必须显式提供；空列表正常拒答，未知／重复 ID 报错。没有硬编码的 −45/+15 天窗口。
 
 已接入旧 v1 的工程迁移差异见 [INTEGRATION.md](INTEGRATION.md)。
+
+统一替换接口使用 v2：调用 `status(2)`，目录上传与匹配请求传 `protocolVersion: 2`；匹配请求新增 `query.rawTitle`，并将 `candidateIds` 改为 `primaryCandidateIds` 与完整目录的 `fallbackCandidateIds`。本包保持原模型和主要候选范围，忽略原始标题、首播日期和逐集目录字段，响应始终标记 `decision.stage: 'primary'`。其他兼容实现可以使用后备候选。完整约束见 [v2 协议](PROTOCOL.md#v2可替换匹配器接口)。all-in-one 继续使用本包。
 
 ## 启用语义模型
 

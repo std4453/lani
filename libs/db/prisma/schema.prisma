@@ -96,6 +96,8 @@ model Season {
   tags                     String[]       @db.VarChar
   yearAndSemester          String         @default("") @map("year_and_semester") @db.VarChar(16)
   yearAndSemesterCanonical Int            @default(0) @map("year_and_semester_canonical")
+  declaredEpisodeCount     Int?           @map("declared_episode_count")
+  premiereDate             String?        @map("premiere_date")
   weekday                  Int?
   airTime                  String         @default("") @map("air_time") @db.VarChar
   posterImageId            Int?           @map("poster_image_id")
