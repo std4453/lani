@@ -76,7 +76,7 @@ try {
 
 已接入旧 v1 的工程迁移差异见 [INTEGRATION.md](INTEGRATION.md)。
 
-统一替换接口使用 v2：调用 `status(2)`，目录上传与匹配请求传 `protocolVersion: 2`；匹配请求新增 `query.rawTitle`，并将 `candidateIds` 改为 `primaryCandidateIds` 与完整目录的 `fallbackCandidateIds`。本包保持原模型和主要候选范围，忽略原始标题、首播日期和逐集目录字段，响应始终标记 `decision.stage: 'primary'`。其他兼容实现可以使用后备候选。完整约束见 [v2 协议](PROTOCOL.md#v2可替换匹配器接口)。all-in-one 继续使用本包。
+统一替换接口使用 v2：调用 `status(2)`，显式上传完整目录，再以 `catalogVersion`、近期 `candidateIds` 和带 `rawTitle` 的查询发起匹配。本包保持原模型及请求候选范围，忽略原始标题、首播日期和逐集目录字段；其他兼容实现可按服务端策略使用完整目录。客户端仅核验核心响应及目录范围，透明传递可选诊断扩展，运行模式由服务端配置决定。完整约束见 [v2 协议](PROTOCOL.md#v2可替换匹配器接口)。all-in-one 继续使用本包。
 
 ## 启用语义模型
 

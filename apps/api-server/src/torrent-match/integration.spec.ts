@@ -145,7 +145,6 @@ suite('种子入库、目录等待与结果持久化', () => {
       },
     });
     seasonId = season.id;
-    jest.spyOn(MatcherTransport.prototype, 'isCurrent').mockReturnValue(true);
     load = jest.spyOn(MatcherTransport.prototype, 'load').mockResolvedValue({
       protocolVersion: 2,
       catalogVersion: '',

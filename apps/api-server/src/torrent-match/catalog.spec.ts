@@ -141,39 +141,20 @@ it.each([0, 5000, 60000])(
   },
 );
 
-it('projects independently declared counts and valid premiere dates into the catalog identity', () => {
-  const base = snapshot([row()]);
-  const declared = snapshot([
-    { ...row(), declaredEpisodeCount: 12, premiereDate: '2026-10-02' },
-  ]);
-  expect(declared.catalog[0]).toMatchObject({
-    declaredEpisodeCount: 12,
-    premiereDate: '2026-10-02',
+it('projects persisted metadata directly without a second validation policy', () => {
+  const stored = {
+    ...row(),
+    declaredEpisodeCount: 0,
+    premiereDate: 'stored-value',
+  };
+  const projected = snapshot([stored]);
+  expect(projected.catalog[0]).toMatchObject({
+    declaredEpisodeCount: 0,
+    premiereDate: 'stored-value',
   });
-  expect(declared.version).not.toBe(base.version);
-  expect(
-    snapshot([
-      { ...row(), declaredEpisodeCount: -1, premiereDate: '2026-02-30' },
-    ]),
-  ).toEqual(base);
-  expect(
-    snapshot([
-      { ...row(), declaredEpisodeCount: 1.5, premiereDate: '2026-1-1' },
-    ]),
-  ).toEqual(base);
-});
-
-it('normalizes zero declared counts and out-of-range premiere years to unknown', () => {
-  expect(
-    snapshot([
-      { ...row(), declaredEpisodeCount: 0, premiereDate: '0000-01-01' },
-    ]),
-  ).toEqual(snapshot([row()]));
-  expect(snapshot([{ ...row(), premiereDate: '10000-01-01' }])).toEqual(
-    snapshot([row()]),
-  );
-  expect(
-    snapshot([{ ...row(), premiereDate: '0001-01-01' }]).catalog[0]
-      .premiereDate,
-  ).toBe('0001-01-01');
+  expect(projected.version).not.toBe(snapshot([row()]).version);
+  expect(snapshot([row()]).catalog[0]).toMatchObject({
+    declaredEpisodeCount: null,
+    premiereDate: null,
+  });
 });

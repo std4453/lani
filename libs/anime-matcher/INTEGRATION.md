@@ -1,6 +1,8 @@
 # 工程接入约定
 
-HTTP／JSONL 使用 v1 协议。工程侧继续维护 PostgreSQL 队列、目录内容版本、debounce、候选范围和结果落库；本包不引入权威状态或业务写操作。
+HTTP／JSONL 支持 v1 与统一替换接口 v2。工程侧继续维护 PostgreSQL 队列、完整目录版本、debounce、近期候选和结果落库；本包不引入权威状态或业务写操作。字段与恢复规则统一见 [PROTOCOL.md](PROTOCOL.md)。
+
+v2 请求使用 `catalogVersion` 引用完整目录，以 `candidateIds` 提供近期候选；本包只匹配这些候选，其他兼容实现可按自身服务端配置使用完整目录。Node 客户端在成功上传后记录目录 ID，以校验 v2 返回范围；新客户端必须显式上传一次，即使远端已有相同版本。`mode`、`modelVersion` 和诊断信息均为可选扩展，不参与客户端兼容性判断。请求中的 `mode` 被忽略，Node 的 `semantic` 选项只控制本地子进程启动。
 
 ## 与已接入 v1 的差异
 
@@ -10,7 +12,7 @@ HTTP／JSONL 使用 v1 协议。工程侧继续维护 PostgreSQL 队列、目录
 - `catalog[].declaredEpisodeCount?: number | null` 是可选作品级静态总集数，正整数；默认交付的两种模型都不使用它，暂不必为此修改目录生成或刷新策略。
 - `year` 接受 1–9999 或 null，`quarter` 接受公历 1–4 或 null；`episode` 提供时必须非负且有限。原有合法输入无需改动。
 - 诊断 `reason` 使用 `static_lexical`／`static_semantic`／`low_confidence`／`no_candidates`。业务逻辑只应依据 `seasonId` 处理正常拒答，不依赖诊断字符串。
-- `modelVersion` 改为 `matcher-static-v1-…`，绑定代码、树、预训练模型清单、依赖版本及推理设备／精度。同一个目录版本可以配合新的模型版本；业务端按自身版本策略决定是否重评。
+- 本包提供可选诊断 `modelVersion: matcher-static-v1-…`，绑定代码、树、预训练模型清单、依赖版本及推理设备／精度。同一个目录版本可以配合新的模型版本；业务端不依赖此扩展选择或识别匹配器实现。
 
 直接调用旧 Python `Matcher` 的用户需要迁移：目录采用同一 v1 结构，明确提供 `title`、`aliases`、`year`、`quarter`，未知季度填 null；`match` 必须显式传 `candidate_ids`，省略不再表示整个目录。查询季数使用 `publisherSeason`，不再接收内部 `season` 名称作为公共合同。旧逐集权重与 `weights_dir` 选项移除，显式替换模型需使用绑定权重 SHA 和特征合同的 `profile_path`。这不改变已经接入 v1 HTTP／JSONL 的调用流程。
 

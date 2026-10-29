@@ -63,7 +63,6 @@ jobs:
       revision: ${{ steps.plan.outputs.revision }}
       matrix: ${{ steps.plan.outputs.matrix }}
       matcherMatrix: ${{ steps.plan.outputs.matcherMatrix }}
-      llmMatcherMatrix: ${{ steps.plan.outputs.llmMatcherMatrix }}
       ref: ${{ steps.source.outputs.ref }}
       environment: ${{ steps.source.outputs.environment }}
       notifyTargets: ${{ steps.source.outputs.notifyTargets }}
@@ -159,27 +158,14 @@ jobs:
       ref: ${{ needs.plan.outputs.revision }}
       fingerprint: ${{ matrix.fingerprint }}
       variant: ${{ matrix.variant }}
-  llm-matcher-images:
-    needs: plan
-    if: needs.plan.outputs.llmMatcherMatrix != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.plan.outputs.llmMatcherMatrix) }}
-    uses: ./.github/workflows/build_llm_matcher.yaml
-    with:
-      ref: ${{ needs.plan.outputs.revision }}
-      fingerprint: ${{ matrix.fingerprint }}
   notify:
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' &&
       (needs.images.result == 'success' ||
       (needs.plan.outputs.matrix == '[]' && needs.images.result == 'skipped')) &&
       (needs.matcher-images.result == 'success' ||
-      (needs.plan.outputs.matcherMatrix == '[]' && needs.matcher-images.result == 'skipped')) &&
-      (needs.llm-matcher-images.result == 'success' ||
-      (needs.plan.outputs.llmMatcherMatrix == '[]' && needs.llm-matcher-images.result == 'skipped')) }}
-    needs: [plan, images, matcher-images, llm-matcher-images]
+      (needs.plan.outputs.matcherMatrix == '[]' && needs.matcher-images.result == 'skipped')) }}
+    needs: [plan, images, matcher-images]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

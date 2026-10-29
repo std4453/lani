@@ -62,8 +62,6 @@ def match(**updates):
 def match_v2(**updates):
     request = match(protocolVersion=2)
     request["query"]["rawTitle"] = "[发布组] 别名 - 01.5"
-    request["primaryCandidateIds"] = request.pop("candidateIds")
-    request["fallbackCandidateIds"] = [s["id"] for s in CATALOG]
     return {**request, **updates}
 
 
@@ -232,7 +230,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(replies[9][0], 200)
         self.assertEqual(len(created), 1)
 
-    def test_v2_primary_scope_and_ignored_model_metadata(self):
+    def test_v2_candidate_scope_and_ignored_model_metadata(self):
         cfg = config(protocolVersion=2)
         cfg["catalog"][0].update(premiereDate="2026-10-01", episodes="ignored")
         request = match_v2()
@@ -241,8 +239,8 @@ class ContractTests(unittest.TestCase):
             ("status", {"protocolVersion": 2}),
             ("configure", cfg),
             ("match", request),
-            ("match", match_v2(primaryCandidateIds=["s2"], fallbackCandidateIds=["s2", "s1"])),
-            ("match", match_v2(primaryCandidateIds=[])),
+            ("match", match_v2(candidateIds=["s2"])),
+            ("match", match_v2(candidateIds=[])),
         ])
         self.assertTrue(all(status == 200 for status, _ in replies))
         self.assertTrue(all(payload["protocolVersion"] == 2 for _, payload in replies))
@@ -251,17 +249,16 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("rawTitle", created[0].last_query)
         for index, sid in ((2, "s1"), (3, "s2"), (4, None)):
             self.assertEqual(replies[index][1]["result"]["seasonId"], sid)
-            self.assertEqual(replies[index][1]["decision"], {"stage": "primary"})
 
-    def test_v2_requires_raw_title_and_explicit_complete_unique_fallback(self):
+    def test_v2_requires_raw_title_and_explicit_unique_candidates(self):
         no_raw_title = match_v2()
         del no_raw_title["query"]["rawTitle"]
-        no_fallback = match_v2()
-        del no_fallback["fallbackCandidateIds"]
-        requests = [no_raw_title, no_fallback, *[
-            match_v2(fallbackCandidateIds=ids)
-            for ids in (None, [], ["s1"], ["s1", "s1", "s2"], ["s1", "s2", "outside"])
-        ], match_v2(primaryCandidateIds=["outside"])]
+        no_candidates = match_v2()
+        del no_candidates["candidateIds"]
+        requests = [no_raw_title, no_candidates, *[
+            match_v2(candidateIds=ids)
+            for ids in (None, ["s1", "s1"], ["outside"])
+        ]]
         replies, _ = self.both([
             ("configure", config(protocolVersion=2)),
             *[("match", request) for request in requests],
@@ -270,7 +267,7 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(status, 400)
             self.assertEqual(payload["error"]["code"], "INVALID_REQUEST")
 
-    def test_v2_legacy_model_cannot_return_a_fallback_only_candidate(self):
+    def test_v2_legacy_model_only_returns_from_requested_candidates(self):
         class EscapingMatcher(FakeMatcher):
             def match(self, query, candidates):
                 return {"seasonId": "s2"}
@@ -281,6 +278,19 @@ class ContractTests(unittest.TestCase):
         ], EscapingMatcher)
         self.assertEqual(replies[1][0], 500)
         self.assertEqual(replies[1][1]["error"]["code"], "INTERNAL_ERROR")
+
+    def test_request_mode_is_ignored_in_both_protocols(self):
+        for protocol_version in (1, 2):
+            request = match_v2() if protocol_version == 2 else match()
+            replies, _ = self.both([
+                ("status", {"protocolVersion": protocol_version, "mode": "semantic"}),
+                ("configure", config(protocolVersion=protocol_version, mode={"ignored": True})),
+                ("match", {**request, "mode": "semantic"}),
+            ])
+            self.assertTrue(all(status == 200 for status, _ in replies))
+            self.assertTrue(all(payload["mode"] == "lexical" for _, payload in replies))
+        state = worker.WorkerState(semantic=True, matcher_factory=FakeMatcher)
+        self.assertEqual(state.dispatch("status", {"mode": "lexical"})["mode"], "semantic")
 
     def test_errors_are_not_business_rejections_and_results_cannot_escape(self):
         replies, _ = self.both(

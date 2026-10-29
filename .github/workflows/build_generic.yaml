@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           case "$PROJECT_NAME" in
-            @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway|@lani/db|@lani/all-in-one) ;;
+            @lani/admin|@lani/api-server|@lani/data-server|@lani/gateway|@lani/db|@lani/all-in-one|@lani/llm-matcher) ;;
             *) echo "Unsupported project" >&2; exit 1 ;;
           esac
 
@@ -120,7 +120,10 @@ jobs:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           app="${PROJECT_NAME##*/}"
-          if [ "$app" = db ]; then directory=libs/db; else directory="apps/$app"; fi
+          case "$app" in
+            db|llm-matcher) directory="libs/$app" ;;
+            *) directory="apps/$app" ;;
+          esac
           {
             echo "dockerfile_path=$directory/Dockerfile"
             echo "image_name=ghcr.io/${REPOSITORY_OWNER,,}/lani-$app"

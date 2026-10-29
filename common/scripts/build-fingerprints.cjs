@@ -7,7 +7,6 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { readLock } = require("./pnpm-fingerprint.cjs");
-const { isDocsPath } = require("./docs-only.cjs");
 const manifestPath = "build-manifest.json";
 const scriptPath = "common/scripts/build-fingerprints.cjs";
 const lockPath = "common/config/rush/pnpm-lock.yaml";
@@ -21,7 +20,20 @@ const apps = [
   "anime-matcher",
   "llm-matcher",
 ];
-const standaloneProjects = new Map([["@lani/llm-matcher", "libs/llm-matcher"]]);
+const sharedBuildInputs = new Set([
+  ".dockerignore",
+  ".npmrc",
+  ".nvmrc",
+  "rush.json",
+  "common/config/rush/.npmrc",
+  "common/config/rush/.pnpmfile.cjs",
+  "common/config/rush/command-line.json",
+  "common/config/rush/common-versions.json",
+  "common/config/rush/deploy.json",
+  "common/config/rush/experiments.json",
+  "common/config/rush/pnpm-config.json",
+  "common/config/rush/rush-plugins.json",
+]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const git = (args, options = {}) =>
   execFileSync("git", args, {
@@ -156,16 +168,14 @@ function calculate(tree) {
     /\.(md|mdx|markdown)$/i.test(file) ||
     /(^|\/)docs\//.test(file) ||
     file.startsWith("development/") ||
-    isDocsPath(file) ||
-    file.startsWith("common/git-hooks/") ||
-    file === ".github/workflows/manifest-check.yaml";
+    // 通用工具源码只影响工具自身；其包配置、编译配置和锁定依赖仍是构建输入。
+    (file.startsWith("tools/") &&
+      !file.endsWith("/package.json") &&
+      !/\/tsconfig(?:\/[^/]+)?\.json$/.test(file));
   const owner = (file) =>
-    [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0] ||
-    [...standaloneProjects].find(([, folder]) =>
-      file.startsWith(`${folder}/`)
-    )?.[0];
-  const global = [...tree.entries.keys()].filter(
-    (file) => file !== lockPath && !excluded(file) && !owner(file)
+    [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0];
+  const global = [...tree.entries.keys()].filter((file) =>
+    sharedBuildInputs.has(file)
   );
   const details = {},
     images = {};
@@ -173,10 +183,6 @@ function calculate(tree) {
     const closure = new Set();
     function visit(name) {
       if (closure.has(name)) return;
-      if (standaloneProjects.has(name)) {
-        closure.add(name);
-        return;
-      }
       const project = projects.get(name);
       if (!project) throw new Error(`Missing application project: ${name}`);
       closure.add(name);
@@ -253,11 +259,7 @@ function generate() {
     throw new Error(
       "Untracked manifest exists; inspect and stage it before generating"
     );
-  for (const script of [
-    scriptPath,
-    "common/scripts/pnpm-fingerprint.cjs",
-    "common/scripts/docs-only.cjs",
-  ])
+  for (const script of [scriptPath, "common/scripts/pnpm-fingerprint.cjs"])
     if (tree.read(script) !== fs.readFileSync(path.join(root, script), "utf8"))
       throw new Error("Stage fingerprint script changes before generating");
   const content = JSON.stringify(calculate(tree).manifest, null, 2) + "\n";

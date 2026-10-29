@@ -49,7 +49,6 @@ function fixture() {
       decision: { stage: 'fallback', fallbackReason: 'primary_refused' },
       result: { seasonId: '1' },
     }),
-    isCurrent: jest.fn().mockReturnValue(true),
   };
   const service = new TorrentMatchService(db as any, {} as any, {} as any);
   (service as any).transport = transport;
@@ -92,7 +91,7 @@ function fixture() {
   return { service, tx, transport, job, torrent, season, state, locks };
 }
 
-it('persists the actual decision stage and locks the catalog before the season and torrent', async () => {
+it('persists the full response unchanged and uses only row locks', async () => {
   const f = fixture();
   const commit = await f.service.match(f.job);
   await commit(f.tx as any);
@@ -106,12 +105,12 @@ it('persists the actual decision stage and locks the catalog before the season a
       }),
     }),
   );
-  expect(f.locks).toEqual([
-    'catalog table',
-    'catalog checkpoint',
-    'season',
-    'torrent',
-  ]);
+  expect(f.locks).toEqual(['catalog checkpoint', 'season', 'torrent']);
+  expect(f.tx.$executeRaw).not.toHaveBeenCalled();
+  expect(f.tx.torrent.update.mock.calls[0][0].data.matchDetails).toEqual({
+    ...(await f.transport.match.mock.results[0].value),
+    inputVersion: expect.any(String),
+  });
 });
 
 it('does not commit if the raw input changed without a new queue revision', async () => {
@@ -148,23 +147,37 @@ it('rejects a new fallback-only candidate even before catalog observation catche
   expect(f.tx.torrent.update).not.toHaveBeenCalled();
 });
 
-it('rejects a result after an observed catalog or worker identity changes', async () => {
-  for (const change of ['catalog', 'worker']) {
-    const f = fixture();
-    const commit = await f.service.match(f.job);
-    if (change === 'catalog') {
-      f.tx.torrentMatchCatalog.findUnique.mockResolvedValue({
-        state: {
-          ...f.state,
-          desired: snapshot([{ ...f.season, declaredEpisodeCount: 12 }]),
-        },
-      });
-    } else {
-      f.transport.isCurrent.mockReturnValue(false);
-    }
-    await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
-    expect(f.tx.torrent.update).not.toHaveBeenCalled();
-  }
+it('rejects a result after the observed catalog changes', async () => {
+  const f = fixture();
+  const commit = await f.service.match(f.job);
+  f.tx.torrentMatchCatalog.findUnique.mockResolvedValue({
+    state: {
+      ...f.state,
+      desired: snapshot([{ ...f.season, declaredEpisodeCount: 12 }]),
+    },
+  });
+  await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
+  expect(f.tx.torrent.update).not.toHaveBeenCalled();
+});
+
+it('stores arbitrary optional JSON without requiring backend identity', async () => {
+  const f = fixture();
+  const response = {
+    protocolVersion: 2,
+    catalogVersion: f.state.active.version,
+    requestId: 'response',
+    result: { seasonId: '1', custom: ['result-data'] },
+    stage: 'backend-stage',
+    diagnostics: { anotherVendor: { units: 'unspecified' } },
+    other: [null, false],
+  };
+  f.transport.match.mockResolvedValue(response);
+  const commit = await f.service.match(f.job);
+  await commit(f.tx as any);
+  expect(f.tx.torrent.update.mock.calls[0][0].data.matchDetails).toEqual({
+    ...response,
+    inputVersion: expect.any(String),
+  });
 });
 
 it('blocks another inference until the stale catalog is observed after rollback', async () => {

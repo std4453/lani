@@ -55,7 +55,7 @@ test("only 404 triggers build; registry faults fail planning", async () => {
   }
 });
 
-test("external matcher gets one unvaried image and a standalone build matrix", async () => {
+test("external matcher gets one unvaried image in the generic Node matrix", async () => {
   const images = Object.fromEntries(
     [
       "admin",
@@ -78,12 +78,10 @@ test("external matcher gets one unvaried image and a standalone build matrix", a
     "ghcr.io/owner/lani-llm-matcher:fp-llm-matcher-fp"
   );
   const split = splitBuildMatrix(planned.matrix);
-  assert.deepEqual(split.llmMatcherMatrix, [
-    { app: "llm-matcher", fingerprint: "llm-matcher-fp" },
-  ]);
+  assert(!Object.hasOwn(split, "llmMatcherMatrix"));
   assert.deepEqual(
     split.matrix.map((x) => x.app),
-    ["admin", "api-server", "data-server", "gateway", "db"]
+    ["admin", "api-server", "data-server", "gateway", "db", "llm-matcher"]
   );
   assert.deepEqual(
     split.matcherMatrix.map((x) => x.variant),
@@ -91,34 +89,36 @@ test("external matcher gets one unvaried image and a standalone build matrix", a
   );
 });
 
-test("reused external matcher skips only its standalone build", async () => {
+test("reused external matcher is omitted from the generic Node build", async () => {
   const targets = [
     { app: "api-server", fingerprint: "api-fp" },
     { app: "llm-matcher", fingerprint: "llm-fp" },
   ];
-  const result = await planImages(
-    "owner",
-    targets,
-    async (name) => name.endsWith("/lani-llm-matcher")
+  const result = await planImages("owner", targets, async (name) =>
+    name.endsWith("/lani-llm-matcher")
   );
   const split = splitBuildMatrix(result.matrix);
-  assert.deepEqual(split.llmMatcherMatrix, []);
   assert.deepEqual(split.matrix, [targets[0]]);
 });
-
 
 test("registry authentication can probe a not-yet-published package", async () => {
   const calls = [];
   const request = async (url, options) => {
-    calls.push({url, options});
+    calls.push({ url, options });
     return url.includes("/token?")
-      ? {ok: true, json: async () => ({token: "registry-token"})}
-      : {ok: false, status: 404};
+      ? { ok: true, json: async () => ({ token: "registry-token" }) }
+      : { ok: false, status: 404 };
   };
-  assert.equal(await imageExists("owner/new-package", "fp", request, "", {
-    username: "actor", token: "github-token",
-  }), false);
-  assert.equal(calls[0].options.headers.Authorization,
-    "Basic " + Buffer.from("actor:github-token").toString("base64"));
+  assert.equal(
+    await imageExists("owner/new-package", "fp", request, "", {
+      username: "actor",
+      token: "github-token",
+    }),
+    false
+  );
+  assert.equal(
+    calls[0].options.headers.Authorization,
+    "Basic " + Buffer.from("actor:github-token").toString("base64")
+  );
   assert.equal(calls[1].options.headers.Authorization, "Bearer registry-token");
 });

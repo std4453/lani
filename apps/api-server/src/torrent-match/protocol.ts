@@ -21,36 +21,13 @@ export interface MatchQuery {
 export interface WorkerStatus {
   protocolVersion: 2;
   catalogVersion: string | null;
-  modelVersion: string;
-  mode: string;
-}
-export interface MatchDiagnostics {
-  elapsedMs: number;
-  attempts: {
-    stage: 'primary' | 'fallback';
-    attempt: number;
-    model?: string;
-    elapsedMs: number;
-    promptTokens?: number;
-    completionTokens?: number;
-    cacheHitTokens?: number;
-    cacheMissTokens?: number;
-    reasoningTokens?: number;
-    error?: string;
-  }[];
-  promptHashes?: { primary?: string; fallback?: string };
+  [key: string]: unknown;
 }
 export interface MatchResponse extends WorkerStatus {
   requestId: string;
-  decision: {
-    stage: 'primary' | 'fallback';
-    fallbackReason?: string;
-  };
-  diagnostics?: MatchDiagnostics;
   result: {
     seasonId: string | null;
-    reason?: string | null;
-    score?: number | null;
+    [key: string]: unknown;
   };
 }
 export interface CatalogState {

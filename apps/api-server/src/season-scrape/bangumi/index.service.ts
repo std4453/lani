@@ -18,8 +18,17 @@ import {
 export class BangumiSeasonService {
   private logger = new Logger(BangumiSeasonService.name);
 
-  private async fetchInfoAndImages(result: PartialSeason, bangumiId: number) {
+  private async fetchSubject(
+    result: PartialSeason,
+    bangumiId: number,
+    includeInfo: boolean,
+  ) {
     const season = await BangumiAPIService.getSubjectById(bangumiId);
+    result.matchMetadata = {
+      declaredEpisodeCount: normalizeDeclaredEpisodeCount(season.eps),
+      premiereDate: normalizePremiereDate(season.date),
+    };
+    if (!includeInfo) return;
     result.info = {
       aliases: bangumiAliases(season.name, season.name_cn, season.infobox),
       description: season.summary,
@@ -28,8 +37,7 @@ export class BangumiSeasonService {
         .filter((tag) => tag.count > 20)
         .map((tag) => tag.name)
         .filter((tag) => !tag.match(/[\u0001-\u001F]/)), // 不包含控制字符，否则无法写入 XML
-      declaredEpisodeCount: normalizeDeclaredEpisodeCount(season.eps),
-      premiereDate: normalizePremiereDate(season.date),
+      ...result.matchMetadata,
     };
     if (result.info.premiereDate) {
       const { semester, weekday, year } = decomposeAirDate(
@@ -161,8 +169,10 @@ export class BangumiSeasonService {
     const result: PartialSeason = {};
     const promises: Promise<void>[] = [];
 
-    if (needInfo || needImages) {
-      promises.push(this.fetchInfoAndImages(result, numBangumiId));
+    if (needInfo || needImages || needEpisodes) {
+      promises.push(
+        this.fetchSubject(result, numBangumiId, !!(needInfo || needImages)),
+      );
     }
     if (needEpisodes) {
       promises.push(this.fetchEpisodes(result, numBangumiId));

@@ -256,16 +256,13 @@ class WorkerState:
                 invalid("候选 ID 不能重复")
             return candidates
 
-        candidates = candidate_ids("primaryCandidateIds" if requested_version == 2 else "candidateIds")
-        fallback = candidate_ids("fallbackCandidateIds") if requested_version == 2 else None
+        candidates = candidate_ids("candidateIds")
         if self.matcher is None:
             raise ProtocolError("CATALOG_MISSING", "目录缓存为空，请显式恢复目录", 409)
         if version != self.catalog_version:
             raise ProtocolError("CATALOG_MISMATCH", "请求版本与当前目录不同", 409)
         if not set(candidates).issubset(self.ids):
             invalid("候选 ID 不在当前目录中")
-        if fallback is not None and set(fallback) != self.ids:
-            invalid("fallbackCandidateIds 必须完整覆盖当前目录")
         result = (
             self.matcher.match(adapted, candidates)
             if candidates
@@ -280,7 +277,6 @@ class WorkerState:
         return {
             **self.status(requested_version),
             "requestId": request_id,
-            **({"decision": {"stage": "primary"}} if requested_version == 2 else {}),
             "result": {
                 k: result[k] for k in ("seasonId", "reason", "score") if k in result
             },

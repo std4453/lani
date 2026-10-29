@@ -23,7 +23,7 @@ import {
   snapshot,
   validatePolicy,
 } from './catalog';
-import { CatalogSnapshot, CatalogState, MatchResponse } from './protocol';
+import { CatalogSnapshot, CatalogState } from './protocol';
 import { MatcherTransport } from './transport';
 
 import { enqueueTorrentMatch, matchingEnabled } from './producer';
@@ -225,7 +225,6 @@ export class TorrentMatchService
       return async () => undefined;
     const inputVersion = digest(query);
     let expectedCatalog: CatalogSnapshot | undefined;
-    let response: MatchResponse | undefined;
     let matchedSeasonId: number | null = null;
     let matchStatus: TorrentMatchStatus = 'UNSUPPORTED';
     let result: Prisma.InputJsonValue = {
@@ -240,7 +239,7 @@ export class TorrentMatchService
       const ids = candidateSeasons(active, query, config.matching).map(
         (s) => s.id,
       );
-      response = await this.transport!.match(
+      const response = await this.transport!.match(
         active,
         query,
         ids,
@@ -252,31 +251,13 @@ export class TorrentMatchService
           : Number(response.result.seasonId);
       matchStatus = matchedSeasonId === null ? 'NO_MATCH' : 'MATCHED';
       result = {
+        ...response,
         inputVersion,
-        catalogVersion: active.version,
-        modelVersion: response.modelVersion,
-        mode: response.mode,
-        reason: response.result.reason ?? null,
-        score: response.result.score ?? null,
-        decision: {
-          stage: response.decision.stage,
-          ...(response.decision.fallbackReason === undefined
-            ? {}
-            : { fallbackReason: response.decision.fallbackReason }),
-        },
-        ...(response.diagnostics
-          ? {
-              diagnostics:
-                response.diagnostics as unknown as Prisma.InputJsonValue,
-            }
-          : {}),
-      };
+      } as unknown as Prisma.InputJsonValue;
     }
     return async (tx) => {
       if (expectedCatalog) {
-        // 短暂阻止季度写入，避免校验完整快照后又出现更新或新增候选。
-        // 在季度父行、种子和任务锁之前获取，保持删除路径的锁顺序。
-        await tx.$executeRaw`LOCK TABLE seasons IN SHARE MODE`;
+        // 乐观核对目录，已观察到变化时交回队列等待新快照。
         const live = snapshot(
           await tx.season.findMany({ select: catalogSelect }),
         );
@@ -324,8 +305,7 @@ export class TorrentMatchService
         if (latest?.revision !== job.revision) return;
         throw new QueueWaiting();
       }
-      if (response && (this.activating || !this.transport!.isCurrent(response)))
-        throw new QueueWaiting();
+      if (this.activating) throw new QueueWaiting();
       await tx.torrent.update({
         where: { id: torrent.id },
         data: {

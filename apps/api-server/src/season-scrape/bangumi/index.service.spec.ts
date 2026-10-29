@@ -20,6 +20,7 @@ const row = (id: number, type: number, ep: number, sort: number) => ({
 beforeEach(() => {
   getEpisodes.mockReset();
   getSubjectById.mockReset();
+  getSubjectById.mockResolvedValue({});
 });
 it('preserves ep, SP sort and undated source metadata', async () => {
   getEpisodes.mockResolvedValue({
@@ -167,4 +168,38 @@ it.each([
   const { info } = await new BangumiSeasonService().fetch({ info: true }, '1');
   expect(info?.premiereDate).toBeNull();
   expect(info?.year).toBeUndefined();
+});
+
+it('仅同步剧集时也读取独立作品信息，返回范围仅包含匹配元数据', async () => {
+  getSubjectById.mockResolvedValue(
+    subject({ eps: 24, date: '2026-10-01', summary: '不要覆盖的简介' }),
+  );
+  getEpisodes.mockResolvedValue({ total: 1, data: [row(1, 0, 1, 1)] });
+  const result = await new BangumiSeasonService().fetch(
+    { episodes: true },
+    '253',
+  );
+  expect(getSubjectById).toHaveBeenCalledTimes(1);
+  expect(result.matchMetadata).toEqual({
+    declaredEpisodeCount: 24,
+    premiereDate: '2026-10-01',
+  });
+  expect(result.info).toBeUndefined();
+  expect(result.images).toBeUndefined();
+  expect(result.episodes).toHaveLength(1);
+});
+
+it('同时同步作品和剧集时只请求一次 subject', async () => {
+  getSubjectById.mockResolvedValue(subject({ eps: 12, date: '2026-10-01' }));
+  getEpisodes.mockResolvedValue({ total: 0, data: [] });
+  const result = await new BangumiSeasonService().fetch(
+    { episodes: true, info: true },
+    '253',
+  );
+  expect(getSubjectById).toHaveBeenCalledTimes(1);
+  expect(result.matchMetadata).toEqual({
+    declaredEpisodeCount: 12,
+    premiereDate: '2026-10-01',
+  });
+  expect(result.info).toMatchObject(result.matchMetadata!);
 });

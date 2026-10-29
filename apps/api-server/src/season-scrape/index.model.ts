@@ -60,6 +60,8 @@ export class SeasonImages {
 
 @ObjectType()
 export class PartialSeason {
+  @HideField()
+  matchMetadata?: Pick<SeasonInfo, 'declaredEpisodeCount' | 'premiereDate'>;
   info?: SeasonInfo;
   episodes?: SeasonEpisode[];
   characters?: SeasonCharacter[];

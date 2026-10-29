@@ -19,7 +19,13 @@ async function imageExists(
     {
       signal: AbortSignal.timeout(30000),
       headers: credentials
-        ? { Authorization: "Basic " + Buffer.from(`${credentials.username}:${credentials.token}`).toString("base64") }
+        ? {
+            Authorization:
+              "Basic " +
+              Buffer.from(
+                `${credentials.username}:${credentials.token}`
+              ).toString("base64"),
+          }
         : undefined,
     }
   );
@@ -86,11 +92,8 @@ function imageTargets(manifest, apps = allowed) {
 
 function splitBuildMatrix(matrix) {
   return {
-    matrix: matrix.filter(
-      (x) => !["anime-matcher", "llm-matcher"].includes(x.app)
-    ),
+    matrix: matrix.filter((x) => x.app !== "anime-matcher"),
     matcherMatrix: matrix.filter((x) => x.app === "anime-matcher"),
-    llmMatcherMatrix: matrix.filter((x) => x.app === "llm-matcher"),
   };
 }
 

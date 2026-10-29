@@ -5,16 +5,6 @@ export const digest = (value: unknown) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-function validPremiereDate(value: string | null | undefined) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000'))
-    return null;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isFinite(parsed.getTime()) &&
-    parsed.toISOString().slice(0, 10) === value
-    ? value
-    : null;
-}
-
 export function snapshot(
   rows: {
     id: number;
@@ -28,15 +18,11 @@ export function snapshot(
   const catalog = rows
     .map((row) => {
       const match = /^(\d{4})0([1-4])$/.exec(row.yearAndSemester);
-      const count = row.declaredEpisodeCount;
       return {
         id: String(row.id),
         title: row.title,
-        declaredEpisodeCount:
-          typeof count === 'number' && Number.isSafeInteger(count) && count > 0
-            ? count
-            : null,
-        premiereDate: validPremiereDate(row.premiereDate),
+        declaredEpisodeCount: row.declaredEpisodeCount ?? null,
+        premiereDate: row.premiereDate ?? null,
         aliases: [...new Set(row.aliases)].sort(compare),
         year: match ? Number(match[1]) : null,
         quarter: match

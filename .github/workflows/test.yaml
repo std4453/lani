@@ -30,20 +30,6 @@ jobs:
       - name: Check documentation-only changes
         id: changes
         run: node common/scripts/docs-only.cjs
-  llm-matcher:
-    needs: changes
-    if: needs.changes.outputs.docs_only == 'false'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Test external LLM matcher
-        run: python3 -m unittest discover -s libs/llm-matcher/tests -p 'test_*.py'
   tests:
     needs: changes
     if: needs.changes.outputs.docs_only == 'false'
@@ -84,7 +70,10 @@ jobs:
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
       - name: Build test dependencies
-        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --parallelism 1
+        run: node common/scripts/install-run-rush.js build --to @lani/api-server --to @lani/gateway --to @lani/llm-matcher --parallelism 1
+      - name: Test external LLM matcher
+        working-directory: libs/llm-matcher
+        run: node ../../common/scripts/install-run-rushx.js test
       - name: Prepare isolated test database
         working-directory: libs/db
         env:

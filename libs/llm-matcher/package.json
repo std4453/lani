@@ -1,0 +1,20 @@
+{
+  "name": "@lani/llm-matcher",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "prompts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "typescript": "~4.7.4",
+    "@types/node": "~17.0.4"
+  }
+}

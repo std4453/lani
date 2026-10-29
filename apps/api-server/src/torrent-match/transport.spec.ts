@@ -188,7 +188,7 @@ it('rejects oversized responses and requests without retrying', async () => {
   expect(requests).toEqual(['GET /v2/status', 'GET /v2/status']);
 });
 
-it('sends full fallback candidates and accepts a fallback-only result', async () => {
+it('sends only recent candidate IDs and accepts a result from the full catalog', async () => {
   const expanded = {
     ...catalog,
     catalog: [
@@ -196,103 +196,101 @@ it('sends full fallback candidates and accepts a fallback-only result', async ()
       { ...catalog.catalog[0], id: '2', year: 2000 },
     ],
   };
-  stage = 'fallback';
+  stage = 'primary';
   resultId = '2';
   expect(
-    (await client.match(expanded, query, ['1'], 'fallback')).result.seasonId,
+    (await client.match(expanded, query, ['1'], 'catalog-match')).result
+      .seasonId,
   ).toBe('2');
-  expect(bodies.find((body) => body.requestId === 'fallback')).toMatchObject({
+  const body = bodies.find((body) => body.requestId === 'catalog-match');
+  expect(body).toEqual({
     protocolVersion: 2,
-    primaryCandidateIds: ['1'],
-    fallbackCandidateIds: ['1', '2'],
+    catalogVersion: 'abc',
+    candidateIds: ['1'],
+    query,
+    requestId: 'catalog-match',
   });
-  stage = 'primary';
-  await expect(
-    client.match(expanded, query, ['1'], 'invalid-stage'),
-  ).rejects.toThrow('Invalid matcher result');
+  expect(body).not.toHaveProperty('primaryCandidateIds');
+  expect(body).not.toHaveProperty('fallbackCandidateIds');
 });
 
-it('rejects an invalid stage and a response from a different model', async () => {
+it('accepts optional backend fields unchanged without checking identity or stage', async () => {
+  matchModelVersion = 'another-model';
   mutateResponse = (response) => {
-    response.decision.stage = 'other';
-  };
-  await expect(client.match(catalog, query, ['1'], 'bad')).rejects.toThrow(
-    'Invalid matcher result',
-  );
-  mutateResponse = undefined;
-  matchModelVersion = 'stale-model';
-  await expect(client.match(catalog, query, ['1'], 'stale')).rejects.toThrow(
-    'Invalid matcher result',
-  );
-});
-
-it('checks the worker identity after inference and before the caller commits', async () => {
-  mutateResponse = () => {
-    modelVersion = 'new-config';
-  };
-  await expect(client.match(catalog, query, ['1'], 'changed')).rejects.toThrow(
-    'Matcher identity changed',
-  );
-  mutateResponse = undefined;
-  const response = await client.match(catalog, query, ['1'], 'current');
-  expect(client.isCurrent(response)).toBe(true);
-  modelVersion = 'another-config';
-  await client.load(catalog);
-  expect(client.isCurrent(response)).toBe(false);
-});
-
-it('retains bounded usage diagnostics without arbitrary text', async () => {
-  mutateResponse = (response) => {
+    response.decision = { stage: 'custom', detail: ['backend-owned'] };
     response.diagnostics = {
-      elapsedMs: 50,
-      attempts: [
-        {
-          stage: 'primary',
-          attempt: 1,
-          model: 'mock',
-          elapsedMs: 50,
-          promptTokens: 20,
-          completionTokens: 3,
-          reasoning: 'private reasoning',
-        },
-      ],
-      promptHashes: { primary: 'abc' },
-      prompt: 'private prompt',
+      attempts: Array(5).fill({ vendorUnits: 'unknown' }),
+      anotherField: true,
     };
+    response.result.explanation = { opaque: [1, null, 'value'] };
+    response.result.score = { custom: 'uncalibrated' };
+    response.extra = { nested: ['kept'] };
+    modelVersion = 'changed-during-request';
   };
-  const response = await client.match(catalog, query, ['1'], 'usage');
-  expect(response.diagnostics).toEqual({
-    elapsedMs: 50,
-    attempts: [
-      {
-        stage: 'primary',
-        attempt: 1,
-        model: 'mock',
-        elapsedMs: 50,
-        promptTokens: 20,
-        completionTokens: 3,
-      },
-    ],
-    promptHashes: { primary: 'abc' },
+  const response = await client.match(catalog, query, ['1'], 'extensions');
+  expect(response).toMatchObject({
+    modelVersion: 'another-model',
+    decision: { stage: 'custom', detail: ['backend-owned'] },
+    diagnostics: {
+      attempts: Array(5).fill({ vendorUnits: 'unknown' }),
+      anotherField: true,
+    },
+    extra: { nested: ['kept'] },
+    result: {
+      explanation: { opaque: [1, null, 'value'] },
+      score: { custom: 'uncalibrated' },
+    },
   });
-  mutateResponse = (response) => {
-    response.diagnostics = {
-      elapsedMs: 1,
-      attempts: Array(5).fill({ stage: 'primary', attempt: 1, elapsedMs: 1 }),
-    };
-  };
-  await expect(
-    client.match(catalog, query, ['1'], 'unbounded'),
-  ).rejects.toThrow('Invalid matcher diagnostics');
+  expect(requests).toEqual([
+    'GET /v2/status',
+    'PUT /v2/catalog',
+    'POST /v2/match',
+  ]);
 });
 
-it('accepts opaque backend mode identities and rejects the legacy protocol', async () => {
-  mode = 'external-compatible-model';
-  expect((await client.match(catalog, query, ['1'], 'opaque')).mode).toBe(mode);
+it('accepts core status and match responses without model identity or extensions', async () => {
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce({
+      data: JSON.stringify({ protocolVersion: 2, catalogVersion: 'abc' }),
+    })
+    .mockResolvedValueOnce({
+      data: JSON.stringify({
+        protocolVersion: 2,
+        catalogVersion: 'abc',
+        requestId: 'core',
+        result: { seasonId: '1' },
+      }),
+    });
+  const core = new MatcherTransport(
+    { endpoint: 'http://example.test', timeoutMs: 1000 },
+    { request } as any,
+  );
+  expect(await core.match(catalog, query, ['1'], 'core')).toEqual({
+    protocolVersion: 2,
+    catalogVersion: 'abc',
+    requestId: 'core',
+    result: { seasonId: '1' },
+  });
+  expect(request).toHaveBeenCalledTimes(2);
+  await core.close();
+});
+
+it.each(['requestId', 'catalogVersion'])(
+  'rejects a mismatched %s even when the result ID is valid',
+  async (field) => {
+    mutateResponse = (response) => {
+      response[field] = 'different';
+    };
+    await expect(
+      client.match(catalog, query, ['1'], 'expected'),
+    ).rejects.toThrow('Invalid matcher result');
+  },
+);
+
+it('rejects the legacy protocol', async () => {
   responseOverride = JSON.stringify({
     protocolVersion: 1,
-    mode: 'lexical',
-    modelVersion: 'legacy',
     catalogVersion: 'abc',
   });
   await expect(client.load(catalog)).rejects.toThrow(
