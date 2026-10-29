@@ -25,7 +25,7 @@ python -m lani_llm_matcher.worker --http --host 0.0.0.0 --port 8090
 | `LLM_CONCURRENCY` | `2` | 同时处理的两阶段请求数 |
 | `LLM_DEADLINE_SECONDS` | `100` | 含并发等待、重试及两个阶段的总期限 |
 | `LLM_ATTEMPT_SECONDS` | `45` | 单次外部调用期限，不得超过总期限 |
-| `LLM_FALLBACK_ENABLED` | `true` | 允许全目录复核；关闭用于首轮对照 |
+| `LLM_FALLBACK_ENABLED` | `true` | 允许全目录复核；关闭用于首轮对照。接受 true/false、1/0、yes/no（忽略大小写及首尾空白），其他值启动时报错 |
 | `LLM_FIRST_PARAMETERS` | `{}` | 合并到首轮请求的 JSON 参数 |
 | `LLM_REVIEW_PARAMETERS` | `{}` | 合并到复核请求的 JSON 参数 |
 
@@ -48,7 +48,7 @@ export LLM_REVIEW_PARAMETERS='{"thinking":{"type":"enabled"},"reasoning_effort":
 
 每次请求提供 `primaryCandidateIds` 和覆盖整份目录的 `fallbackCandidateIds`，前者必须是后者的子集。正常结果包含 `decision.stage`，调用方按实际阶段验证候选归属。空首轮直接复核，空目录返回正常 null。只返回季度 ID，无精确剧集、offset 或校准置信度。
 
-`rawTitle` 必须是完整原标题，`publishedAt` 是资源发布时间，不能使用重跑时间。`declaredEpisodeCount` 与 `premiereDate` 必须来自独立作品元数据；未知为 null，不能用已同步集数或最早单集日期推算。API 的 Bangumi 元数据同步保存这些字段；已有作品需重新同步作品元数据才能补齐，迁移不会猜测回填。逐集同步不改变目录投影。
+`rawTitle` 使用未经解析的资源标题；API 保留数据库原文，发送时按协议截取前 2048 个 Unicode 字符。`publishedAt` 是资源发布时间，不能使用重跑时间。`declaredEpisodeCount` 与 `premiereDate` 必须来自独立作品元数据；未知为 null，不能用已同步集数或最早单集日期推算。API 的 Bangumi 元数据同步保存这些字段；已有作品需重新同步作品元数据才能补齐，迁移不会猜测回填。逐集同步不改变目录投影。
 
 首轮提示词只包含 ID、完整名称、年份与季度；复核增加声明集数与开播日期。原始查询放在最后一条 user 消息。两阶段分别计算提示词摘要，相同首轮投影不因其他季度或辅助元数据变化而失去前缀缓存机会；实际缓存能力与计费由供应商决定。
 

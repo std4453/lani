@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from urllib.request import urlopen, Request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -31,6 +32,19 @@ def completion(value, **extras):
 
 
 class MatcherTest(unittest.TestCase):
+    def test_boolean_environment_is_validated(self):
+        environment = dict(LLM_ENDPOINT='http://example.test/chat/completions',
+                           LLM_MODEL='test', LLM_API_KEY='secret')
+        for value, expected in [('true', True), (' True ', True), ('1', True),
+                                ('yes', True), ('false', False), ('FALSE', False),
+                                ('0', False), ('no', False)]:
+            with self.subTest(value=value), patch.dict('os.environ', dict(environment, LLM_FALLBACK_ENABLED=value), clear=True):
+                self.assertEqual(Settings.from_env().fallback_enabled, expected)
+        for value in ('', 'ture', '2'):
+            with self.subTest(value=value), patch.dict('os.environ', dict(environment, LLM_FALLBACK_ENABLED=value), clear=True):
+                with self.assertRaises(ValueError):
+                    Settings.from_env()
+
     def setup_worker(self, responses, **settings):
         self.calls, self.events = [], []
         def call(config, payload, timeout):

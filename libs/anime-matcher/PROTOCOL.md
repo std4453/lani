@@ -27,7 +27,7 @@ npm 客户端导出 `MatchQueryV2`、`WorkerStatusV2`、`ConfigureRequestV2`、`
 }
 ```
 
-`rawTitle` 是必填字符串，最长 2048 字符；其余查询字段沿用 v1 校验。两个候选列表均须显式提供、ID 不重复；`primaryCandidateIds` 必须是目录子集，`fallbackCandidateIds` 必须与完整目录 ID 集合相等，顺序不限。后者明确授权匹配器在主要候选不足时使用全目录，具体调用策略属于匹配器。本包仅使用主要候选，主要候选为空时仍拒答，不尝试后备匹配；本包忽略 `rawTitle`，保留已有模型行为。
+`rawTitle` 是必填字符串，最长 2048 个 Unicode 字符；API 发送未经解析的资源标题，超长时仅截取传输值，数据库保留原文。其余查询字段沿用 v1 校验。两个候选列表均须显式提供、ID 不重复；`primaryCandidateIds` 必须是目录子集，`fallbackCandidateIds` 必须与完整目录 ID 集合相等，顺序不限。后者明确授权匹配器在主要候选不足时使用全目录，具体调用策略属于匹配器。本包仅使用主要候选，主要候选为空时仍拒答，不尝试后备匹配；本包忽略 `rawTitle`，保留已有模型行为。
 
 状态与目录成功响应为 `{ protocolVersion: 2, catalogVersion, modelVersion, mode }`，`mode` 是实现提供的非空字符串；本包仍返回 `lexical` 或 `semantic`。匹配成功响应在此基础上增加 `requestId`、`result` 和 `decision: { stage: 'primary' | 'fallback' }`。`result` 沿用 v1 结构；所选 `seasonId` 必须属于声明阶段的候选列表。拒答也必须返回实际决策阶段。本包始终返回 `stage: 'primary'`。客户端检查协议版本、请求关联、目录版本、阶段及对应候选范围，不解释实现专有的 `mode` 或诊断分数。
 

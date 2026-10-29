@@ -21,6 +21,15 @@ def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+def boolean(value):
+    normalized = value.strip().lower()
+    if normalized in ('true', '1', 'yes'):
+        return True
+    if normalized in ('false', '0', 'no'):
+        return False
+    raise ValueError('Invalid LLM_FALLBACK_ENABLED')
+
+
 @dataclass(frozen=True)
 class Settings:
     endpoint: str
@@ -57,7 +66,7 @@ class Settings:
             deadline_seconds=float(os.environ.get('LLM_DEADLINE_SECONDS', '100')),
             attempt_seconds=float(os.environ.get('LLM_ATTEMPT_SECONDS', '45')),
             concurrency=int(os.environ.get('LLM_CONCURRENCY', '2')),
-            fallback_enabled=os.environ.get('LLM_FALLBACK_ENABLED', 'true') == 'true',
+            fallback_enabled=boolean(os.environ.get('LLM_FALLBACK_ENABLED', 'true')),
             first_parameters=json.loads(os.environ.get('LLM_FIRST_PARAMETERS', '{}')),
             review_parameters=json.loads(os.environ.get('LLM_REVIEW_PARAMETERS', '{}')),
         )

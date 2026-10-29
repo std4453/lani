@@ -52,6 +52,14 @@ it('projects only an existing finite integer publisher season', () => {
   }
 });
 
+it('bounds the wire title by Unicode code points without modifying stored input', () => {
+  const input = torrent({ title: '动画😀'.repeat(1000) });
+  const query = torrentQuery(input)!;
+  expect([...query.rawTitle]).toHaveLength(2048);
+  expect(query.rawTitle).toBe('动画😀'.repeat(682) + '动画');
+  expect(input.title).toBe('动画😀'.repeat(1000));
+});
+
 it('keeps single fractional episode numbers but does not coerce a range or special', () => {
   expect(
     torrentQuery(torrent({ episodeNumber: new Prisma.Decimal('3.5') })),

@@ -40,7 +40,7 @@ export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
       ? season
       : undefined;
   return {
-    rawTitle: torrent.title,
+    rawTitle: [...torrent.title].slice(0, 2048).join(''),
     aliases,
     publishedAt: torrent.publishDate.toISOString(),
     ...(episode !== undefined && Number.isFinite(episode) ? { episode } : {}),
