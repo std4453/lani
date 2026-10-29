@@ -285,6 +285,12 @@ export class TorrentMatchService
           : await tx.$queryRaw<
               { id: number }[]
             >`SELECT id FROM seasons WHERE id = ${matchedSeasonId} FOR KEY SHARE`;
+      if (matchedSeasonId !== null && !seasons.length) {
+        // 目录核对后目标仍可能被删除，等待新目录后重新匹配。
+        this.observed = false;
+        this.catalogOutdated = true;
+        throw new QueueWaiting();
+      }
       // 再按种子 -> 任务的顺序提交；删除的种子只确认任务。
       const existing = await tx.$queryRaw<
         { id: number; matchStatus: TorrentMatchStatus | null }[]

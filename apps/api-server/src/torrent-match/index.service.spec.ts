@@ -197,3 +197,21 @@ it('blocks another inference until the stale catalog is observed after rollback'
   f.service.settleMatch();
   expect(refresh).toHaveBeenCalledTimes(1);
 });
+
+it('waits for a refreshed catalog if the selected season is deleted after the snapshot check', async () => {
+  const f = fixture();
+  (f.service as any).observed = true;
+  const commit = await f.service.match(f.job);
+  f.tx.$queryRaw.mockResolvedValueOnce([{ id: 1 }]).mockResolvedValueOnce([]);
+  const refresh = jest
+    .spyOn(f.service, 'refreshCatalog')
+    .mockResolvedValue(undefined);
+  await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
+  expect(f.tx.season.findMany).toHaveBeenCalledTimes(1);
+  expect(f.tx.torrent.findUnique).not.toHaveBeenCalled();
+  expect(f.tx.torrent.update).not.toHaveBeenCalled();
+  expect(await f.service.ready(f.job)).toBe(false);
+  expect(refresh).not.toHaveBeenCalled();
+  f.service.settleMatch();
+  expect(refresh).toHaveBeenCalledTimes(1);
+});
