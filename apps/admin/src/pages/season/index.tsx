@@ -53,6 +53,7 @@ export default function SeasonPage() {
             },
             resetButtonProps: {
               disabled: !modified,
+              preventDefault: true,
               onClick: reset,
             },
             render: (_props, dom) =>

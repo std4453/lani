@@ -237,8 +237,11 @@ export function useSeasonPage(id: number) {
   });
 
   const reset = useMemoizedFn(() => {
-    formRef.current?.resetFields();
-    updateTouched();
+    const form = formRef.current;
+    // 只重置命名字段，保留图片展示项及其加载、重试状态。
+    form?.resetFields(Object.keys(form.getFieldsValue()));
+    // 列表子字段在重新挂载后才清除 touched，此处直接同步重置状态。
+    setTouched(false);
   });
 
   const setValues = useMemoizedFn(
@@ -250,7 +253,8 @@ export function useSeasonPage(id: number) {
     ) => {
       if ('id' in values) {
         setInitialValues(queryToFormValues(values));
-        reset();
+        formRef.current?.resetFields();
+        updateTouched();
       }
       if ('episodesBySeasonId' in values) {
         setEpisodesLastSync(values.episodesLastSync ?? null);
