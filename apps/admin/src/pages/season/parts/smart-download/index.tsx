@@ -408,9 +408,11 @@ export function SettingsDialog({
                           data-release-ids={row.release?.episodeIds.join(',')}
                         >
                           <td colSpan={5}>
-                            <span className={styles.releaseLabel}>
-                              {release}
-                            </span>
+                            <div className={styles.releaseMarker}>
+                              <span className={styles.releaseLabel}>
+                                {release}
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       )}
