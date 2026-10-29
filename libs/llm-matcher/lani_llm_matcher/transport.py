@@ -13,7 +13,7 @@ class NoRedirect(request.HTTPRedirectHandler):
 
 def main():
     try:
-        message = json.load(sys.stdin)
+        message = json.loads(sys.stdin.buffer.read())
         req = request.Request(message['endpoint'],
                               json.dumps(message['payload'], ensure_ascii=False,
                                          separators=(',', ':'), allow_nan=False).encode(),
@@ -39,7 +39,7 @@ def main():
         result = {'error': 'INVALID_RESPONSE', 'retryable': True}
     except Exception:
         result = {'error': 'UPSTREAM_UNAVAILABLE', 'retryable': True}
-    sys.stdout.write(json.dumps(result, ensure_ascii=False, separators=(',', ':')))
+    sys.stdout.buffer.write(json.dumps(result, separators=(',', ':')).encode('ascii'))
 
 
 if __name__ == '__main__':

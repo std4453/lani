@@ -206,6 +206,31 @@ class MatcherTest(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_transport_is_independent_of_locale_encoding(self):
+        received = []
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_):
+                pass
+            def do_POST(self):
+                received.append(json.loads(self.rfile.read(int(self.headers['Content-Length']))))
+                payload = json.dumps(completion('中文'), ensure_ascii=False).encode('utf-8')
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        settings = Settings('http://127.0.0.1:' + str(server.server_port), 'test', 'secret')
+        try:
+            with patch.dict('os.environ', {'PYTHONUTF8': '0', 'PYTHONCOERCECLOCALE': '0',
+                                          'LC_ALL': 'C', 'PYTHONIOENCODING': 'ascii'}):
+                result = complete(settings, {'title': '动画😀'}, 2)
+            self.assertEqual(received, [{'title': '动画😀'}])
+            self.assertEqual(answer(result, {'中文'}), '中文')
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_malformed_containers_follow_format_retry(self):
         for response in [{'choices': [None]}, {'choices': [{}]},
                          {'choices': [{'finish_reason': 'stop', 'message': None}]},
