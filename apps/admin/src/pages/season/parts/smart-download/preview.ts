@@ -186,7 +186,7 @@ export function relativePublishTime(publishDate: string, releaseAt: number) {
     .join(':')}`;
 }
 
-/** 在改变偏移前读取实际位置，50px 采样和 48px 恢复之间留 2px 余量。 */
+/** 读取正常流中的分界行，而非吸顶单元格；50px 采样与 48px 恢复留 2px 余量。 */
 export function captureRelease(viewport: HTMLElement): number | undefined {
   const top = viewport.getBoundingClientRect().top + 50;
   const rows = [

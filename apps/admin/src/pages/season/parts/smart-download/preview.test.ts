@@ -172,3 +172,20 @@ test('按旧视口 +50px 向上查找剧集，恢复到 +48px；没有剧集则�
   viewport.getBoundingClientRect = () => ({ top: 0 } as DOMRect);
   expect(captureRelease(viewport)).toBeUndefined();
 });
+
+test('吸顶单元格不改变分界行的采样与恢复位置', () => {
+  const viewport = document.createElement('div');
+  viewport.innerHTML =
+    '<table><tbody><tr data-release-ids="1"><td>第一集</td></tr><tr data-release-ids="2"><td>第二集</td></tr><tr data-release-ids="3"><td>第三集</td></tr></tbody></table>';
+  viewport.getBoundingClientRect = () => ({ top: 100 } as DOMRect);
+  const rows = [...viewport.querySelectorAll('tr')];
+  rows.forEach((row, i) => {
+    row.getBoundingClientRect = () => ({ top: -200 + i * 200 } as DOMRect);
+    row.firstElementChild!.getBoundingClientRect = () =>
+      ({ top: Math.max(148, -200 + i * 200) } as DOMRect);
+  });
+  viewport.scrollTop = 500;
+  expect(captureRelease(viewport)).toBe(2);
+  restoreRelease(viewport, 2);
+  expect(viewport.scrollTop).toBe(352);
+});

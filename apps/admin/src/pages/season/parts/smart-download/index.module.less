@@ -90,6 +90,8 @@
   max-height: 460px;
   flex: 1;
 }
+// 与 preview.ts 的 48px 恢复位置对应，分界线停在固定表头的下方。
+@previewHeaderHeight: 48px;
 .table {
   width: 100%;
   min-width: 800px;
@@ -103,6 +105,7 @@
     text-align: left;
   }
   th {
+    height: @previewHeaderHeight;
     position: sticky;
     top: 0;
     z-index: 2;
@@ -128,7 +131,7 @@
   td:nth-child(3) {
     overflow-wrap: anywhere;
   }
-  tbody tr:not(.excluded) {
+  .torrentRow:not(.excluded) {
     background: var(--lani-selected);
     &:hover {
       background: var(--lani-highlight-bg);
@@ -141,6 +144,9 @@
 }
 .titleCell {
   position: relative;
+  .cellContent {
+    transition: visibility 0s;
+  }
 }
 .exclusionReason {
   position: absolute;
@@ -152,6 +158,7 @@
   color: var(--lani-text);
   text-align: left;
   visibility: hidden;
+  transition: visibility 0s;
   pointer-events: none;
 
   > span {
@@ -163,35 +170,45 @@
   }
 }
 .excluded[tabindex]:hover,
-.excluded[tabindex]:focus {
+.excluded[tabindex]:focus-visible {
   .titleCell .cellContent {
     visibility: hidden;
+    transition-delay: 350ms;
   }
   .exclusionReason {
     visibility: visible;
+    transition-delay: 350ms;
   }
 }
-.release {
-  td {
-    padding-top: 18px;
-    border-top: 3px solid var(--lani-primary);
+.excluded[tabindex]:focus-visible {
+  .titleCell .cellContent,
+  .exclusionReason {
+    transition-delay: 0s;
   }
-  td[data-release] {
-    position: relative;
-  }
-  td[data-release]::after {
-    content: attr(data-release);
-    position: absolute;
-    top: 0;
-    z-index: 1;
-    left: 0;
-    padding: 1px 2px;
-    color: var(--lani-image-text);
-    background: var(--lani-primary);
-    font-size: 10px;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
+}
+.table .release td {
+  // 仅单元格吸顶；行本身保持正常流位置，供偏移调整前后定位剧集。
+  position: sticky;
+  top: @previewHeaderHeight;
+  z-index: 1;
+  height: 17px;
+  padding: 0;
+  border-top: 3px solid var(--lani-primary);
+  border-bottom: 0;
+  line-height: 14px;
+  text-align: left;
+  // 后一集覆盖前一集时，较长的旧标签不能从右侧透出。
+  background: var(--lani-table-header-bg);
+}
+.releaseLabel {
+  display: inline-block;
+  vertical-align: top;
+  padding: 1px 2px;
+  color: var(--lani-image-text);
+  background: var(--lani-primary);
+  font-size: 10px;
+  line-height: 12px;
+  white-space: nowrap;
 }
 .table .emptyRow {
   text-align: center;

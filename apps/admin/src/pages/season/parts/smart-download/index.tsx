@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
 import {
   Alert,
@@ -394,78 +394,83 @@ export function SettingsDialog({
                   : undefined;
                 const reasonId = `smart-download-exclusion-${row.key}`;
                 return (
-                  <tr
-                    key={row.key}
-                    data-release-ids={row.release?.episodeIds.join(',')}
-                    tabIndex={exclusion ? 0 : undefined}
-                    aria-describedby={exclusion ? reasonId : undefined}
-                    className={clsx({
-                      [styles.excluded]: !!exclusion || !torrent,
-                      [styles.release]: !!row.release,
-                    })}
-                  >
-                    {torrent ? (
-                      <>
-                        <td data-release={release}>
-                          <span className={styles.cellContent}>
-                            {typeof torrent.episodeInfo?.index === 'number' ||
-                            typeof torrent.episodeInfo?.index === 'string'
-                              ? String(torrent.episodeInfo.index)
-                              : '-'}
-                          </span>
-                        </td>
-                        <td
-                          title={dayjs(torrent.publishDate).format(
-                            'YYYY-MM-DD HH:mm:ss',
-                          )}
-                        >
-                          <span className={styles.cellContent}>
-                            {row.precedingReleaseAt === undefined
-                              ? dayjs(torrent.publishDate).format(
-                                  'YYYY-MM-DD HH:mm:ss',
-                                )
-                              : relativePublishTime(
-                                  torrent.publishDate,
-                                  row.precedingReleaseAt,
-                                )}
-                          </span>
-                        </td>
-                        <td className={styles.titleCell}>
-                          <span className={styles.cellContent}>
-                            {torrent.title}
-                          </span>
-                          {exclusion && (
-                            <span
-                              id={reasonId}
-                              className={styles.exclusionReason}
-                            >
-                              <span>{exclusion}</span>
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={styles.cellContent}>
-                            <TorrentSubtitle
-                              info={torrent.subtitleInfo as SubtitleInfo}
-                            />
-                          </span>
-                        </td>
-                        <td>
-                          <span className={styles.cellContent}>
-                            {prettyBytes(Number(torrent.size))}
-                          </span>
-                        </td>
-                      </>
-                    ) : (
-                      <td
-                        colSpan={5}
-                        data-release={release}
-                        className={styles.emptyRow}
+                  <Fragment key={row.key}>
+                    {release && (
+                      <tr
+                        className={styles.release}
+                        data-release-ids={row.release?.episodeIds.join(',')}
                       >
-                        无匹配种子
-                      </td>
+                        <td colSpan={5}>
+                          <span className={styles.releaseLabel}>{release}</span>
+                        </td>
+                      </tr>
                     )}
-                  </tr>
+                    <tr
+                      tabIndex={exclusion ? 0 : undefined}
+                      aria-describedby={exclusion ? reasonId : undefined}
+                      className={clsx(styles.torrentRow, {
+                        [styles.excluded]: !!exclusion || !torrent,
+                      })}
+                    >
+                      {torrent ? (
+                        <>
+                          <td>
+                            <span className={styles.cellContent}>
+                              {typeof torrent.episodeInfo?.index === 'number' ||
+                              typeof torrent.episodeInfo?.index === 'string'
+                                ? String(torrent.episodeInfo.index)
+                                : '-'}
+                            </span>
+                          </td>
+                          <td
+                            title={dayjs(torrent.publishDate).format(
+                              'YYYY-MM-DD HH:mm:ss',
+                            )}
+                          >
+                            <span className={styles.cellContent}>
+                              {row.precedingReleaseAt === undefined
+                                ? dayjs(torrent.publishDate).format(
+                                    'YYYY-MM-DD HH:mm:ss',
+                                  )
+                                : relativePublishTime(
+                                    torrent.publishDate,
+                                    row.precedingReleaseAt,
+                                  )}
+                            </span>
+                          </td>
+                          <td className={styles.titleCell}>
+                            <span className={styles.cellContent}>
+                              {torrent.title}
+                            </span>
+                            {exclusion && (
+                              <span
+                                id={reasonId}
+                                className={styles.exclusionReason}
+                              >
+                                <span>{exclusion}</span>
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <span className={styles.cellContent}>
+                              <TorrentSubtitle
+                                info={torrent.subtitleInfo as SubtitleInfo}
+                              />
+                            </span>
+                          </td>
+                          <td>
+                            <span className={styles.cellContent}>
+                              {prettyBytes(Number(torrent.size))}
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <td colSpan={5} className={styles.emptyRow}>
+                          无匹配种子
+                        </td>
+                      )}
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>

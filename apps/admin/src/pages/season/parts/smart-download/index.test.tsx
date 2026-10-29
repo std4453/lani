@@ -221,9 +221,17 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
   });
   await click('开启智能下载');
   const rows = Array.from(
-    document.querySelectorAll('table[aria-label="智能下载种子预览"] tbody tr'),
+    document.querySelectorAll(
+      'table[aria-label="智能下载种子预览"] tbody tr:not([data-release-ids])',
+    ),
   );
   expect(rows).toHaveLength(3);
+  const releases = document.querySelectorAll('tr[data-release-ids]');
+  expect(releases).toHaveLength(2);
+  expect(releases[0].textContent).toContain('#1 发布');
+  expect(releases[0].querySelector('td')?.colSpan).toBe(5);
+  expect(releases[0].nextElementSibling).toBe(rows[0]);
+  expect(releases[1].nextElementSibling).toBe(rows[2]);
   const excluded = rows.find((row) => row.textContent?.includes('资源 v2'))!;
   const reason = document.getElementById(
     excluded.getAttribute('aria-describedby')!,
