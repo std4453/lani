@@ -5,11 +5,11 @@ import json
 import os
 from pathlib import Path
 import re
-import socket
+import subprocess
 import sys
 import threading
 import time
-from urllib import request as http, error as http_error, parse
+from urllib import parse
 
 from .protocol import ProtocolError, encode, numeric
 
@@ -69,40 +69,33 @@ class AttemptError(Exception):
         self.code, self.retryable = code, retryable
 
 
-class NoRedirect(http.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
 def complete(settings, payload, timeout):
-    # 重定向不可携带供应商密钥；错误正文也不进入日志。
-    req = http.Request(settings.endpoint, encode(payload).encode(), {
-        'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.api_key,
-    })
+    # 进程边界使 DNS、TLS、慢响应头及正文都能被同一个截止时间中断。
+    # 密钥只经匿名 stdin 管道传递，不进入命令行、环境或日志。
     deadline = time.monotonic() + timeout
+    message = dict(endpoint=settings.endpoint, apiKey=settings.api_key,
+                   payload=payload, timeout=timeout)
+    encoded = encode(message).encode()
+    process = subprocess.Popen(
+        [sys.executable, str(Path(__file__).with_name('transport.py'))],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        env={key: value for key, value in os.environ.items() if key != 'LLM_API_KEY'},
+    )
     try:
-        with http.build_opener(NoRedirect()).open(req, timeout=timeout) as response:
-            chunks, size = [], 0
-            while True:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    raise AttemptError('TIMEOUT')
-                # read1 每次至多一次底层读取；不断缩短超时，防止滴流响应延长预算。
-                if response.fp is not None:
-                    response.fp.raw._sock.settimeout(remaining)
-                chunk = response.read1(min(65536, 4 * 1024 * 1024 + 1 - size))
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                size += len(chunk)
-                if size > 4 * 1024 * 1024:
-                    raise AttemptError('INVALID_RESPONSE')
-            return json.loads(b''.join(chunks))
-    except http_error.HTTPError as error:
-        raise AttemptError('UPSTREAM_HTTP_' + str(error.code), error.code in (408, 429) or error.code >= 500) from None
-    except (http_error.URLError, TimeoutError, socket.timeout, ConnectionError, OSError):
-        raise AttemptError('UPSTREAM_UNAVAILABLE') from None
-    except (ValueError, UnicodeError, RecursionError):
+        output, _ = process.communicate(encoded,
+                                        timeout=max(0, deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.communicate()
+        raise AttemptError('TIMEOUT') from None
+    if process.returncode != 0:
+        raise AttemptError('UPSTREAM_UNAVAILABLE')
+    try:
+        result = json.loads(output)
+        if 'error' in result:
+            raise AttemptError(result['error'], result['retryable'])
+        return result['data']
+    except (ValueError, TypeError, KeyError):
         raise AttemptError('INVALID_RESPONSE') from None
 
 
@@ -130,9 +123,12 @@ def answer(response, candidates):
         if not isinstance(choices, list) or len(choices) != 1:
             raise ValueError()
         choice = choices[0]
-        if choice.get('finish_reason') != 'stop':
+        if not isinstance(choice, dict) or choice.get('finish_reason') != 'stop':
             raise ValueError()
-        content = choice['message']['content']
+        message = choice.get('message')
+        if not isinstance(message, dict):
+            raise ValueError()
+        content = message.get('content')
         if not isinstance(content, str):
             raise ValueError()
         def unique(pairs):
@@ -204,7 +200,7 @@ class Engine:
                             raise AttemptError('TIMEOUT', False)
                         event.update(usage_record(response))
                         model = response.get('model') if isinstance(response, dict) else None
-                        if isinstance(model, str) and len(model) <= 256:
+                        if isinstance(model, str) and len(model) <= 128:
                             event['model'] = model
                         value = answer(response, set(ids))
                     except AttemptError as exc:

@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lani_llm_matcher.engine import (Engine, Settings, AttemptError, answer, complete)
-from lani_llm_matcher.protocol import ProtocolError
+from lani_llm_matcher.protocol import ProtocolError, query_input
 from lani_llm_matcher.worker import Worker, make_http_server, serve_jsonl
 
 
@@ -164,6 +164,55 @@ class MatcherTest(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_header_drip_respects_entire_attempt_deadline(self):
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_):
+                pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                try:
+                    self.wfile.write(b'HTTP/1.1 200 OK\r\nX-Drip: ')
+                    for _ in range(100):
+                        self.wfile.write(b'x')
+                        self.wfile.flush()
+                        time.sleep(.02)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        settings = Settings('http://127.0.0.1:' + str(server.server_port), 'test', 'secret')
+        try:
+            begin = time.monotonic()
+            with self.assertRaises(AttemptError) as caught:
+                complete(settings, {}, .2)
+            self.assertEqual(caught.exception.code, 'TIMEOUT')
+            self.assertLess(time.monotonic() - begin, .8)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_malformed_containers_follow_format_retry(self):
+        for response in [{'choices': [None]}, {'choices': [{}]},
+                         {'choices': [{'finish_reason': 'stop', 'message': None}]},
+                         None, [], {'choices': 'bad'}]:
+            with self.subTest(response=response), self.assertRaises(AttemptError):
+                answer(response, {'new'})
+        self.setup_worker([{'choices': [None]}, {'choices': [None]}, completion('old')])
+        result = self.worker.dispatch('match', self.request())
+        self.assertEqual(result['result']['seasonId'], 'old')
+        self.assertEqual(len(self.calls), 3)
+        with self.assertRaises(ProtocolError) as caught:
+            query_input(dict(QUERY, episode=10**1000))
+        self.assertEqual(caught.exception.code, 'INVALID_REQUEST')
+
+    def test_oversized_model_name_does_not_discard_a_valid_match(self):
+        response = completion('new')
+        response['model'] = 'x' * 129
+        self.setup_worker([response])
+        result = self.worker.dispatch('match', self.request())
+        self.assertEqual(result['result']['seasonId'], 'new')
+        self.assertNotIn('model', result['diagnostics']['attempts'][0])
 
     def test_invalid_outputs(self):
         for content in ['{"s":"null"}', '{"s":4}', '{"s":null,"episode":1}',

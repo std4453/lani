@@ -40,7 +40,10 @@ def integer(value, low, high):
 
 
 def numeric(value):
-    return type(value) in (int, float) and math.isfinite(value)
+    try:
+        return type(value) in (int, float) and math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 def calendar_date(value):
