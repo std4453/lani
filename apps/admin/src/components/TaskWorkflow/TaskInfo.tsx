@@ -11,8 +11,6 @@ export default function TaskInfo({
     'createdAt' | 'type' | 'torrentLink'
   > & {
     isSmartDownload?: boolean;
-    isCancelled?: boolean;
-    workflow?: TaskDetailsFieldsFragment['workflow'];
   };
 }) {
   return (
@@ -26,11 +24,6 @@ export default function TaskInfo({
         {TASK_TYPE_LABELS[task.type]}
         {task.type === 'DOWNLOAD' && task.isSmartDownload ? '（智能下载）' : ''}
       </Field>
-      {(task.isCancelled || task.workflow?.cancellation) && (
-        <Field label="取消原因">
-          {task.workflow?.cancellation?.reason ?? '用户手动取消'}
-        </Field>
-      )}
       {['DOWNLOAD', 'BATCH_DOWNLOAD'].includes(task.type) && (
         <Field label="种子地址">{task.torrentLink}</Field>
       )}
