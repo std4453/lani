@@ -7,12 +7,23 @@ export default function TaskDialog({
   title,
   running,
   titleActions,
+  closeHint,
+  className,
   ...props
-}: ModalProps & { running?: boolean; titleActions?: ReactNode }) {
+}: ModalProps & {
+  running?: boolean;
+  titleActions?: ReactNode;
+  closeHint?: ReactNode;
+}) {
   return (
     <Modal
       {...props}
-      className={clsx(styles.dialog, titleActions && styles.hasActions)}
+      className={clsx(
+        styles.dialog,
+        titleActions && styles.hasActions,
+        closeHint && styles.hasCloseHint,
+        className,
+      )}
       title={
         <div className={clsx(styles.title, titleActions && styles.withActions)}>
           <span role="heading" aria-level={2}>
@@ -22,6 +33,7 @@ export default function TaskDialog({
             <span className={styles.hint}>后台执行中，可关闭弹窗</span>
           )}
           {titleActions && <div className={styles.actions}>{titleActions}</div>}
+          {closeHint && <span className={styles.closeHint}>{closeHint}</span>}
         </div>
       }
     />

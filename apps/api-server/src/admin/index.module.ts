@@ -1,4 +1,5 @@
 import { TaskStatusResolver } from './task-status.resolver';
+import { PublicConfigResolver } from './public-config.resolver';
 import { MediaPoolModule } from '@/media-pool/index.module';
 import { TorrentSubtitleResolver } from './torrent-subtitle.resolver';
 import { JellyfinFolderResolver } from '@/admin/JellyfinFolderResolver';
@@ -25,6 +26,7 @@ import { ImageThumbnailModule } from '@/image-thumbnail/index.module';
   ],
   providers: [
     AdminResolver,
+    PublicConfigResolver,
     TorrentSubtitleResolver,
     TaskStatusResolver,
     ImageResolver,

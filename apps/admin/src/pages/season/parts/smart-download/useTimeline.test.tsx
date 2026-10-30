@@ -93,9 +93,9 @@ beforeEach(async () => {
   container = document.createElement('div');
   document.body.appendChild(container);
   fetch = jest.fn(async (request: PreviewRequest) => page(request));
-  act(() =>
-    ReactDOM.render(<Harness cache={new PreviewCache(fetch)} />, container),
-  );
+  act(() => {
+    ReactDOM.render(<Harness cache={new PreviewCache(fetch)} />, container);
+  });
   await advance(0);
 });
 afterEach(() => {
@@ -212,6 +212,63 @@ test('取样点上方没有发布事件，偏移修改后不自动滚动', async
   act(() => offset(1));
   await advance(0);
   expect(viewport.scrollTop).toBe(500);
+});
+test('后台增量刷新保持分页、滚动且不显示 loading；隐藏或离线时暂停', async () => {
+  const viewport = current.viewport.current!;
+  viewport.scrollTop = 127;
+  const calls = fetch.mock.calls.length;
+  const old = current.view;
+  await advance(30000);
+  expect(fetch.mock.calls.length).toBeGreaterThan(calls);
+  expect(current.view).not.toBe(old);
+  expect(current.loading).toBe(false);
+  expect(current.frozen).toBe(false);
+  expect(current.count).toBe(30);
+  expect(viewport.scrollTop).toBe(127);
+  const after = fetch.mock.calls.length;
+  const hidden = jest.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await advance(60000);
+  expect(fetch).toHaveBeenCalledTimes(after);
+  hidden.mockReturnValue(false);
+  const online = jest.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('offline'));
+  });
+  await advance(60000);
+  expect(fetch).toHaveBeenCalledTimes(after);
+  online.mockReturnValue(true);
+  act(() => {
+    window.dispatchEvent(new Event('online'));
+  });
+  await advance(30000);
+  expect(fetch.mock.calls.length).toBeGreaterThan(after);
+  hidden.mockRestore();
+  online.mockRestore();
+});
+test('偏移变化取消正在进行的后台刷新，迟到结果不能覆盖新视图', async () => {
+  const old = current.view;
+  let finish!: () => void;
+  fetch.mockImplementationOnce(
+    (request: PreviewRequest) =>
+      new Promise((resolve) => {
+        finish = () => resolve(page(request));
+      }),
+  );
+  await advance(30000);
+  expect(current.loading).toBe(false);
+  expect(current.view).toBe(old);
+  act(() => offset(1));
+  await advance(0);
+  const latest = current.view;
+  await act(async () => {
+    finish();
+    await Promise.resolve();
+  });
+  expect(current.view).toBe(latest);
 });
 
 test('末尾限制滚动距离后连续调整仍跟随原剧集，手动滚动后重新取样', async () => {

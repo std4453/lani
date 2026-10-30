@@ -150,6 +150,68 @@ test('最后一集读取至末尾；无日程、空结果和无法推进的游�
     new PreviewCache(fetch).ensure(30, [], base, signal()),
   ).rejects.toThrow('种子列表分页未推进');
 });
+test('刷新推进快照并从旧尾部取新种子，同刻新增 ID 不漏项且分页仍复用缓存', async () => {
+  const { cache, rows, fetch } = setup(210);
+  await cache.ensure(30, episodes, base + 500 * hour, signal());
+  const old = [...cache.nodes];
+  rows.push({ ...rows[209], id: 211 });
+  const refreshedAt = base + 600 * hour;
+  const result = await cache.refresh(30, episodes, refreshedAt, signal());
+  expect(fetch.mock.calls[fetch.mock.calls.length - 1][0]).toMatchObject({
+    after: '210',
+    first: 90,
+    snapshot: new Date(refreshedAt).toISOString(),
+  });
+  expect(result.nodes).toEqual([...old, rows[210]]);
+  const calls = fetch.mock.calls.length;
+  await cache.ensure(60, episodes, refreshedAt, signal());
+  expect(fetch).toHaveBeenCalledTimes(calls);
+});
+test('增量刷新失败或旧请求迟到不污染缓存；恢复后继续同一游标', async () => {
+  const { cache, rows, fetch } = setup(210);
+  await cache.ensure(30, episodes, base + 500 * hour, signal());
+  const old = [...cache.nodes];
+  rows.push({ ...rows[209], id: 211 });
+  fetch.mockRejectedValueOnce(new Error('offline'));
+  await expect(
+    cache.refresh(30, episodes, base + 600 * hour, signal()),
+  ).rejects.toThrow('offline');
+  expect(cache.nodes).toEqual(old);
+  let finish!: () => void;
+  const fn = fetch.getMockImplementation()!;
+  fetch.mockImplementationOnce(
+    (request) =>
+      new Promise((resolve) => {
+        finish = () => resolve(fn(request));
+      }),
+  );
+  const controller = new AbortController();
+  const pending = cache.refresh(
+    30,
+    episodes,
+    base + 600 * hour,
+    controller.signal,
+  );
+  controller.abort();
+  finish();
+  await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  expect(cache.nodes).toEqual(old);
+  const result = await cache.refresh(30, episodes, base + 600 * hour, signal());
+  expect(result.nodes[result.nodes.length - 1].id).toBe(211);
+});
+test('空列表刷新能读到首集前新到的种子，不等待正式开播', async () => {
+  const { cache, rows } = setup(0);
+  await cache.ensure(30, episodes, base - hour, signal());
+  rows.push({
+    id: 1,
+    hash: 'early',
+    title: '提前发布',
+    size: '100',
+    publishDate: new Date(base - hour).toISOString(),
+  });
+  const result = await cache.refresh(30, episodes, base, signal());
+  expect(result.nodes.map((row) => row.id)).toEqual([1]);
+});
 test('相对时间保留累计小时，不会按一天回绕', () => {
   expect(
     relativePublishTime(new Date(base + 45296000).toISOString(), base),

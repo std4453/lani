@@ -1,4 +1,4 @@
-import { PrismaClient } from '@lani/db';
+import { Prisma, PrismaClient } from '@lani/db';
 import {
   atomTypes,
   buildWorkflowSnapshot,
@@ -334,6 +334,36 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     expect(
       new Set([...first.nodes, ...next.nodes].map((row) => row.id)).size,
     ).toBe(35);
+  });
+  test('预览任务按本季度和 hash 返回最新智能任务摘要，隐藏工作流数据', async () => {
+    const create = (hash: string, isSmartDownload = true) =>
+      db.task.create({
+        data: {
+          type: 'DOWNLOAD',
+          episodeId: episode,
+          legacyStage: 'DOWNLOADING',
+          isSmartDownload,
+          smartDownloadTorrentHash: hash,
+          workflow: workflow() as any,
+        },
+      });
+    await create('ABC');
+    const cancelled = await create('abc');
+    await db.task.update({
+      where: { id: cancelled.id },
+      data: { workflow: Prisma.DbNull, isCancelled: true },
+    });
+    await create('manual', false);
+    const resolver = new SmartDownloadResolver(db as any);
+    const result = await resolver.smartDownloadTasks(season);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: cancelled.id,
+      hash: 'abc',
+      summary: { legacy: { isCancelled: true } },
+    });
+    expect(Object.keys(result[0]).sort()).toEqual(['hash', 'id', 'summary']);
+    expect(await resolver.smartDownloadTasks(-1)).toEqual([]);
   });
   test('正序查询保留首集之前最近 10 条，from 边界包含同刻种子且游标不漏项', async () => {
     const before: Awaited<ReturnType<typeof torrent>>[] = [];

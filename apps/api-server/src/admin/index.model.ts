@@ -38,11 +38,19 @@ export class FeaturesConfig {
 }
 
 @ObjectType()
+export class PublicMatchingConfig {
+  enabled: boolean;
+  backend: string;
+  mode?: string;
+}
+
+@ObjectType()
 export class AdminConfig {
   jellyfin?: JellyfinConfig;
   lania?: LaniaConfig;
   features: FeaturesConfig;
   env: string;
+  matching?: PublicMatchingConfig;
 }
 
 registerEnumType(MetadataSource, {

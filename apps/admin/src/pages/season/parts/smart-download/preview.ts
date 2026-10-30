@@ -17,6 +17,7 @@ export interface PreviewRequest {
   after?: string | null;
   from?: string;
   before?: string;
+  snapshot?: string;
 }
 export interface PreviewSnapshot {
   nodes: PreviewTorrent[];
@@ -43,6 +44,8 @@ export class PreviewCache {
   private cursor: string | null = null;
   private from?: number;
   private lowerBound = Infinity;
+  private snapshot?: string;
+  private revision = 0;
   constructor(
     private fetchPage: (
       request: PreviewRequest,
@@ -55,7 +58,10 @@ export class PreviewCache {
   }
   private async fetch(request: PreviewRequest, signal: AbortSignal) {
     check(signal);
-    const page = await this.fetchPage(request, signal);
+    const page = await this.fetchPage(
+      { snapshot: this.snapshot, ...request },
+      signal,
+    );
     check(signal);
     if (
       page.hasMore &&
@@ -118,6 +124,7 @@ export class PreviewCache {
     signal: AbortSignal,
     anchorId?: number,
   ): Promise<PreviewSnapshot> {
+    this.revision++;
     const releases = episodeReleases(episodes);
     const first = releases[0]?.at;
     if (!this.initialized || this.needsEarlier(first))
@@ -169,6 +176,57 @@ export class PreviewCache {
           : Infinity,
       },
     };
+  }
+
+  /** 尾部增量在副本中完成；翻页、偏移或取消使旧刷新失效，失败保留当前表格。 */
+  async refresh(
+    count: number,
+    episodes: SmartEpisode[],
+    now: number,
+    signal: AbortSignal,
+  ) {
+    const revision = this.revision;
+    const next = new PreviewCache(this.fetchPage);
+    Object.assign(next, {
+      nodes: [...this.nodes],
+      excludes: this.excludes,
+      hasMore: this.hasMore,
+      initialized: this.initialized,
+      cursor: this.cursor,
+      from: this.from,
+      lowerBound: this.lowerBound,
+      snapshot: date(now),
+    });
+    if (!next.nodes.length) next.initialized = false;
+    else {
+      const page = await next.fetch(
+        {
+          first: 90,
+          after: next.cursor,
+        },
+        signal,
+      );
+      next.nodes = merge(next.nodes, page.nodes);
+      next.excludes = page.excludes;
+      next.hasMore = page.hasMore;
+      if (page.cursor) next.cursor = page.cursor;
+    }
+    const result = await next.ensure(count, episodes, now, signal);
+    check(signal);
+    if (revision !== this.revision)
+      throw new DOMException('Superseded', 'AbortError');
+    Object.assign(this, {
+      nodes: next.nodes,
+      excludes: next.excludes,
+      hasMore: next.hasMore,
+      cursor: next.cursor,
+      snapshot: next.snapshot,
+      initialized: next.initialized,
+      lowerBound: next.lowerBound,
+      from: next.from,
+    });
+    this.revision++;
+    return result;
   }
 }
 

@@ -240,6 +240,31 @@
   padding: 12px;
   text-align: center;
 }
+.matcherWarning {
+  margin-bottom: 16px;
+}
+.titleHint {
+  margin-left: 6px;
+  color: var(--lani-text-secondary);
+  font-size: 14px;
+}
+.taskCell {
+  display: block;
+  position: relative;
+  height: 22px;
+}
+.taskTag {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  :global(.ant-tag) {
+    margin: 0;
+    max-width: 65px;
+    padding: 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 @media (max-width: 1000px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

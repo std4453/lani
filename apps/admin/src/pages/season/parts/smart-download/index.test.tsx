@@ -1,5 +1,11 @@
 const mockQuery = jest.fn();
-const mockClient = { query: mockQuery };
+const mockStateQuery = jest.fn();
+const mockClient = {
+  query: (options: any) =>
+    options.query.definitions[0].name.value === 'SmartDownloadState'
+      ? mockStateQuery(options)
+      : mockQuery(options),
+};
 const mockContext = {
   id: 1,
   episodes: [] as { id: number; index: number; airTime: string }[],
@@ -76,6 +82,14 @@ async function changeHours(hours: string) {
   await settle();
 }
 beforeEach(() => {
+  mockStateQuery
+    .mockReset()
+    .mockResolvedValue({
+      data: {
+        smartDownloadTasks: [],
+        config: { matching: { mode: 'semantic' } },
+      },
+    });
   localStorage.clear();
   mockContext.episodes = [];
   mockQuery.mockReset().mockResolvedValue({
@@ -141,6 +155,57 @@ test('首次说明和设置均可取消；仅设置确认才记忆，并把偏�
   });
   expect(container.textContent).toContain('延后 29 小时');
 });
+test('词法模式警告和自动刷新提示显示，状态标签替代集号且没有详情入口', async () => {
+  localStorage.setItem('lani.smart-download.confirmed', 'true');
+  mockStateQuery.mockResolvedValue({
+    data: {
+      config: { matching: { mode: 'lexical' } },
+      smartDownloadTasks: [
+        {
+          id: 7,
+          hash: 'abc',
+          summary: {
+            version: 1,
+            legacy: {
+              stage: 'DOWNLOADING',
+              isCancelled: true,
+              isFailed: false,
+            },
+          },
+        },
+      ],
+    },
+  });
+  mockQuery.mockResolvedValue({
+    data: {
+      smartDownloadPreview: {
+        nodes: [
+          {
+            id: 1,
+            hash: 'abc',
+            title: 'test',
+            size: '1024',
+            publishDate: '2020-01-01T00:00:00Z',
+            episodeInfo: { type: 'episode', index: 9 },
+          },
+        ],
+        cursor: null,
+        hasMore: false,
+        excludes: [],
+      },
+    },
+  });
+  await click('开启智能下载');
+  expect(document.body.textContent).toContain(
+    '使用词法模式时的识别准确率可能较低，不建议开启智能下载',
+  );
+  expect(document.body.textContent).toContain('自动刷新中');
+  const cell = document.querySelector('.ant-modal tbody tr td')!;
+  expect(cell.textContent).toBe('已取消');
+  expect(cell.querySelector('[aria-label="select"]')).toBeNull();
+  act(() => (cell.querySelector('.ant-tag') as HTMLElement).click());
+  expect(document.querySelectorAll('.ant-modal')).toHaveLength(1);
+});
 test('关闭只改开关，保留原规则和设置；再次打开采用保留值', async () => {
   localStorage.setItem('lani.smart-download.confirmed', 'true');
   act(() =>
@@ -183,7 +248,7 @@ test('预览请求失败可重试，失败不丢弃设置草稿', async () => {
       'input[aria-label="下载偏移小时数"]',
     )!.value,
   ).toBe('7');
-  expect(document.body.textContent).toContain('无匹配种子');
+  expect(document.body.textContent).toContain('还未开播，之后再来看看吧');
 });
 
 test('无效种子提供完整排除原因，有效种子和空区间保持各自内容', async () => {

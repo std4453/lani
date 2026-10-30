@@ -44,6 +44,7 @@ export type AdminConfig = {
   features: FeaturesConfig;
   jellyfin?: Maybe<JellyfinConfig>;
   lania?: Maybe<LaniaConfig>;
+  matching?: Maybe<PublicMatchingConfig>;
 };
 
 export type BatchDownloadEntry = {
@@ -2570,6 +2571,13 @@ export type PartialSeason = {
   info?: Maybe<SeasonInfo>;
 };
 
+export type PublicMatchingConfig = {
+  __typename?: 'PublicMatchingConfig';
+  backend: Scalars['String'];
+  enabled: Scalars['Boolean'];
+  mode?: Maybe<Scalars['String']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   /** Reads and enables pagination through a set of `DownloadSource`. */
@@ -2621,6 +2629,7 @@ export type Query = {
   seasonById?: Maybe<Season>;
   seasonByTitle?: Maybe<Season>;
   smartDownloadPreview: Scalars['JSON'];
+  smartDownloadTasks: Scalars['JSON'];
   /** Reads a single `Task` using its globally unique `ID`. */
   task?: Maybe<Task>;
   taskById?: Maybe<Task>;
@@ -2862,6 +2871,11 @@ export type QuerySmartDownloadPreviewArgs = {
   from?: InputMaybe<Scalars['String']>;
   seasonId: Scalars['Int'];
   snapshot: Scalars['String'];
+};
+
+
+export type QuerySmartDownloadTasksArgs = {
+  seasonId: Scalars['Int'];
 };
 
 
@@ -5674,6 +5688,13 @@ export type SmartDownloadPreviewQueryVariables = Exact<{
 
 export type SmartDownloadPreviewQuery = { __typename?: 'Query', smartDownloadPreview: any };
 
+export type SmartDownloadStateQueryVariables = Exact<{
+  seasonId: Scalars['Int'];
+}>;
+
+
+export type SmartDownloadStateQuery = { __typename?: 'Query', smartDownloadTasks: any, config: { __typename?: 'AdminConfig', matching?: { __typename?: 'PublicMatchingConfig', enabled: boolean, backend: string, mode?: string | null } | null } };
+
 export type DisplayImageFieldsFragment = { __typename?: 'Image', id: number, downloadPath?: string | null };
 
 export type SeasonEpisodesFragment = { __typename?: 'Season', episodesLastSync?: any | null, episodesBySeasonId: { __typename?: 'EpisodesConnection', edges: Array<{ __typename?: 'EpisodesEdge', node?: { __typename?: 'Episode', airTime?: any | null, rawAirTime?: any | null, bangumiSort?: any | null, id: number, index?: number | null, numbering?: any | null, jellyfinEpisodeId?: string | null, title: string, tasks: { __typename?: 'TasksConnection', edges: Array<{ __typename?: 'TasksEdge', node?: { __typename?: 'Task', id: number, type: TaskType, statusSummary?: TaskSummary | null } | null }> } } | null }> } };
@@ -5924,6 +5945,7 @@ export const GetTaskPageSignatureDocument = {"kind":"Document","definitions":[{"
 export const GetEpisodesStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEpisodesStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allEpisodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"episodeStatusFields"}}]}}]}}]}}]}},...EpisodeStatusFieldsFragmentDoc.definitions,...TaskSummaryFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetEpisodesStatusQuery, GetEpisodesStatusQueryVariables>;
 export const MockEpisodePublishDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MockEpisodePublish"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mockEpisodePublish"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"episodeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"episodeId"}}}]}]}}]} as unknown as DocumentNode<MockEpisodePublishMutation, MockEpisodePublishMutationVariables>;
 export const SmartDownloadPreviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SmartDownloadPreview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"snapshot"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"before"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"smartDownloadPreview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"snapshot"},"value":{"kind":"Variable","name":{"kind":"Name","value":"snapshot"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"before"},"value":{"kind":"Variable","name":{"kind":"Name","value":"before"}}}]}]}}]} as unknown as DocumentNode<SmartDownloadPreviewQuery, SmartDownloadPreviewQueryVariables>;
+export const SmartDownloadStateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SmartDownloadState"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"smartDownloadTasks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"seasonId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonId"}}}]},{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"matching"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"backend"}},{"kind":"Field","name":{"kind":"Name","value":"mode"}}]}}]}}]}}]} as unknown as DocumentNode<SmartDownloadStateQuery, SmartDownloadStateQueryVariables>;
 export const GetSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"withConfig"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},"defaultValue":{"kind":"BooleanValue","value":true}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"withEpisodes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},"defaultValue":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"seasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"seasonConfigFields"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"withConfig"}}}]}]},{"kind":"FragmentSpread","name":{"kind":"Name","value":"seasonEpisodes"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"withEpisodes"}}}]}]}]}}]}},...SeasonConfigFieldsFragmentDoc.definitions,...DisplayImageFieldsFragmentDoc.definitions,...SeasonEpisodesFragmentDoc.definitions,...EpisodeStatusFieldsFragmentDoc.definitions,...TaskSummaryFieldsFragmentDoc.definitions]} as unknown as DocumentNode<GetSeasonByIdQuery, GetSeasonByIdQueryVariables>;
 export const UpdateSeasonByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSeasonById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"seasonPatch"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SeasonPatch"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSeasonById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"seasonPatch"},"value":{"kind":"Variable","name":{"kind":"Name","value":"seasonPatch"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<UpdateSeasonByIdMutation, UpdateSeasonByIdMutationVariables>;
 export const GetSeasonByTitleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSeasonByTitle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"seasonByTitle"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<GetSeasonByTitleQuery, GetSeasonByTitleQueryVariables>;

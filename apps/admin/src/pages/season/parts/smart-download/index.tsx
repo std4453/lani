@@ -1,5 +1,7 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
+import { QuestionCircleOutlined } from '@ant-design/icons';
+import { calcTaskStatus, DownloadStatusTag } from '@/constants/download-status';
 import {
   Alert,
   Button,
@@ -34,6 +36,7 @@ import {
   relativePublishTime,
 } from './preview';
 import { useTimeline } from './useTimeline';
+import { usePreviewState } from './usePreviewState';
 import OffsetInput from './OffsetInput';
 import {
   describeSettings,
@@ -160,6 +163,7 @@ export function SettingsDialog({
   const [form] = Form.useForm<DownloadSettings>();
   const [draft, setDraft] = useState(initial);
   const [now] = useState(() => Date.now());
+  const live = usePreviewState(id);
   const cache = useMemo(
     () =>
       new PreviewCache(async (request, signal) => {
@@ -168,7 +172,7 @@ export function SettingsDialog({
           variables: {
             seasonId: id,
             ...request,
-            snapshot: new Date(now).toISOString(),
+            snapshot: request.snapshot ?? new Date(now).toISOString(),
           },
           fetchPolicy: 'no-cache',
           context: { fetchOptions: { signal }, queryDeduplication: false },
@@ -209,12 +213,12 @@ export function SettingsDialog({
             view.directory,
             view.preview.nodes,
             toSettings(draft),
-            now,
+            view.now,
             view.preview.excludes,
             view.preview.coverage,
           )
         : [],
-    [view, draft, now],
+    [view, draft],
   );
   const visible = rows.slice(0, count);
   const groups: typeof visible[] = [];
@@ -236,6 +240,7 @@ export function SettingsDialog({
     <TaskDialog
       visible
       title="智能下载设置"
+      closeHint="自动刷新中"
       width={1100}
       onCancel={onCancel}
       footer={
@@ -280,6 +285,15 @@ export function SettingsDialog({
           setDraft(next);
         }}
       >
+        {live.mode === 'lexical' && (
+          // TODO：补充用户侧文档，说明词法匹配模式的准确率与智能下载建议。
+          <Alert
+            className={styles.matcherWarning}
+            type="warning"
+            showIcon
+            message="使用词法模式时的识别准确率可能较低，不建议开启智能下载"
+          />
+        )}
         <div className={styles.grid}>
           <Form.Item
             label="字幕要求"
@@ -376,7 +390,31 @@ export function SettingsDialog({
               <tr>
                 {['集数', '发布时间', '种子标题', '字幕', '种子大小'].map(
                   (title) => (
-                    <th key={title}>{title}</th>
+                    <th key={title}>
+                      {title}
+                      {title === '种子标题' && (
+                        <Tooltip
+                          title={
+                            <>
+                              仅展示成功匹配到本季度的种子，
+                              <a
+                                href="/torrents"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ whiteSpace: 'nowrap' }}
+                              >
+                                查看全部
+                              </a>
+                            </>
+                          }
+                        >
+                          <QuestionCircleOutlined
+                            className={styles.titleHint}
+                            aria-label="种子展示范围"
+                          />
+                        </Tooltip>
+                      )}
+                    </th>
                   ),
                 )}
               </tr>
@@ -385,6 +423,8 @@ export function SettingsDialog({
               <tbody key={group[0].key}>
                 {group.map((row) => {
                   const torrent = row.torrent as PreviewTorrent | undefined;
+                  const task =
+                    torrent && live.tasks.get(torrent.hash.toLowerCase());
                   const reasons = row.decision?.reasons ?? [];
                   const exclusion =
                     torrent &&
@@ -417,6 +457,7 @@ export function SettingsDialog({
                         </tr>
                       )}
                       <tr
+                        data-preview-key={row.key}
                         tabIndex={exclusion ? 0 : undefined}
                         aria-describedby={exclusion ? reasonId : undefined}
                         className={clsx(styles.torrentRow, {
@@ -426,12 +467,26 @@ export function SettingsDialog({
                         {torrent ? (
                           <>
                             <td>
-                              <span className={styles.cellContent}>
-                                {typeof torrent.episodeInfo?.index ===
-                                  'number' ||
-                                typeof torrent.episodeInfo?.index === 'string'
-                                  ? String(torrent.episodeInfo.index)
-                                  : '-'}
+                              <span
+                                className={clsx(
+                                  styles.cellContent,
+                                  task && styles.taskCell,
+                                )}
+                              >
+                                {task ? (
+                                  <span className={styles.taskTag}>
+                                    <DownloadStatusTag
+                                      {...calcTaskStatus(task.summary)}
+                                    />
+                                  </span>
+                                ) : typeof torrent.episodeInfo?.index ===
+                                    'number' ||
+                                  typeof torrent.episodeInfo?.index ===
+                                    'string' ? (
+                                  String(torrent.episodeInfo.index)
+                                ) : (
+                                  '-'
+                                )}
                               </span>
                             </td>
                             <td>
@@ -514,7 +569,7 @@ export function SettingsDialog({
             <Empty
               className={styles.empty}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="无匹配种子"
+              description="还未开播，之后再来看看吧"
             />
           )}
           {!loading && !error && more && (

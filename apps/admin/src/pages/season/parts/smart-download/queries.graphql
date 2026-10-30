@@ -15,3 +15,14 @@ query SmartDownloadPreview(
     before: $before
   )
 }
+
+query SmartDownloadState($seasonId: Int!) {
+  smartDownloadTasks(seasonId: $seasonId)
+  config {
+    matching {
+      enabled
+      backend
+      mode
+    }
+  }
+}
