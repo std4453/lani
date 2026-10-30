@@ -268,7 +268,7 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
     hash: 'valid',
     publishDate: '2020-01-01T01:00:00Z',
     size: '1000',
-    episodeInfo: { type: 'episode', index: 1 },
+    episodeInfo: { type: 'episode', index: '1.000' },
     subtitleInfo: { languages: ['zh'] },
     parseVersion: 1,
     channel: 'MIKAN',
@@ -301,6 +301,7 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
     ),
   );
   expect(rows).toHaveLength(3);
+  expect(rows[0].querySelector('td')?.textContent).toBe('1');
   const releases = document.querySelectorAll('tr[data-release-ids]');
   expect(releases).toHaveLength(2);
   expect(releases[0].textContent).toContain('#1 发布');

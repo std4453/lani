@@ -5,6 +5,7 @@ import {
   TorrentChannel,
 } from '@/generated/types';
 import { PreviewPage, PreviewRequest } from './preview-cache';
+import { formatNumber } from '@/utils/episode';
 
 /** 使用连接的原生游标；首集之前的上下文由同一正序连接取末尾 10 条。 */
 export async function fetchPreviewPage(
@@ -42,6 +43,14 @@ export async function fetchPreviewPage(
         ? [
             {
               ...torrent,
+              // GraphQL 编号是定点十进制字符串，先去掉尾零再参与匹配和展示。
+              episodeInfo: torrent.episodeInfo && {
+                ...torrent.episodeInfo,
+                index:
+                  typeof torrent.episodeInfo.index === 'string'
+                    ? formatNumber(torrent.episodeInfo.index)
+                    : torrent.episodeInfo.index,
+              },
               ready:
                 typeof torrent.parseVersion === 'number' &&
                 (torrent.channel !== TorrentChannel.Nyaa ||
