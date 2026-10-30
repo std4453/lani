@@ -59,21 +59,19 @@ function readLock(text) {
   const snapshots = children(root.get("snapshots"), 2);
   if (!importers.has(".") || content(importers.get(".")) !== "{}")
     throw new Error("Expected an empty Rush workspace root importer");
-  const globals = [...root]
-    .filter(([key]) => !["importers", "packages", "snapshots"].includes(key))
-    .map(([key, entry]) => [key, content(entry)]);
-
   return function select(projectFolders) {
     const folders = new Set(projectFolders);
-    const selected = new Map(
-      globals.map(([key, value]) => [`global/${key}`, value])
-    );
+    // overrides、pnpmfile 校验和等全局元数据不直接参与指纹；
+    // 实际解析结果的变化由本项目可达的 importer、package 和 snapshot 表达。
+    const selected = new Map();
     const visited = new Set();
 
     function dependency(alias, reference, importer) {
       if (reference.startsWith("link:")) {
         if (!importer)
-          throw new Error(`Unexpected workspace link in pnpm snapshot: ${alias}`);
+          throw new Error(
+            `Unexpected workspace link in pnpm snapshot: ${alias}`
+          );
         const target = path.posix.normalize(
           path.posix.join(importer, reference.slice(5))
         );

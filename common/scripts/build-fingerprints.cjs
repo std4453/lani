@@ -7,9 +7,10 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { readLock } = require("./pnpm-fingerprint.cjs");
+const { fingerprintIgnore } = require("./fingerprint-ignore.cjs");
 const manifestPath = "build-manifest.json";
 const lockPath = "common/config/rush/pnpm-lock.yaml";
-const algorithmVersion = 2;
+const algorithmVersion = 3;
 const apps = [
   "admin",
   "api-server",
@@ -18,20 +19,6 @@ const apps = [
   "db",
   "anime-matcher",
 ];
-const sharedBuildInputs = new Set([
-  ".dockerignore",
-  ".npmrc",
-  ".nvmrc",
-  "rush.json",
-  "common/config/rush/.npmrc",
-  "common/config/rush/.pnpmfile.cjs",
-  "common/config/rush/command-line.json",
-  "common/config/rush/common-versions.json",
-  "common/config/rush/deploy.json",
-  "common/config/rush/experiments.json",
-  "common/config/rush/pnpm-config.json",
-  "common/config/rush/rush-plugins.json",
-]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const git = (args, options = {}) =>
   execFileSync("git", args, {
@@ -159,22 +146,8 @@ function calculate(tree) {
         }
       }
   }
-  const excluded = (file) =>
-    file === manifestPath ||
-    file === "LICENSE" ||
-    // 文档位置可随读者归属调整；文档目录中的截图等附件也排除。
-    /\.(md|mdx|markdown)$/i.test(file) ||
-    /(^|\/)docs\//.test(file) ||
-    file.startsWith("development/") ||
-    // 通用工具源码只影响工具自身；其包配置、编译配置和锁定依赖仍是构建输入。
-    (file.startsWith("tools/") &&
-      !file.endsWith("/package.json") &&
-      !/\/tsconfig(?:\/[^/]+)?\.json$/.test(file));
   const owner = (file) =>
     [...projects].find(([, p]) => file.startsWith(`${p.folder}/`))?.[0];
-  const global = [...tree.entries.keys()].filter((file) =>
-    sharedBuildInputs.has(file)
-  );
   const details = {},
     images = {};
   for (const app of apps) {
@@ -186,10 +159,26 @@ function calculate(tree) {
       closure.add(name);
       for (const dependency of project.dependencies) visit(dependency);
     }
-    visit(`@lani/${app}`);
-    const files = new Set(global);
-    for (const file of tree.entries.keys())
-      if (closure.has(owner(file)) && !excluded(file)) files.add(file);
+    const projectName = `@lani/${app}`;
+    // Python 服务直接用包目录构建，不经过 Rush，也不使用 Node 依赖。
+    const python = app === "anime-matcher";
+    if (python) closure.add(projectName);
+    else visit(projectName);
+    const folder = projects.get(projectName).folder;
+    const ignored = fingerprintIgnore(tree, app);
+    const files = new Set();
+    const excluded = [];
+    for (const file of [...tree.entries.keys()].sort()) {
+      const project = owner(file);
+      if (!closure.has(project) && !(file === ".dockerignore" && !python))
+        continue;
+      const rule = ignored(file);
+      if (rule) excluded.push({ file, ...rule });
+      // 依赖包的 Dockerfile 属于另一个镜像，不用于当前应用的构建。
+      else if (file.endsWith("/Dockerfile") && file !== `${folder}/Dockerfile`)
+        excluded.push({ file, reason: "Dockerfile belongs to another image" });
+      else files.add(file);
+    }
     // Symlink path/mode/blob are inputs too. Targets must belong to the declared
     // project/dependency closure; cross-project build inputs need a Rush dependency.
     const inputs = [...files]
@@ -202,7 +191,7 @@ function calculate(tree) {
     const folders = [...closure]
       .filter((name) => projects.has(name))
       .map((name) => projects.get(name).folder);
-    const dependencies = folders.length ? selectDependencies(folders) : [];
+    const dependencies = python ? [] : selectDependencies(folders);
     for (const [key, value] of dependencies)
       inputs.push([
         `${lockPath}#${key}`,
@@ -218,7 +207,12 @@ function calculate(tree) {
       })
     );
     images[app] = { fingerprint };
-    details[app] = { fingerprint, projects: [...closure].sort(), inputs };
+    details[app] = {
+      fingerprint,
+      projects: [...closure].sort(),
+      inputs,
+      excluded,
+    };
   }
   return { manifest: { version: 1, algorithmVersion, images }, details };
 }
