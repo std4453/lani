@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, ThunderboltFilled } from '@ant-design/icons';
 import { calcTaskStatus, DownloadStatusTag } from '@/constants/download-status';
 import {
   Alert,
@@ -38,7 +38,6 @@ import {
 import { useTimeline } from './useTimeline';
 import { usePreviewState } from './usePreviewState';
 import OffsetInput from './OffsetInput';
-import AttentionIcon from './AttentionIcon';
 import {
   describeSettings,
   DownloadSettings,
@@ -64,7 +63,7 @@ const exclusionLabels: Record<ExclusionReason, string> = {
 };
 
 export default function SmartDownload() {
-  const { id, formRef, updateTouched } = useSeasonPageContext();
+  const { formRef, updateTouched } = useSeasonPageContext();
   const [draft, setDraft] = useState<DownloadSettings>();
   const [visible, setVisible] = useState(false);
   const close = () => setVisible(false);
@@ -128,7 +127,7 @@ export default function SmartDownload() {
               label={
                 <span className={styles.label}>
                   智能下载
-                  <AttentionIcon key={id} />
+                  <ThunderboltFilled className={styles.icon} aria-hidden />
                 </span>
               }
               {...formItemProps}
