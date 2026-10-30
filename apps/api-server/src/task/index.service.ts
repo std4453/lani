@@ -23,7 +23,7 @@ import {
   StepDefinition,
   requestCancellation,
   retryWorkflow,
-  currentStep,
+  Workflow,
 } from '@lani/workflow';
 import { TaskState } from './index.model';
 import { WorkflowRunner } from './workflow-runner';
@@ -112,31 +112,22 @@ export class TaskService
   }
   @Mutation(() => ID)
   async cancelTask(@Args('taskId') taskId: number) {
+    await this.cancel(taskId);
+    return 'ok';
+  }
+  async cancel(
+    taskId: number,
+    details: Pick<
+      NonNullable<Workflow['cancellation']>,
+      'reason' | 'code'
+    > = {},
+  ) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许取消');
     await this.runner.transition(taskId, (workflow) =>
-      requestCancellation(workflow, new Date().toISOString()),
+      requestCancellation(workflow, new Date().toISOString(), details),
     );
-    void this.runner.start(taskId);
-    return 'ok';
-  }
-  /** Baha 替换仅允许智能下载的传输步骤；事务版本冲突后重新核对步骤。 */
-  async cancelSmartDownload(taskId: number) {
-    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!task?.isSmartDownload) return;
-    await this.runner.transition(taskId, (workflow) => {
-      if (
-        workflow.status !== 'running' ||
-        workflow.cancellation ||
-        currentStep(workflow).atom !== 'download'
-      )
-        return workflow;
-      return requestCancellation(workflow, new Date().toISOString(), {
-        code: 'baha',
-        reason: '智能下载任务取消（Baha 优先）',
-      });
-    });
     void this.runner.start(taskId);
   }
   @Query(() => [TaskState])

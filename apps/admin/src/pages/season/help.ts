@@ -61,11 +61,6 @@ type DownloadSource = ExtractNode<
 >;
 
 export interface FormValues {
-  smartDownloadEnabled: boolean;
-  smartDownloadSubtitle: SubtitleRequirement;
-  smartDownloadPreferBaha: boolean;
-  smartDownloadWindowHours: number;
-  smartDownloadTimeoutMinutes: number | null;
   isMonitoring: boolean;
   jellyfinFolderDesc: string;
   tags: string[];
@@ -81,6 +76,11 @@ export interface FormValues {
   bilibiliThmId: string;
   description: string;
   aliases: string[];
+  smartDownloadEnabled: boolean;
+  smartDownloadSubtitle: SubtitleRequirement;
+  smartDownloadPreferBaha: boolean;
+  smartDownloadWindowHours: number;
+  smartDownloadTimeoutMinutes: number | null;
   downloadSources: DownloadSource[];
   infoSource: MetadataSource;
   episodesSource: MetadataSource;
@@ -98,11 +98,6 @@ export interface FormValues {
 }
 
 export function queryToFormValues({
-  smartDownloadEnabled,
-  smartDownloadSubtitle,
-  smartDownloadPreferBaha,
-  smartDownloadWindowHours,
-  smartDownloadTimeoutMinutes,
   isMonitoring,
   jellyfinFolder,
   tags,
@@ -117,6 +112,11 @@ export function queryToFormValues({
   bilibiliThmId,
   description,
   aliases,
+  smartDownloadEnabled,
+  smartDownloadSubtitle,
+  smartDownloadPreferBaha,
+  smartDownloadWindowHours,
+  smartDownloadTimeoutMinutes,
   downloadSourcesBySeasonId,
   infoSource,
   episodesSource,
@@ -131,15 +131,6 @@ export function queryToFormValues({
   integrationsLaniaSync,
 }: Season): FormValues {
   return {
-    smartDownloadEnabled: smartDownloadEnabled ?? false,
-    smartDownloadSubtitle: (smartDownloadSubtitle ??
-      'chinese') as SubtitleRequirement,
-    smartDownloadPreferBaha: smartDownloadPreferBaha ?? false,
-    smartDownloadWindowHours: smartDownloadWindowHours ?? 48,
-    smartDownloadTimeoutMinutes:
-      smartDownloadTimeoutMinutes === undefined
-        ? 120
-        : smartDownloadTimeoutMinutes,
     isMonitoring,
     jellyfinFolderDesc: jellyfinFolder
       ? `${jellyfinFolder.name} (${jellyfinFolder.location})`
@@ -159,6 +150,15 @@ export function queryToFormValues({
     bilibiliThmId,
     description,
     aliases: (aliases ?? []).filter((alias): alias is string => Boolean(alias)),
+    smartDownloadEnabled: smartDownloadEnabled ?? false,
+    smartDownloadSubtitle: (smartDownloadSubtitle ??
+      'chinese') as SubtitleRequirement,
+    smartDownloadPreferBaha: smartDownloadPreferBaha ?? false,
+    smartDownloadWindowHours: smartDownloadWindowHours ?? 48,
+    smartDownloadTimeoutMinutes:
+      smartDownloadTimeoutMinutes === undefined
+        ? 120
+        : smartDownloadTimeoutMinutes,
     downloadSources: (extractNode(downloadSourcesBySeasonId) ?? []).map(
       ({ offset, ...source }) => ({
         ...source,

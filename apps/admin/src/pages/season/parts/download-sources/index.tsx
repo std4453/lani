@@ -375,8 +375,10 @@ export default function DownloadSources() {
                 }
                 {...formItemProps}
               >
-                <Space className={styles.timeOffset}>
+                <span className={styles.timeOffsetLabel}>
                   基于剧集放送时间，
+                </span>
+                <Space className={styles.timeOffset}>
                   <ProFormSelect
                     name="downloadOffsetType"
                     valueEnum={{

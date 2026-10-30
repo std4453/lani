@@ -84,7 +84,7 @@ async function changeHours(hours: string) {
 beforeEach(() => {
   mockStateQuery.mockReset().mockResolvedValue({
     data: {
-      smartDownloadTasks: [],
+      allTasks: { nodes: [], pageInfo: { hasNextPage: false } },
       config: { matching: { mode: 'semantic' } },
     },
   });
@@ -92,11 +92,13 @@ beforeEach(() => {
   mockContext.episodes = [];
   mockQuery.mockReset().mockResolvedValue({
     data: {
-      smartDownloadPreview: {
+      allTorrents: {
         nodes: [],
-        cursor: null,
-        hasMore: false,
-        excludes: [],
+        pageInfo: {
+          endCursor: null,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
       },
     },
   });
@@ -158,25 +160,28 @@ test('词法模式警告和自动刷新提示显示，状态标签替代集号�
   mockStateQuery.mockResolvedValue({
     data: {
       config: { matching: { mode: 'lexical' } },
-      smartDownloadTasks: [
-        {
-          id: 7,
-          hash: 'abc',
-          summary: {
-            version: 1,
-            legacy: {
-              stage: 'DOWNLOADING',
-              isCancelled: true,
-              isFailed: false,
+      allTasks: {
+        pageInfo: { hasNextPage: false },
+        nodes: [
+          {
+            id: 7,
+            smartDownloadTorrentHash: 'abc',
+            statusSummary: {
+              version: 1,
+              legacy: {
+                stage: 'DOWNLOADING',
+                isCancelled: true,
+                isFailed: false,
+              },
             },
           },
-        },
-      ],
+        ],
+      },
     },
   });
   mockQuery.mockResolvedValue({
     data: {
-      smartDownloadPreview: {
+      allTorrents: {
         nodes: [
           {
             id: 1,
@@ -184,12 +189,16 @@ test('词法模式警告和自动刷新提示显示，状态标签替代集号�
             title: 'test',
             size: '1024',
             publishDate: '2020-01-01T00:00:00Z',
+            parseVersion: 1,
+            channel: 'MIKAN',
             episodeInfo: { type: 'episode', index: 9 },
           },
         ],
-        cursor: null,
-        hasMore: false,
-        excludes: [],
+        pageInfo: {
+          endCursor: null,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
       },
     },
   });
@@ -261,11 +270,12 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
     size: '1000',
     episodeInfo: { type: 'episode', index: 1 },
     subtitleInfo: { languages: ['zh'] },
-    ready: true,
+    parseVersion: 1,
+    channel: 'MIKAN',
   };
   mockQuery.mockResolvedValueOnce({
     data: {
-      smartDownloadPreview: {
+      allTorrents: {
         nodes: [
           { ...torrent, id: 1, title: '有效资源' },
           {
@@ -276,9 +286,11 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
             subtitleInfo: null,
           },
         ],
-        cursor: null,
-        hasMore: false,
-        excludes: [],
+        pageInfo: {
+          endCursor: null,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
       },
     },
   });
@@ -299,9 +311,7 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
   const reason = document.getElementById(
     excluded.getAttribute('aria-describedby')!,
   );
-  expect(reason?.textContent).toBe(
-    '无法下载原因：不符合字幕要求；命中标题或片源屏蔽规则',
-  );
+  expect(reason?.textContent).toBe('无法下载原因：不符合字幕要求');
   expect(excluded.getAttribute('tabindex')).toBe('0');
   expect(
     rows

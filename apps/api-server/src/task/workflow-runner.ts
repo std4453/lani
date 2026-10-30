@@ -3,6 +3,7 @@ import {
   AtomContext,
   CheckpointUpdate,
   ExecutionStopped,
+  TaskCancellation,
   TaskInput,
   TaskOutput,
   Atoms,
@@ -174,19 +175,6 @@ export class WorkflowRunner {
         return checkpoint;
       },
       assertActive,
-      requestCancellation: async (reason, code) => {
-        for (;;) {
-          const latest = await read();
-          checkActive(latest);
-          const next = requestCancellation(
-            latest.workflow,
-            new Date().toISOString(),
-            { reason, code },
-          );
-          if (await this.store.commit(latest, next)) break;
-        }
-        this.wake.get(task.id)?.forEach((wake) => wake());
-      },
       transaction: async (operation) => {
         const committed = await this.store.transaction(task.id, async (tx) => {
           const latest = await read(tx);
@@ -351,6 +339,22 @@ export class WorkflowRunner {
         if (this.stopping) return;
         const latest = await this.store.read(id);
         if (latest.workflow.cancellation) continue;
+        if (error instanceof TaskCancellation) {
+          await this.transition(id, (workflow) => {
+            const current = currentStep(workflow);
+            if (
+              workflow.status !== 'running' ||
+              current.id !== step.id ||
+              current.attempt !== step.attempt
+            )
+              return workflow;
+            return requestCancellation(workflow, new Date().toISOString(), {
+              reason: error.message,
+              code: error.code,
+            });
+          });
+          continue;
+        }
         if (error instanceof ExecutionStopped) return;
         await this.fail(id, step.id, step.attempt, error, false);
         return;

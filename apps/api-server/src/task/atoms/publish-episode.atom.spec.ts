@@ -40,6 +40,7 @@ function setup() {
     importPath: null,
     filePath: null,
     nfoPath: null,
+    downloadTimeoutMinutes: null,
     jellyfinEpisodeId: 'jellyfin-episode',
   };
   let association: string | null = null;

@@ -1,13 +1,10 @@
 import {
   defaultSettings,
   evaluateTorrents,
-  formatEpisodeNumbers,
   isCollection,
-  previewRows,
   SmartEpisode,
   SmartTorrent,
   titleRule,
-  validateSettings,
 } from "./index";
 const at = Date.parse("2026-10-01T12:00:00Z");
 const date = (hours: number) => new Date(at + hours * 3600000).toISOString();
@@ -98,7 +95,7 @@ test("Baha 仅在同集且其余规则合格时压低其他资源", () => {
     ])[0].reasons
   ).toEqual([]);
 });
-test("等待抓取、日程缺失、未来剧集、修正版和补档不进入候选", () => {
+test("等待抓取、日程缺失、未来剧集不进入候选", () => {
   expect(check({ ...torrent(), ready: false }).reasons).toContain("pending");
   expect(check(torrent(), [{ ...episode(), airTime: null }]).reasons).toContain(
     "time"
@@ -107,113 +104,37 @@ test("等待抓取、日程缺失、未来剧集、修正版和补档不进入�
     evaluateTorrents([episode()], [torrent()], defaultSettings, at - 1)[0]
       .reasons
   ).toContain("time");
-  expect(check({ ...torrent(), title: "Series 01v2" }).reasons).toContain(
-    "title"
-  );
-  expect(check({ ...torrent(), sourceType: "BDRIP" }).reasons).toContain(
-    "title"
-  );
 });
-test("0 和空值无超时，配置拒绝非法窗口、负超时和非法正则", () => {
-  for (const timeoutMinutes of [null, 0])
-    expect(() =>
-      validateSettings({ ...defaultSettings, timeoutMinutes })
-    ).not.toThrow();
-  for (const windowHours of [0, 169, NaN, 1.5])
-    expect(() =>
-      validateSettings({ ...defaultSettings, windowHours })
-    ).toThrow();
-  expect(() =>
-    validateSettings({ ...defaultSettings, timeoutMinutes: -1 })
-  ).toThrow();
+test("未配置规则时修正版及片源不额外排除，配置规则仍然生效", () => {
+  for (const title of [
+    "Series 01v2",
+    "Series repack",
+    "Series proper 修正 修复",
+  ])
+    expect(check({ ...torrent(), title, sourceType: "BDRIP" }).reasons).toEqual(
+      []
+    );
+  expect(
+    evaluateTorrents([episode()], [torrent()], defaultSettings, at + 86400000, [
+      "/Series/i",
+    ])[0].reasons
+  ).toContain("title");
+});
+test("Baha 使用独立单词，避免将 Bahamut 等标题误判为中文字幕", () => {
+  for (const title of [
+    "[Baha] Series 01",
+    "Series (BAHA)",
+    "Series Baha WEB-DL",
+  ])
+    expect(check({ ...torrent(), title, subtitleInfo: null }).reasons).toEqual(
+      []
+    );
+  for (const title of ["Bahamut - 01", "[NotBaha] Series", "BahaRip Series"])
+    expect(
+      check({ ...torrent(), title, subtitleInfo: null }).reasons
+    ).toContain("subtitle");
+});
+test("配置拒绝非法正则", () => {
   expect(() => titleRule("/abc/g")).toThrow();
   expect(() => titleRule("[")).toThrow();
-});
-test("预览按实际发布区间补空行，与下载窗口无关，合并同刻角标", () => {
-  const episodes = [
-    episode(1),
-    episode(2, 168),
-    episode(3, 336),
-    episode(4, 336),
-  ];
-  const rows = previewRows(
-    episodes,
-    [torrent(1, 96)],
-    { ...defaultSettings, windowHours: 1 },
-    at + 400 * 3600000,
-    [],
-    { from: -Infinity, through: Infinity, completeUntil: Infinity }
-  );
-  expect(rows.map((r) => r.release?.label)).toEqual([
-    "#1 发布",
-    "#2 发布",
-    "#3-4 发布",
-  ]);
-  expect(rows.map((r) => r.torrent?.id)).toEqual([1, undefined, undefined]);
-});
-test("无资源保留发布事件定位点，无剧集时保留种子且置灰", () => {
-  expect(
-    previewRows([episode()], [], defaultSettings, at + 86400000, [], {
-      from: -Infinity,
-      through: Infinity,
-      completeUntil: Infinity,
-    })
-  ).toMatchObject([{ key: "release-1", release: { label: "#1 发布" } }]);
-  const rows = previewRows(
-    [],
-    [torrent()],
-    defaultSettings,
-    at + 86400000,
-    [],
-    { from: -Infinity, through: Infinity, completeUntil: Infinity }
-  );
-  expect(rows[0].release).toBeUndefined();
-  expect(rows[0].decision?.reasons).toContain("episode");
-  expect(formatEpisodeNumbers([5, 3, 1, 4, 3, 10])).toBe("#1,3-5,10 发布");
-});
-
-test("正序分界位于发布后第一条，相对时间使用最近的发布事件，包含相同时间", () => {
-  const rows = previewRows(
-    [episode(1), episode(2, 168)],
-    [torrent(5, 168), torrent(2, -1), torrent(3, 168), torrent(1, 0)],
-    defaultSettings,
-    at + 400 * 3600000,
-    [],
-    { from: -Infinity, through: Infinity, completeUntil: Infinity }
-  );
-  expect(rows.map((r) => r.torrent?.id)).toEqual([2, 1, 3, 5]);
-  expect(rows.map((r) => r.release?.label)).toEqual([
-    undefined,
-    "#1 发布",
-    "#2 发布",
-    undefined,
-  ]);
-  expect(rows.map((r) => r.precedingReleaseAt)).toEqual([
-    undefined,
-    at,
-    at + 168 * 3600000,
-    at + 168 * 3600000,
-  ]);
-});
-test("不为未加载的尾部补空事件，首集在未来仍能定位", () => {
-  expect(
-    previewRows(
-      [episode(1), episode(2, 168)],
-      [],
-      defaultSettings,
-      at + 200 * 3600000,
-      [],
-      { from: -Infinity, through: at, completeUntil: at }
-    )
-  ).toEqual([]);
-  expect(
-    previewRows(
-      [episode(1), episode(2, 168)],
-      [],
-      defaultSettings,
-      at - 1,
-      [],
-      { from: -Infinity, through: Infinity, completeUntil: Infinity }
-    )
-  ).toMatchObject([{ release: { episodeIds: [1] } }]);
 });

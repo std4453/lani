@@ -5,15 +5,9 @@ import { DownloadJobService } from './index.service';
 import { BatchDownloadService } from './batch-download.service';
 import { DownloadClientModule } from '@/download-client/DownloadClientModule';
 import { SmartDownloadService } from './smart-download.service';
-import { SmartDownloadResolver } from './smart-download.resolver';
 @Module({
   imports: [CommonModule, TaskModule, DownloadClientModule],
-  providers: [
-    DownloadJobService,
-    BatchDownloadService,
-    SmartDownloadService,
-    SmartDownloadResolver,
-  ],
+  providers: [DownloadJobService, BatchDownloadService, SmartDownloadService],
   exports: [DownloadJobService],
 })
 export class DownloadJobModule {}

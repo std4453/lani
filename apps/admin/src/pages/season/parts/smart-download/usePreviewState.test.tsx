@@ -11,9 +11,16 @@ let current: ReturnType<typeof usePreviewState>;
 const result = (status = 'running', mode = 'semantic') => ({
   data: {
     config: { matching: { mode } },
-    smartDownloadTasks: [
-      { id: 1, hash: 'ABC', summary: { version: 1, workflow: { status } } },
-    ],
+    allTasks: {
+      nodes: [
+        {
+          id: 1,
+          smartDownloadTorrentHash: 'ABC',
+          statusSummary: { version: 1, workflow: { status } },
+        },
+      ],
+      pageInfo: { endCursor: null, hasNextPage: false },
+    },
   },
 });
 function Harness({ enabled = true }: { enabled?: boolean }) {
@@ -109,4 +116,28 @@ test('刷新失败保留标签，关闭动画期间取消请求并停止轮询',
   await tick(10000);
   expect(mockQuery).toHaveBeenCalledTimes(calls);
   expect(current.tasks.get('abc')?.summary.workflow?.status).toBe('running');
+});
+
+test('原生游标翻完所有任务，同 hash 保留最新记录，分页失败保留上轮状态', async () => {
+  const first = result();
+  first.data.allTasks.pageInfo = {
+    endCursor: 'page-1' as any,
+    hasNextPage: true,
+  };
+  const second = result('cancelled');
+  second.data.allTasks.nodes.push({
+    id: 2,
+    smartDownloadTorrentHash: 'OTHER',
+    statusSummary: { version: 1, workflow: { status: 'succeeded' } },
+  });
+  mockQuery.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+  await tick(5000);
+  expect(current.tasks.size).toBe(2);
+  expect(current.tasks.get('abc')?.summary.workflow?.status).toBe('running');
+  expect(mockQuery.mock.calls[2][0].variables.after).toBe('page-1');
+  mockQuery
+    .mockResolvedValueOnce(first)
+    .mockRejectedValueOnce(new Error('offline'));
+  await tick(5000);
+  expect(current.tasks.size).toBe(2);
 });

@@ -1,12 +1,11 @@
+import { PreviewCache, PreviewRequest, PreviewTorrent } from './preview-cache';
 import {
-  PreviewCache,
-  PreviewRequest,
-  PreviewTorrent,
   relativePublishTime,
   captureRelease,
   restoreRelease,
-} from './preview';
+} from './preview-utils';
 import { SmartEpisode } from '@lani/smart-download';
+
 const base = Date.parse('2026-10-01T00:00:00Z');
 const hour = 3600000;
 const episodes: SmartEpisode[] = [0, 168, 336].map((offset, index) => ({

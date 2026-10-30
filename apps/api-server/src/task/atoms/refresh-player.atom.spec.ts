@@ -70,6 +70,7 @@ function setup() {
     importPath: null,
     filePath: '/media/episode.mkv',
     nfoPath: null,
+    downloadTimeoutMinutes: null,
     jellyfinEpisodeId: null,
   };
   return { atom, context, input, refresh };

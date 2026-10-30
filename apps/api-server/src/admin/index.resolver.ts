@@ -22,11 +22,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
-import {
-  defaultSettings,
-  validateSettings,
-  SubtitleRequirement,
-} from '@lani/smart-download';
 
 @Injectable()
 @Resolver()
@@ -220,17 +215,6 @@ export class AdminResolver {
     })
     { sources, ...seasonPatch }: SaveSeasonPatch,
   ) {
-    validateSettings({
-      ...defaultSettings,
-      subtitle: (seasonPatch.smartDownloadSubtitle ??
-        defaultSettings.subtitle) as SubtitleRequirement,
-      windowHours:
-        seasonPatch.smartDownloadWindowHours ?? defaultSettings.windowHours,
-      timeoutMinutes:
-        seasonPatch.smartDownloadTimeoutMinutes === undefined
-          ? defaultSettings.timeoutMinutes
-          : seasonPatch.smartDownloadTimeoutMinutes,
-    });
     this.logger.log(`Updating season #${id}...`);
     this.logger.verbose(`Writing season #${id} to db...`);
     const results = await this.prisma.$transaction([

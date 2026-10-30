@@ -304,7 +304,6 @@
    * 3. It's useful to have a centralized inventory of all projects and their important metadata.
    */
   "projects": [
-    { "packageName": "@lani/smart-download", "projectFolder": "libs/smart-download" },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)
@@ -404,6 +403,10 @@
     {
       "packageName": "@lani/db",
       "projectFolder": "libs/db"
+    },
+    {
+      "packageName": "@lani/smart-download",
+      "projectFolder": "libs/smart-download"
     },
     {
       "packageName": "@lani/anime-matcher",

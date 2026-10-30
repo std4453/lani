@@ -1,0 +1,99 @@
+@import (reference) '~antd/lib/style/themes/default.less';
+
+.dialog:global(.ant-modal) {
+  top: ~'calc(24px + env(safe-area-inset-top, 0px))';
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  :global(.ant-modal-content) {
+    display: flex;
+    flex-direction: column;
+    max-height: ~'min(800px, calc(100vh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)))';
+    max-height: ~'min(800px, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)))';
+  }
+  :global(.ant-modal-header) {
+    flex: none;
+  }
+  :global(.ant-modal-body) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  :global(.ant-modal-body) > :global(.ant-alert),
+  :global(.ant-modal-body) > :global(.ant-skeleton) {
+    margin: 24px;
+  }
+  :global(.ant-spin-nested-loading),
+  :global(.ant-spin-container) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-right: 32px;
+  > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+.hasCloseHint {
+  .title {
+    padding-right: 140px;
+  }
+}
+.closeHint {
+  position: absolute;
+  right: @modal-header-close-size;
+  top: 0;
+  height: @modal-header-close-size;
+  display: flex;
+  align-items: center;
+  color: var(--lani-text-secondary);
+  font-size: 14px;
+  font-weight: normal;
+}
+.withActions {
+  padding-right: (
+    3 * (@modal-header-close-size - 12px) + 6px -
+      @modal-header-padding-horizontal
+  );
+}
+.hasActions :global(.ant-modal-close) {
+  right: 6px;
+  :global(.ant-modal-close-x) {
+    width: (@modal-header-close-size - 12px);
+  }
+}
+.actions {
+  position: absolute;
+  top: 0;
+  right: (@modal-header-close-size - 6px);
+  display: flex;
+  > button {
+    width: (@modal-header-close-size - 12px);
+    height: @modal-header-close-size;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    font-size: @font-size-lg;
+    color: var(--lani-text-secondary);
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.3s;
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      color: var(--lani-icon-hover);
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}

@@ -13,7 +13,12 @@ import {
   WorkflowRunner,
   TaskStorePort,
 } from '@/task/workflow-runner';
-import { AtomContext, Atoms, ExecutionStopped } from '@/task/atom';
+import {
+  AtomContext,
+  Atoms,
+  ExecutionStopped,
+  TaskCancellation,
+} from '@/task/atom';
 const now = '2026-10-14T12:00:00Z';
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -56,6 +61,7 @@ function setup(types: AtomType[] = ['submitDownload', 'download']) {
       filePath: null,
       nfoPath: null,
       jellyfinEpisodeId: null,
+      downloadTimeoutMinutes: null,
     },
   };
   let completions = 0;
@@ -116,20 +122,17 @@ it('状态转换遇到并发提交后重读最新检查点，重复取消不再�
 });
 it('下载超时先保存原因，清理失败后重启仍继续取消', async () => {
   const test = setup(['download']);
-  jest
-    .spyOn(test.atoms.download, 'run')
-    .mockImplementation(async (_, __, ctx) => {
-      await ctx.requestCancellation!('智能下载任务超时（120 分钟）', 'timeout');
-      throw new ExecutionStopped();
-    });
+  jest.spyOn(test.atoms.download, 'run').mockImplementation(async () => {
+    throw new TaskCancellation('终止原因由调用方提供', 'custom-code');
+  });
   jest
     .spyOn(test.atoms.download, 'cancel')
     .mockRejectedValueOnce(new Error('offline'));
   await test.runner.start(1);
   expect(test.state().workflow.status).toBe('failed');
   expect(test.state().workflow.cancellation).toMatchObject({
-    code: 'timeout',
-    reason: '智能下载任务超时（120 分钟）',
+    code: 'custom-code',
+    reason: '终止原因由调用方提供',
   });
   await test.runner.transition(1, (flow) => retryWorkflow(flow, now));
   const recovered = new WorkflowRunner(test.store, test.atoms, test.errors);
@@ -137,26 +140,29 @@ it('下载超时先保存原因，清理失败后重启仍继续取消', async (
   expect(test.state().workflow.status).toBe('cancelled');
   expect(test.atoms.download.run).toHaveBeenCalledTimes(1);
 });
-it('旧尝试的超时回调不能取消重试后的下载', async () => {
+it('旧尝试迟到的取消通知不能取消更新后的流程', async () => {
   const test = setup(['download']);
-  let oldContext!: AtomContext;
-  jest
-    .spyOn(test.atoms.download, 'run')
-    .mockImplementationOnce(async (_, __, ctx) => {
-      oldContext = ctx;
-      throw new Error('retry');
-    })
-    .mockImplementationOnce(async () => {
-      await expect(
-        oldContext.requestCancellation!('late timeout', 'timeout'),
-      ).rejects.toBeInstanceOf(ExecutionStopped);
-      return {};
-    });
-  await test.runner.start(1);
-  await test.runner.transition(1, (flow) => retryWorkflow(flow, now));
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  jest.spyOn(test.atoms.download, 'run').mockImplementationOnce(async () => {
+    entered.resolve();
+    await release.promise;
+    throw new TaskCancellation('旧尝试', 'custom');
+  });
+  const running = test.runner.start(1);
+  await entered.promise;
+  await test.runner.transition(1, (workflow) => {
+    const next = parseWorkflow(workflow);
+    next.status = 'failed';
+    currentStep(next).attempt++;
+    return next;
+  });
+  release.resolve();
+  await running;
+  expect(test.state().workflow.cancellation).toBeUndefined();
+  await test.runner.transition(1, (workflow) => retryWorkflow(workflow, now));
   await test.runner.start(1);
   expect(test.state().workflow.status).toBe('succeeded');
-  expect(test.state().workflow.cancellation).toBeUndefined();
 });
 it.each([
   ['download'],

@@ -1,6 +1,10 @@
 jest.mock('@/config', () => ({
   __esModule: true,
   default: {
+    smartDownload: {
+      rules: { title: { excludes: ['/test/i'] } },
+      secret: 'private',
+    },
     matching: {
       enabled: true,
       backend: 'external',
@@ -69,4 +73,10 @@ test('关闭匹配或使用内置 LLM 时不访问外部服务', async () => {
     { enabled: true, backend: 'llm', mode: 'llm' },
   );
   expect(request).not.toHaveBeenCalled();
+});
+
+test('公开智能下载配置只包含标题规则', () => {
+  expect(
+    new PublicConfigResolver({ request } as any).smartDownloadTitleExcludes(),
+  ).toEqual(['/test/i']);
 });

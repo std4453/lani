@@ -6,7 +6,6 @@ import {
   requestCancellation,
 } from '@lani/workflow';
 import { SmartDownloadService } from './smart-download.service';
-import { SmartDownloadResolver } from './smart-download.resolver';
 import { downloadDefinition } from './definition';
 jest.mock('@/config', () => ({
   __esModule: true,
@@ -24,7 +23,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
   let service: SmartDownloadService;
   let tasks: any;
   const start = jest.fn(),
-    cancelSmartDownload = jest.fn();
+    cancel = jest.fn();
   const lookupTorrents = jest.fn();
   const base = new Date('2026-10-01T12:00:00Z');
   const registry = Object.fromEntries(
@@ -89,7 +88,7 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
           },
         }),
       start,
-      cancelSmartDownload,
+      cancel,
     };
     service = new SmartDownloadService(
       db as any,
@@ -303,128 +302,49 @@ const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
     });
     lookupTorrents.mockResolvedValue([{ hash: 'qbt', status: 'success' }]);
     await service.run();
-    expect(cancelSmartDownload).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
     lookupTorrents.mockResolvedValue([{ hash: 'qbt', status: 'pending' }]);
     await service.run();
-    expect(cancelSmartDownload).toHaveBeenCalledWith(task.id);
-    cancelSmartDownload.mockClear();
+    expect(cancel).toHaveBeenCalledWith(task.id, {
+      code: 'baha',
+      reason: '智能下载任务取消（Baha 优先）',
+    });
+    cancel.mockClear();
     await db.task.update({
       where: { id: task.id },
       data: { isSmartDownload: false },
     });
     await service.run();
-    expect(cancelSmartDownload).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
   });
-  test('同发布时间复合游标不漏项，第一页之外的历史资源仍可翻页', async () => {
-    for (let i = 0; i < 35; i++) await torrent();
-    const resolver = new SmartDownloadResolver(db as any);
-    const first = await resolver.smartDownloadPreview(
-      season,
-      30,
-      new Date().toISOString(),
-    );
-    const next = await resolver.smartDownloadPreview(
-      season,
-      30,
-      new Date().toISOString(),
-      first.cursor!,
-    );
-    expect(first.hasMore).toBe(true);
-    expect(next.hasMore).toBe(false);
-    expect(
-      new Set([...first.nodes, ...next.nodes].map((row) => row.id)).size,
-    ).toBe(35);
-  });
-  test('预览任务按本季度和 hash 返回最新智能任务摘要，隐藏工作流数据', async () => {
-    const create = (hash: string, isSmartDownload = true) =>
-      db.task.create({
-        data: {
-          type: 'DOWNLOAD',
-          episodeId: episode,
-          legacyStage: 'DOWNLOADING',
-          isSmartDownload,
-          smartDownloadTorrentHash: hash,
-          workflow: workflow() as any,
-        },
-      });
-    await create('ABC');
-    const cancelled = await create('abc');
+
+  test('失败智能下载排除原 hash，下一轮选择其他候选且不重复入队', async () => {
+    const failedTorrent = await torrent();
+    await service.run();
+    const [failed] = await db.task.findMany({ where: { episodeId: episode } });
+    const flow = workflow();
+    flow.status = 'failed';
+    currentStep(flow).status = 'failed';
     await db.task.update({
-      where: { id: cancelled.id },
-      data: { workflow: Prisma.DbNull, isCancelled: true },
+      where: { id: failed.id },
+      data: {
+        isFailed: true,
+        workflow: flow as any,
+      },
     });
-    await create('manual', false);
-    const resolver = new SmartDownloadResolver(db as any);
-    const result = await resolver.smartDownloadTasks(season);
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      id: cancelled.id,
-      hash: 'abc',
-      summary: { legacy: { isCancelled: true } },
-    });
-    expect(Object.keys(result[0]).sort()).toEqual(['hash', 'id', 'summary']);
-    expect(await resolver.smartDownloadTasks(-1)).toEqual([]);
-  });
-  test('正序查询保留首集之前最近 10 条，from 边界包含同刻种子且游标不漏项', async () => {
-    const before: Awaited<ReturnType<typeof torrent>>[] = [];
-    for (let i = 0; i < 12; i++) before.push(await torrent('Before', -12 + i));
-    const sameTime: Awaited<ReturnType<typeof torrent>>[] = [];
-    for (let i = 0; i < 35; i++) sameTime.push(await torrent('At release', 0));
-    const after = await torrent('After', 1);
-    const resolver = new SmartDownloadResolver(db as any);
-    const snapshot = new Date().toISOString();
-    const context = await resolver.smartDownloadPreview(
-      season,
-      10,
-      snapshot,
-      undefined,
-      undefined,
-      base.toISOString(),
-    );
-    expect(context.hasMore).toBe(true);
-    expect(context.nodes.map((row) => row.id)).toEqual(
-      before.slice(-10).map((row) => row.id),
-    );
-    const first = await resolver.smartDownloadPreview(
-      season,
-      30,
-      snapshot,
-      undefined,
-      base.toISOString(),
-    );
-    const next = await resolver.smartDownloadPreview(
-      season,
-      30,
-      snapshot,
-      first.cursor!,
-      base.toISOString(),
-    );
-    expect([...first.nodes, ...next.nodes].map((row) => row.id)).toEqual(
-      [...sameTime, after].map((row) => row.id),
-    );
-    expect(next.hasMore).toBe(false);
-    await expect(
-      resolver.smartDownloadPreview(season, 10, snapshot, undefined, 'invalid'),
-    ).rejects.toThrow('种子预览参数无效');
-    await expect(
-      resolver.smartDownloadPreview(
-        season,
-        10,
-        snapshot,
-        first.cursor!,
-        undefined,
-        base.toISOString(),
-      ),
-    ).rejects.toThrow('种子预览参数无效');
-    await expect(
-      resolver.smartDownloadPreview(
-        season,
-        10,
-        snapshot,
-        undefined,
-        base.toISOString(),
-        base.toISOString(),
-      ),
-    ).rejects.toThrow('种子预览参数无效');
+    expect(await service.run()).toBe(0);
+    expect(await service.run()).toBe(0);
+    expect(await db.task.count({ where: { episodeId: episode } })).toBe(1);
+    const next = await torrent('Other 01 CHS', 2);
+    expect(await service.run()).toBe(1);
+    expect(
+      (
+        await db.task.findFirst({
+          where: { episodeId: episode },
+          orderBy: { id: 'desc' },
+        })
+      )?.smartDownloadTorrentHash,
+    ).toBe(next.hash);
+    expect(next.hash).not.toBe(failedTorrent.hash);
   });
 });

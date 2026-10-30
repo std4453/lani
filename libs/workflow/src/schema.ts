@@ -36,7 +36,7 @@ const workflowSchema = Joi.object<Workflow>({
     stepId: Joi.string().required(),
     completedAtoms: Joi.array().items(Joi.string()).required(),
     reason: Joi.string(),
-    code: Joi.string().valid("timeout", "baha"),
+    code: Joi.string(),
   }),
   error: Joi.object({
     operation: Joi.string().valid("execute", "cancel").required(),

@@ -16,7 +16,8 @@ export type TaskInput = Pick<
   | 'filePath'
   | 'nfoPath'
   | 'jellyfinEpisodeId'
-> & { downloadTimeoutMinutes?: number | null };
+  | 'downloadTimeoutMinutes'
+>;
 export type TaskOutput = Partial<
   Pick<
     TaskInput,
@@ -54,9 +55,14 @@ export interface AtomContext {
   saveCheckpoint(checkpoint: Checkpoint, output?: TaskOutput): Promise<void>;
   wait(milliseconds: number): Promise<void>;
   waitFor<T>(operation: Promise<T>): Promise<T>;
-  requestCancellation?(reason: string, code: 'timeout' | 'baha'): Promise<void>;
 }
 export class ExecutionStopped extends Error {}
+/** 原子通知执行器终止任务；原因由调用方定义，清理由通用取消流程处理。 */
+export class TaskCancellation extends Error {
+  constructor(reason: string, readonly code?: string) {
+    super(reason);
+  }
+}
 export abstract class AsyncAtom {
   abstract readonly wants: Wants;
   abstract run(

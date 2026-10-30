@@ -159,3 +159,19 @@ it("定义版本保存在快照中，文件发布检查点必须包含身份", (
   };
   expect(() => parseWorkflow(corrupted)).toThrow();
 });
+
+test("取消原因码允许业务自行扩展", () => {
+  const flow = buildWorkflowSnapshot(
+    [{ id: "download", atom: "download", title: "下载" }],
+    registry,
+    now
+  );
+  expect(
+    parseWorkflow(
+      requestCancellation(flow, now, {
+        code: "custom-reason",
+        reason: "自定义原因",
+      })
+    ).cancellation?.code
+  ).toBe("custom-reason");
+});

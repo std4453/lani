@@ -30,7 +30,7 @@ export function excludedSmartDownloadHashes(tasks: Task[]): Set<string> {
       .filter(
         (task) =>
           task.isSmartDownload &&
-          task.isCancelled &&
+          (task.isCancelled || task.isFailed) &&
           (!task.workflow ||
             parseWorkflow(task.workflow).cancellation?.code !== 'baha'),
       )
@@ -213,25 +213,24 @@ export class SmartDownloadService {
                 isSmartDownload: true,
                 smartDownloadTorrentHash: torrent.hash,
                 downloadTimeoutMinutes: current.settings.timeoutMinutes || null,
-                smartDownloadDecision: JSON.parse(
-                  JSON.stringify({
-                    version: 1,
-                    at: new Date().toISOString(),
-                    torrent: smartTorrent(torrent),
-                    seasonId: id,
-                    matchedAt: torrent.matchedAt,
-                    matchDetails: torrent.matchDetails,
-                    metadataFetchedAt: torrent.metadataFetchedAt,
-                    createdAt: torrent.createdAt,
-                    episode: current.episodes.find(
-                      (row) => row.id === episode.id,
-                    ),
-                    offset: current.season.downloadOffsetHours,
-                    settings: current.settings,
-                    excludes: config.smartDownload?.rules.title.excludes ?? [],
-                    decision,
-                  }),
-                ),
+                smartDownloadDecision: {
+                  version: 1,
+                  at: new Date().toISOString(),
+                  torrent: smartTorrent(torrent),
+                  seasonId: id,
+                  matchedAt: torrent.matchedAt?.toISOString() ?? null,
+                  matchDetails: torrent.matchDetails,
+                  metadataFetchedAt:
+                    torrent.metadataFetchedAt?.toISOString() ?? null,
+                  createdAt: torrent.createdAt.toISOString(),
+                  episode: current.episodes.find(
+                    (row) => row.id === episode.id,
+                  ),
+                  offset: current.season.downloadOffsetHours,
+                  settings: current.settings,
+                  excludes: config.smartDownload?.rules.title.excludes ?? [],
+                  decision,
+                } as unknown as Prisma.InputJsonValue,
               },
               [episode.id],
             );
@@ -247,7 +246,10 @@ export class SmartDownloadService {
               result.cancel.qbtTorrentHash,
             ]);
             if (status?.status === 'pending')
-              await this.tasks.cancelSmartDownload(result.cancel.id);
+              await this.tasks.cancel(result.cancel.id, {
+                code: 'baha',
+                reason: '智能下载任务取消（Baha 优先）',
+              });
           }
         }
       } catch (error) {

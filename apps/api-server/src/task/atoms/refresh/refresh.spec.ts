@@ -38,7 +38,7 @@ it('大量下载合为一个查询，重复刷新不重叠，空队列不请求�
   } as unknown as IDownloadClient);
   expect(await queue.refreshAllLegacyTaskStage()).toBe(0);
   const results = Array.from({ length: 20 }, (_, id) =>
-    queue.enqueue(id, { hash: `hash-${id}`, cancel: jest.fn() }),
+    queue.enqueue(id, { hash: `hash-${id}` }),
   );
   const first = queue.refreshAllLegacyTaskStage();
   const second = queue.refreshAllLegacyTaskStage();
@@ -67,11 +67,11 @@ it('取消移除等待对象，旧批次的迟到结果不能完成新的尝试'
     lookupTorrents,
   } as unknown as IDownloadClient);
   const old = jest.fn();
-  void queue.enqueue(1, { hash: 'old', cancel: jest.fn() }).then(old);
+  void queue.enqueue(1, { hash: 'old' }).then(old);
   const first = queue.refreshAllLegacyTaskStage();
   queue.remove(1);
   const current = jest.fn();
-  void queue.enqueue(1, { hash: 'new', cancel: jest.fn() }).then(current);
+  void queue.enqueue(1, { hash: 'new' }).then(current);
   resolve([{ hash: 'old', status: 'success', downloadPath: '/old' }]);
   await first;
   expect(old).not.toHaveBeenCalled();
@@ -232,12 +232,8 @@ it('下载器暂时断连保留队列，下个周期继续查询，取消对象�
   } as unknown as IDownloadClient);
   const fulfilled = jest.fn(),
     rejected = jest.fn();
-  const result = queue
-    .enqueue(1, { hash: 'keep', cancel: jest.fn() })
-    .then(fulfilled, rejected);
-  void queue
-    .enqueue(2, { hash: 'cancelled', cancel: jest.fn() })
-    .then(fulfilled, rejected);
+  const result = queue.enqueue(1, { hash: 'keep' }).then(fulfilled, rejected);
+  void queue.enqueue(2, { hash: 'cancelled' }).then(fulfilled, rejected);
   await queue.refreshAllLegacyTaskStage();
   expect(fulfilled).not.toHaveBeenCalled();
   expect(rejected).not.toHaveBeenCalled();
@@ -256,15 +252,13 @@ it('成功查询后，种子不存在或明确错误才会使对应下载失败'
   const queue = new DownloadRefreshService({
     lookupTorrents,
   } as unknown as IDownloadClient);
-  const missing = expect(
-    queue.enqueue(1, { hash: 'missing', cancel: jest.fn() }),
-  ).rejects.toThrow('种子不存在');
-  const broken = expect(
-    queue.enqueue(2, { hash: 'broken', cancel: jest.fn() }),
-  ).rejects.toThrow('missingFiles');
-  const good = expect(
-    queue.enqueue(3, { hash: 'good', cancel: jest.fn() }),
-  ).resolves.toEqual({
+  const missing = expect(queue.enqueue(1, { hash: 'missing' })).rejects.toThrow(
+    '种子不存在',
+  );
+  const broken = expect(queue.enqueue(2, { hash: 'broken' })).rejects.toThrow(
+    'missingFiles',
+  );
+  const good = expect(queue.enqueue(3, { hash: 'good' })).resolves.toEqual({
     downloadPath: '/download',
   });
   await queue.refreshAllLegacyTaskStage();

@@ -19,14 +19,6 @@ export class DownloadAtom extends AsyncAtom {
         this.refresh.enqueue(id, {
           hash: qbtTorrentHash,
           timeoutMinutes: downloadTimeoutMinutes,
-          cancel: async () => {
-            if (!context.requestCancellation)
-              throw new Error('下载任务缺少取消上下文');
-            await context.requestCancellation(
-              `智能下载任务超时（${downloadTimeoutMinutes} 分钟）`,
-              'timeout',
-            );
-          },
         }),
       );
     } finally {

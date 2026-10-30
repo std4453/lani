@@ -49,6 +49,7 @@ function setup(checkpoint: Checkpoint = {}) {
     importPath: null,
     filePath: null,
     nfoPath: null,
+    downloadTimeoutMinutes: null,
     jellyfinEpisodeId: null,
   };
   return { client, context, atom, input };

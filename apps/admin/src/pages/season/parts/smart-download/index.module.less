@@ -66,11 +66,10 @@
 .downloadTime {
   grid-column: ~'1 / -1';
 }
-.timeOffset {
+.timeOffsetLabel {
+  margin-right: 8px;
   @media @mobile {
-    > :global(.ant-space-item):first-child {
-      display: none;
-    }
+    display: none;
   }
 }
 .footer {
@@ -107,7 +106,7 @@
   max-height: 460px;
   flex: 1;
 }
-// 与 preview.ts 的 48px 恢复位置对应，分界线停在固定表头的下方。
+// 与 preview-utils.ts 的 48px 恢复位置对应，分界线停在固定表头的下方。
 @previewHeaderHeight: 48px;
 .table {
   width: 100%;
@@ -133,22 +132,10 @@
     background: var(--lani-table-header-bg);
     font-weight: 500;
   }
-  th:first-child {
-    width: 65px;
-  }
   th:first-child,
   .torrentRow > td:first-child:not([colspan]) {
     padding-left: 24px;
     text-align: center;
-  }
-  th:nth-child(4) {
-    width: 100px;
-  }
-  th:nth-child(2) {
-    width: 175px;
-  }
-  th:nth-child(5) {
-    width: 100px;
   }
   td:nth-child(3) {
     overflow-wrap: anywhere;

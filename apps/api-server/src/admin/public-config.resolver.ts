@@ -11,6 +11,11 @@ export class PublicConfigResolver {
 
   constructor(private readonly http: LocalAxiosService) {}
 
+  @ResolveField(() => [String])
+  smartDownloadTitleExcludes(): string[] {
+    return config.smartDownload?.rules.title.excludes ?? [];
+  }
+
   @ResolveField(() => PublicMatchingConfig)
   matching(): Promise<PublicMatchingConfig> {
     if (this.cached && this.cached.expires > Date.now())

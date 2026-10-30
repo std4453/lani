@@ -72,6 +72,7 @@ describe.each(['BATCH_IMPORT', 'BATCH_DOWNLOAD'] as const)(
           importPath: null,
           filePath: null,
           nfoPath: null,
+          downloadTimeoutMinutes: null,
           jellyfinEpisodeId: null,
           batchEntries: [1, 2].map((id) => ({
             id: `entry-${id}`,

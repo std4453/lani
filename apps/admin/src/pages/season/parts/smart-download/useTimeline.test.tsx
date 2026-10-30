@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
-import {
-  defaultSettings,
-  previewRows,
-  SmartEpisode,
-} from '@lani/smart-download';
-import { PreviewCache, PreviewPage, PreviewRequest } from './preview';
+import { defaultSettings, SmartEpisode } from '@lani/smart-download';
+import { previewRows } from './preview-rows';
+import { PreviewCache, PreviewPage, PreviewRequest } from './preview-cache';
+
 import { useTimeline } from './useTimeline';
 
 const base = Date.parse('2020-01-01T00:00:00Z');

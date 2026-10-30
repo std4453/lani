@@ -23,25 +23,38 @@ export function usePreviewState(seasonId: number, enabled: boolean = true) {
     const controller = new AbortController();
     pending.current = controller;
     try {
-      const { data } = await client.query({
-        query: SmartDownloadStateDocument,
-        variables: { seasonId },
-        fetchPolicy: 'no-cache',
-        context: {
-          fetchOptions: { signal: controller.signal },
-          queryDeduplication: false,
-        },
-      });
-      if (!controller.signal.aborted)
-        setState({
-          tasks: new Map(
-            ((data.smartDownloadTasks ?? []) as PreviewTask[]).map((task) => [
-              task.hash.toLowerCase(),
-              task,
-            ]),
-          ),
-          mode: data.config?.matching?.mode,
+      const tasks = new Map<string, PreviewTask>();
+      let after: string | undefined;
+      let mode: string | null | undefined;
+      do {
+        const { data } = await client.query({
+          query: SmartDownloadStateDocument,
+          variables: { seasonId, after },
+          fetchPolicy: 'no-cache',
+          context: {
+            fetchOptions: { signal: controller.signal },
+            queryDeduplication: false,
+          },
         });
+        if (controller.signal.aborted) return;
+        mode = data.config?.matching?.mode;
+        const connection = data.allTasks!;
+        for (const task of connection.nodes) {
+          const hash = task?.smartDownloadTorrentHash?.toLowerCase();
+          // 连接按创建时间倒序，保留同一资源最新的任务。
+          if (task && hash && !tasks.has(hash))
+            tasks.set(hash, {
+              id: task.id,
+              hash,
+              summary: task.statusSummary ?? { version: 0 },
+            });
+        }
+        const next = connection.pageInfo;
+        if (next.hasNextPage && (!next.endCursor || next.endCursor === after))
+          throw new Error('任务列表分页未推进');
+        after = next.hasNextPage ? next.endCursor! : undefined;
+      } while (after);
+      if (!controller.signal.aborted) setState({ tasks, mode });
     } catch {
       // 保留上次状态；网络恢复或下一轮轮询时重试。
     } finally {

@@ -51,6 +51,7 @@ export class AdminConfig {
   features: FeaturesConfig;
   env: string;
   matching?: PublicMatchingConfig;
+  smartDownloadTitleExcludes?: string[];
 }
 
 registerEnumType(MetadataSource, {

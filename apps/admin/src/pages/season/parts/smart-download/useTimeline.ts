@@ -1,17 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useApolloPoll, useForegroundOnline } from '@/utils/useApolloPoll';
-import {
-  defaultSettings,
-  episodeReleases,
-  previewRows,
-  SmartEpisode,
-} from '@lani/smart-download';
-import {
-  captureRelease,
-  PreviewCache,
-  PreviewSnapshot,
-  restoreRelease,
-} from './preview';
+import { defaultSettings, SmartEpisode } from '@lani/smart-download';
+import { episodeReleases, previewRows } from './preview-rows';
+import { PreviewCache, PreviewSnapshot } from './preview-cache';
+import { captureRelease, restoreRelease } from './preview-utils';
 
 export function useTimeline(
   cache: PreviewCache,

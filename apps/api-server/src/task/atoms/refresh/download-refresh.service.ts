@@ -3,12 +3,13 @@ import { Interval } from '@nestjs/schedule';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
 import { IDownloadClient } from '@/download-client/IDownloadClient';
 import { BatchQueue, QueueEntry } from './batch-queue';
-import { ExecutionStopped } from '@/task/atom';
+import { TaskCancellation } from '@/task/atom';
+
 interface DownloadWait {
   hash: string;
   timeoutMinutes?: number | null;
-  cancel(): Promise<void>;
 }
+
 @Injectable()
 @Resolver()
 export class DownloadRefreshService extends BatchQueue<
@@ -16,14 +17,17 @@ export class DownloadRefreshService extends BatchQueue<
   { downloadPath: string }
 > {
   private logger = new Logger(DownloadRefreshService.name);
+
   constructor(private client: IDownloadClient) {
     super();
   }
+
   @Interval(30000)
   @Mutation(() => Int)
   async refreshAllLegacyTaskStage() {
     return this.refresh();
   }
+
   protected async refreshBatch(
     entries: Map<number, QueueEntry<DownloadWait, { downloadPath: string }>>,
   ) {
@@ -53,17 +57,14 @@ export class DownloadRefreshService extends BatchQueue<
           Date.now() - torrent.addedAt * 1000 >=
             entry.input.timeoutMinutes * 60000
         ) {
-          try {
-            await entry.input.cancel();
-            this.settle(id, entry, new ExecutionStopped());
-          } catch (error) {
-            if (error instanceof ExecutionStopped)
-              this.settle(id, entry, error);
-            else
-              this.logger.warn(
-                `Download timeout cancellation failed for task ${id}; retrying: ${error}`,
-              );
-          }
+          this.settle(
+            id,
+            entry,
+            new TaskCancellation(
+              `智能下载任务超时（${entry.input.timeoutMinutes} 分钟）`,
+              'timeout',
+            ),
+          );
         }
       }
     } catch (error) {
