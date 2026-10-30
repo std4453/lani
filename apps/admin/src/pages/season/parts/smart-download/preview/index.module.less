@@ -55,12 +55,20 @@
     > td:first-child:not([colspan]) {
     padding-left: 24px;
   }
-  :global(.ant-table) :global(.ant-table-tbody) > .torrentRow > td {
-    background: var(--lani-selected);
+  :global(.ant-table) :global(.ant-table-tbody) > .torrentRow {
+    > td,
+    &:hover > td,
+    > td:global(.ant-table-cell-row-hover) {
+      background: var(--lani-selected);
+    }
   }
-  :global(.ant-table) :global(.ant-table-tbody) > .excluded > td {
-    color: var(--lani-text-secondary);
-    background: var(--lani-muted);
+  :global(.ant-table) :global(.ant-table-tbody) > .excluded {
+    > td,
+    &:hover > td,
+    > td:global(.ant-table-cell-row-hover) {
+      color: var(--lani-text-secondary);
+      background: var(--lani-muted);
+    }
   }
 }
 .titleCell {
@@ -119,7 +127,10 @@
   line-height: 0;
   vertical-align: top;
   text-align: left;
-  background: transparent;
+  &,
+  &:global(.ant-table-cell-row-hover) {
+    background: transparent;
+  }
   pointer-events: none;
 }
 .releaseMarker {

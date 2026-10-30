@@ -1,15 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
-import {
-  IDownloadClient,
-  TorrentInfoWithStatus,
-} from '@/download-client/IDownloadClient';
+import { IDownloadClient } from '@/download-client/IDownloadClient';
 import { BatchQueue, QueueEntry } from './batch-queue';
 
 interface DownloadWait {
   hash: string;
-  onPending?: (torrent: TorrentInfoWithStatus) => void;
+  timeoutMinutes?: number | null;
+  onTimeout?: () => void;
 }
 
 @Injectable()
@@ -52,9 +50,16 @@ export class DownloadRefreshService extends BatchQueue<
           );
         else if (torrent.status === 'success')
           this.settle(id, entry, { downloadPath: torrent.downloadPath });
-        else {
+        else if (
+          entry.input.timeoutMinutes != null &&
+          entry.input.timeoutMinutes > 0 &&
+          torrent.addedAt != null &&
+          torrent.addedAt > 0 &&
+          Date.now() - torrent.addedAt * 1000 >=
+            entry.input.timeoutMinutes * 60000
+        ) {
           try {
-            entry.input.onPending?.(torrent);
+            entry.input.onTimeout?.();
           } catch (error) {
             this.settle(
               id,

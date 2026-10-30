@@ -1,5 +1,7 @@
-import { TaskDialogHeader, TaskDialogTabs } from '@/components/TaskDialog';
-import EnhancedDialog from '@/components/EnhancedDialog';
+import TaskDialog, {
+  TaskDialogHeader,
+  TaskDialogTabs,
+} from '@/components/TaskDialog';
 import TaskStatus from '@/components/TaskStatus';
 import TaskContent from '@/components/TaskWorkflow/TaskContent';
 import EpisodeHeader from './EpisodeHeader';
@@ -156,7 +158,7 @@ export default function EpisodeDetailsDialog({
   const selectedTask = activeTask ?? (tasks[0] ? `${tasks[0].id}` : undefined);
 
   return (
-    <EnhancedDialog
+    <TaskDialog
       visible={visible}
       onCancel={reject}
       wrapProps={{ onKeyDownCapture: onKeyDown }}
@@ -194,11 +196,9 @@ export default function EpisodeDetailsDialog({
         )
       }
       footer={false}
-      titleHint={
-        tasks.some((task) =>
-          ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
-        ) && '后台执行中，可关闭弹窗'
-      }
+      running={tasks.some((task) =>
+        ['running', 'cancelling'].includes(task.workflow?.status ?? ''),
+      )}
       title={
         episode
           ? `#${formatNumbering(episode.numbering)} - ${episode.title}`
@@ -259,7 +259,7 @@ export default function EpisodeDetailsDialog({
           )}
         </>
       )}
-    </EnhancedDialog>
+    </TaskDialog>
   );
 }
 export const useEpisodeDetailsDialog = createUseDialog(EpisodeDetailsDialog);

@@ -23,20 +23,12 @@ export class DownloadAtom extends AsyncAtom {
       return await context.waitFor(
         this.refresh.enqueue(id, {
           hash: qbtTorrentHash,
-          onPending: (torrent) => {
-            if (
-              downloadTimeoutMinutes != null &&
-              downloadTimeoutMinutes > 0 &&
-              torrent.addedAt != null &&
-              torrent.addedAt > 0 &&
-              Date.now() - torrent.addedAt * 1000 >=
-                downloadTimeoutMinutes * 60000
-            ) {
-              throw new TaskCancellation(
-                `智能下载任务超时（${downloadTimeoutMinutes} 分钟）`,
-                'timeout',
-              );
-            }
+          timeoutMinutes: downloadTimeoutMinutes,
+          onTimeout: () => {
+            throw new TaskCancellation(
+              `智能下载任务超时（${downloadTimeoutMinutes} 分钟）`,
+              'timeout',
+            );
           },
         }),
       );

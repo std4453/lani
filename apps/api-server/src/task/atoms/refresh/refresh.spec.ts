@@ -81,7 +81,7 @@ it('取消移除等待对象，旧批次的迟到结果不能完成新的尝试'
   await next;
   expect(current).toHaveBeenCalledWith({ downloadPath: '/new' });
 });
-it('等待回调失败只结束当前任务，已移除等待对象不再执行回调', async () => {
+it('超时回调失败只结束当前任务，已移除等待对象不再执行回调', async () => {
   let resolve!: (value: TorrentInfoWithStatus[]) => void;
   const queue = new DownloadRefreshService({
     lookupTorrents: () =>
@@ -93,19 +93,24 @@ it('等待回调失败只结束当前任务，已移除等待对象不再执行�
   const result = expect(
     queue.enqueue(1, {
       hash: 'first',
-      onPending: () => {
+      timeoutMinutes: 1,
+      onTimeout: () => {
         throw error;
       },
     }),
   ).rejects.toBe(error);
   const removed = jest.fn();
-  void queue.enqueue(2, { hash: 'removed', onPending: removed });
+  void queue.enqueue(2, {
+    hash: 'removed',
+    timeoutMinutes: 1,
+    onTimeout: removed,
+  });
   const other = queue.enqueue(3, { hash: 'other' });
   const refresh = queue.refresh();
   queue.remove(2);
   resolve([
-    { hash: 'first', status: 'pending' },
-    { hash: 'removed', status: 'pending' },
+    { hash: 'first', status: 'pending', addedAt: 1 },
+    { hash: 'removed', status: 'pending', addedAt: 1 },
     { hash: 'other', status: 'success', downloadPath: '/other' },
   ]);
   await refresh;
@@ -113,6 +118,35 @@ it('等待回调失败只结束当前任务，已移除等待对象不再执行�
   expect(removed).not.toHaveBeenCalled();
   expect(await other).toEqual({ downloadPath: '/other' });
 });
+it.each([
+  [120, 1000, 7199999, false],
+  [120, 1000, 7200000, true],
+  [0, 1000, 7200000, false],
+  [null, 1000, 7200000, false],
+  [undefined, 1000, 7200000, false],
+  [120, undefined, 7200000, false],
+  [120, 0, 7200000, false],
+])(
+  '刷新服务按下载器加入时间判断超时：%p 分钟，开始 %p，经过 %p',
+  async (timeoutMinutes, addedAt, elapsed, timedOut) => {
+    jest.setSystemTime(1000 * 1000 + Number(elapsed));
+    const onTimeout = jest.fn();
+    const queue = new DownloadRefreshService({
+      lookupTorrents: async () => [
+        { hash: 'waiting', status: 'pending', addedAt },
+      ],
+    } as unknown as IDownloadClient);
+    void queue.enqueue(1, {
+      hash: 'waiting',
+      timeoutMinutes: timeoutMinutes as number | null | undefined,
+      onTimeout,
+    });
+    await queue.refresh();
+    expect(onTimeout).toHaveBeenCalledTimes(timedOut ? 1 : 0);
+    queue.remove(1);
+  },
+);
+
 it('同季度多个剧集只刷新和查询一次，后续轮询仅查询，失败季度不阻断其他季度', async () => {
   const refresh = jest.spyOn(JellyfinHelp, 'refreshItem').mockImplementation(
     ({ itemId }) =>
