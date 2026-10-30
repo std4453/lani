@@ -3,7 +3,7 @@ import {
   SmartEpisode,
   SmartTorrent,
 } from '@lani/smart-download';
-import { formatEpisodeNumbers, previewRows } from './preview-rows';
+import { formatEpisodeNumbers, previewRows } from './rows';
 const at = Date.parse('2026-10-01T12:00:00Z');
 const date = (hours: number) => new Date(at + hours * 3600000).toISOString();
 const episode = (id = 1, hours = 0, sort = id): SmartEpisode => ({

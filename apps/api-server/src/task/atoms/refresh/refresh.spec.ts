@@ -81,6 +81,38 @@ it('取消移除等待对象，旧批次的迟到结果不能完成新的尝试'
   await next;
   expect(current).toHaveBeenCalledWith({ downloadPath: '/new' });
 });
+it('等待回调失败只结束当前任务，已移除等待对象不再执行回调', async () => {
+  let resolve!: (value: TorrentInfoWithStatus[]) => void;
+  const queue = new DownloadRefreshService({
+    lookupTorrents: () =>
+      new Promise<TorrentInfoWithStatus[]>((done) => {
+        resolve = done;
+      }),
+  } as unknown as IDownloadClient);
+  const error = new Error('caller stopped waiting');
+  const result = expect(
+    queue.enqueue(1, {
+      hash: 'first',
+      onPending: () => {
+        throw error;
+      },
+    }),
+  ).rejects.toBe(error);
+  const removed = jest.fn();
+  void queue.enqueue(2, { hash: 'removed', onPending: removed });
+  const other = queue.enqueue(3, { hash: 'other' });
+  const refresh = queue.refresh();
+  queue.remove(2);
+  resolve([
+    { hash: 'first', status: 'pending' },
+    { hash: 'removed', status: 'pending' },
+    { hash: 'other', status: 'success', downloadPath: '/other' },
+  ]);
+  await refresh;
+  await result;
+  expect(removed).not.toHaveBeenCalled();
+  expect(await other).toEqual({ downloadPath: '/other' });
+});
 it('同季度多个剧集只刷新和查询一次，后续轮询仅查询，失败季度不阻断其他季度', async () => {
   const refresh = jest.spyOn(JellyfinHelp, 'refreshItem').mockImplementation(
     ({ itemId }) =>

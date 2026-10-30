@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { defaultSettings, SmartEpisode } from '@lani/smart-download';
-import { previewRows } from './preview-rows';
-import { PreviewCache, PreviewPage, PreviewRequest } from './preview-cache';
+import { previewRows } from './rows';
+import { PreviewCache, PreviewPage, PreviewRequest } from './cache';
 
 import { useTimeline } from './useTimeline';
 

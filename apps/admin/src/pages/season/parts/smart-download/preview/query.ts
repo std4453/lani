@@ -4,7 +4,7 @@ import {
   TorrentMatchStatus,
   TorrentChannel,
 } from '@/generated/types';
-import { PreviewPage, PreviewRequest } from './preview-cache';
+import { PreviewPage, PreviewRequest } from './cache';
 import { formatNumber } from '@/utils/episode';
 
 /** 使用连接的原生游标；首集之前的上下文由同一正序连接取末尾 10 条。 */

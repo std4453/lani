@@ -1,13 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { Int, Mutation, Resolver } from '@nestjs/graphql';
-import { IDownloadClient } from '@/download-client/IDownloadClient';
+import {
+  IDownloadClient,
+  TorrentInfoWithStatus,
+} from '@/download-client/IDownloadClient';
 import { BatchQueue, QueueEntry } from './batch-queue';
-import { TaskCancellation } from '@/task/atom';
 
 interface DownloadWait {
   hash: string;
-  timeoutMinutes?: number | null;
+  onPending?: (torrent: TorrentInfoWithStatus) => void;
 }
 
 @Injectable()
@@ -39,6 +41,7 @@ export class DownloadRefreshService extends BatchQueue<
         torrents.map((torrent) => [torrent.hash, torrent]),
       );
       for (const [id, entry] of entries) {
+        if (this.entries.get(id) !== entry) continue;
         const torrent = byHash.get(entry.input.hash);
         if (!torrent) this.settle(id, entry, new Error('种子不存在或被删除'));
         else if (torrent.status === 'error')
@@ -49,22 +52,16 @@ export class DownloadRefreshService extends BatchQueue<
           );
         else if (torrent.status === 'success')
           this.settle(id, entry, { downloadPath: torrent.downloadPath });
-        else if (
-          entry.input.timeoutMinutes != null &&
-          entry.input.timeoutMinutes > 0 &&
-          torrent.addedAt != null &&
-          torrent.addedAt > 0 &&
-          Date.now() - torrent.addedAt * 1000 >=
-            entry.input.timeoutMinutes * 60000
-        ) {
-          this.settle(
-            id,
-            entry,
-            new TaskCancellation(
-              `智能下载任务超时（${entry.input.timeoutMinutes} 分钟）`,
-              'timeout',
-            ),
-          );
+        else {
+          try {
+            entry.input.onPending?.(torrent);
+          } catch (error) {
+            this.settle(
+              id,
+              entry,
+              error instanceof Error ? error : new Error(String(error)),
+            );
+          }
         }
       }
     } catch (error) {

@@ -2,16 +2,16 @@ import { useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
 import { Button, Form, Space } from 'antd';
 import type { SmartEpisode } from '@lani/smart-download';
-import ContentDialog from '@/components/ContentDialog';
+import EnhancedDialog from '@/components/EnhancedDialog';
 import { useSeasonPageContext } from '../../help';
-import { PreviewCache } from './preview-cache';
-import { fetchPreviewPage } from './preview-query';
-import { useTimeline } from './useTimeline';
-import { usePreviewState } from './usePreviewState';
+import { PreviewCache } from './preview/cache';
+import { fetchPreviewPage } from './preview/query';
+import { useTimeline } from './preview/useTimeline';
+import { usePreviewState } from './preview/usePreviewState';
 import { DownloadSettings, offsetHours, normalizeOffset } from './settings';
 import { FIRST_USE_KEY } from './constants';
 import SettingsForm from './SettingsForm';
-import PreviewTable from './PreviewTable';
+import PreviewTable from './preview';
 import styles from './index.module.less';
 
 export default function SettingsDialog({
@@ -82,7 +82,7 @@ export default function SettingsDialog({
     onSave({ ...value, smartDownloadEnabled: true });
   };
   return (
-    <ContentDialog
+    <EnhancedDialog
       visible={visible}
       afterClose={afterClose}
       title="智能下载设置"
@@ -129,6 +129,6 @@ export default function SettingsDialog({
         }}
       />
       <PreviewTable timeline={timeline} draft={draft} tasks={live.tasks} />
-    </ContentDialog>
+    </EnhancedDialog>
   );
 }

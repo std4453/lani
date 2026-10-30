@@ -297,7 +297,7 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
   await click('开启智能下载');
   const rows = Array.from(
     document.querySelectorAll(
-      'table[aria-label="智能下载种子预览"] tbody tr:not([data-release-ids])',
+      '[aria-label="智能下载种子预览"] table tbody tr:not([data-release-ids])',
     ),
   );
   expect(rows).toHaveLength(3);
@@ -327,7 +327,10 @@ test('无效种子提供完整排除原因，有效种子和空区间保持各�
   const table = rows[0].closest('table')!;
   expect(table.querySelectorAll('tbody')).toHaveLength(2);
   expect(releases[0].parentElement).not.toBe(releases[1].parentElement);
-  expect(table.parentElement!.lastElementChild).toBe(table);
+  expect(table.closest('[aria-busy]')!.lastElementChild).toBe(
+    table.closest('.ant-table-wrapper'),
+  );
+  expect(table.closest('.ant-table')).not.toBeNull();
 });
 
 test('负数天数合并到总偏移，跨零切换方向并以归一后的值保存', async () => {

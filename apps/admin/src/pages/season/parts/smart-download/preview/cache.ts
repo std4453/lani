@@ -1,6 +1,6 @@
 import { SmartEpisode, SmartTorrent } from '@lani/smart-download';
 
-import { compareTorrents, episodeReleases } from './preview-rows';
+import { compareTorrents, episodeReleases } from './rows';
 
 export type PreviewTorrent = SmartTorrent & { size: string };
 export interface PreviewPage {

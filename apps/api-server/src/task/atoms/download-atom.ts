@@ -1,4 +1,9 @@
-import { AsyncAtom, AtomContext, TaskInput } from '@/task/atom';
+import {
+  AsyncAtom,
+  AtomContext,
+  TaskInput,
+  TaskCancellation,
+} from '@/task/atom';
 import { DownloadRefreshService } from './refresh/download-refresh.service';
 import { Injectable } from '@nestjs/common';
 
@@ -18,7 +23,21 @@ export class DownloadAtom extends AsyncAtom {
       return await context.waitFor(
         this.refresh.enqueue(id, {
           hash: qbtTorrentHash,
-          timeoutMinutes: downloadTimeoutMinutes,
+          onPending: (torrent) => {
+            if (
+              downloadTimeoutMinutes != null &&
+              downloadTimeoutMinutes > 0 &&
+              torrent.addedAt != null &&
+              torrent.addedAt > 0 &&
+              Date.now() - torrent.addedAt * 1000 >=
+                downloadTimeoutMinutes * 60000
+            ) {
+              throw new TaskCancellation(
+                `智能下载任务超时（${downloadTimeoutMinutes} 分钟）`,
+                'timeout',
+              );
+            }
+          },
         }),
       );
     } finally {

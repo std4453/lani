@@ -148,7 +148,6 @@ export class SmartDownloadService {
           if (!possible.has(episode.id)) continue;
           // 短事务内重新读取配置、目录、资源和占用，任务与关联同时写入。
           const result = await this.tasks.creationTransaction(async (tx) => {
-            await tx.$queryRaw`SELECT id FROM seasons WHERE id=${id} FOR SHARE`;
             await lockEpisode(tx, episode.id);
             const current = await this.load(tx, id, Date.now());
             if (

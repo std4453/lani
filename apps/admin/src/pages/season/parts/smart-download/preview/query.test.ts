@@ -1,5 +1,5 @@
 import { defaultSettings, evaluateTorrents } from '@lani/smart-download';
-import { fetchPreviewPage } from './preview-query';
+import { fetchPreviewPage } from './query';
 
 test.each([
   ['13.000', '13', true],

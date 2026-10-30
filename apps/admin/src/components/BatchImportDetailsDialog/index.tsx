@@ -1,7 +1,5 @@
-import TaskDialog, {
-  TaskDialogHeader,
-  TaskDialogTabs,
-} from '@/components/TaskDialog';
+import { TaskDialogHeader, TaskDialogTabs } from '@/components/TaskDialog';
+import EnhancedDialog from '@/components/EnhancedDialog';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import { GetTaskByIdDocument, TaskType } from '@/generated/types';
 import { DialogProps } from '@/utils/useDialog';
@@ -47,7 +45,7 @@ export default function BatchImportDetailsDialog({
   const running =
     task?.workflow && ['running', 'cancelling'].includes(task.workflow.status);
   return (
-    <TaskDialog
+    <EnhancedDialog
       visible={visible}
       onCancel={reject}
       footer={false}
@@ -60,7 +58,7 @@ export default function BatchImportDetailsDialog({
           {download ? '整季下载' : '批量导入'} #{input?.taskId ?? ''}
         </Typography.Text>
       }
-      running={!!running}
+      titleHint={running && '后台执行中，可关闭弹窗'}
     >
       {query.loading && !task ? (
         <Skeleton active />
@@ -165,6 +163,6 @@ export default function BatchImportDetailsDialog({
           </TaskDialogTabs>
         </>
       )}
-    </TaskDialog>
+    </EnhancedDialog>
   );
 }

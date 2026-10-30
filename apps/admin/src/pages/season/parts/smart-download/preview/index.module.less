@@ -1,0 +1,173 @@
+.previewContainer {
+  position: relative;
+  min-height: 100px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.frozen {
+  overflow: hidden !important;
+  touch-action: none;
+  pointer-events: none;
+}
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lani-loading-mask);
+}
+.preview {
+  overflow: auto;
+  overflow-anchor: none;
+  min-height: 100px;
+  max-height: 460px;
+  flex: 1;
+}
+// 与 utils.ts 的 48px 恢复位置对应，分界线停在固定表头的下方。
+@previewHeaderHeight: 48px;
+.table {
+  :global(table) {
+    min-width: 800px;
+  }
+  :global(.ant-table) :global(.ant-table-tbody) {
+    // 每集限制自己的吸顶范围，进入下一集后旧角标退出。
+    clip-path: inset(-1px 0 0);
+  }
+  :global(.ant-table) :global(.ant-table-thead) > tr > th,
+  :global(.ant-table) :global(.ant-table-tbody) > tr > td {
+    padding: 12px;
+  }
+  :global(.ant-table) :global(.ant-table-thead) > tr > th {
+    height: @previewHeaderHeight;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    font-weight: 500;
+  }
+  :global(.ant-table) :global(.ant-table-thead) > tr > th:first-child,
+  :global(.ant-table)
+    :global(.ant-table-tbody)
+    > .torrentRow
+    > td:first-child:not([colspan]) {
+    padding-left: 24px;
+  }
+  :global(.ant-table) :global(.ant-table-tbody) > .torrentRow > td {
+    background: var(--lani-selected);
+  }
+  :global(.ant-table) :global(.ant-table-tbody) > .excluded > td {
+    color: var(--lani-text-secondary);
+    background: var(--lani-muted);
+  }
+}
+.titleCell {
+  overflow-wrap: anywhere;
+  position: relative;
+  .cellContent {
+    transition: visibility 0s;
+  }
+}
+.exclusionReason {
+  position: absolute;
+  inset: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  color: var(--lani-text);
+  text-align: left;
+  visibility: hidden;
+  transition: visibility 0s;
+  pointer-events: none;
+
+  > span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: 100%;
+    overflow: hidden;
+  }
+}
+.excluded[tabindex]:hover,
+.excluded[tabindex]:focus-visible {
+  .titleCell .cellContent {
+    visibility: hidden;
+    transition-delay: 75ms;
+  }
+  .exclusionReason {
+    visibility: visible;
+    transition-delay: 75ms;
+  }
+}
+.excluded[tabindex]:focus-visible {
+  .titleCell .cellContent,
+  .exclusionReason {
+    transition-delay: 0s;
+  }
+}
+.table :global(.ant-table) :global(.ant-table-tbody) > .release > td {
+  // 仅单元格吸顶；行本身保持正常流位置，供偏移调整前后定位剧集。
+  position: sticky;
+  top: @previewHeaderHeight;
+  z-index: 1;
+  height: 0;
+  padding: 0;
+  border: 0;
+  line-height: 0;
+  vertical-align: top;
+  text-align: left;
+  background: transparent;
+  pointer-events: none;
+}
+.releaseMarker {
+  text-align: left;
+  // 负外边距抵消全部高度，向上覆盖 1px 分隔线，其余覆盖下方种子行。
+  height: 17px;
+  margin: -1px 0 -16px;
+  border-top: 3px solid var(--lani-primary);
+  line-height: 14px;
+}
+.releaseLabel {
+  display: inline-block;
+  vertical-align: top;
+  padding: 1px 2px;
+  color: var(--lani-image-text);
+  background: var(--lani-primary);
+  font-size: 10px;
+  line-height: 12px;
+  white-space: nowrap;
+}
+.table :global(.ant-table) :global(.ant-table-tbody) > .torrentRow > .emptyRow {
+  text-align: center;
+  color: var(--lani-text-secondary);
+  height: 52px;
+}
+.status {
+  padding: 12px;
+  text-align: center;
+}
+.titleHint {
+  margin-left: 6px;
+  color: var(--lani-text-secondary);
+  font-size: 14px;
+}
+.taskCell {
+  display: block;
+  position: relative;
+  height: 22px;
+}
+.taskTag {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  :global(.ant-tag) {
+    margin: 0;
+    max-width: 65px;
+    padding: 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
