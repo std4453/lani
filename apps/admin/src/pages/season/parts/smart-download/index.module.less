@@ -19,6 +19,8 @@
 .attention {
   color: var(--lani-smart-download-icon);
   transform-origin: 50% 75%;
+}
+.shaking {
   animation: smartDownloadAttention 900ms ease-in-out 250ms;
 }
 @keyframes smartDownloadAttention {
@@ -28,17 +30,17 @@
   }
   15%,
   45% {
-    transform: rotate(-16deg);
+    transform: rotate(-20deg);
   }
   30%,
   60% {
-    transform: rotate(16deg);
+    transform: rotate(20deg);
   }
   75% {
-    transform: rotate(-8deg);
+    transform: rotate(-10deg);
   }
   90% {
-    transform: rotate(8deg);
+    transform: rotate(10deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {

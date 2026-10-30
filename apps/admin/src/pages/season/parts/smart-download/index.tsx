@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
-import { QuestionCircleOutlined, ThunderboltFilled } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { calcTaskStatus, DownloadStatusTag } from '@/constants/download-status';
 import {
   Alert,
@@ -38,6 +38,7 @@ import {
 import { useTimeline } from './useTimeline';
 import { usePreviewState } from './usePreviewState';
 import OffsetInput from './OffsetInput';
+import AttentionIcon from './AttentionIcon';
 import {
   describeSettings,
   DownloadSettings,
@@ -127,11 +128,7 @@ export default function SmartDownload() {
               label={
                 <span className={styles.label}>
                   智能下载
-                  <ThunderboltFilled
-                    key={id}
-                    className={styles.attention}
-                    aria-hidden
-                  />
+                  <AttentionIcon key={id} />
                 </span>
               }
               {...formItemProps}
