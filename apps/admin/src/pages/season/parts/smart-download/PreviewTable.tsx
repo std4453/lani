@@ -20,7 +20,7 @@ const exclusionLabels: Record<ExclusionReason, string> = {
   episode: '集数无法唯一匹配本季度正篇单集',
   time: '发布时间不在对应剧集的下载窗口内',
   subtitle: '不符合字幕要求',
-  title: '命中标题或片源屏蔽规则',
+  title: '命中标题屏蔽规则',
   baha: '已优先选择同集的 Baha 资源',
   'before-first': '早于首集开始下载时间',
   pending: '种子解析或详情抓取尚未完成',
