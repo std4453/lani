@@ -1,11 +1,12 @@
 import { AsyncAtom, AtomContext, TaskInput } from '@/task/atom';
 import { IDownloadClient } from '@/download-client/IDownloadClient';
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@/common/prisma.service';
 
 @Injectable()
 export class SubmitDownloadAtom extends AsyncAtom {
   readonly wants = [] as const;
-  constructor(private client: IDownloadClient) {
+  constructor(private client: IDownloadClient, private prisma: PrismaService) {
     super();
   }
 
@@ -57,7 +58,7 @@ export class SubmitDownloadAtom extends AsyncAtom {
     return output;
   }
 
-  async cancel(_id: number, _input: TaskInput, context: AtomContext) {
+  async cancel(id: number, _input: TaskInput, context: AtomContext) {
     const submission = context.checkpoint.submission;
     if (!submission) return;
     const clientHash = submission.clientHash ?? submission.hash;
@@ -77,6 +78,18 @@ export class SubmitDownloadAtom extends AsyncAtom {
         submission: { ...submission, phase: 'confirmed' },
       });
     }
-    await this.client.removeTorrent(clientHash);
+    // 取消仅释放本任务；其他未完成下载仍依赖同一个下载器种子。
+    const shared = await this.prisma.task.findFirst({
+      where: {
+        id: { not: id },
+        type: { in: ['DOWNLOAD', 'BATCH_DOWNLOAD'] },
+        qbtTorrentHash: { equals: clientHash, mode: 'insensitive' },
+        legacyStage: { not: 'AVAILABLE' },
+        isCancelled: false,
+        isFailed: false,
+      },
+      select: { id: true },
+    });
+    if (!shared) await this.client.removeTorrent(clientHash);
   }
 }
