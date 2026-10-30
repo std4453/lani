@@ -1,3 +1,4 @@
+import type { SubtitleRequirement } from '@lani/smart-download';
 import { compareEpisodes } from '@/utils/episode';
 import { calcEpisodeStatus, EpisodeStatus } from '@/constants/download-status';
 import {
@@ -75,6 +76,11 @@ export interface FormValues {
   bilibiliThmId: string;
   description: string;
   aliases: string[];
+  smartDownloadEnabled: boolean;
+  smartDownloadSubtitle: SubtitleRequirement;
+  smartDownloadPreferBaha: boolean;
+  smartDownloadWindowHours: number;
+  smartDownloadTimeoutMinutes: number | null;
   downloadSources: DownloadSource[];
   infoSource: MetadataSource;
   episodesSource: MetadataSource;
@@ -106,6 +112,11 @@ export function queryToFormValues({
   bilibiliThmId,
   description,
   aliases,
+  smartDownloadEnabled,
+  smartDownloadSubtitle,
+  smartDownloadPreferBaha,
+  smartDownloadWindowHours,
+  smartDownloadTimeoutMinutes,
   downloadSourcesBySeasonId,
   infoSource,
   episodesSource,
@@ -124,7 +135,7 @@ export function queryToFormValues({
     jellyfinFolderDesc: jellyfinFolder
       ? `${jellyfinFolder.name} (${jellyfinFolder.location})`
       : '',
-    tags: tags.filter((tag): tag is string => Boolean(tag)),
+    tags: (tags ?? []).filter((tag): tag is string => Boolean(tag)),
     title,
     tvdbId,
     tvdbSeason: tvdbSeason ?? null,
@@ -139,6 +150,15 @@ export function queryToFormValues({
     bilibiliThmId,
     description,
     aliases: (aliases ?? []).filter((alias): alias is string => Boolean(alias)),
+    smartDownloadEnabled: smartDownloadEnabled ?? false,
+    smartDownloadSubtitle: (smartDownloadSubtitle ??
+      'chinese') as SubtitleRequirement,
+    smartDownloadPreferBaha: smartDownloadPreferBaha ?? false,
+    smartDownloadWindowHours: smartDownloadWindowHours ?? 48,
+    smartDownloadTimeoutMinutes:
+      smartDownloadTimeoutMinutes === undefined
+        ? 120
+        : smartDownloadTimeoutMinutes,
     downloadSources: (extractNode(downloadSourcesBySeasonId) ?? []).map(
       ({ offset, ...source }) => ({
         ...source,
@@ -380,6 +400,11 @@ export function useSeasonPage(id: number) {
 
   const submit = useMemoizedFn(
     async ({
+      smartDownloadEnabled,
+      smartDownloadSubtitle,
+      smartDownloadPreferBaha,
+      smartDownloadWindowHours,
+      smartDownloadTimeoutMinutes,
       isMonitoring,
       title,
       tvdbId,
@@ -409,6 +434,11 @@ export function useSeasonPage(id: number) {
           variables: {
             id,
             patch: {
+              smartDownloadEnabled,
+              smartDownloadSubtitle,
+              smartDownloadPreferBaha,
+              smartDownloadWindowHours,
+              smartDownloadTimeoutMinutes,
               isMonitoring,
               // jellyfinId,
               title,

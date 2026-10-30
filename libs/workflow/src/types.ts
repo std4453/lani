@@ -33,6 +33,8 @@ export interface Workflow {
     requestedAt: string;
     stepId: string;
     completedAtoms: string[];
+    reason?: string;
+    code?: string;
   };
   error?: {
     operation: "execute" | "cancel";

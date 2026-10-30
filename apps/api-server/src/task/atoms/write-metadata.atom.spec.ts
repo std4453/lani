@@ -37,6 +37,7 @@ it.each(['cancel', 'partial-write', 'rename', 'cleanup'])(
       importPath: null,
       filePath: path.join(directory, 'episode.mkv'),
       nfoPath: null,
+      downloadTimeoutMinutes: null,
       jellyfinEpisodeId: null,
     };
     const context: AtomContext = {

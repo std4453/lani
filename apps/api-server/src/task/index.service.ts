@@ -23,6 +23,7 @@ import {
   StepDefinition,
   requestCancellation,
   retryWorkflow,
+  Workflow,
 } from '@lani/workflow';
 import { TaskState } from './index.model';
 import { WorkflowRunner } from './workflow-runner';
@@ -111,14 +112,23 @@ export class TaskService
   }
   @Mutation(() => ID)
   async cancelTask(@Args('taskId') taskId: number) {
+    await this.cancel(taskId);
+    return 'ok';
+  }
+  async cancel(
+    taskId: number,
+    details: Pick<
+      NonNullable<Workflow['cancellation']>,
+      'reason' | 'code'
+    > = {},
+  ) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new LaniError('任务不存在');
     if (!task.workflow) throw new LaniError('旧任务不允许取消');
     await this.runner.transition(taskId, (workflow) =>
-      requestCancellation(workflow, new Date().toISOString()),
+      requestCancellation(workflow, new Date().toISOString(), details),
     );
     void this.runner.start(taskId);
-    return 'ok';
   }
   @Query(() => [TaskState])
   async getTaskStates(

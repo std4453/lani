@@ -1,29 +1,20 @@
-import { Modal, ModalProps, Tabs, Typography } from 'antd';
+import { ModalProps, Tabs, Typography } from 'antd';
 import clsx from 'clsx';
 import { ComponentProps, ReactNode } from 'react';
+import EnhancedDialog from '../EnhancedDialog';
 import styles from './index.module.less';
 
 export default function TaskDialog({
-  title,
   running,
-  titleActions,
   ...props
-}: ModalProps & { running?: boolean; titleActions?: ReactNode }) {
+}: ModalProps & {
+  running?: boolean;
+  titleActions?: ReactNode;
+}) {
   return (
-    <Modal
+    <EnhancedDialog
       {...props}
-      className={clsx(styles.dialog, titleActions && styles.hasActions)}
-      title={
-        <div className={clsx(styles.title, titleActions && styles.withActions)}>
-          <span role="heading" aria-level={2}>
-            {title}
-          </span>
-          {running && (
-            <span className={styles.hint}>后台执行中，可关闭弹窗</span>
-          )}
-          {titleActions && <div className={styles.actions}>{titleActions}</div>}
-        </div>
-      }
+      titleHint={running && '后台执行中，可关闭弹窗'}
     />
   );
 }

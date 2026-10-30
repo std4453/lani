@@ -55,6 +55,9 @@ export class DownloadJobService {
     @Args('episodeId') episodeId: number,
     @Args('torrentLink') torrentLink: string,
   ) {
+    return this.createDownload(episodeId, torrentLink);
+  }
+  private async createDownload(episodeId: number, torrentLink: string) {
     const id = await this.tasks.creationTransaction(async (tx) => {
       await lockEpisode(tx, episodeId);
       const existing = await tx.task.findFirst({
@@ -82,7 +85,7 @@ export class DownloadJobService {
       );
       return task.id;
     });
-    void this.tasks.start(id);
+    if (id) void this.tasks.start(id);
     return id;
   }
   async findTorrentsToDownload() {
@@ -110,6 +113,7 @@ export class DownloadJobService {
         AND download_sources.season_id = episodes.season_id
         AND episodes.season_id = seasons.id
         AND seasons.jellyfin_id != ''
+        AND seasons.smart_download_enabled = false
         AND episodes.episode_type = 'EPISODE'
         AND COALESCE(episodes.episode_number, episodes.index) + download_sources.offset = torrents_match_number(torrents)
         AND episodes.jellyfin_episode_id IS NULL
@@ -143,7 +147,7 @@ export class DownloadJobService {
     }
     for (const { episode_id, torrent_link } of result) {
       try {
-        await this.downloadTorrentForEpisode(episode_id, torrent_link);
+        await this.createDownload(episode_id, torrent_link);
       } catch (error) {
         this.logger.error(error);
       }

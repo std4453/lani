@@ -1,0 +1,6 @@
+# Python 镜像不使用同包的 TypeScript 客户端及其构建配置。
+# 与根规则一样，路径相对于仓库根目录。
+/libs/anime-matcher/src/
+/libs/anime-matcher/package.json
+/libs/anime-matcher/tsconfig.json
+/libs/anime-matcher/docker/verify-image.py

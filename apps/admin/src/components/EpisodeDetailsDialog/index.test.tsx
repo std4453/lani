@@ -39,6 +39,7 @@ const episodes = [
 ];
 const task = (id: number) => ({
   __typename: 'Task',
+    isSmartDownload: false,
   id,
   type: 'DOWNLOAD',
   workflow: null,

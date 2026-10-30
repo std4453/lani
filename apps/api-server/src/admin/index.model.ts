@@ -38,11 +38,20 @@ export class FeaturesConfig {
 }
 
 @ObjectType()
+export class PublicMatchingConfig {
+  enabled: boolean;
+  backend: string;
+  mode?: string;
+}
+
+@ObjectType()
 export class AdminConfig {
   jellyfin?: JellyfinConfig;
   lania?: LaniaConfig;
   features: FeaturesConfig;
   env: string;
+  matching?: PublicMatchingConfig;
+  smartDownloadTitleExcludes?: string[];
 }
 
 registerEnumType(MetadataSource, {
@@ -60,6 +69,11 @@ export class SaveSeasonPatch {
   // createdAt
   description?: string;
   downloadOffsetHours?: number;
+  smartDownloadEnabled?: boolean;
+  smartDownloadSubtitle?: string;
+  smartDownloadPreferBaha?: boolean;
+  smartDownloadWindowHours?: number;
+  smartDownloadTimeoutMinutes?: number;
   episodesAutoSync?: boolean;
   // episodesLastSync
   @Field(() => MetadataSource)

@@ -1,4 +1,4 @@
-import { AtomType } from '@lani/workflow';
+import { AtomType, TaskSummary } from '@lani/workflow';
 import { useTaskDetailsDialog } from '@/components/TaskDetailsDialog';
 import {
   LegacyTaskStage,
@@ -107,62 +107,68 @@ export function calcEpisodeStatus(episode: EpisodeStatusFieldsFragment): {
   if (episode.jellyfinEpisodeId) {
     return { status: 'AVAILABLE' };
   } else if (task) {
-    const summary = task.statusSummary;
-    const workflow = summary?.workflow;
-    const step = workflow?.steps.find(
-      ({ id }) => id === workflow.currentStepId,
-    );
-    let status: EpisodeStatus = 'UNKNOWN';
-    let label: string | undefined;
-    if (workflow) {
-      if (workflow.status === 'running') {
-        // 步骤标题来自流程快照；未知 atom 仍可显示，颜色回退为进行中。
-        status =
-          step &&
-          Object.prototype.hasOwnProperty.call(EPISODE_STATUS_TAGS, step.atom)
-            ? (step.atom as EpisodeStatus)
-            : 'RUNNING';
-        label = step?.title;
-      } else {
-        status =
-          (
-            {
-              succeeded: 'AVAILABLE',
-              failed: 'DOWNLOAD_FAILED',
-              cancelled: 'CANCELLED',
-              cancelling: 'CANCELLING',
-            } as Record<string, EpisodeStatus>
-          )[workflow.status] ?? 'UNKNOWN';
-        if (step && status === 'UNKNOWN')
-          label = `${step.title} · ${EPISODE_STATUS_TAGS[status].children}`;
-      }
-    } else if (summary?.legacy) {
-      const legacy = summary.legacy;
-      status = legacy.isCancelled
-        ? 'CANCELLED'
-        : legacy.isFailed || legacy.stage !== LegacyTaskStage.Available
-        ? 'DOWNLOAD_FAILED'
-        : 'AVAILABLE';
-    }
-    return { status, label, taskId: task.id, taskType: task.type };
+    return {
+      ...calcTaskStatus(task.statusSummary),
+      taskId: task.id,
+      taskType: task.type,
+    };
   } else {
     if (episode.airTime) {
       const now = dayjs();
       const startDownloadTime = dayjs(episode.airTime);
       const resourceMissingTime = startDownloadTime.add(12, 'h');
       if (startDownloadTime.isBefore(now)) {
-        if (now.isBefore(resourceMissingTime)) {
-          return { status: 'RESOURCE_WAITING' };
-        } else {
-          return { status: 'RESOURCE_MISSING' };
-        }
-      } else {
-        return { status: 'NOT_AIRED' };
+        return {
+          status: now.isBefore(resourceMissingTime)
+            ? 'RESOURCE_WAITING'
+            : 'RESOURCE_MISSING',
+        };
       }
-    } else {
-      return { status: 'DATE_UNKNOWN' };
+      return { status: 'NOT_AIRED' };
     }
+    return { status: 'DATE_UNKNOWN' };
   }
+}
+
+export function calcTaskStatus(summary?: TaskSummary | null): {
+  status: EpisodeStatus;
+  label?: string;
+} {
+  const workflow = summary?.workflow;
+  const step = workflow?.steps.find(({ id }) => id === workflow.currentStepId);
+  let status: EpisodeStatus = 'UNKNOWN';
+  let label: string | undefined;
+  if (workflow) {
+    if (workflow.status === 'running') {
+      // 步骤标题来自流程快照；未知 atom 仍可显示，颜色回退为进行中。
+      status =
+        step &&
+        Object.prototype.hasOwnProperty.call(EPISODE_STATUS_TAGS, step.atom)
+          ? (step.atom as EpisodeStatus)
+          : 'RUNNING';
+      label = step?.title;
+    } else {
+      status =
+        (
+          {
+            succeeded: 'AVAILABLE',
+            failed: 'DOWNLOAD_FAILED',
+            cancelled: 'CANCELLED',
+            cancelling: 'CANCELLING',
+          } as Record<string, EpisodeStatus>
+        )[workflow.status] ?? 'UNKNOWN';
+      if (step && status === 'UNKNOWN')
+        label = `${step.title} · ${EPISODE_STATUS_TAGS[status].children}`;
+    }
+  } else if (summary?.legacy) {
+    const legacy = summary.legacy;
+    status = legacy.isCancelled
+      ? 'CANCELLED'
+      : legacy.isFailed || legacy.stage !== LegacyTaskStage.Available
+      ? 'DOWNLOAD_FAILED'
+      : 'AVAILABLE';
+  }
+  return { status, label };
 }
 
 export function DownloadStatusTag({

@@ -16,6 +16,7 @@ fragment taskDetailsFields on Task {
   }
 
   type
+  isSmartDownload
   batchEntries
   sourcePath
   episodeId

@@ -1,3 +1,5 @@
+jest.mock('@/common/prisma.service', () => ({ PrismaService: class {} }));
+
 import { SubmitDownloadAtom } from './submit-download.atom';
 import {
   IDownloadClient,
@@ -8,6 +10,7 @@ import { toTorrentFile } from '@ctrl/torrent-file';
 import { createHash } from 'crypto';
 import { AtomContext } from '@/task/atom';
 import { Checkpoint } from '@lani/workflow';
+import { PrismaService } from '@/common/prisma.service';
 function setup(checkpoint: Checkpoint = {}) {
   const client = {
     prepareTorrent: jest.fn(
@@ -35,7 +38,11 @@ function setup(checkpoint: Checkpoint = {}) {
       Object.assign(checkpoint, value);
     }),
   };
-  const atom = new SubmitDownloadAtom(client as unknown as IDownloadClient);
+  const prisma = { task: { findFirst: jest.fn().mockResolvedValue(null) } };
+  const atom = new SubmitDownloadAtom(
+    client as unknown as IDownloadClient,
+    prisma as unknown as PrismaService,
+  );
   const input = {
     type: 'DOWNLOAD' as const,
     sourcePath: null,
@@ -49,9 +56,10 @@ function setup(checkpoint: Checkpoint = {}) {
     importPath: null,
     filePath: null,
     nfoPath: null,
+    downloadTimeoutMinutes: null,
     jellyfinEpisodeId: null,
   };
-  return { client, context, atom, input };
+  return { client, context, atom, input, prisma };
 }
 it('整季下载拒绝预览后被替换的种子，且不保存或提交下载', async () => {
   const test = setup();
@@ -304,4 +312,37 @@ it('纯 v2 提交结果未确认时，取消按已保存的截断 ID 查询', as
   await test.atom.cancel(1, test.input, test.context);
   expect(test.client.lookupTorrents).toHaveBeenCalledWith([clientHash]);
   expect(test.client.removeTorrent).toHaveBeenCalledWith(clientHash);
+});
+
+it('其他活动任务共用种子时取消不删除，最后一个使用者取消才删除', async () => {
+  const test = setup({ submission: { hash: 'known', phase: 'confirmed' } });
+  test.prisma.task.findFirst.mockResolvedValueOnce({ id: 2 });
+  await test.atom.cancel(1, test.input, test.context);
+  expect(test.client.removeTorrent).not.toHaveBeenCalled();
+  expect(test.prisma.task.findFirst).toHaveBeenCalledWith({
+    where: {
+      id: { not: 1 },
+      type: { in: ['DOWNLOAD', 'BATCH_DOWNLOAD'] },
+      qbtTorrentHash: { equals: 'known', mode: 'insensitive' },
+      legacyStage: { not: 'AVAILABLE' },
+      isCancelled: false,
+      isFailed: false,
+    },
+    select: { id: true },
+  });
+  await test.atom.cancel(2, test.input, test.context);
+  expect(test.client.removeTorrent).toHaveBeenCalledTimes(1);
+});
+
+it('无法确认共享任务状态时保留种子并允许重试取消', async () => {
+  const test = setup({ submission: { hash: 'known', phase: 'confirmed' } });
+  test.prisma.task.findFirst.mockRejectedValueOnce(
+    new Error('database offline'),
+  );
+  await expect(test.atom.cancel(1, test.input, test.context)).rejects.toThrow(
+    'database offline',
+  );
+  expect(test.client.removeTorrent).not.toHaveBeenCalled();
+  await test.atom.cancel(1, test.input, test.context);
+  expect(test.client.removeTorrent).toHaveBeenCalledWith('known');
 });

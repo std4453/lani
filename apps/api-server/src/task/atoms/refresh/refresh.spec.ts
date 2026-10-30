@@ -38,7 +38,7 @@ it('大量下载合为一个查询，重复刷新不重叠，空队列不请求�
   } as unknown as IDownloadClient);
   expect(await queue.refreshAllLegacyTaskStage()).toBe(0);
   const results = Array.from({ length: 20 }, (_, id) =>
-    queue.enqueue(id, `hash-${id}`),
+    queue.enqueue(id, { hash: `hash-${id}` }),
   );
   const first = queue.refreshAllLegacyTaskStage();
   const second = queue.refreshAllLegacyTaskStage();
@@ -67,11 +67,11 @@ it('取消移除等待对象，旧批次的迟到结果不能完成新的尝试'
     lookupTorrents,
   } as unknown as IDownloadClient);
   const old = jest.fn();
-  void queue.enqueue(1, 'old').then(old);
+  void queue.enqueue(1, { hash: 'old' }).then(old);
   const first = queue.refreshAllLegacyTaskStage();
   queue.remove(1);
   const current = jest.fn();
-  void queue.enqueue(1, 'new').then(current);
+  void queue.enqueue(1, { hash: 'new' }).then(current);
   resolve([{ hash: 'old', status: 'success', downloadPath: '/old' }]);
   await first;
   expect(old).not.toHaveBeenCalled();
@@ -81,6 +81,72 @@ it('取消移除等待对象，旧批次的迟到结果不能完成新的尝试'
   await next;
   expect(current).toHaveBeenCalledWith({ downloadPath: '/new' });
 });
+it('超时回调失败只结束当前任务，已移除等待对象不再执行回调', async () => {
+  let resolve!: (value: TorrentInfoWithStatus[]) => void;
+  const queue = new DownloadRefreshService({
+    lookupTorrents: () =>
+      new Promise<TorrentInfoWithStatus[]>((done) => {
+        resolve = done;
+      }),
+  } as unknown as IDownloadClient);
+  const error = new Error('caller stopped waiting');
+  const result = expect(
+    queue.enqueue(1, {
+      hash: 'first',
+      timeoutMinutes: 1,
+      onTimeout: () => {
+        throw error;
+      },
+    }),
+  ).rejects.toBe(error);
+  const removed = jest.fn();
+  void queue.enqueue(2, {
+    hash: 'removed',
+    timeoutMinutes: 1,
+    onTimeout: removed,
+  });
+  const other = queue.enqueue(3, { hash: 'other' });
+  const refresh = queue.refresh();
+  queue.remove(2);
+  resolve([
+    { hash: 'first', status: 'pending', addedAt: 1 },
+    { hash: 'removed', status: 'pending', addedAt: 1 },
+    { hash: 'other', status: 'success', downloadPath: '/other' },
+  ]);
+  await refresh;
+  await result;
+  expect(removed).not.toHaveBeenCalled();
+  expect(await other).toEqual({ downloadPath: '/other' });
+});
+it.each([
+  [120, 1000, 7199999, false],
+  [120, 1000, 7200000, true],
+  [0, 1000, 7200000, false],
+  [null, 1000, 7200000, false],
+  [undefined, 1000, 7200000, false],
+  [120, undefined, 7200000, false],
+  [120, 0, 7200000, false],
+])(
+  '刷新服务按下载器加入时间判断超时：%p 分钟，开始 %p，经过 %p',
+  async (timeoutMinutes, addedAt, elapsed, timedOut) => {
+    jest.setSystemTime(1000 * 1000 + Number(elapsed));
+    const onTimeout = jest.fn();
+    const queue = new DownloadRefreshService({
+      lookupTorrents: async () => [
+        { hash: 'waiting', status: 'pending', addedAt },
+      ],
+    } as unknown as IDownloadClient);
+    void queue.enqueue(1, {
+      hash: 'waiting',
+      timeoutMinutes: timeoutMinutes as number | null | undefined,
+      onTimeout,
+    });
+    await queue.refresh();
+    expect(onTimeout).toHaveBeenCalledTimes(timedOut ? 1 : 0);
+    queue.remove(1);
+  },
+);
+
 it('同季度多个剧集只刷新和查询一次，后续轮询仅查询，失败季度不阻断其他季度', async () => {
   const refresh = jest.spyOn(JellyfinHelp, 'refreshItem').mockImplementation(
     ({ itemId }) =>
@@ -232,8 +298,8 @@ it('下载器暂时断连保留队列，下个周期继续查询，取消对象�
   } as unknown as IDownloadClient);
   const fulfilled = jest.fn(),
     rejected = jest.fn();
-  const result = queue.enqueue(1, 'keep').then(fulfilled, rejected);
-  void queue.enqueue(2, 'cancelled').then(fulfilled, rejected);
+  const result = queue.enqueue(1, { hash: 'keep' }).then(fulfilled, rejected);
+  void queue.enqueue(2, { hash: 'cancelled' }).then(fulfilled, rejected);
   await queue.refreshAllLegacyTaskStage();
   expect(fulfilled).not.toHaveBeenCalled();
   expect(rejected).not.toHaveBeenCalled();
@@ -252,13 +318,13 @@ it('成功查询后，种子不存在或明确错误才会使对应下载失败'
   const queue = new DownloadRefreshService({
     lookupTorrents,
   } as unknown as IDownloadClient);
-  const missing = expect(queue.enqueue(1, 'missing')).rejects.toThrow(
+  const missing = expect(queue.enqueue(1, { hash: 'missing' })).rejects.toThrow(
     '种子不存在',
   );
-  const broken = expect(queue.enqueue(2, 'broken')).rejects.toThrow(
+  const broken = expect(queue.enqueue(2, { hash: 'broken' })).rejects.toThrow(
     'missingFiles',
   );
-  const good = expect(queue.enqueue(3, 'good')).resolves.toEqual({
+  const good = expect(queue.enqueue(3, { hash: 'good' })).resolves.toEqual({
     downloadPath: '/download',
   });
   await queue.refreshAllLegacyTaskStage();

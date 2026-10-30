@@ -1,0 +1,64 @@
+query SmartDownloadPreview(
+  $first: Int
+  $last: Int
+  $after: Cursor
+  $filter: TorrentFilter!
+) {
+  allTorrents(
+    first: $first
+    last: $last
+    after: $after
+    orderBy: [PUBLISH_DATE_ASC, ID_ASC]
+    filter: $filter
+  ) {
+    nodes {
+      id
+      hash
+      title
+      publishDate
+      size
+      episodeInfo
+      subtitleInfo
+      parseVersion
+      channel
+      metadataFetchedAt
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+  config {
+    smartDownloadTitleExcludes
+  }
+}
+
+query SmartDownloadState($seasonId: Int!, $after: Cursor) {
+  allTasks(
+    filter: {
+      isSmartDownload: { equalTo: true }
+      episodeByEpisodeId: { seasonId: { equalTo: $seasonId } }
+    }
+    orderBy: [CREATED_AT_DESC, ID_DESC]
+    first: 100
+    after: $after
+  ) {
+    nodes {
+      id
+      smartDownloadTorrentHash
+      statusSummary
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+  config {
+    matching {
+      enabled
+      backend
+      mode
+    }
+  }
+}

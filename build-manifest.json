@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "algorithmVersion": 2,
+  "algorithmVersion": 3,
   "images": {
     "admin": {
-      "fingerprint": "b66797c1712ffdf0c285e5f7189e2ad65fc5b5e0b854ebb43354c8e371a5b3ed"
+      "fingerprint": "097d84da1e391184d155f61980a3dc86adc939d58b17af9c956cbb913b055c0c"
     },
     "api-server": {
-      "fingerprint": "8147b0056249c3d95b31b16c0ca8df3a71d177023d1714fca69ac8d0de147ffe"
+      "fingerprint": "1cc7ea342d59e2e35c38419b3211d6795247193422a8a810e7e90e14cbdb9919"
     },
     "data-server": {
-      "fingerprint": "93e948172a5aa4decf70083dcda33e82c44b1ee956d181a5a8baea096170375d"
+      "fingerprint": "af7fcd2d04bde0aea88e006b2ae28c0ac7f3b693588c4922c7f6ec544f639b5b"
     },
     "gateway": {
-      "fingerprint": "61d1c91f00ab3d4422f4faa176997e227f77031779de019f4565cece99adea6a"
+      "fingerprint": "cfae54dd8385efd12978b8d583c3e2d60f03613ffa2c42565d5d7b74d09d32f9"
     },
     "db": {
-      "fingerprint": "55f0b89cacab1653d2ec648224d1dde716426693b903f53afc5b500d7fb0390a"
+      "fingerprint": "c2758ea530e9e3ce2594564e6e42d30f3105091c10bc2e929e47dd4adb9367ba"
     },
     "anime-matcher": {
-      "fingerprint": "1f84fd7e3de0490c4a2d3e6eb37e18cbd4ab6fa1384c7c419b3bddfdfe75ada4"
+      "fingerprint": "cbab55c175c59a2e15393d93dd50e88e8d86a4ce6bec2ed7c51ce9a5d5798620"
     }
   }
 }

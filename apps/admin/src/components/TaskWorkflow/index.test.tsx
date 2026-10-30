@@ -217,8 +217,53 @@ it('取消中默认无表单和操作，取消完成只有当前位置显示取�
   expect(container.querySelectorAll('button.ant-btn')).toHaveLength(0);
   const details = container.querySelectorAll('.ant-steps-item-description')[1];
   expect(details.textContent).toContain('取消时间：');
+  expect(details.textContent).toContain('取消原因：用户手动取消');
   expect(details.textContent).not.toMatch(/开始时间|失败原因|元数据路径/);
 });
+it.each([
+  [undefined, undefined, '用户手动取消'],
+  ['timeout', '智能下载已超过 120 分钟', '智能下载已超过 120 分钟'],
+  ['baha', '改用同集的 Baha 资源', '改用同集的 Baha 资源'],
+] as const)(
+  '取消原因与时间仅显示在取消发生的步骤内（%s）',
+  (code, reason, expected) => {
+    const base = buildWorkflowSnapshot(
+      [
+        { id: 'submit', atom: 'submitDownload', title: '提交下载' },
+        { id: 'download', atom: 'download', title: '下载中' },
+        { id: 'publish', atom: 'publishEpisode', title: '完成' },
+      ],
+      registry,
+      '2026-10-14T12:00:00Z',
+    );
+    base.steps[0].status = 'succeeded';
+    base.steps[1].status = 'running';
+    base.currentStepId = 'download';
+    const flow = requestCancellation(base, '2026-10-14T12:01:00Z', {
+      code,
+      reason,
+    });
+    render(flow);
+    expect(container.textContent).not.toContain('取消原因：');
+    flow.status = 'cancelled';
+    flow.steps[1].status = 'cancelled';
+    flow.finishedAt = '2026-10-14T12:02:00Z';
+    render(flow);
+
+    const details = container.querySelector(
+      '[data-step-id="download"] .ant-steps-item-description',
+    )!;
+    expect(details.textContent).toContain('取消时间：');
+    expect(details.textContent).toContain(`取消原因：${expected}`);
+    expect(container.textContent?.match(/取消原因：/g)).toHaveLength(1);
+    expect(
+      container.querySelector('[id="task-1-step-task-info"]')?.textContent,
+    ).not.toContain('取消原因');
+    expect(
+      container.querySelector('[data-step-id="publish"]')?.textContent,
+    ).not.toMatch(/取消原因|取消时间/);
+  },
+);
 it('取消任务先确认，接口返回后立即刷新', async () => {
   const flow = workflow();
   flow.steps[0].status = 'running';

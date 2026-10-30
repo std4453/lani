@@ -405,6 +405,10 @@
       "projectFolder": "libs/db"
     },
     {
+      "packageName": "@lani/smart-download",
+      "projectFolder": "libs/smart-download"
+    },
+    {
       "packageName": "@lani/anime-matcher",
       "projectFolder": "libs/anime-matcher"
     },

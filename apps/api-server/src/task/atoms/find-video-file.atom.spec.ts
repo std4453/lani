@@ -10,6 +10,7 @@ const input = {
   importPath: null,
   filePath: null,
   nfoPath: null,
+  downloadTimeoutMinutes: null,
   jellyfinEpisodeId: null,
   type: 'BATCH_DOWNLOAD',
   qbtTorrentHash: 'hash',

@@ -10,6 +10,7 @@ fragment seasonEpisodes on Season {
       node {
         airTime
         rawAirTime
+        bangumiSort
         id
         index
         numbering
@@ -25,6 +26,11 @@ fragment seasonConfigFields on Season {
   id
   infoSource
   isMonitoring
+  smartDownloadEnabled
+  smartDownloadSubtitle
+  smartDownloadPreferBaha
+  smartDownloadWindowHours
+  smartDownloadTimeoutMinutes
   tags
   title
   tvdbId

@@ -13,7 +13,11 @@ export type TorrentStatus =
       downloadPath: string;
     };
 
-export type TorrentInfoWithStatus = TorrentInfo & TorrentStatus;
+export type TorrentInfoWithStatus = TorrentInfo &
+  TorrentStatus & {
+    /** 下载器加入种子的 Unix 时间（秒），重启和重新连接不重置。 */
+    addedAt?: number;
+  };
 
 export type PreparedTorrent = TorrentInfo & {
   /** 提交时的下载器 ID：已知 v2 时取前 40 位，否则使用 v1。 */

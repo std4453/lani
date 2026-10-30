@@ -5,7 +5,9 @@ const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { calculate } = require("./build-fingerprints.cjs");
+const { calculate, jsonc } = require("./build-fingerprints.cjs");
+const { fingerprintIgnore } = require("./fingerprint-ignore.cjs");
+const { readLock } = require("./pnpm-fingerprint.cjs");
 
 // 覆盖当前工作树，新增 Rush 项目在提交前也能验证依赖图及输入范围。
 const files = execFileSync(
@@ -127,9 +129,15 @@ test("moving documentation between site, package and shared paths preserves fing
 });
 
 for (const [file, owner] of [
-  ["apps/gateway/example.config.yaml", "gateway"],
   ["apps/admin/src/docs-loader.ts", "admin"],
   ["apps/admin/public/logo.svg", "admin"],
+  ["apps/admin/config/theme-loader.cjs", "admin"],
+  ["apps/admin/.umirc.ts", "admin"],
+  ["apps/admin/nginx.conf", "admin"],
+  ["libs/db/prisma/schema.prisma", "db"],
+  ["libs/anime-matcher/docker/install-dependencies.py", "anime-matcher"],
+  ["libs/anime-matcher/pyproject.toml", "anime-matcher"],
+  ["libs/anime-matcher/.dockerignore", "anime-matcher"],
   ["libs/db/prisma/migrations/new_change/migration.sql", "db"],
   ["libs/anime-matcher/python/model.bin", "anime-matcher"],
   ["apps/api-server/src/torrent-match/llm/index.service.ts", "api-server"],
@@ -208,6 +216,26 @@ for (const file of [
   "tmux.conf",
   "lani.code-workspace",
   ".prettierrc.json",
+  ".nvmrc",
+  "common/config/rush/.npmrc",
+  "common/config/rush/pnpm-config.json",
+  "apps/gateway/example.config.yaml",
+  "apps/admin/.vscode/settings.json",
+  "apps/admin/.eslintrc.js",
+  "apps/admin/.prettierrc",
+  "apps/admin/codegen.yml",
+  "apps/admin/next.config.js",
+  "apps/data-server/codegen.yml",
+  "apps/data-server/src/scripts/generate-schema.ts",
+  "apps/data-server/generated/.gitkeep",
+  "apps/admin/src/pages/jobs/filters.test.ts",
+  "apps/api-server/src/config/llm.spec.ts",
+  "apps/api-server/samples/qbt-torrent-list.json",
+  "libs/parse-nyaa/src/fixtures/subtitles/corpus.json",
+  "libs/anime-matcher/tests/test_worker.py",
+  "libs/anime-matcher/src/index.ts",
+  "libs/anime-matcher/tsconfig.json",
+  "libs/anime-matcher/docker/verify-image.py",
 ]) {
   test(`${file} tooling changes do not invalidate applications`, () => {
     assert.deepEqual(withChange(file, "Changed tooling\n"), baseline);
@@ -215,13 +243,24 @@ for (const file of [
   });
 }
 
-for (const file of [".dockerignore", ".nvmrc", "common/config/rush/.npmrc"]) {
-  test(`${file} remains a shared build input`, () => {
-    const changed = withChange(file, "Changed build input\n");
-    for (const app of Object.keys(baseline.images))
-      assert.notEqual(
-        changed.images[app].fingerprint,
-        baseline.images[app].fingerprint
+test("root Docker context rules only affect images built from the root", () => {
+  const changed = withChange(".dockerignore", "Changed build input\n");
+  for (const app of Object.keys(baseline.images))
+    assert.equal(
+      changed.images[app].fingerprint !== baseline.images[app].fingerprint,
+      app !== "anime-matcher"
+    );
+});
+
+for (const app of Object.keys(baseline.images)) {
+  test(`${app} Dockerfile only affects its own image`, () => {
+    const folder = ["db", "anime-matcher"].includes(app) ? "libs" : "apps";
+    const changed = withChange(`${folder}/${app}/Dockerfile`, "FROM scratch\n");
+    for (const other of Object.keys(baseline.images))
+      assert.equal(
+        changed.images[other].fingerprint !==
+          baseline.images[other].fingerprint,
+        other === app
       );
   });
 }
@@ -232,6 +271,159 @@ test("generic tooling sources are absent from every explained input list", () =>
     assert(!detail.inputs.some(([file]) => file.startsWith("common/scripts/")));
     assert(!detail.inputs.some(([file]) => file.startsWith("tools/cli/src/")));
   }
+});
+
+test("Rush metadata and ordering do not directly affect fingerprints", () => {
+  const rush = jsonc(tree.read("rush.json"));
+  rush.projects.reverse();
+  rush.rushVersion = "0.0.0";
+  rush.eventHooks = { preRushBuild: ["echo changed"] };
+  assert.deepEqual(withChange("rush.json", JSON.stringify(rush)), baseline);
+  assert.deepEqual(
+    withChange(
+      "common/config/rush/deploy.json",
+      tree.read("common/config/rush/deploy.json") + "\n// comment\n"
+    ),
+    baseline
+  );
+});
+
+test("package.json is hashed whole for Node images but not the Python image", () => {
+  for (const [file, app] of [
+    ["apps/gateway/package.json", "gateway"],
+    ["libs/anime-matcher/package.json", "anime-matcher"],
+  ]) {
+    const pkg = JSON.parse(tree.read(file));
+    pkg.description = "Updated package metadata";
+    const changed = withChange(file, JSON.stringify(pkg));
+    assert.equal(
+      changed.images[app].fingerprint !== baseline.images[app].fingerprint,
+      app !== "anime-matcher"
+    );
+  }
+});
+
+test("ignore comments and unmatched rules do not change fingerprints", () => {
+  assert.deepEqual(
+    withChange(
+      ".fingerprintignore",
+      tree.read(".fingerprintignore") + "\n# explanation\n/nonexistent/\n"
+    ),
+    baseline
+  );
+});
+
+test("negation restores a file as a fingerprint input", () => {
+  const rules = tree.read(".fingerprintignore") + "\n!**/example.config.yaml\n";
+  const before = withChange(".fingerprintignore", rules);
+  const after = withChanges([
+    [".fingerprintignore", rules],
+    ["apps/gateway/example.config.yaml", "changed example\n"],
+  ]);
+  assert.notEqual(
+    before.images.gateway.fingerprint,
+    after.images.gateway.fingerprint
+  );
+});
+
+test("gitignore semantics and explanations are supplied by ignore", () => {
+  const rules = new Map([
+    [
+      ".fingerprintignore",
+      "/root-only.txt\n*.test.ts\n!keep.test.ts\nblocked/\n!blocked/keep.ts\n\\#literal\nspace\\ \n",
+    ],
+    [
+      "common/config/fingerprints/admin.ignore",
+      "!special.test.ts\nadmin-only.ts\n",
+    ],
+  ]);
+  const fixture = { entries: rules, read: (file) => rules.get(file) };
+  const ignored = fingerprintIgnore(fixture, "admin");
+  assert.equal(ignored("nested/root-only.txt"), undefined);
+  assert.equal(ignored("keep.test.ts"), undefined);
+  assert.equal(ignored("special.test.ts"), undefined);
+  assert.equal(ignored("UPPER.TEST.TS"), undefined);
+  for (const file of [
+    "root-only.txt",
+    "nested/foo.test.ts",
+    "#literal",
+    "space ",
+  ])
+    assert.ok(ignored(file), file);
+  assert.deepEqual(ignored("blocked/keep.ts"), {
+    source: ".fingerprintignore:4",
+    pattern: "blocked/",
+  });
+  assert.deepEqual(ignored("admin-only.ts"), {
+    source: "common/config/fingerprints/admin.ignore:2",
+    pattern: "admin-only.ts",
+  });
+  assert.equal(
+    fingerprintIgnore(fixture, "gateway")("admin-only.ts"),
+    undefined
+  );
+});
+
+test("explain lists ignored files with the matching rule", () => {
+  const details = calculate(tree).details;
+  const excluded = details.admin.excluded.find(
+    ({ file }) => file === "apps/admin/jest.config.js"
+  );
+  assert.equal(excluded.pattern, "jest.config.*");
+  assert.match(excluded.source, /^\.fingerprintignore:\d+$/);
+  assert(
+    !details["anime-matcher"].inputs.some(([file]) =>
+      file.includes("pnpm-lock.yaml")
+    )
+  );
+});
+
+test("lockfile changes only affect the selected dependency graph", () => {
+  const lock = `lockfileVersion: '9.0'
+overrides:
+  unrelated: 1.0.0
+pnpmfileChecksum: original
+importers:
+  .: {}
+  ../../apps/one:
+    dependencies:
+      direct:
+        specifier: ^1
+        version: 1.0.0
+  ../../apps/two:
+    dependencies:
+      unrelated:
+        specifier: ^1
+        version: 1.0.0
+packages:
+  direct@1.0.0:
+    resolution: {integrity: direct}
+  transitive@1.0.0:
+    resolution: {integrity: transitive}
+  unrelated@1.0.0:
+    resolution: {integrity: unrelated}
+snapshots:
+  direct@1.0.0:
+    optionalDependencies:
+      transitive: 1.0.0
+  transitive@1.0.0: {}
+  unrelated@1.0.0: {}
+`;
+  const select = (value) => readLock(value)(["apps/one"]);
+  for (const [from, to] of [
+    ["unrelated: 1.0.0", "unrelated: 2.0.0"],
+    ["pnpmfileChecksum: original", "pnpmfileChecksum: updated"],
+    ["integrity: unrelated", "integrity: new-unrelated"],
+  ])
+    assert.deepEqual(select(lock.replace(from, to)), select(lock));
+  assert.notDeepEqual(
+    select(lock.replace("integrity: transitive", "integrity: updated")),
+    select(lock)
+  );
+  assert.throws(
+    () => select(lock.replace("version: 1.0.0", "version: 9.0.0")),
+    /Missing pnpm snapshot/
+  );
 });
 
 test("generating from the index tolerates unstaged tool edits and protects partial staging", () => {
@@ -250,6 +442,8 @@ test("generating from the index tolerates unstaged tool edits and protects parti
     for (const file of tree.entries.keys())
       if (
         file === "rush.json" ||
+        file === ".fingerprintignore" ||
+        file.startsWith("common/config/fingerprints/") ||
         file === "common/config/rush/deploy.json" ||
         file === "common/config/rush/pnpm-lock.yaml" ||
         file.endsWith("/package.json")
@@ -260,6 +454,10 @@ test("generating from the index tolerates unstaged tool edits and protects parti
     git("add", ".");
     write("common/scripts/build-fingerprints.cjs", "unstaged tool source\n");
     write("apps/api-server/partial.ts", "unstaged application source\n");
+    write(
+      ".fingerprintignore",
+      tree.read(".fingerprintignore") + "\n/apps/api-server/partial.ts\n"
+    );
     const generator = path.join(__dirname, "build-fingerprints.cjs");
     execFileSync(process.execPath, [generator, "generate", "--staged"], {
       cwd: directory,
@@ -284,6 +482,20 @@ test("generating from the index tolerates unstaged tool edits and protects parti
       "utf8"
     );
     assert.equal(git("show", ":build-manifest.json"), manifest);
+    write("apps/api-server/partial.ts", "second staged application source\n");
+    git("add", "apps/api-server/partial.ts");
+    execFileSync(process.execPath, [generator, "generate", "--staged"], {
+      cwd: directory,
+    });
+    const updated = fs.readFileSync(
+      path.join(directory, "build-manifest.json"),
+      "utf8"
+    );
+    assert.notEqual(
+      JSON.parse(updated).images["api-server"].fingerprint,
+      JSON.parse(manifest).images["api-server"].fingerprint,
+      "Unstaged ignore rules must not exclude the staged application source"
+    );
     write("build-manifest.json", manifest + " ");
     assert.throws(
       () =>

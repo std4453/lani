@@ -1,0 +1,57 @@
+# gitignore 语法，路径相对于仓库根目录。仅筛选镜像及依赖闭包中的文件。
+# 文档和开发资料
+*.[mM][dD]
+*.[mM][dD][xX]
+*.[mM][aA][rR][kK][dD][oO][wW][nN]
+docs/
+/development/
+samples/
+example.config.yaml
+compose.example.yaml
+
+# 测试代码、夹具及配置
+*.test.*
+*.spec.*
+test/
+tests/
+__tests__/
+__mocks__/
+fixtures/
+jest.config.*
+jest.setup.*
+tsconfig.spec.json
+
+# 编辑器、检查及格式化工具
+.vscode/
+.editorconfig
+.eslint*
+eslint.config.*
+.prettier*
+.gitignore
+.gitattributes
+
+# 构建基础设施不直接触发应用重建；锁文件另按依赖图截取。
+/.github/
+/common/
+/rush.json
+/.npmrc
+/.nvmrc
+/.fingerprintignore
+/build-manifest.json
+/LICENSE
+/start_tmux.sh
+/tmux.conf
+/*.code-workspace
+/tools/cli/*
+!/tools/cli/package.json
+!/tools/cli/tsconfig.json
+!/tools/cli/tsconfig/
+
+# 仅供开发时生成或检查代码使用
+/apps/admin/apollo.config.js
+/apps/admin/codegen.yml
+/apps/admin/next.config.js
+/apps/data-server/codegen.yml
+/apps/data-server/generated/.gitkeep
+/apps/data-server/src/scripts/generate-schema.ts
+/libs/parse-torrent-title/scripts/

@@ -1,3 +1,4 @@
+import SmartDownload from '../smart-download';
 import AsyncButton from '@/components/AsyncButton';
 import FormDependency from '@/components/FormDependency';
 import { useAddDownloadPatternDialog } from '@/components/SearchTorrentDialog';
@@ -29,6 +30,9 @@ import { useRef } from 'react';
 import Section from '../../components/section';
 import { formItemProps, FormValues, useSeasonPageContext } from '../../help';
 import styles from './index.module.less';
+
+// 隐藏规则和偏移时仍注册字段，使提交与重置包含保存的值。
+const PreservedValue = () => null;
 
 export default function DownloadSources() {
   const ref = useRef<FormListOperation>();
@@ -204,193 +208,223 @@ export default function DownloadSources() {
         name="isMonitoring"
         formItemProps={formItemProps}
       />
-      <Form.Item
-        label="种子标题匹配"
-        {...formItemProps}
-        className={styles.form}
-      >
-        <ProFormList
-          name="downloadSources"
-          copyIconProps={false}
-          deleteIconProps={false}
-          creatorButtonProps={false}
-          actionRef={ref}
-        >
-          {(meta, index, action) => (
-            <div className={styles.row} key={meta.key}>
-              <MinusOutlined
-                onClick={() => {
-                  action.remove(index);
-                }}
-                className={styles.button}
-              />
-              <ProFormTextArea
-                name="pattern"
-                rules={[
-                  {
-                    required: true,
-                    message: '请输入匹配表达式',
-                  },
-                  {
-                    validator: async (_, value: string) => {
-                      if (value.includes('\n')) {
-                        throw new Error('不能包含换行符');
-                      }
-                    },
-                  },
-                ]}
-                fieldProps={{
-                  autoSize: true,
-                }}
-                formItemProps={{
-                  className: styles.item,
-                }}
-              />
-              <div className={styles.offset}>
-                <Typography.Text className={styles.offsetText}>
-                  偏移&nbsp;
-                  <Tooltip
-                    title={
-                      <>
-                        偏移X集，则该标题匹配到的第(1+X)集，对应lani系统中第1集，通常用于年番后半季、第二季中，种子集数不从1开始的情况
-                      </>
-                    }
-                  >
-                    <QuestionCircleOutlined />
-                  </Tooltip>
+      <SmartDownload />
+      <FormDependency<FormValues> name={['smartDownloadEnabled']}>
+        {({ smartDownloadEnabled }) =>
+          smartDownloadEnabled ? (
+            <>
+              {[
+                'downloadSources',
+                'downloadOffsetType',
+                'downloadOffsetDays',
+                'downloadOffsetHours',
+              ].map((name) => (
+                <Form.Item key={name} name={name} hidden>
+                  <PreservedValue />
+                </Form.Item>
+              ))}
+              <Form.Item label="种子标题匹配" {...formItemProps}>
+                <Typography.Text type="secondary">
+                  开启智能下载时禁用种子标题匹配
                 </Typography.Text>
-                <ProFormDigit
-                  name="offset"
-                  min={0}
-                  max={100}
-                  width="xs"
-                  formItemProps={{
-                    noStyle: true,
-                  }}
-                />
-                <Typography.Text
-                  className={clsx(styles.offsetText, styles.after)}
+              </Form.Item>
+            </>
+          ) : (
+            <>
+              <Form.Item
+                label="种子标题匹配"
+                {...formItemProps}
+                className={styles.form}
+              >
+                <ProFormList
+                  name="downloadSources"
+                  copyIconProps={false}
+                  deleteIconProps={false}
+                  creatorButtonProps={false}
+                  actionRef={ref}
                 >
-                  集
-                </Typography.Text>
-              </div>
-            </div>
-          )}
-        </ProFormList>
-        <div className={styles.row}>
-          <PlusOutlined className={styles.button} />
-          <Button
-            type="dashed"
-            className={styles.create}
-            onClick={() => {
-              ref.current?.add({
-                id: 0,
-                pattern: '',
-                offset: 0,
-              });
-            }}
-          >
-            新建匹配规则
-          </Button>
-        </div>
-        <div className={styles.row}>
-          <SearchOutlined className={styles.button} />
-          <Button
-            type="primary"
-            ghost
-            className={styles.create}
-            onClick={async () => {
-              if (!formRef.current) {
-                return;
-              }
-              const result = await openAddDownloadPattern({
-                seasonId: id,
-                seasonFullName: formRef.current?.getFieldValue('title'),
-              });
-              if (result.type !== 'success') {
-                return;
-              }
-              for (const { title } of result.output) {
-                const match = matchTorrentEpisode(title);
-                if (match) {
-                  const { index, length } = match;
-                  ref.current?.add({
-                    id: 0,
-                    // 匹配到剧集的部分使用\d+代替，其余部分保持不变
-                    pattern: `${title.substring(0, index)}%${title.substring(
-                      index + length,
-                    )}`,
-                    offset: 0,
-                  });
-                } else {
-                  ref.current?.add({
-                    id: 0,
-                    pattern: title,
-                    offset: 0,
-                  });
+                  {(meta, index, action) => (
+                    <div className={styles.row} key={meta.key}>
+                      <MinusOutlined
+                        onClick={() => {
+                          action.remove(index);
+                        }}
+                        className={styles.button}
+                      />
+                      <ProFormTextArea
+                        name="pattern"
+                        rules={[
+                          {
+                            required: true,
+                            message: '请输入匹配表达式',
+                          },
+                          {
+                            validator: async (_, value: string) => {
+                              if (value.includes('\n')) {
+                                throw new Error('不能包含换行符');
+                              }
+                            },
+                          },
+                        ]}
+                        fieldProps={{
+                          autoSize: true,
+                        }}
+                        formItemProps={{
+                          className: styles.item,
+                        }}
+                      />
+                      <div className={styles.offset}>
+                        <Typography.Text className={styles.offsetText}>
+                          偏移&nbsp;
+                          <Tooltip
+                            title={
+                              <>
+                                偏移X集，则该标题匹配到的第(1+X)集，对应lani系统中第1集，通常用于年番后半季、第二季中，种子集数不从1开始的情况
+                              </>
+                            }
+                          >
+                            <QuestionCircleOutlined />
+                          </Tooltip>
+                        </Typography.Text>
+                        <ProFormDigit
+                          name="offset"
+                          min={0}
+                          max={100}
+                          width="xs"
+                          formItemProps={{
+                            noStyle: true,
+                          }}
+                        />
+                        <Typography.Text
+                          className={clsx(styles.offsetText, styles.after)}
+                        >
+                          集
+                        </Typography.Text>
+                      </div>
+                    </div>
+                  )}
+                </ProFormList>
+                <div className={styles.row}>
+                  <PlusOutlined className={styles.button} />
+                  <Button
+                    type="dashed"
+                    className={styles.create}
+                    onClick={() => {
+                      ref.current?.add({
+                        id: 0,
+                        pattern: '',
+                        offset: 0,
+                      });
+                    }}
+                  >
+                    新建匹配规则
+                  </Button>
+                </div>
+                <div className={styles.row}>
+                  <SearchOutlined className={styles.button} />
+                  <Button
+                    type="primary"
+                    ghost
+                    className={styles.create}
+                    onClick={async () => {
+                      if (!formRef.current) {
+                        return;
+                      }
+                      const result = await openAddDownloadPattern({
+                        seasonId: id,
+                        seasonFullName: formRef.current?.getFieldValue('title'),
+                      });
+                      if (result.type !== 'success') {
+                        return;
+                      }
+                      for (const { title } of result.output) {
+                        const match = matchTorrentEpisode(title);
+                        if (match) {
+                          const { index, length } = match;
+                          ref.current?.add({
+                            id: 0,
+                            // 匹配到剧集的部分使用\d+代替，其余部分保持不变
+                            pattern: `${title.substring(
+                              0,
+                              index,
+                            )}%${title.substring(index + length)}`,
+                            offset: 0,
+                          });
+                        } else {
+                          ref.current?.add({
+                            id: 0,
+                            pattern: title,
+                            offset: 0,
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    从已有种子新建规则…
+                  </Button>
+                </div>
+              </Form.Item>
+              <Form.Item
+                label={
+                  <>
+                    下载时间&nbsp;
+                    <Tooltip title="当剧集数据中的放送时间与实际放送时间有差异时，提前或延后开始下载。通常用于处理先行放送、整周偏移，以及bangumi数据无精确时间的问题">
+                      <QuestionCircleOutlined />
+                    </Tooltip>
+                  </>
                 }
-              }
-            }}
-          >
-            从已有种子新建规则……
-          </Button>
-        </div>
-      </Form.Item>
-      <Form.Item
-        label={
-          <>
-            下载时间&nbsp;
-            <Tooltip title="当剧集数据中的放送时间与实际放送时间有差异时，提前或延后开始下载。通常用于处理先行放送、整周偏移，以及bangumi数据无精确时间的问题">
-              <QuestionCircleOutlined />
-            </Tooltip>
-          </>
+                {...formItemProps}
+              >
+                <span className={styles.timeOffsetLabel}>
+                  基于剧集放送时间，
+                </span>
+                <Space className={styles.timeOffset}>
+                  <ProFormSelect
+                    name="downloadOffsetType"
+                    valueEnum={{
+                      advance: '提前',
+                      postpone: '延后',
+                    }}
+                    placeholder="请选择"
+                    formItemProps={{
+                      noStyle: true,
+                    }}
+                    width={100}
+                  />
+                  <ProFormDigit
+                    name="downloadOffsetDays"
+                    formItemProps={{ noStyle: true }}
+                    width="xs"
+                    min={0}
+                    max={14}
+                  />
+                  天
+                  <ProFormDigit
+                    name="downloadOffsetHours"
+                    formItemProps={{ noStyle: true }}
+                    width="xs"
+                    min={0}
+                    max={24}
+                  />
+                  小时开始下载
+                  <Tooltip title="根据种子标题匹配规则，自动设置提前或延后时间">
+                    <AsyncButton
+                      type="primary"
+                      ghost
+                      style={{
+                        marginLeft: 8,
+                      }}
+                      onClick={autoMatchDownloadOffset}
+                    >
+                      自动设置
+                    </AsyncButton>
+                  </Tooltip>
+                </Space>
+              </Form.Item>
+            </>
+          )
         }
-        {...formItemProps}
-      >
-        <Space className={styles.timeOffset}>
-          基于剧集放送时间，
-          <ProFormSelect
-            name="downloadOffsetType"
-            valueEnum={{
-              advance: '提前',
-              postpone: '延后',
-            }}
-            placeholder="请选择"
-            formItemProps={{
-              noStyle: true,
-            }}
-            width={100}
-          />
-          <ProFormDigit
-            name="downloadOffsetDays"
-            formItemProps={{ noStyle: true }}
-            width="xs"
-            min={0}
-            max={14}
-          />
-          天
-          <ProFormDigit
-            name="downloadOffsetHours"
-            formItemProps={{ noStyle: true }}
-            width="xs"
-            min={0}
-            max={24}
-          />
-          小时开始下载
-          <Tooltip title="根据种子标题匹配规则，自动设置提前或延后时间">
-            <AsyncButton
-              type="primary"
-              ghost
-              style={{
-                marginLeft: 8,
-              }}
-              onClick={autoMatchDownloadOffset}
-            >
-              自动设置
-            </AsyncButton>
-          </Tooltip>
-        </Space>
-      </Form.Item>
+      </FormDependency>
       <ProFormSwitch
         label="需要下载字幕"
         name="needDownloadCc"

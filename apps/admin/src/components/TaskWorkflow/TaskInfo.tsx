@@ -6,7 +6,12 @@ import Field from './Field';
 export default function TaskInfo({
   task,
 }: {
-  task: Pick<TaskDetailsFieldsFragment, 'createdAt' | 'type' | 'torrentLink'>;
+  task: Pick<
+    TaskDetailsFieldsFragment,
+    'createdAt' | 'type' | 'torrentLink'
+  > & {
+    isSmartDownload?: boolean;
+  };
 }) {
   return (
     <>
@@ -15,7 +20,10 @@ export default function TaskInfo({
           ? dayjs(task.createdAt).format('YYYY-MM-DD HH:mm:ss')
           : '-'}
       </Field>
-      <Field label="类型">{TASK_TYPE_LABELS[task.type]}</Field>
+      <Field label="类型">
+        {TASK_TYPE_LABELS[task.type]}
+        {task.type === 'DOWNLOAD' && task.isSmartDownload ? '（智能下载）' : ''}
+      </Field>
       {['DOWNLOAD', 'BATCH_DOWNLOAD'].includes(task.type) && (
         <Field label="种子地址">{task.torrentLink}</Field>
       )}

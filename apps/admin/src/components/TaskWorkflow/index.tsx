@@ -245,9 +245,14 @@ export default function TaskWorkflowView({
             description={
               cancelled ? (
                 cancelledHere && (
-                  <Field label="取消时间">
-                    {formatTime(workflow.finishedAt)}
-                  </Field>
+                  <>
+                    <Field label="取消时间">
+                      {formatTime(workflow.finishedAt)}
+                    </Field>
+                    <Field label="取消原因">
+                      {savedWorkflow?.cancellation?.reason ?? '用户手动取消'}
+                    </Field>
+                  </>
                 )
               ) : item.status !== 'pending' && hasDetails ? (
                 <StepDetails

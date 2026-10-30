@@ -3,6 +3,7 @@ import {
   AtomContext,
   CheckpointUpdate,
   ExecutionStopped,
+  TaskCancellation,
   TaskInput,
   TaskOutput,
   Atoms,
@@ -13,6 +14,7 @@ import {
   Workflow,
   isActive,
   parseWorkflow,
+  requestCancellation,
 } from '@lani/workflow';
 
 export type Output = TaskOutput;
@@ -337,6 +339,22 @@ export class WorkflowRunner {
         if (this.stopping) return;
         const latest = await this.store.read(id);
         if (latest.workflow.cancellation) continue;
+        if (error instanceof TaskCancellation) {
+          await this.transition(id, (workflow) => {
+            const current = currentStep(workflow);
+            if (
+              workflow.status !== 'running' ||
+              current.id !== step.id ||
+              current.attempt !== step.attempt
+            )
+              return workflow;
+            return requestCancellation(workflow, new Date().toISOString(), {
+              reason: error.message,
+              code: error.code,
+            });
+          });
+          continue;
+        }
         if (error instanceof ExecutionStopped) return;
         await this.fail(id, step.id, step.attempt, error, false);
         return;

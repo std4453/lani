@@ -32,6 +32,7 @@ const registry = Object.fromEntries(
 ) as unknown as AtomRegistry;
 const task: TaskDetailsFieldsFragment = {
   __typename: 'Task',
+  isSmartDownload: false,
   id: 42,
   type: TaskType.Download,
   taskEpisodesByTaskId: { nodes: [] },

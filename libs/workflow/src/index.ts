@@ -89,11 +89,16 @@ export function summarizeWorkflow(value: unknown): WorkflowSummary {
 export function isActive(workflow: Workflow): boolean {
   return workflow.status === "running" || workflow.status === "cancelling";
 }
-export function requestCancellation(workflow: Workflow, now: string): Workflow {
+export function requestCancellation(
+  workflow: Workflow,
+  now: string,
+  details: Pick<NonNullable<Workflow["cancellation"]>, "reason" | "code"> = {}
+): Workflow {
   if (workflow.status === "succeeded") throw new Error("任务已完成");
   if (workflow.cancellation || workflow.status === "cancelled") return workflow;
   const next = parseWorkflow(JSON.parse(JSON.stringify(workflow)));
   next.cancellation = {
+    ...details,
     requestedAt: now,
     stepId: next.currentStepId,
     completedAtoms: [],

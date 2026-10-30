@@ -154,6 +154,7 @@ test('活跃摘要更新页面，任务完成后停止快速轮询', async () =>
   const calls: string[] = [];
   const task = (status: string, version: number) => ({
     __typename: 'Task',
+    isSmartDownload: false,
     id: 1,
     type: TaskType.Download,
     statusSummary: {
