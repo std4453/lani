@@ -17,6 +17,7 @@ export function useTimeline(
   cache: PreviewCache,
   directory: SmartEpisode[],
   now: number,
+  enabled: boolean = true,
 ) {
   const viewport = useRef<HTMLDivElement>(null);
   const locked = useRef<number>();
@@ -71,6 +72,7 @@ export function useTimeline(
   }
 
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     setLoading(true);
     setError(undefined);
@@ -121,15 +123,15 @@ export function useTimeline(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [cache, count, directory, now, retry]);
+  }, [cache, count, directory, now, retry, enabled]);
 
   useEffect(() => {
     return () => background.current?.abort();
-  }, [cache, count, directory, loading, frozen, online]);
+  }, [cache, count, directory, loading, frozen, online, enabled]);
 
   useApolloPoll({
     pollInterval: 30000,
-    enabled: !!view && !loading && !frozen && !error && online,
+    enabled: enabled && !!view && !loading && !frozen && !error && online,
     refetch: async () => {
       background.current?.abort();
       const controller = new AbortController();
@@ -196,7 +198,7 @@ export function useTimeline(
   }, [view, frozen, loading, count, height]);
 
   const more = () => {
-    if (locked.current === undefined && !loading && !error)
+    if (enabled && locked.current === undefined && !loading && !error)
       setCount((value) => value + 30);
   };
   return {

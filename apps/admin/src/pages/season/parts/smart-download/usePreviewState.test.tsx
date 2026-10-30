@@ -16,8 +16,8 @@ const result = (status = 'running', mode = 'semantic') => ({
     ],
   },
 });
-function Harness() {
-  current = usePreviewState(1);
+function Harness({ enabled = true }: { enabled?: boolean }) {
+  current = usePreviewState(1, enabled);
   return null;
 }
 async function tick(ms = 0) {
@@ -85,7 +85,7 @@ test('隐藏页面或离线时取消在途请求，恢复后立即读取且迟�
   });
   expect(current.tasks.get('abc')?.summary.workflow?.status).toBe('succeeded');
 });
-test('刷新失败保留标签，关闭弹窗取消请求并停止轮询', async () => {
+test('刷新失败保留标签，关闭动画期间取消请求并停止轮询', async () => {
   mockQuery.mockRejectedValueOnce(new Error('offline'));
   await tick(5000);
   expect(current.tasks.size).toBe(1);
@@ -100,7 +100,7 @@ test('刷新失败保留标签，关闭弹窗取消请求并停止轮询', async
   const calls = mockQuery.mock.calls.length;
   const signal = mockQuery.mock.calls[calls - 1][0].context.fetchOptions.signal;
   act(() => {
-    ReactDOM.unmountComponentAtNode(container);
+    ReactDOM.render(<Harness enabled={false} />, container);
   });
   expect(signal.aborted).toBe(true);
   await act(async () => {
@@ -108,4 +108,5 @@ test('刷新失败保留标签，关闭弹窗取消请求并停止轮询', async
   });
   await tick(10000);
   expect(mockQuery).toHaveBeenCalledTimes(calls);
+  expect(current.tasks.get('abc')?.summary.workflow?.status).toBe('running');
 });

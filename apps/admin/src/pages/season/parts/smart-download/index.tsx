@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, ThunderboltFilled } from '@ant-design/icons';
 import { calcTaskStatus, DownloadStatusTag } from '@/constants/download-status';
 import {
   Alert,
@@ -63,14 +63,19 @@ const exclusionLabels: Record<ExclusionReason, string> = {
 };
 
 export default function SmartDownload() {
-  const { formRef, updateTouched } = useSeasonPageContext();
+  const { id, formRef, updateTouched } = useSeasonPageContext();
   const [draft, setDraft] = useState<DownloadSettings>();
+  const [visible, setVisible] = useState(false);
+  const close = () => setVisible(false);
   const open = () => {
     const values = formRef.current?.getFieldsValue(
       settingNames,
     ) as DownloadSettings;
     if (!values) return;
-    const settings = () => setDraft({ ...values });
+    const settings = () => {
+      setDraft({ ...values });
+      setVisible(true);
+    };
     let confirmed = false;
     try {
       confirmed = localStorage.getItem(FIRST_USE_KEY) === 'true';
@@ -118,13 +123,20 @@ export default function SmartDownload() {
       <div className={styles.band}>
         <FormDependency<DownloadSettings> name={settingNames}>
           {(values) => (
-            <Form.Item label="智能下载" {...formItemProps}>
-              <Button
-                type="primary"
-                ghost
-                className={styles.button}
-                onClick={open}
-              >
+            <Form.Item
+              label={
+                <span className={styles.label}>
+                  智能下载
+                  <ThunderboltFilled
+                    key={id}
+                    className={styles.attention}
+                    aria-hidden
+                  />
+                </span>
+              }
+              {...formItemProps}
+            >
+              <Button type="primary" className={styles.button} onClick={open}>
                 {values.smartDownloadEnabled ? '设置…' : '开启智能下载'}
               </Button>
               {values.smartDownloadEnabled && (
@@ -137,11 +149,13 @@ export default function SmartDownload() {
       {draft && (
         <SettingsDialog
           initial={draft}
-          onCancel={() => setDraft(undefined)}
+          visible={visible}
+          onCancel={close}
+          afterClose={() => setDraft(undefined)}
           onSave={(value) => {
             formRef.current?.setFieldsValue(value);
             updateTouched();
-            setDraft(undefined);
+            close();
           }}
         />
       )}
@@ -151,19 +165,23 @@ export default function SmartDownload() {
 
 export function SettingsDialog({
   initial,
+  visible,
   onCancel,
   onSave,
+  afterClose,
 }: {
   initial: DownloadSettings;
+  visible: boolean;
   onCancel(): void;
   onSave(value: DownloadSettings): void;
+  afterClose(): void;
 }) {
   const { id, episodes } = useSeasonPageContext();
   const client = useApolloClient();
   const [form] = Form.useForm<DownloadSettings>();
   const [draft, setDraft] = useState(initial);
   const [now] = useState(() => Date.now());
-  const live = usePreviewState(id);
+  const live = usePreviewState(id, visible);
   const cache = useMemo(
     () =>
       new PreviewCache(async (request, signal) => {
@@ -204,7 +222,7 @@ export function SettingsDialog({
   );
   const offset = offsetHours(draft);
   const directory = useMemo(() => directoryFor(offset), [directoryFor, offset]);
-  const timeline = useTimeline(cache, directory, now);
+  const timeline = useTimeline(cache, directory, now, visible);
   const { view, count, loading, frozen, error } = timeline;
   const rows = useMemo(
     () =>
@@ -220,9 +238,9 @@ export function SettingsDialog({
         : [],
     [view, draft],
   );
-  const visible = rows.slice(0, count);
-  const groups: typeof visible[] = [];
-  visible.forEach((row) => {
+  const visibleRows = rows.slice(0, count);
+  const groups: typeof visibleRows[] = [];
+  visibleRows.forEach((row) => {
     if (row.release || !groups.length) groups.push([]);
     groups[groups.length - 1].push(row);
   });
@@ -238,7 +256,8 @@ export function SettingsDialog({
   };
   return (
     <TaskDialog
-      visible
+      visible={visible}
+      afterClose={afterClose}
       title="智能下载设置"
       closeHint="自动刷新中"
       width={1100}
@@ -264,7 +283,7 @@ export function SettingsDialog({
                 void save().catch(() => undefined);
               }}
             >
-              确定
+              {initial.smartDownloadEnabled ? '确定' : '开启智能下载'}
             </Button>
           </Space>
         </div>

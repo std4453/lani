@@ -38,7 +38,14 @@ let container: HTMLDivElement;
 let current: ReturnType<typeof useTimeline>;
 let offset: (hours: number) => void;
 let fetch: jest.Mock;
-function Harness({ cache }: { cache: PreviewCache }) {
+let cache: PreviewCache;
+function Harness({
+  cache,
+  enabled = true,
+}: {
+  cache: PreviewCache;
+  enabled?: boolean;
+}) {
   const [hours, setHours] = useState(0);
   const makeDirectory = (value: number): SmartEpisode[] =>
     [0, 12, 24].map((time, i) => ({
@@ -49,7 +56,7 @@ function Harness({ cache }: { cache: PreviewCache }) {
       airTime: new Date(base + (time - value) * hour).toISOString(),
     }));
   const directory = useMemo(() => makeDirectory(hours), [hours]);
-  current = useTimeline(cache, directory, now);
+  current = useTimeline(cache, directory, now, enabled);
   offset = (value) => {
     current.beforeOffsetChange(makeDirectory(value));
     setHours(value);
@@ -93,8 +100,9 @@ beforeEach(async () => {
   container = document.createElement('div');
   document.body.appendChild(container);
   fetch = jest.fn(async (request: PreviewRequest) => page(request));
+  cache = new PreviewCache(fetch);
   act(() => {
-    ReactDOM.render(<Harness cache={new PreviewCache(fetch)} />, container);
+    ReactDOM.render(<Harness cache={cache} />, container);
   });
   await advance(0);
 });
@@ -269,6 +277,32 @@ test('偏移变化取消正在进行的后台刷新，迟到结果不能覆盖�
     await Promise.resolve();
   });
   expect(current.view).toBe(latest);
+});
+
+test('关闭动画期间保留列表，取消后台请求并停止翻页和轮询', async () => {
+  const old = current.view;
+  const count = current.count;
+  let finish!: () => void;
+  fetch.mockImplementationOnce(
+    (request: PreviewRequest) =>
+      new Promise((resolve) => {
+        finish = () => resolve(page(request));
+      }),
+  );
+  await advance(30000);
+  const calls = fetch.mock.calls.length;
+  const signal = fetch.mock.calls[calls - 1][1] as AbortSignal;
+  act(() => {
+    ReactDOM.render(<Harness cache={cache} enabled={false} />, container);
+  });
+  expect(signal.aborted).toBe(true);
+  expect(current.view).toBe(old);
+  await act(async () => finish());
+  act(() => current.loadMore());
+  await advance(60000);
+  expect(current.view).toBe(old);
+  expect(current.count).toBe(count);
+  expect(fetch).toHaveBeenCalledTimes(calls);
 });
 
 test('末尾限制滚动距离后连续调整仍跟随原剧集，手动滚动后重新取样', async () => {

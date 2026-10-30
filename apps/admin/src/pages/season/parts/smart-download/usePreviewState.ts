@@ -10,7 +10,7 @@ export interface PreviewTask {
   summary: TaskSummary;
 }
 
-export function usePreviewState(seasonId: number) {
+export function usePreviewState(seasonId: number, enabled: boolean = true) {
   const client = useApolloClient();
   const online = useForegroundOnline();
   const pending = useRef<AbortController>();
@@ -49,9 +49,13 @@ export function usePreviewState(seasonId: number) {
     }
   }, [client, seasonId]);
   useEffect(() => {
-    if (online) void refresh();
+    if (enabled && online) void refresh();
     return () => pending.current?.abort();
-  }, [refresh, online]);
-  useApolloPoll({ pollInterval: 5000, enabled: online, refetch: refresh });
+  }, [refresh, online, enabled]);
+  useApolloPoll({
+    pollInterval: 5000,
+    enabled: enabled && online,
+    refetch: refresh,
+  });
   return state;
 }

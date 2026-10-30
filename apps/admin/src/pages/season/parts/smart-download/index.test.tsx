@@ -82,14 +82,12 @@ async function changeHours(hours: string) {
   await settle();
 }
 beforeEach(() => {
-  mockStateQuery
-    .mockReset()
-    .mockResolvedValue({
-      data: {
-        smartDownloadTasks: [],
-        config: { matching: { mode: 'semantic' } },
-      },
-    });
+  mockStateQuery.mockReset().mockResolvedValue({
+    data: {
+      smartDownloadTasks: [],
+      config: { matching: { mode: 'semantic' } },
+    },
+  });
   localStorage.clear();
   mockContext.episodes = [];
   mockQuery.mockReset().mockResolvedValue({
@@ -136,7 +134,7 @@ test('首次说明和设置均可取消；仅设置确认才记忆，并把偏�
   await click('确定', document.querySelector('.ant-modal-confirm')!);
   await changeHours('5');
   await click(
-    '确定',
+    '开启智能下载',
     document.querySelector('.ant-modal:not(.ant-modal-confirm)')!,
   );
   expect(mockContext.formRef.current!.getFieldsValue(true)).toMatchObject({
@@ -230,7 +228,7 @@ test('关闭只改开关，保留原规则和设置；再次打开采用保留�
       'input[aria-label="下载偏移小时数"]',
     )!.value,
   ).toBe('2');
-  await click('确定', document.querySelector('.ant-modal')!);
+  await click('开启智能下载', document.querySelector('.ant-modal')!);
   expect(
     mockContext.formRef.current!.getFieldValue('smartDownloadWindowHours'),
   ).toBe(72);
@@ -347,7 +345,7 @@ test('负数天数合并到总偏移，跨零切换方向并以归一后的值�
       'input[aria-label="下载偏移小时数"]',
     )!.value,
   ).toBe('23');
-  await click('确定', document.querySelector('.ant-modal')!);
+  await click('开启智能下载', document.querySelector('.ant-modal')!);
   expect(mockContext.formRef.current!.getFieldsValue(true)).toMatchObject({
     downloadOffsetType: 'postpone',
     downloadOffsetDays: 0,

@@ -11,6 +11,41 @@
 .button {
   width: 132px;
 }
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.attention {
+  color: var(--lani-smart-download-icon);
+  transform-origin: 50% 75%;
+  animation: smartDownloadAttention 900ms ease-in-out 250ms;
+}
+@keyframes smartDownloadAttention {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15%,
+  45% {
+    transform: rotate(-16deg);
+  }
+  30%,
+  60% {
+    transform: rotate(16deg);
+  }
+  75% {
+    transform: rotate(-8deg);
+  }
+  90% {
+    transform: rotate(8deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attention {
+    animation: none;
+  }
+}
 .summary {
   margin-top: 8px;
   font-size: 12px;
