@@ -21,7 +21,7 @@ export default function OffsetInput({
     <InputNumber
       aria-label={label}
       precision={0}
-      style={{ width: 64 }}
+      style={{ width: 84 }}
       value={editing ? draft : value}
       onChange={(next) => {
         setDraft(next);

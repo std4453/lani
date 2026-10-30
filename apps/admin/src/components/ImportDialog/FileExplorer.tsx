@@ -398,9 +398,11 @@ export function FileExplorer({ path, setPath, ...props }: FileExplorerProps) {
                 dataIndex: 'lastModified',
                 responsive: ['md'],
                 render: (date: string) => (
-                  <>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</>
+                  <span style={{ whiteSpace: 'nowrap' }}>
+                    {dayjs(date).format('YYYY-MM-DD HH:mm:ss')}
+                  </span>
                 ),
-                width: 160,
+                width: 180,
               },
               {
                 title: '大小',

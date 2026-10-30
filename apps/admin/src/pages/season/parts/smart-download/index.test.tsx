@@ -149,7 +149,7 @@ test('关闭只改开关，保留原规则和设置；再次打开采用保留�
       smartDownloadWindowHours: 72,
     }),
   );
-  await click('设置……');
+  await click('设置…');
   await changeHours('9');
   await click('关闭智能下载');
   expect(mockContext.formRef.current!.getFieldsValue(true)).toMatchObject({

@@ -122,7 +122,7 @@ export default function SmartDownload() {
                 className={styles.button}
                 onClick={open}
               >
-                {values.smartDownloadEnabled ? '设置……' : '开启智能下载'}
+                {values.smartDownloadEnabled ? '设置…' : '开启智能下载'}
               </Button>
               {values.smartDownloadEnabled && (
                 <div className={styles.summary}>{describeSettings(values)}</div>
@@ -333,7 +333,7 @@ export function SettingsDialog({
             />
           </Form.Item>
           <Form.Item label="下载时间" className={styles.downloadTime}>
-            <Space wrap>
+            <Space wrap className={styles.timeOffset}>
               基于剧集放送时间，
               <Form.Item name="downloadOffsetType" noStyle>
                 <Select

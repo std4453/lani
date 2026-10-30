@@ -1,3 +1,5 @@
+@import '~@/styles/index.less';
+
 .band {
   margin: 0 -24px 24px;
   padding: 16px 24px;
@@ -55,6 +57,13 @@
 }
 .downloadTime {
   grid-column: ~'1 / -1';
+}
+.timeOffset {
+  @media @mobile {
+    > :global(.ant-space-item):first-child {
+      display: none;
+    }
+  }
 }
 .footer {
   display: flex;

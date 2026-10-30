@@ -565,9 +565,10 @@ export default function Episodes() {
               });
             }}
           >
-            批量导入……
+            批量导入…
           </Button>
           <Button
+            type="primary"
             ghost
             onClick={() => {
               void openBatchDownload({

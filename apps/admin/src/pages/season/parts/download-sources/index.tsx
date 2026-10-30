@@ -360,7 +360,7 @@ export default function DownloadSources() {
                       }
                     }}
                   >
-                    从已有种子新建规则……
+                    从已有种子新建规则…
                   </Button>
                 </div>
               </Form.Item>

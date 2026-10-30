@@ -64,5 +64,8 @@
 .timeOffset {
   @media @mobile {
     flex-wrap: wrap;
+    > :global(.ant-space-item):first-child {
+      display: none;
+    }
   }
 }
