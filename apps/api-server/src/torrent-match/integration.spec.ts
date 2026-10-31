@@ -519,23 +519,33 @@ suite('种子入库、目录等待与结果持久化', () => {
     expect(match).toHaveBeenCalledTimes(1);
   });
 
-  it('pauses a faulty worker once without consuming the rest of the queue', async () => {
-    match.mockRejectedValue(new Error('worker offline'));
-    await insert();
-    await insert();
-    await queues.wake(MATCH_QUEUE);
-    await queues.wake(MATCH_QUEUE);
-    expect(match).toHaveBeenCalledTimes(1);
-    expect(
-      (await db.backgroundJob.findFirst({
-        where: { queueName: MATCH_QUEUE },
-        orderBy: { id: 'asc' },
-      }))!.status,
-    ).toBe('failed');
-    expect(
-      await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
-    ).toBe(2);
-  });
+  it.each(['once', 'always'])(
+    'continues after a matcher fails %s without retrying failed jobs',
+    async (failure) => {
+      if (failure === 'once')
+        match.mockRejectedValueOnce(new Error('worker offline'));
+      else match.mockRejectedValue(new Error('worker offline'));
+      const first = await insert();
+      const second = await insert();
+      await queues.wake(MATCH_QUEUE);
+      await queues.wake(MATCH_QUEUE);
+      expect(match).toHaveBeenCalledTimes(2);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: {
+            queueName_key: { queueName: MATCH_QUEUE, key: String(first.id) },
+          },
+        }),
+      ).toMatchObject({ status: 'failed', attempts: 1 });
+      expect(
+        await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
+      ).toBe(failure === 'once' ? 1 : 2);
+      if (failure === 'once')
+        expect(
+          await db.torrent.findUnique({ where: { id: second.id } }),
+        ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
+    },
+  );
 
   it('does not persist an old match after the source input is replaced in flight', async () => {
     let entered!: () => void;

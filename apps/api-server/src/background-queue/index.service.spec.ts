@@ -325,6 +325,155 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     });
   });
 
+  it.each(['execute', 'commit'])(
+    'continues after a terminal %s failure when enabled, preserving its record',
+    async (phase) => {
+      const settled = jest.fn();
+      execute.mockImplementation(async (job) => {
+        if (job.payload.value === 1 && phase === 'execute')
+          throw new Error('private upstream detail');
+        if (job.payload.value === 2)
+          expect(
+            await db.backgroundJob.findUnique({
+              where: { queueName_key: { queueName: output, key: output } },
+            }),
+          ).toMatchObject({ payload: {} });
+        return async (tx) => {
+          await tx.backgroundJob.update({
+            where: { queueName_key: { queueName: output, key: output } },
+            data: { payload: job.payload },
+          });
+          if (job.payload.value === 1) throw new Error('commit failed');
+        };
+      });
+      await queues.onApplicationShutdown();
+      await create({
+        enabled: true,
+        continueOnFailure: true,
+        execute,
+        settled,
+      });
+      const failed = await enqueue('a', 1);
+      await enqueue('b', 2);
+      await queues.wake(name);
+      expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'b']);
+      expect(settled).toHaveBeenCalledTimes(2);
+      expect(
+        await db.backgroundJob.findMany({ where: { queueName: name } }),
+      ).toEqual([
+        expect.objectContaining({
+          id: failed.id,
+          status: 'failed',
+          attempts: 1,
+          failedAt: expect.any(Date),
+          lastError: '后台任务执行失败，请检查组件配置和日志',
+        }),
+      ]);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: { queueName_key: { queueName: output, key: output } },
+        }),
+      ).toMatchObject({ payload: { value: 2 } });
+    },
+  );
+
+  it('skips persisted failures across restart and retries them only on explicit resume', async () => {
+    const failed = await enqueue('a', 1);
+    await db.backgroundJob.update({
+      where: { id: failed.id },
+      data: { status: 'failed', attempts: 1, failedAt: new Date() },
+    });
+    await enqueue('b', 2);
+    await queues.onApplicationShutdown();
+    await create({ enabled: true, continueOnFailure: true, execute });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b']);
+    await enqueue('a', 3);
+    await queues.onApplicationShutdown();
+    await create({ enabled: true, continueOnFailure: true, execute });
+    await enqueue('c', 4);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b', 'c']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: failed.id } }),
+    ).toMatchObject({ status: 'failed', attempts: 1, payload: { value: 3 } });
+    await queues.resume(name);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b', 'c', 'a']);
+    expect(await db.backgroundJob.count({ where: { queueName: name } })).toBe(
+      0,
+    );
+  });
+
+  it('keeps dependency waits in FIFO even when continuing past failures', async () => {
+    await queues.onApplicationShutdown();
+    await create({
+      enabled: true,
+      continueOnFailure: true,
+      ready: async () => ready,
+      execute,
+    });
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    ready = false;
+    await queues.wake(name);
+    expect(execute).not.toHaveBeenCalled();
+    ready = true;
+    execute.mockRejectedValueOnce(new QueueWaiting());
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: head.id } }),
+    ).toMatchObject({ status: 'pending', attempts: 0 });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
+  });
+
+  it('preserves retry delays and continues only after attempts are exhausted', async () => {
+    execute.mockRejectedValueOnce(new Error('temporary failure'));
+    execute.mockRejectedValueOnce(new Error('terminal failure'));
+    await queues.onApplicationShutdown();
+    await create({
+      enabled: true,
+      continueOnFailure: true,
+      execute,
+      retry: { maxAttempts: 2, delayMs: 1000 },
+    });
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    await queues.wake(name);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a']);
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { availableAt: new Date(0) },
+    });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: head.id } }),
+    ).toMatchObject({ status: 'failed', attempts: 2 });
+  });
+
+  it('does not skip an in-flight head when continuing past failures', async () => {
+    await queues.onApplicationShutdown();
+    await create({ enabled: true, continueOnFailure: true, execute });
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { status: 'running' },
+    });
+    await queues.wake(name);
+    expect(execute).not.toHaveBeenCalled();
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { status: 'pending' },
+    });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'b']);
+  });
+
   it('supports bounded opt-in retries, preserving FIFO and the final failed job', async () => {
     await queues.onApplicationShutdown();
     await create({
@@ -426,23 +575,30 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   });
 });
 
-it('halts a queue in memory after storage failure and allows explicit recovery', async () => {
-  const database: any = {
-    backgroundJob: {
-      findFirst: jest.fn().mockRejectedValue(new Error('offline')),
-      updateMany: jest.fn(),
-    },
-  };
-  const queues = new BackgroundQueueService(database);
-  queues.register('storage-failure', { enabled: true, execute: jest.fn() });
-  await queues.initialize();
-  await queues.wake('storage-failure');
-  await queues.wake('storage-failure');
-  expect(queues.hasStorageFault('storage-failure')).toBe(true);
-  expect(database.backgroundJob.findFirst).toHaveBeenCalledTimes(1);
-  database.backgroundJob.findFirst.mockResolvedValue(null);
-  await queues.resume('storage-failure');
-  await queues.wake('storage-failure');
-  expect(queues.hasStorageFault('storage-failure')).toBe(false);
-  await queues.onApplicationShutdown();
-});
+it.each([false, true])(
+  'halts after storage failure with continueOnFailure=%s and allows explicit recovery',
+  async (continueOnFailure) => {
+    const database: any = {
+      backgroundJob: {
+        findFirst: jest.fn().mockRejectedValue(new Error('offline')),
+        updateMany: jest.fn(),
+      },
+    };
+    const queues = new BackgroundQueueService(database);
+    queues.register('storage-failure', {
+      enabled: true,
+      continueOnFailure,
+      execute: jest.fn(),
+    });
+    await queues.initialize();
+    await queues.wake('storage-failure');
+    await queues.wake('storage-failure');
+    expect(queues.hasStorageFault('storage-failure')).toBe(true);
+    expect(database.backgroundJob.findFirst).toHaveBeenCalledTimes(1);
+    database.backgroundJob.findFirst.mockResolvedValue(null);
+    await queues.resume('storage-failure');
+    await queues.wake('storage-failure');
+    expect(queues.hasStorageFault('storage-failure')).toBe(false);
+    await queues.onApplicationShutdown();
+  },
+);

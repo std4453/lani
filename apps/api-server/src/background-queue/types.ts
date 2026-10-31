@@ -10,6 +10,8 @@ export type QueueJob<TPayload> = Omit<BackgroundJob, 'payload'> & {
 };
 export interface QueueHandler<TPayload> {
   enabled: boolean;
+  /** 独立任务可跳过终止失败，保留失败记录供手动恢复；默认阻塞本通道。 */
+  continueOnFailure?: boolean;
   /** 默认只尝试一次；需自动重试的处理器显式声明有限次数和间隔。 */
   retry?: QueueRetry;
   ready?(job: QueueJob<TPayload>): Promise<boolean>;
