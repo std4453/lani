@@ -334,9 +334,31 @@ export class TorrentMatchService
       torrentIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
     )
       throw new BadRequestException('每批需提供 1 至 500 个有效种子 ID');
-    const count = await this.prisma.$transaction((tx) =>
-      enqueueTorrentMatch(tx, torrentIds, !rematch),
-    );
+    const count = await this.prisma.$transaction(async (tx) => {
+      const count = await enqueueTorrentMatch(tx, torrentIds, !rematch);
+      if (rematch && count) {
+        // 仅恢复本批已接受重评的种子；取消记录仍由入队规则排除。
+        const accepted = await tx.torrent.findMany({
+          where: { id: { in: torrentIds }, matchStatus: 'PENDING' },
+          select: { id: true },
+        });
+        await tx.backgroundJob.updateMany({
+          where: {
+            queueName: MATCH_QUEUE,
+            key: { in: accepted.map(({ id }) => String(id)) },
+            status: 'failed',
+          },
+          data: {
+            status: 'pending',
+            attempts: 0,
+            availableAt: new Date(),
+            failedAt: null,
+            lastError: null,
+          },
+        });
+      }
+      return count;
+    });
     // 先提交业务状态及队列事务，再唤醒消费者。
     if (count) void this.queues.wake(MATCH_QUEUE);
     return count;

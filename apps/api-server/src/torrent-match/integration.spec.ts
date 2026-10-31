@@ -571,6 +571,34 @@ suite('种子入库、目录等待与结果持久化', () => {
     },
   );
 
+  it('explicit rematch retries only selected failed jobs and preserves cancellation', async () => {
+    match.mockRejectedValueOnce(new Error('worker offline'));
+    match.mockRejectedValueOnce(new Error('worker offline'));
+    const selected = await insert();
+    const other = await insert();
+    const cancelled = await insert();
+    await service.cancelAssociation(cancelled.id);
+    await queues.wake(MATCH_QUEUE);
+    expect(match).toHaveBeenCalledTimes(2);
+    expect(await service.enqueueBatch([selected.id])).toBe(0);
+    expect(await service.enqueueBatch([selected.id, cancelled.id], true)).toBe(
+      1,
+    );
+    await queues.wake(MATCH_QUEUE);
+    expect(match).toHaveBeenCalledTimes(3);
+    expect(
+      await db.torrent.findUnique({ where: { id: selected.id } }),
+    ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
+    expect(
+      await db.backgroundJob.findMany({ where: { queueName: MATCH_QUEUE } }),
+    ).toEqual([
+      expect.objectContaining({ key: String(other.id), status: 'failed' }),
+    ]);
+    expect(
+      await db.torrent.findUnique({ where: { id: cancelled.id } }),
+    ).toMatchObject({ matchStatus: 'DISMISSED' });
+  });
+
   it('does not persist an old match after the source input is replaced in flight', async () => {
     let entered!: () => void;
     let release!: () => void;
