@@ -456,6 +456,30 @@ suite('种子入库、目录等待与结果持久化', () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps matching waiting after catalog failure until the catalog is recovered', async () => {
+    await db.season.update({
+      where: { id: seasonId },
+      data: { aliases: ['Updated anime'] },
+    });
+    await service.refreshCatalog();
+    load.mockRejectedValueOnce(new Error('catalog unavailable'));
+    await mature();
+    const torrent = await insert();
+    await queues.wake(MATCH_QUEUE);
+    expect(match).not.toHaveBeenCalled();
+    expect(
+      await db.backgroundJob.findFirst({
+        where: { queueName: CATALOG_QUEUE },
+      }),
+    ).toMatchObject({ status: 'failed', attempts: 1 });
+    await queues.resume(CATALOG_QUEUE);
+    await queues.wake(CATALOG_QUEUE);
+    await queues.wake(MATCH_QUEUE);
+    expect(
+      await db.torrent.findUnique({ where: { id: torrent.id } }),
+    ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
+  });
+
   it('does not restore an old worker cache during catalog activation', async () => {
     // 变化在回退目录中的其他季度；debounce 与激活期间都必须等待。
     await db.season.create({

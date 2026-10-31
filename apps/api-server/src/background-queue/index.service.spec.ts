@@ -178,7 +178,9 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
         status: barrier === 'failed' ? 'failed' : 'pending',
         attempts: barrier === 'failed' ? 1 : 0,
       });
-      expect(execute).toHaveBeenCalledTimes(barrier === 'ready' ? 0 : 1);
+      expect(execute).toHaveBeenCalledTimes(
+        barrier === 'ready' ? 0 : barrier === 'failed' ? 2 : 1,
+      );
     },
   );
 
@@ -277,17 +279,17 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     ).toMatchObject({ payload: { value: 2 } });
   });
 
-  it('pauses on failure without retries, including across restart', async () => {
+  it('does not retry terminal failures across restart until explicitly resumed', async () => {
     execute.mockRejectedValue(new Error('component offline'));
     await enqueue('a', 1);
     await enqueue('b', 2);
     await queues.wake(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(2);
     await queues.onApplicationShutdown();
     await create();
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(2);
     expect(
       (await db.backgroundJob.findFirst({
         where: { queueName: name },
@@ -297,7 +299,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     execute.mockImplementation(async () => async () => undefined);
     await queues.resume(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(3);
+    expect(execute).toHaveBeenCalledTimes(4);
   });
 
   it('keeps failure information and does not retry when a producer replaces failed input', async () => {
@@ -326,7 +328,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   });
 
   it.each(['execute', 'commit'])(
-    'continues after a terminal %s failure when enabled, preserving its record',
+    'continues after a terminal %s failure, preserving its record',
     async (phase) => {
       const settled = jest.fn();
       execute.mockImplementation(async (job) => {
@@ -349,7 +351,6 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
       await queues.onApplicationShutdown();
       await create({
         enabled: true,
-        continueOnFailure: true,
         execute,
         settled,
       });
@@ -385,12 +386,12 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     });
     await enqueue('b', 2);
     await queues.onApplicationShutdown();
-    await create({ enabled: true, continueOnFailure: true, execute });
+    await create();
     await queues.wake(name);
     expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b']);
     await enqueue('a', 3);
     await queues.onApplicationShutdown();
-    await create({ enabled: true, continueOnFailure: true, execute });
+    await create();
     await enqueue('c', 4);
     await queues.wake(name);
     expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b', 'c']);
@@ -409,7 +410,6 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     await queues.onApplicationShutdown();
     await create({
       enabled: true,
-      continueOnFailure: true,
       ready: async () => ready,
       execute,
     });
@@ -435,7 +435,6 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     await queues.onApplicationShutdown();
     await create({
       enabled: true,
-      continueOnFailure: true,
       execute,
       retry: { maxAttempts: 2, delayMs: 1000 },
     });
@@ -457,7 +456,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
 
   it('does not skip an in-flight head when continuing past failures', async () => {
     await queues.onApplicationShutdown();
-    await create({ enabled: true, continueOnFailure: true, execute });
+    await create();
     const head = await enqueue('a', 1);
     await enqueue('b', 2);
     await db.backgroundJob.update({
@@ -474,7 +473,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'b']);
   });
 
-  it('supports bounded opt-in retries, preserving FIFO and the final failed job', async () => {
+  it('preserves delayed retries across restart and continues after terminal failure', async () => {
     await queues.onApplicationShutdown();
     await create({
       enabled: true,
@@ -502,11 +501,11 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     });
     await queues.wake(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledTimes(3);
     expect(
       await db.backgroundJob.findUnique({ where: { id: job.id } }),
     ).toMatchObject({ status: 'failed', attempts: 2 });
-    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a']);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
   });
 
   it('recovers interrupted work but does not lose a job on a failed result transaction', async () => {
@@ -575,30 +574,23 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
   });
 });
 
-it.each([false, true])(
-  'halts after storage failure with continueOnFailure=%s and allows explicit recovery',
-  async (continueOnFailure) => {
-    const database: any = {
-      backgroundJob: {
-        findFirst: jest.fn().mockRejectedValue(new Error('offline')),
-        updateMany: jest.fn(),
-      },
-    };
-    const queues = new BackgroundQueueService(database);
-    queues.register('storage-failure', {
-      enabled: true,
-      continueOnFailure,
-      execute: jest.fn(),
-    });
-    await queues.initialize();
-    await queues.wake('storage-failure');
-    await queues.wake('storage-failure');
-    expect(queues.hasStorageFault('storage-failure')).toBe(true);
-    expect(database.backgroundJob.findFirst).toHaveBeenCalledTimes(1);
-    database.backgroundJob.findFirst.mockResolvedValue(null);
-    await queues.resume('storage-failure');
-    await queues.wake('storage-failure');
-    expect(queues.hasStorageFault('storage-failure')).toBe(false);
-    await queues.onApplicationShutdown();
-  },
-);
+it('halts a queue in memory after storage failure and allows explicit recovery', async () => {
+  const database: any = {
+    backgroundJob: {
+      findFirst: jest.fn().mockRejectedValue(new Error('offline')),
+      updateMany: jest.fn(),
+    },
+  };
+  const queues = new BackgroundQueueService(database);
+  queues.register('storage-failure', { enabled: true, execute: jest.fn() });
+  await queues.initialize();
+  await queues.wake('storage-failure');
+  await queues.wake('storage-failure');
+  expect(queues.hasStorageFault('storage-failure')).toBe(true);
+  expect(database.backgroundJob.findFirst).toHaveBeenCalledTimes(1);
+  database.backgroundJob.findFirst.mockResolvedValue(null);
+  await queues.resume('storage-failure');
+  await queues.wake('storage-failure');
+  expect(queues.hasStorageFault('storage-failure')).toBe(false);
+  await queues.onApplicationShutdown();
+});

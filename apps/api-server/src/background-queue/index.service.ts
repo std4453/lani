@@ -44,9 +44,6 @@ export class BackgroundQueueService
       get retry() {
         return handler.retry;
       },
-      get continueOnFailure() {
-        return handler.continueOnFailure;
-      },
       settled: handler.settled?.bind(handler),
       ready: ready ? (job) => ready(job as QueueJob<TPayload>) : undefined,
       execute: (job) => handler.execute(job as QueueJob<TPayload>),
@@ -101,10 +98,7 @@ export class BackgroundQueueService
   private async drain(name: string, handler: QueueHandler<unknown>) {
     for (let count = 0; count < 50 && !this.stopped; count++) {
       const job = await this.prisma.backgroundJob.findFirst({
-        where: {
-          queueName: name,
-          ...(handler.continueOnFailure ? { status: { not: 'failed' } } : {}),
-        },
+        where: { queueName: name, status: { not: 'failed' } },
         orderBy: { id: 'asc' },
       });
       if (!job || job.status !== 'pending' || job.availableAt > new Date())
@@ -160,7 +154,7 @@ export class BackgroundQueueService
         this.logger.error(
           `Background queue ${name} failed at job ${job.id}; retry=${!!again}`,
         );
-        if (again || !handler.continueOnFailure) return;
+        if (again) return;
       } finally {
         if (executing) handler.settled?.();
       }

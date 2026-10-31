@@ -27,8 +27,6 @@ export class MatchCatalogConsumer implements QueueHandler<CatalogSnapshot> {
 @Injectable()
 @QueueConsumer(MATCH_QUEUE)
 export class TorrentMatchConsumer implements QueueHandler<TorrentMatchPayload> {
-  readonly continueOnFailure = true;
-
   constructor(private matching: TorrentMatchService) {}
 
   get enabled() {
