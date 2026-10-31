@@ -456,6 +456,30 @@ suite('种子入库、目录等待与结果持久化', () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps matching waiting after catalog failure until the catalog is recovered', async () => {
+    await db.season.update({
+      where: { id: seasonId },
+      data: { aliases: ['Updated anime'] },
+    });
+    await service.refreshCatalog();
+    load.mockRejectedValueOnce(new Error('catalog unavailable'));
+    await mature();
+    const torrent = await insert();
+    await queues.wake(MATCH_QUEUE);
+    expect(match).not.toHaveBeenCalled();
+    expect(
+      await db.backgroundJob.findFirst({
+        where: { queueName: CATALOG_QUEUE },
+      }),
+    ).toMatchObject({ status: 'failed', attempts: 1 });
+    await queues.resume(CATALOG_QUEUE);
+    await queues.wake(CATALOG_QUEUE);
+    await queues.wake(MATCH_QUEUE);
+    expect(
+      await db.torrent.findUnique({ where: { id: torrent.id } }),
+    ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
+  });
+
   it('does not restore an old worker cache during catalog activation', async () => {
     // 变化在回退目录中的其他季度；debounce 与激活期间都必须等待。
     await db.season.create({
@@ -519,22 +543,60 @@ suite('种子入库、目录等待与结果持久化', () => {
     expect(match).toHaveBeenCalledTimes(1);
   });
 
-  it('pauses a faulty worker once without consuming the rest of the queue', async () => {
-    match.mockRejectedValue(new Error('worker offline'));
-    await insert();
-    await insert();
+  it.each(['once', 'always'])(
+    'continues after a matcher fails %s without retrying failed jobs',
+    async (failure) => {
+      if (failure === 'once')
+        match.mockRejectedValueOnce(new Error('worker offline'));
+      else match.mockRejectedValue(new Error('worker offline'));
+      const first = await insert();
+      const second = await insert();
+      await queues.wake(MATCH_QUEUE);
+      await queues.wake(MATCH_QUEUE);
+      expect(match).toHaveBeenCalledTimes(2);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: {
+            queueName_key: { queueName: MATCH_QUEUE, key: String(first.id) },
+          },
+        }),
+      ).toMatchObject({ status: 'failed', attempts: 1 });
+      expect(
+        await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
+      ).toBe(failure === 'once' ? 1 : 2);
+      if (failure === 'once')
+        expect(
+          await db.torrent.findUnique({ where: { id: second.id } }),
+        ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
+    },
+  );
+
+  it('explicit rematch retries only selected failed jobs and preserves cancellation', async () => {
+    match.mockRejectedValueOnce(new Error('worker offline'));
+    match.mockRejectedValueOnce(new Error('worker offline'));
+    const selected = await insert();
+    const other = await insert();
+    const cancelled = await insert();
+    await service.cancelAssociation(cancelled.id);
     await queues.wake(MATCH_QUEUE);
+    expect(match).toHaveBeenCalledTimes(2);
+    expect(await service.enqueueBatch([selected.id])).toBe(0);
+    expect(await service.enqueueBatch([selected.id, cancelled.id], true)).toBe(
+      1,
+    );
     await queues.wake(MATCH_QUEUE);
-    expect(match).toHaveBeenCalledTimes(1);
+    expect(match).toHaveBeenCalledTimes(3);
     expect(
-      (await db.backgroundJob.findFirst({
-        where: { queueName: MATCH_QUEUE },
-        orderBy: { id: 'asc' },
-      }))!.status,
-    ).toBe('failed');
+      await db.torrent.findUnique({ where: { id: selected.id } }),
+    ).toMatchObject({ matchStatus: 'MATCHED', matchedSeasonId: seasonId });
     expect(
-      await db.backgroundJob.count({ where: { queueName: MATCH_QUEUE } }),
-    ).toBe(2);
+      await db.backgroundJob.findMany({ where: { queueName: MATCH_QUEUE } }),
+    ).toEqual([
+      expect.objectContaining({ key: String(other.id), status: 'failed' }),
+    ]);
+    expect(
+      await db.torrent.findUnique({ where: { id: cancelled.id } }),
+    ).toMatchObject({ matchStatus: 'DISMISSED' });
   });
 
   it('does not persist an old match after the source input is replaced in flight', async () => {

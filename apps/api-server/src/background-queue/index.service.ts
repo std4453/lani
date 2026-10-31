@@ -98,7 +98,7 @@ export class BackgroundQueueService
   private async drain(name: string, handler: QueueHandler<unknown>) {
     for (let count = 0; count < 50 && !this.stopped; count++) {
       const job = await this.prisma.backgroundJob.findFirst({
-        where: { queueName: name },
+        where: { queueName: name, status: { not: 'failed' } },
         orderBy: { id: 'asc' },
       });
       if (!job || job.status !== 'pending' || job.availableAt > new Date())
@@ -154,7 +154,7 @@ export class BackgroundQueueService
         this.logger.error(
           `Background queue ${name} failed at job ${job.id}; retry=${!!again}`,
         );
-        return;
+        if (again) return;
       } finally {
         if (executing) handler.settled?.();
       }

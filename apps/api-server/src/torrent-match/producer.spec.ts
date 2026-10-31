@@ -9,7 +9,10 @@ jest.mock('@/config', () => ({
 }));
 
 const transaction = () => ({
-  torrent: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+  torrent: {
+    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    findMany: jest.fn().mockResolvedValue([]),
+  },
   backgroundJob: {
     upsert: jest.fn().mockResolvedValue({ id: 10 }),
     updateMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -76,8 +79,24 @@ it('运维接口默认只处理未识别记录，提交后唤醒消费者', asyn
   expect(await service.enqueueBatch([1])).toBe(1);
   expect(tx.torrent.updateMany.mock.calls[0][0].where.matchStatus).toBeNull();
   expect(events).toEqual(['committed', 'wake']);
+  expect(tx.torrent.findMany).not.toHaveBeenCalled();
+  tx.torrent.findMany.mockResolvedValue([{ id: 2 }]);
   await service.enqueueBatch([2], true);
   expect(tx.torrent.updateMany.mock.calls[1][0].where.OR).toBeDefined();
+  expect(tx.backgroundJob.updateMany).toHaveBeenLastCalledWith({
+    where: {
+      queueName: 'torrent-match',
+      key: { in: ['2'] },
+      status: 'failed',
+    },
+    data: {
+      status: 'pending',
+      attempts: 0,
+      availableAt: expect.any(Date),
+      failedAt: null,
+      lastError: null,
+    },
+  });
 });
 
 it('禁用、无效批次和事务失败均不会唤醒消费者', async () => {

@@ -178,7 +178,9 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
         status: barrier === 'failed' ? 'failed' : 'pending',
         attempts: barrier === 'failed' ? 1 : 0,
       });
-      expect(execute).toHaveBeenCalledTimes(barrier === 'ready' ? 0 : 1);
+      expect(execute).toHaveBeenCalledTimes(
+        barrier === 'ready' ? 0 : barrier === 'failed' ? 2 : 1,
+      );
     },
   );
 
@@ -277,17 +279,17 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     ).toMatchObject({ payload: { value: 2 } });
   });
 
-  it('pauses on failure without retries, including across restart', async () => {
+  it('does not retry terminal failures across restart until explicitly resumed', async () => {
     execute.mockRejectedValue(new Error('component offline'));
     await enqueue('a', 1);
     await enqueue('b', 2);
     await queues.wake(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(2);
     await queues.onApplicationShutdown();
     await create();
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(2);
     expect(
       (await db.backgroundJob.findFirst({
         where: { queueName: name },
@@ -297,7 +299,7 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     execute.mockImplementation(async () => async () => undefined);
     await queues.resume(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(3);
+    expect(execute).toHaveBeenCalledTimes(4);
   });
 
   it('keeps failure information and does not retry when a producer replaces failed input', async () => {
@@ -325,7 +327,153 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     });
   });
 
-  it('supports bounded opt-in retries, preserving FIFO and the final failed job', async () => {
+  it.each(['execute', 'commit'])(
+    'continues after a terminal %s failure, preserving its record',
+    async (phase) => {
+      const settled = jest.fn();
+      execute.mockImplementation(async (job) => {
+        if (job.payload.value === 1 && phase === 'execute')
+          throw new Error('private upstream detail');
+        if (job.payload.value === 2)
+          expect(
+            await db.backgroundJob.findUnique({
+              where: { queueName_key: { queueName: output, key: output } },
+            }),
+          ).toMatchObject({ payload: {} });
+        return async (tx) => {
+          await tx.backgroundJob.update({
+            where: { queueName_key: { queueName: output, key: output } },
+            data: { payload: job.payload },
+          });
+          if (job.payload.value === 1) throw new Error('commit failed');
+        };
+      });
+      await queues.onApplicationShutdown();
+      await create({
+        enabled: true,
+        execute,
+        settled,
+      });
+      const failed = await enqueue('a', 1);
+      await enqueue('b', 2);
+      await queues.wake(name);
+      expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'b']);
+      expect(settled).toHaveBeenCalledTimes(2);
+      expect(
+        await db.backgroundJob.findMany({ where: { queueName: name } }),
+      ).toEqual([
+        expect.objectContaining({
+          id: failed.id,
+          status: 'failed',
+          attempts: 1,
+          failedAt: expect.any(Date),
+          lastError: '后台任务执行失败，请检查组件配置和日志',
+        }),
+      ]);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: { queueName_key: { queueName: output, key: output } },
+        }),
+      ).toMatchObject({ payload: { value: 2 } });
+    },
+  );
+
+  it('skips persisted failures across restart and retries them only on explicit resume', async () => {
+    const failed = await enqueue('a', 1);
+    await db.backgroundJob.update({
+      where: { id: failed.id },
+      data: { status: 'failed', attempts: 1, failedAt: new Date() },
+    });
+    await enqueue('b', 2);
+    await queues.onApplicationShutdown();
+    await create();
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b']);
+    await enqueue('a', 3);
+    await queues.onApplicationShutdown();
+    await create();
+    await enqueue('c', 4);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b', 'c']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: failed.id } }),
+    ).toMatchObject({ status: 'failed', attempts: 1, payload: { value: 3 } });
+    await queues.resume(name);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['b', 'c', 'a']);
+    expect(await db.backgroundJob.count({ where: { queueName: name } })).toBe(
+      0,
+    );
+  });
+
+  it('keeps dependency waits in FIFO even when continuing past failures', async () => {
+    await queues.onApplicationShutdown();
+    await create({
+      enabled: true,
+      ready: async () => ready,
+      execute,
+    });
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    ready = false;
+    await queues.wake(name);
+    expect(execute).not.toHaveBeenCalled();
+    ready = true;
+    execute.mockRejectedValueOnce(new QueueWaiting());
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: head.id } }),
+    ).toMatchObject({ status: 'pending', attempts: 0 });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
+  });
+
+  it('preserves retry delays and continues only after attempts are exhausted', async () => {
+    execute.mockRejectedValueOnce(new Error('temporary failure'));
+    execute.mockRejectedValueOnce(new Error('terminal failure'));
+    await queues.onApplicationShutdown();
+    await create({
+      enabled: true,
+      execute,
+      retry: { maxAttempts: 2, delayMs: 1000 },
+    });
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    await queues.wake(name);
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a']);
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { availableAt: new Date(0) },
+    });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
+    expect(
+      await db.backgroundJob.findUnique({ where: { id: head.id } }),
+    ).toMatchObject({ status: 'failed', attempts: 2 });
+  });
+
+  it('does not skip an in-flight head when continuing past failures', async () => {
+    await queues.onApplicationShutdown();
+    await create();
+    const head = await enqueue('a', 1);
+    await enqueue('b', 2);
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { status: 'running' },
+    });
+    await queues.wake(name);
+    expect(execute).not.toHaveBeenCalled();
+    await db.backgroundJob.update({
+      where: { id: head.id },
+      data: { status: 'pending' },
+    });
+    await queues.wake(name);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'b']);
+  });
+
+  it('preserves delayed retries across restart and continues after terminal failure', async () => {
     await queues.onApplicationShutdown();
     await create({
       enabled: true,
@@ -353,11 +501,11 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     });
     await queues.wake(name);
     await queues.wake(name);
-    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenCalledTimes(3);
     expect(
       await db.backgroundJob.findUnique({ where: { id: job.id } }),
     ).toMatchObject({ status: 'failed', attempts: 2 });
-    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a']);
+    expect(execute.mock.calls.map(([job]) => job.key)).toEqual(['a', 'a', 'b']);
   });
 
   it('recovers interrupted work but does not lose a job on a failed result transaction', async () => {

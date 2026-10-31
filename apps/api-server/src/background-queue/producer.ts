@@ -13,7 +13,7 @@ export async function enqueueJobIfAbsent(
   });
 }
 
-/** 必须使用生产者的事务；替换输入不会解除已有失败屏障。 */
+/** 必须使用生产者的事务；替换输入不会自动恢复失败任务。 */
 export async function enqueueJob(
   tx: Prisma.TransactionClient,
   queueName: string,
