@@ -46,14 +46,14 @@ beforeEach(() => {
   api.getSubjectById.mockResolvedValue({ ...item, tags } as never);
 });
 
-it('旧版使用 large 保留日期，并按热度补齐详情标签', async () => {
+it('旧版使用 large 保留日期，缺少标签时不补查详情', async () => {
   expect(await resolver.searchBangumi('芙莉莲', false)).toEqual([
     {
       id: '400602',
       name: '葬送的芙莉莲',
       airDate: '2023-09-29',
       added: true,
-      tags: ['漫画改', '奇幻'],
+      tags: [],
     },
   ]);
   expect(api.searchSubjectByKeywords).toHaveBeenCalledWith(
@@ -63,16 +63,19 @@ it('旧版使用 large 保留日期，并按热度补齐详情标签', async () 
     0,
     25,
   );
-  expect(api.getSubjectById).toHaveBeenCalledWith(400602);
+  expect(api.getSubjectById).not.toHaveBeenCalled();
 });
 
-it('标签详情失败时保留可选条目及日期', async () => {
-  api.getSubjectById.mockRejectedValue(new Error('timeout'));
+it('搜索响应自带标签时直接返回，不补查详情', async () => {
+  api.searchSubjectByKeywords.mockResolvedValue({
+    list: [{ ...item, tags }],
+  } as never);
   expect((await resolver.searchBangumi('芙莉莲', false))[0]).toMatchObject({
     id: '400602',
     airDate: '2023-09-29',
-    tags: [],
+    tags: ['漫画改', '奇幻'],
   });
+  expect(api.getSubjectById).not.toHaveBeenCalled();
 });
 
 it('新版和精确查询复用已有标签，不重复请求详情', async () => {
@@ -101,27 +104,12 @@ it('空结果不请求详情，搜索失败仍向调用方报告', async () => {
   );
 });
 
-it('多个搜索请求共享详情并发上限，保持搜索顺序', async () => {
-  api.searchSubjectByKeywords.mockResolvedValue({
-    list: Array.from({ length: 9 }, (_, id) => ({ ...item, id })),
-  });
-  let active = 0;
-  let peak = 0;
-  (api.getSubjectById as jest.Mock).mockImplementation(async (id: number) => {
-    peak = Math.max(peak, ++active);
-    await new Promise((resolve) => setTimeout(resolve, (9 - id) * 2));
-    active--;
-    return { tags: [{ name: String(id), count: 1 }] } as never;
-  });
-  const results = await Promise.all([
-    resolver.searchBangumi('甲', false),
-    resolver.searchBangumi('乙', false),
-  ]);
-  expect(peak).toBe(4);
-  for (const result of results)
-    expect(result.map((entry) => entry.tags[0])).toEqual(
-      Array.from({ length: 9 }, (_, id) => String(id)),
-    );
+it('新版缺少标签时返回空列表，不补查详情', async () => {
+  api.searchSubjects.mockResolvedValue({
+    data: [{ ...item, tags: undefined }],
+  } as never);
+  expect((await resolver.searchBangumi('芙莉莲', true))[0].tags).toEqual([]);
+  expect(api.getSubjectById).not.toHaveBeenCalled();
 });
 
 it('缺失、空白和重复标签归一化且不修改来源', () => {
