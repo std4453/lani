@@ -13,6 +13,11 @@ export interface CatalogSeason {
   declaredEpisodeCount?: number | null;
   /** 作品首播日期；v2 为 YYYY-MM-DD，旧模型忽略此字段。 */
   premiereDate?: string | null;
+  /** 已有编号的压缩集合；可选扩展，旧模型忽略。 */
+  numbers?: {
+    episode?: { local?: string; sort?: string };
+    sp?: { sort: string };
+  };
   episodes?: { number: number; airDate: string }[];
 }
 

@@ -60,6 +60,14 @@ const catalogSelect = {
   yearAndSemester: true,
   declaredEpisodeCount: true,
   premiereDate: true,
+  episodes: {
+    where: { bangumiSort: { not: null } },
+    select: {
+      episodeType: true,
+      episodeNumber: true,
+      bangumiSort: true,
+    },
+  },
 } as const;
 
 /** 工程层只选择候选、等待目录并保存结果，不决定时间／集数的模型权重。 */
@@ -237,9 +245,10 @@ export class TorrentMatchService
       if (this.activating || !catalogReady(state)) throw new QueueWaiting();
       const active = state!.active!;
       expectedCatalog = active;
-      const ids = candidateSeasons(active, query, config.matching).map(
-        (s) => s.id,
-      );
+      const ids = candidateSeasons(active, query, {
+        ...config.matching,
+        usePremiere: config.matching.backend === 'llm',
+      }).map((s) => s.id);
       const response = await this.matcher!.match(
         active,
         query,

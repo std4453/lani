@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { CatalogSnapshot, CatalogState, MatchQuery } from './protocol';
+import { NumberedEpisode, summarizeNumbers } from './numbers';
 
 export const digest = (value: unknown) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -13,12 +14,15 @@ export function snapshot(
     yearAndSemester: string;
     declaredEpisodeCount?: number | null;
     premiereDate?: string | null;
+    episodes?: NumberedEpisode[];
   }[],
 ): CatalogSnapshot {
   const catalog = rows
     .map((row) => {
       const match = /^(\d{4})0([1-4])$/.exec(row.yearAndSemester);
+      const numbers = summarizeNumbers(row.episodes ?? []);
       return {
+        ...(numbers ? { numbers } : {}),
         id: String(row.id),
         title: row.title,
         declaredEpisodeCount: row.declaredEpisodeCount ?? null,
@@ -55,6 +59,7 @@ export interface CandidatePolicy {
   timezone: string;
   previousQuarters: number;
   nextQuarters: number;
+  usePremiere?: boolean;
 }
 export function validatePolicy(policy: CandidatePolicy) {
   new Intl.DateTimeFormat('en', { timeZone: policy.timezone }).format();
@@ -83,8 +88,23 @@ export function candidateSeasons(
   const month = Number(parts.find((part) => part.type === 'month')!.value);
   const quarterIndex = year * 4 + Math.floor((month - 1) / 3);
   return catalog.catalog.filter((season) => {
-    if (season.year === null || season.quarter === null) return false;
-    const index = season.year * 4 + season.quarter - 1;
+    let year = season.year;
+    let quarter = season.quarter;
+    if ((year === null || quarter === null) && policy.usePremiere) {
+      const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(season.premiereDate ?? '');
+      if (
+        date &&
+        Number.isFinite(Date.parse(`${season.premiereDate}T00:00:00Z`)) &&
+        new Date(`${season.premiereDate}T00:00:00Z`)
+          .toISOString()
+          .slice(0, 10) === season.premiereDate
+      ) {
+        year = Number(date[1]);
+        quarter = Math.ceil(Number(date[2]) / 3);
+      }
+    }
+    if (year === null || quarter === null) return false;
+    const index = year * 4 + quarter - 1;
     return (
       index >= quarterIndex - policy.previousQuarters &&
       index <= quarterIndex + policy.nextQuarters

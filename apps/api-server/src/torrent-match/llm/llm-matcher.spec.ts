@@ -26,7 +26,13 @@ const catalog: CatalogSnapshot = {
       declaredEpisodeCount: 12,
       premiereDate: '2026-10-01',
     },
-    { id: 'old', title: '旧篇', aliases: ['Old'], year: 2025, quarter: 3 },
+    {
+      id: 'old',
+      title: '旧篇',
+      aliases: ['Old'],
+      year: 2025,
+      quarter: 3,
+    },
   ],
 };
 const query: MatchQuery = {
@@ -107,7 +113,7 @@ test('preserves the frozen prompt bytes', () => {
     'first.system.txt':
       'cb1c7b157d0840cab3ca2d9724d03e0c9b8f917157cbdc6300dbef6fe8a24dc3',
     'review.system.txt':
-      '03d72de21599c6aa1e5ca35575a4696e9b2829655d94ee69c42b8450273655f7',
+      'd1e727f32101806a955dcc8c199d734025d20a73724010a0a99fc1879bc72a9d',
   })) {
     expect(
       createHash('sha256')
@@ -423,4 +429,102 @@ test('usage accepts only finite nonnegative counters without inventing missing v
       },
     }),
   ).toEqual({ promptTokens: 10, cacheHitTokens: 4, reasoningTokens: 3 });
+});
+
+test('small catalogs retain recent-only primary and full review on null', async () => {
+  const numbered = {
+    version: 'small-numbered',
+    catalog: [
+      {
+        ...catalog.catalog[0],
+        numbers: { episode: { local: '1-12', sort: '14-25' } },
+      },
+      catalog.catalog[1],
+    ],
+  };
+  const f = fixture([completion(null), completion('old')]);
+  const result = await f.match({}, ['new'], numbered);
+  expect(result.decision).toEqual({
+    stage: 'fallback',
+    fallbackReason: 'primary_null',
+  });
+  expect(f.calls).toHaveLength(2);
+  expect(f.calls[0].payload.messages[0].content).not.toContain('"id":"old"');
+  expect(f.calls[0].payload.messages[0].content).not.toContain('"numbers"');
+  expect(f.calls[1].payload.messages[0].content).toContain('"id":"old"');
+  expect(f.calls[1].payload.messages[0].content).toContain('"numbers"');
+});
+
+test('number evidence waives a count conflict without enlarging the large-catalog primary prompt', async () => {
+  const numbered = {
+    version: 'numbered',
+    catalog: [
+      {
+        ...catalog.catalog[0],
+        numbers: {
+          episode: { local: '1-12', sort: '14-25' },
+          sp: { sort: '13.5' },
+        },
+      },
+      catalog.catalog[1],
+    ],
+  };
+  const f = fixture([
+    completion('new'),
+    completion('new'),
+    completion('new'),
+    completion(null),
+  ]);
+  expect((await f.match({ episode: 15 }, ['new'], numbered)).decision).toEqual({
+    stage: 'primary',
+  });
+  expect(
+    (
+      await f.match(
+        { episode: 13.5, rawTitle: 'New Season 2 Special 13.5' },
+        ['new'],
+        numbered,
+      )
+    ).decision,
+  ).toEqual({ stage: 'primary' });
+  const mismatch = await f.match(
+    { episode: 15, rawTitle: 'New Season 2 Special 15' },
+    ['new'],
+    numbered,
+  );
+  expect(mismatch.decision).toEqual({
+    stage: 'fallback',
+    fallbackReason: 'numbering_conflict',
+  });
+  expect(f.calls).toHaveLength(4);
+  expect(f.calls[0].payload.messages[0].content).not.toContain('"numbers"');
+  expect(f.calls[3].payload.messages[0].content).toContain('"numbers"');
+});
+
+test.each(['New Second Season', 'New シーズン 2', '动画 第二期'])(
+  'reviews explicit season count conflicts in %s',
+  async (rawTitle) => {
+    const f = fixture([completion('new'), completion(null)]);
+    expect(
+      (await f.match({ rawTitle, publisherSeason: undefined, episode: 15 }))
+        .decision,
+    ).toEqual({ stage: 'fallback', fallbackReason: 'numbering_conflict' });
+  },
+);
+
+test('small-catalog protocol failures still receive an independent review', async () => {
+  const f = fixture([
+    new LlmError('INVALID_RESPONSE'),
+    new LlmError('INVALID_RESPONSE'),
+    completion(null),
+  ]);
+  const result = await f.match({}, ['new'], {
+    version: 'small',
+    catalog: [catalog.catalog[0]],
+  });
+  expect(result.decision).toEqual({
+    stage: 'fallback',
+    fallbackReason: 'primary_error',
+  });
+  expect(f.calls).toHaveLength(3);
 });

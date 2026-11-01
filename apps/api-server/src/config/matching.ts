@@ -49,14 +49,16 @@ const matching = obj({
   previousQuarters: opt(num(), 0),
   nextQuarters: opt(num(), 0),
   timeoutMs: opt(num(), 120000),
-  catalogDebounceMs: opt(
-    Joi.number()
-      .integer()
-      .min(0)
-      .max(Number.MAX_SAFE_INTEGER)
-      .required() as unknown as D<number>,
-    30 * 60 * 1000,
-  ),
+  catalogDebounceMs: Joi.number()
+    .integer()
+    .min(0)
+    .max(Number.MAX_SAFE_INTEGER)
+    .optional()
+    .when('backend', {
+      is: 'llm',
+      then: Joi.number().default(0),
+      otherwise: Joi.number().default(10 * 60 * 1000),
+    }) as unknown as D<number>,
 });
 
 export const matchingConfig = opt(
@@ -75,6 +77,6 @@ export const matchingConfig = opt(
     previousQuarters: 0,
     nextQuarters: 0,
     timeoutMs: 120000,
-    catalogDebounceMs: 30 * 60 * 1000,
+    catalogDebounceMs: 10 * 60 * 1000,
   },
 );

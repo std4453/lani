@@ -1,3 +1,4 @@
+import { hasMultipleSeasons } from '@lani/parse-torrent-title';
 import { Torrent } from '@lani/db';
 import { MatchQuery } from './protocol';
 
@@ -15,6 +16,10 @@ export type TorrentMatchInput = Pick<
 >;
 
 export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
+  // 单集季度匹配不消费解析出的范围或明确跨季合集。
+  if (torrent.episodeNumberFrom != null || torrent.episodeNumberTo != null)
+    return null;
+  if (hasMultipleSeasons(torrent.title)) return null;
   const aliases = [
     ...new Set(
       [torrent.seasonTitleRaw ?? '', ...torrent.seasonTitleAliases]

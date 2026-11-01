@@ -232,7 +232,10 @@ class ContractTests(unittest.TestCase):
 
     def test_v2_candidate_scope_and_ignored_model_metadata(self):
         cfg = config(protocolVersion=2)
-        cfg["catalog"][0].update(premiereDate="2026-10-01", episodes="ignored")
+        cfg["catalog"][0].update(
+            premiereDate="2026-10-01", episodes="ignored",
+            numbers={"episode": {"local": "1-12", "sort": "14-25"}, "sp": {"sort": "13.5"}},
+        )
         request = match_v2()
         request["query"]["rawTitle"] = "escape"
         replies, created = self.both([
@@ -246,6 +249,7 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(all(payload["protocolVersion"] == 2 for _, payload in replies))
         self.assertEqual(created[0].catalog[0]["episodes"], [])
         self.assertNotIn("premiereDate", created[0].catalog[0])
+        self.assertNotIn("numbers", created[0].catalog[0])
         self.assertNotIn("rawTitle", created[0].last_query)
         for index, sid in ((2, "s1"), (3, "s2"), (4, None)):
             self.assertEqual(replies[index][1]["result"]["seasonId"], sid)

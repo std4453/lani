@@ -297,3 +297,24 @@ it('rejects the legacy protocol', async () => {
     'Incompatible matcher protocol',
   );
 });
+
+it('uploads optional number summaries through the existing v2 catalog contract', async () => {
+  const numbers = {
+    episode: { local: '1-12', sort: '14-25' },
+    sp: { sort: '13.5' },
+  };
+  const extended = {
+    ...catalog,
+    catalog: [{ ...catalog.catalog[0], numbers }],
+  };
+  await client.load(extended);
+  expect(bodies.find((body) => body.catalog)).toEqual({
+    protocolVersion: 2,
+    catalogVersion: extended.version,
+    catalog: extended.catalog,
+  });
+  expect(
+    (await client.match(extended, query, ['1'], 'with-numbers')).result
+      .seasonId,
+  ).toBe('1');
+});

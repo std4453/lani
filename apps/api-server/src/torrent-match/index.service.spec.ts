@@ -260,38 +260,102 @@ it.each(['external', 'llm'] as const)(
   },
 );
 
-it('目录观察使用单次查询，只有写入检查点才开启事务', async () => {
-  const season = {
-    id: 1,
-    title: '动画',
-    aliases: [],
-    yearAndSemester: '202603',
-  };
-  const tx = {
-    $queryRaw: jest.fn().mockResolvedValue([{ id: 1 }]),
-    torrentMatchCatalog: {
-      findUnique: jest.fn().mockResolvedValue({ state: {} }),
-      update: jest.fn().mockResolvedValue(undefined),
-    },
-    backgroundJob: {
-      upsert: jest.fn().mockResolvedValue({ id: 1 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-    },
-  };
-  const db = {
-    season: { findMany: jest.fn().mockResolvedValue([season]) },
-    $transaction: jest.fn(async (callback) => callback(tx)),
-  };
-  const queues = { wake: jest.fn().mockResolvedValue(undefined) };
-  const service = new TorrentMatchService(
-    db as any,
-    queues as any,
-    {} as any,
-    {} as any,
-  );
-  (service as any).matcher = {};
-  await service.refreshCatalog();
-  expect(db.season.findMany).toHaveBeenCalledTimes(1);
-  expect(db.$transaction).toHaveBeenCalledTimes(1);
-  expect(tx.torrentMatchCatalog.update).toHaveBeenCalled();
-});
+it.each(['external', 'llm'] as const)(
+  '%s 观察目录时只为摘要实际差异写入检查点和任务',
+  async (backend) => {
+    const season = {
+      id: 1,
+      title: '动画',
+      aliases: [],
+      yearAndSemester: '202603',
+      episodes: [1, 2, 3].map((episodeNumber) => ({
+        episodeType: 'EPISODE',
+        episodeNumber,
+        bangumiSort: episodeNumber + 13,
+      })),
+    };
+    const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 1 }]),
+      torrentMatchCatalog: {
+        findUnique: jest.fn().mockResolvedValue({ state: {} }),
+        update: jest.fn().mockResolvedValue(undefined),
+      },
+      backgroundJob: {
+        upsert: jest.fn().mockResolvedValue({ id: 1 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const db = {
+      season: { findMany: jest.fn().mockResolvedValue([season]) },
+      $transaction: jest.fn(async (callback) => callback(tx)),
+    };
+    const queues = { wake: jest.fn().mockResolvedValue(undefined) };
+    const service = new TorrentMatchService(
+      db as any,
+      queues as any,
+      {} as any,
+      {} as any,
+    );
+    (service as any).matcher = {};
+    const previous = config.matching.backend;
+    config.matching.backend = backend;
+    try {
+      await service.refreshCatalog();
+      expect(db.season.findMany).toHaveBeenCalledTimes(1);
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      expect(tx.torrentMatchCatalog.update).toHaveBeenCalledTimes(1);
+      expect(db.season.findMany.mock.calls[0][0].select.episodes).toEqual({
+        where: { bangumiSort: { not: null } },
+        select: { episodeType: true, episodeNumber: true, bangumiSort: true },
+      });
+      tx.torrentMatchCatalog.findUnique.mockResolvedValue({
+        state: tx.torrentMatchCatalog.update.mock.calls[0][0].data.state,
+      });
+      db.season.findMany.mockResolvedValue([
+        {
+          ...season,
+          episodes: [...season.episodes.slice().reverse(), ...season.episodes],
+        },
+      ]);
+      tx.torrentMatchCatalog.update.mockClear();
+      tx.backgroundJob.upsert.mockClear();
+      await service.refreshCatalog();
+      expect(tx.torrentMatchCatalog.update).not.toHaveBeenCalled();
+      expect(tx.backgroundJob.upsert).not.toHaveBeenCalled();
+    } finally {
+      config.matching.backend = previous;
+    }
+  },
+);
+
+it.each(['external', 'llm'] as const)(
+  'waits for new number evidence for %s before committing and selects no episode titles or dates',
+  async (backend) => {
+    const previous = config.matching.backend;
+    config.matching.backend = backend;
+    try {
+      const f = fixture();
+      const commit = await f.service.match(f.job);
+      f.tx.season.findMany.mockResolvedValue([
+        {
+          ...f.season,
+          episodes: [
+            {
+              episodeType: 'EPISODE',
+              episodeNumber: new Prisma.Decimal(1),
+              bangumiSort: new Prisma.Decimal(14),
+            },
+          ],
+        },
+      ]);
+      await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
+      expect(f.tx.torrent.update).not.toHaveBeenCalled();
+      expect(f.tx.season.findMany.mock.calls[0][0].select.episodes).toEqual({
+        where: { bangumiSort: { not: null } },
+        select: { episodeType: true, episodeNumber: true, bangumiSort: true },
+      });
+    } finally {
+      config.matching.backend = previous;
+    }
+  },
+);
