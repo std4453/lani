@@ -28,7 +28,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 import { handleError } from '@/utils/error';
-import { LoadingOutlined, SettingOutlined } from '@ant-design/icons';
+import { SettingOutlined } from '@ant-design/icons';
 import { useBangumiSearch } from './useBangumiSearch';
 import BangumiSearchCard from './BangumiSearchCard';
 import { isBangumiResultVisible } from './bangumi-search-display';
@@ -68,6 +68,21 @@ export default function AddFromBangumiDialog({
       (displayedItems.length === 0 && !error && (loading || hasMore)));
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const scroll = scrollRef.current;
+    if (!visible || !scroll) return;
+    const update = () => {
+      // 将滚动条占用的宽度补回内容区，保持卡片宽度及弹窗两侧留白。
+      scroll.style.setProperty(
+        '--scrollbar-width',
+        `${scroll.offsetWidth - scroll.clientWidth}px`,
+      );
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(scroll);
+    update();
+    return () => observer.disconnect();
+  }, [visible]);
   useEffect(() => {
     if (!searchReady || loading || error || !hasMore || !bottomRef.current)
       return;
@@ -182,21 +197,10 @@ export default function AddFromBangumiDialog({
         </Space>,
       ]}
       width={900}
+      bodyStyle={{ padding: 0 }}
     >
-      <Space
-        direction="vertical"
-        style={{
-          width: '100%',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginRight: -8,
-          }}
-        >
+      <div>
+        <div className={styles.searchBar}>
           <Input
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
@@ -252,68 +256,70 @@ export default function AddFromBangumiDialog({
         <Spin spinning={initialLoading} delay={0}>
           <div
             ref={scrollRef}
-            style={{
-              height: mobile ? 400 : 600,
-              overflow: 'auto',
-              marginLeft: -8,
-              marginRight: -8,
-            }}
+            className={styles.searchScroll}
+            style={{ height: mobile ? 424 : 624 }}
           >
-            <List
-              dataSource={searchReady ? displayedItems : []}
-              locale={{
-                emptyText:
-                  initialLoading || error ? (
-                    <div className={styles.loadingPlaceholder} />
-                  ) : (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description={
-                        items.length
-                          ? '没有符合筛选条件的结果，可调整搜索设置'
-                          : '暂无数据'
-                      }
-                    />
-                  ),
-              }}
-              rowKey="id"
-              grid={{
-                column: 2,
-                xs: 1,
-                sm: 1,
-              }}
-              renderItem={(item) => (
-                <BangumiSearchCard
-                  key={item.id}
-                  item={item}
-                  selected={item.id === selected?.id}
-                  keywords={keywordsDebounced}
-                  onSelect={setSelected}
-                />
-              )}
-            />
-            <div ref={bottomRef} className={styles.searchFooter} role="status">
-              {searchReady &&
-                !initialLoading &&
-                (loading ? (
-                  <Space>
-                    <LoadingOutlined spin />
-                    加载中
-                  </Space>
-                ) : error ? (
-                  <Space>
-                    加载失败
-                    <Button type="link" size="small" onClick={loadMore}>
-                      重试
-                    </Button>
-                  </Space>
-                ) : !hasMore && displayedItems.length > 0 ? (
-                  '到底了'
-                ) : null)}
+            <div className={styles.searchContent}>
+              <List
+                dataSource={searchReady ? displayedItems : []}
+                locale={{
+                  emptyText:
+                    initialLoading || error ? (
+                      <div className={styles.loadingPlaceholder} />
+                    ) : (
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={
+                          items.length
+                            ? '没有符合筛选条件的结果，可调整搜索设置'
+                            : '暂无数据'
+                        }
+                      />
+                    ),
+                }}
+                rowKey="id"
+                grid={{
+                  column: 2,
+                  xs: 1,
+                  sm: 1,
+                }}
+                renderItem={(item) => (
+                  <BangumiSearchCard
+                    key={item.id}
+                    item={item}
+                    selected={item.id === selected?.id}
+                    keywords={keywordsDebounced}
+                    onSelect={setSelected}
+                  />
+                )}
+              />
+              <div
+                ref={bottomRef}
+                className={styles.searchFooter}
+                role="status"
+              >
+                {searchReady &&
+                  !initialLoading &&
+                  (loading ? (
+                    <Space>
+                      <Spin size="small" />
+                      加载中
+                    </Space>
+                  ) : error ? (
+                    <Space>
+                      加载失败
+                      <Button type="link" size="small" onClick={loadMore}>
+                        重试
+                      </Button>
+                    </Space>
+                  ) : !hasMore && displayedItems.length > 0 ? (
+                    '到底了'
+                  ) : null)}
+              </div>
             </div>
           </div>
         </Spin>
-      </Space>
+      </div>
     </Modal>
   );
 }

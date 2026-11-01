@@ -1,3 +1,17 @@
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 8px;
+}
+.searchScroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.searchContent {
+  width: calc(100% + var(--scrollbar-width, 0px));
+  padding: 0 16px;
+}
 .item {
   display: flex;
   align-items: center;
@@ -6,8 +20,8 @@
   transition: border-color 120ms, background-color 120ms, opacity 120ms;
   cursor: pointer;
 
-  &:hover,
-  &:focus-visible {
+  &:not(.added):hover,
+  &:not(.added):focus-visible {
     border-color: var(--lani-primary);
   }
   &.selected {
@@ -15,11 +29,8 @@
     border-color: var(--lani-primary);
   }
   &.added {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: default;
-    &:hover {
-      opacity: 1;
-    }
   }
 }
 .itemContainer {
@@ -37,7 +48,7 @@
 .title {
   font-weight: 500;
   line-height: 22px;
-  height: 44px;
+  max-height: 44px;
   flex-shrink: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
