@@ -22,11 +22,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
+import pLimit from 'p-limit';
+import { bangumiSearchTags } from './bangumi-search-tags';
 
 @Injectable()
 @Resolver()
 export class AdminResolver {
   private logger = new Logger(AdminResolver.name);
+  private bangumiDetailsLimit = pLimit(4);
 
   constructor(
     private prisma: PrismaService,
@@ -94,6 +97,7 @@ export class AdminResolver {
             name: item.name_cn || item.name || '未命名',
             airDate: item.date,
             image: item.images?.small,
+            tags: bangumiSearchTags(item.tags),
             added,
           },
         ];
@@ -127,7 +131,7 @@ export class AdminResolver {
           await BangumiAPIService.searchSubjectByKeywords(
             keywords,
             Legacy_SubjectType._2,
-            'small',
+            'large',
             0,
             25,
           )
@@ -140,14 +144,34 @@ export class AdminResolver {
         },
       },
     });
-    return entries.map((item) => ({
-      id: `${item.id}`,
-      name: item.name_cn || item.name || '未命名',
-      airDate: item.date || item.air_date,
-      image: item.image || item.images?.small,
-      added:
-        added.find((season) => season.bangumiId === `${item.id}`) !== undefined,
-    }));
+    return Promise.all(
+      entries.map(async (item) => ({
+        id: `${item.id}`,
+        name: item.name_cn || item.name || '未命名',
+        airDate: item.date || item.air_date,
+        image: item.image || item.images?.small,
+        tags:
+          'tags' in item
+            ? bangumiSearchTags(item.tags)
+            : await this.bangumiDetailsLimit(async () => {
+                try {
+                  // 旧版搜索的 large 仍不含标签，需要从条目详情补齐。
+                  const subject = await BangumiAPIService.getSubjectById(
+                    item.id,
+                  );
+                  return bangumiSearchTags(subject.tags);
+                } catch {
+                  this.logger.warn(
+                    `Failed to fetch Bangumi tags for subject ${item.id}`,
+                  );
+                  return [];
+                }
+              }),
+        added:
+          added.find((season) => season.bangumiId === `${item.id}`) !==
+          undefined,
+      })),
+    );
   }
 
   @Query(() => [String])

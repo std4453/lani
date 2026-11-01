@@ -31,6 +31,7 @@ import { useEffect, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 import { handleError } from '@/utils/error';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import BangumiTags from './BangumiTags';
 
 export default function AddFromBangumiDialog({
   visible,
@@ -222,6 +223,7 @@ export default function AddFromBangumiDialog({
                           放送日期：{item.airDate}
                         </Typography.Paragraph>
                       ) : null}
+                      <BangumiTags tags={item.tags} />
                     </div>
                     <Image
                       src={item.image ?? undefined}
