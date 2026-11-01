@@ -37,7 +37,7 @@ jest.mock('@/components/EpisodeDetailsDialog', () => ({
 jest.mock('./CreateSeasonDialog', () => ({
   useCreateSeasonDialog: () => [null, null, jest.fn()],
 }));
-jest.mock('./AddFromBangumiDialog', () => ({
+jest.mock('./add-from-bangumi/AddFromBangumiDialog', () => ({
   useAddFromBangumiDialog: () => [null, null, jest.fn()],
 }));
 jest.mock('./TestRoutingTitle', () => () => null);

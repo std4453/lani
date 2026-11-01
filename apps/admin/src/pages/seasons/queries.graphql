@@ -118,19 +118,6 @@ mutation CreateSeason($season: SeasonInput!) {
   }
 }
 
-query SearchBangumi($keywords: String!, $useNewBangumiSearchApi: Boolean) {
-  searchBangumi(
-    keywords: $keywords
-    useNewBangumiSearchApi: $useNewBangumiSearchApi
-  ) {
-    added
-    airDate
-    id
-    image
-    name
-  }
-}
-
 fragment jellyfinFolderFields on JellyfinFolder {
   id
   name
