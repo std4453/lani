@@ -8,7 +8,7 @@ worker 只保存可丢弃的全目录索引，不访问数据库、不管理任�
 
 npm 客户端导出 `MatchQueryV2`、`WorkerStatusV2`、`ConfigureRequestV2`、`MatchRequestV2` 和 `MatchResponseV2`；使用 `status(2)`，`configure()` 和 `match()` 根据请求版本选择协议。`status()` 默认 v1，保留既有调用行为。
 
-目录上传结构为 `{ protocolVersion: 2, catalogVersion, catalog }`。目录条目沿用下文的 ID、标题、别名、年、季度与可选静态总集数字段，并允许 `premiereDate?: string | null` 表示 `YYYY-MM-DD` 首播日期。v2 无需逐集 `episodes`。本包模型忽略 `premiereDate` 和 `episodes`；它们不会进入本包推理输入。
+目录上传结构为 `{ protocolVersion: 2, catalogVersion, catalog }`。目录条目沿用下文的 ID、标题、别名、年、季度与可选静态总集数字段，并允许 `premiereDate?: string | null` 表示 `YYYY-MM-DD` 首播日期。v2 无需逐集 `episodes`。可选 `numbers` 提供去重、排序、区间合并后的编号集合，例如 `{ "episode": { "local": "1-12", "sort": "14-25" }, "sp": { "sort": "13.5" } }`；缺失类型或编号时省略相应字段。编号仅来自已有 Bangumi sort，普通集 local 使用对应记录的本篇编号，SP 仅提供 sort。整数区间不包含中间小数，两个集合不表示一一对应关系。此字段是兼容扩展，协议版本保持 2。本包模型忽略 `premiereDate`、`numbers` 和 `episodes`；它们不会进入本包推理输入。调用方仅在合并后摘要实际变化时更新目录版本并 debounce，重复同步及逐集标题、日期变化不触发更新。
 
 ```json
 {

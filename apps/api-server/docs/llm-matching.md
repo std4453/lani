@@ -25,13 +25,15 @@ matching:
 
 `apiBase` 是供应商 API 基础地址，由 SDK 拼接 Chat Completions 路径。项目不默认选择供应商。DeepSeek 官方路由可使用 `apiBase: https://api.deepseek.com`、`model: deepseek-flash`，首轮参数设为 `thinking: { type: disabled }`，复核参数设为 `thinking: { type: enabled }` 与 `reasoning_effort: high`。模型名及扩展参数以供应商合同为准，凭据不写入公开配置或日志。
 
-首轮默认 `temperature=0,max_tokens=128`，复核默认 `max_tokens=8192`。两阶段固定 `stream=false,response_format={type: json_object}`，扩展参数不能覆盖模型、消息或这些固定项。关闭 `fallbackEnabled` 可用于首轮对照。保留独立匹配器时选择 `matching.backend: external` 并配置其 `endpoint`；all-in-one 默认仍使用原 anime-matcher。
+首轮默认 `temperature=0,max_tokens=128`，复核默认 `max_tokens=8192`。两阶段固定 `stream=false,response_format={type: json_object}`，扩展参数不能覆盖模型、消息或这些固定项。关闭 `fallbackEnabled` 可用于首轮对照。`matching.catalogDebounceMs` 在 LLM 模式默认 `0`，external 模式默认 `600000`（10 分钟），显式配置优先。目录仍每分钟检测一次，只有实际内容变化才刷新；已持久化的等待窗口不因配置变化重新计时。
+
+保留独立匹配器时选择 `matching.backend: external` 并配置其 `endpoint`；all-in-one 默认仍使用原 anime-matcher。
 
 ## 两阶段判断
 
 所有目录统一使用两阶段流程：首轮只给近期候选的 ID、完整名称、年份与季度，拒答再用完整目录独立复核。小目录也保留这一流程。季度缺失时，内置 LLM 可用有效作品首播日期补候选窗口；已有季度优先，独立匹配器的窗口规则不变。
 
-声明集数冲突与可重试技术故障仍可触发复核。只有发布者季数或原标题明确季数、且单集编号超出声明集数时才检查冲突；命中该条目真实编号摘要可免去此次复核。特别篇、OVA/OAD、Recap 等标题仅接受 `sp.sort` 作为免复核证据。整数范围不包含中间小数，未列出的编号保持未知，不据此硬拒绝。编号证据不验证篇章身份，不能防止模型把新篇误认为目录已有前篇。
+声明集数冲突与可重试技术故障仍可触发复核。标题季数标记和跨季合集识别由 `@lani/parse-torrent-title` 共用；matcher 决定是否复核或跳过。只有发布者季数或原标题明确季数、且单集编号超出声明集数时才检查冲突；命中该条目真实编号摘要可免去此次复核。特别篇、OVA/OAD、Recap 等标题仅接受 `sp.sort` 作为免复核证据。整数范围不包含中间小数，未列出的编号保持未知，不据此硬拒绝。编号证据不验证篇章身份，不能防止模型把新篇误认为目录已有前篇。
 
 目录摘要只读取数据库已有 `bangumiSort`，没有 sort 的剧集不参与摘要。普通剧集按 `episodeNumber` 和 sort 分别形成集合，SP 仅提供 sort；去重、排序并合并连续整数，保留断点与小数。例如：
 
@@ -39,7 +41,7 @@ matching:
 {"numbers":{"episode":{"local":"1-12","sort":"14-25"},"sp":{"sort":"13.5"}}}
 ```
 
-不向模型提供逐集标题或日期，不把两个编号集合当作一一对应的 offset 表。摘要参与目录版本和提交前核验，编号变化等待新的目录快照；逐集标题、放送时间及行顺序变化不会使摘要失效。声明集数与首播日期继续来自作品级元数据，不能根据已同步剧集数或最早单集日期推算。匹配过程不请求 Bangumi、不回填业务数据；外部匹配后端不读取这些剧集行。
+不向模型提供逐集标题或日期，不把两个编号集合当作一一对应的 offset 表。摘要参与目录版本和提交前核验，只有去重、排序、区间合并后的摘要实际变化才更新目录并按配置 debounce，重复同步不刷新；逐集标题、放送时间及行顺序变化不会使摘要失效。声明集数与首播日期继续来自作品级元数据，不能根据已同步剧集数或最早单集日期推算。匹配过程不请求 Bangumi、不回填业务数据。两个后端统一接收可选 `numbers` 字段，沿用 v2 协议；旧外部 matcher 可忽略该字段。
 
 提示词位于 [prompts](../src/torrent-match/llm/prompts)，精简首轮不受编号变化影响，完整复核携带摘要。两阶段均不接收前次答案，供应商缓存和计费仍由供应商决定。空完整目录不产生付费调用；已解析的集数范围和标题明确跨季合集不进入单集季度匹配，单个总集篇仍可参与季度归属判断。
 

@@ -11,7 +11,7 @@ it.each([undefined, {}])(
       endpoint: '',
       previousQuarters: 0,
       nextQuarters: 0,
-      catalogDebounceMs: 1800000,
+      catalogDebounceMs: 600000,
     });
   },
 );
@@ -219,5 +219,26 @@ it.each(['firstParameters', 'reviewParameters'])(
         }).error,
       ).toBeDefined();
     }
+  },
+);
+
+// 未启用时也解析默认值，保证启用开关不会改变配置含义。
+it.each(['llm', 'external'])(
+  '%s 使用后端默认防抖，并保留显式配置',
+  (backend) => {
+    const parsed = matchingConfig.validate({ backend });
+    expect(parsed.error).toBeUndefined();
+    expect(parsed.value.catalogDebounceMs).toBe(backend === 'llm' ? 0 : 600000);
+    for (const catalogDebounceMs of [0, 5000, 600000]) {
+      const { value, error } = matchingConfig.validate({
+        backend,
+        catalogDebounceMs,
+      });
+      expect(error).toBeUndefined();
+      expect(value.catalogDebounceMs).toBe(catalogDebounceMs);
+    }
+    expect(
+      matchingConfig.validate({ backend, catalogDebounceMs: -1 }).error,
+    ).toBeDefined();
   },
 );

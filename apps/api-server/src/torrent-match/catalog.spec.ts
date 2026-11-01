@@ -202,3 +202,86 @@ it('uses valid premiere dates only for missing quarters when explicitly enabled'
   ).toEqual(['1']);
   expect(catalog.catalog[0].year).toBeNull();
 });
+
+it('debounces only changes to merged number sets, not repeated episode syncs', () => {
+  const now = new Date('2026-10-21T00:00:00Z');
+  const episodes = [1, 2, 3].map((episodeNumber) => ({
+    episodeType: 'EPISODE',
+    episodeNumber,
+    bangumiSort: episodeNumber + 13,
+  }));
+  const original = snapshot([{ ...row(), episodes }]);
+  expect(original.catalog[0].numbers).toEqual({
+    episode: { local: '1-3', sort: '14-16' },
+  });
+  const active = {
+    ...observeCatalog(null, original, now, 600000),
+    active: original,
+  };
+  const synced = snapshot([
+    {
+      ...row(),
+      episodes: [
+        ...episodes
+          .slice()
+          .reverse()
+          .map((episode) => ({
+            ...episode,
+            title: '更新标题',
+            rawAirTime: new Date(),
+          })),
+        ...episodes,
+        { episodeType: 'EPISODE', episodeNumber: 99, bangumiSort: null },
+      ],
+    },
+  ]);
+  expect(observeCatalog(active, synced, new Date(+now + 1000), 600000)).toBe(
+    active,
+  );
+  // 原始行对应关系变化，但两组摘要集合不变时也不刷新。
+  const swapped = snapshot([
+    {
+      ...row(),
+      episodes: episodes.map((episode, index) => ({
+        ...episode,
+        bangumiSort: episodes[2 - index].bangumiSort,
+      })),
+    },
+  ]);
+  expect(observeCatalog(active, swapped, new Date(+now + 2000), 600000)).toBe(
+    active,
+  );
+  for (const delay of [0, 600000]) {
+    const expanded = snapshot([
+      {
+        ...row(),
+        episodes: [
+          ...episodes,
+          { episodeType: 'EPISODE', episodeNumber: 4, bangumiSort: 17 },
+        ],
+      },
+    ]);
+    const pending = observeCatalog(
+      active,
+      expanded,
+      new Date(+now + 3000),
+      delay,
+    );
+    expect(pending.desired.catalog[0].numbers).toEqual({
+      episode: { local: '1-4', sort: '14-17' },
+    });
+    expect(pending.dueAt).toBe(new Date(+now + 3000 + delay).toISOString());
+    expect(catalogReady(pending)).toBe(false);
+    expect(
+      observeCatalog(pending, expanded, new Date(+now + 4000), delay),
+    ).toBe(pending);
+    const removed = observeCatalog(
+      pending,
+      original,
+      new Date(+now + 5000),
+      delay,
+    );
+    expect(removed.desired.version).toBe(original.version);
+    expect(removed.dueAt).toBe(new Date(+now + 5000 + delay).toISOString());
+  }
+});

@@ -1,3 +1,4 @@
+import { hasExplicitSeason } from '@lani/parse-torrent-title';
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
@@ -32,8 +33,6 @@ interface Snapshot {
   rows: ReadonlyMap<string, CatalogRow>;
 }
 
-const explicitSeason =
-  /(?:\bS\d{1,2}(?:E\d|\b)|\b\d{1,2}(?:st|nd|rd|th)\b|\bSeason\s+\d{1,2}\b|第[一二三四五六七八九十0-9]+[季期]|\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+season\b|シーズン\s*\d+)/i;
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 const object = (value: unknown): value is Record<string, unknown> =>
@@ -393,7 +392,7 @@ export class LlmMatcher implements MatcherBackend {
             const count = rows.get(selected)!.count;
             const explicit =
               (query.publisherSeason ?? 0) > 0 ||
-              explicitSeason.test(query.rawTitle);
+              hasExplicitSeason(query.rawTitle);
             if (
               !(
                 count !== null &&
