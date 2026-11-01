@@ -62,3 +62,25 @@ it('封面失败移除损坏图片并保留占位，不显示失败文字或重�
   expect(next.style.opacity).toBe('1');
   expect(container.querySelector('.ant-image-mask')).not.toBeNull();
 });
+
+it('普通卡片支持键盘选择，已添加项跳过 Tab，子元素键盘事件不选中卡片', () => {
+  render(item);
+  const card = container.querySelector('[aria-disabled]')!;
+  expect(card.getAttribute('role')).toBe('button');
+  expect(card.getAttribute('tabindex')).toBe('0');
+  expect(card.getAttribute('aria-pressed')).toBe('false');
+  act(() => {
+    Simulate.keyDown(card, { key: 'Enter' });
+    Simulate.keyDown(card, { key: ' ' });
+  });
+  expect(select).toHaveBeenCalledTimes(2);
+  select.mockClear();
+  act(() =>
+    Simulate.keyDown(container.querySelector('img')!, { key: 'Enter' }),
+  );
+  expect(select).not.toHaveBeenCalled();
+  render({ ...item, added: true });
+  expect(card.getAttribute('tabindex')).toBe('-1');
+  act(() => Simulate.keyDown(card, { key: 'Enter' }));
+  expect(select).not.toHaveBeenCalled();
+});

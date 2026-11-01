@@ -34,6 +34,16 @@ function BangumiSearchCard({
         onClick={() => {
           if (!item.added) onSelect(item);
         }}
+        role="button"
+        tabIndex={item.added ? -1 : 0}
+        aria-pressed={selected}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget || item.added) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect(item);
+          }
+        }}
         aria-disabled={item.added}
         className={clsx(styles.item, {
           [styles.added]: item.added,
