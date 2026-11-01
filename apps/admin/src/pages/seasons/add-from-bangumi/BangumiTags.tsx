@@ -1,6 +1,5 @@
 import { Tag, Tooltip } from 'antd';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { visibleTagCount } from './bangumi-tags-layout';
 import styles from './BangumiTags.module.less';
 import { platformColors } from './bangumi-search-display';
 
@@ -60,6 +59,7 @@ export default function BangumiTags({
             {hidden.length > 0 && (
               <Tooltip title={hidden.join('、')} trigger={['hover', 'focus']}>
                 <Tag
+                  className={styles.more}
                   tabIndex={0}
                   aria-label={`另有${hidden.length}个标签：${hidden.join(
                     '、',
@@ -84,4 +84,25 @@ export default function BangumiTags({
       )}
     </div>
   );
+}
+
+// 为 +X 预留位置，标签与隐藏数量共同限制在一行内。
+export function visibleTagCount(
+  widths: number[],
+  available: number,
+  moreWidth: (hidden: number) => number,
+  gap: number = 4,
+): number {
+  const total = (count: number) =>
+    widths.slice(0, count).reduce((sum, width) => sum + width, 0) +
+    Math.max(0, count - 1) * gap;
+  if (total(widths.length) <= available) return widths.length;
+  for (let count = widths.length - 1; count >= 0; count--) {
+    if (
+      total(count) + (count ? gap : 0) + moreWidth(widths.length - count) <=
+      available
+    )
+      return count;
+  }
+  return 0;
 }

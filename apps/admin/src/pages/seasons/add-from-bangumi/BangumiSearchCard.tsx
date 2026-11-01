@@ -31,19 +31,6 @@ function BangumiSearchCard({
   return (
     <div className={styles.itemContainer}>
       <div
-        onClick={() => {
-          if (!item.added) onSelect(item);
-        }}
-        role="button"
-        tabIndex={item.added ? -1 : 0}
-        aria-pressed={selected}
-        onKeyDown={(event) => {
-          if (event.target !== event.currentTarget || item.added) return;
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onSelect(item);
-          }
-        }}
         aria-disabled={item.added}
         className={clsx(styles.item, {
           [styles.added]: item.added,
@@ -62,7 +49,7 @@ function BangumiSearchCard({
           <div className={styles.date}>
             {item.airDate && item.airDate !== '0000-00-00'
               ? `放送日期：${item.airDate}`
-              : '\u00a0'}
+              : ''}
           </div>
           <BangumiTags tags={tags} platform={item.platform} />
         </div>
@@ -70,6 +57,14 @@ function BangumiSearchCard({
           src={item.image}
           previewSrc={item.previewImage}
           name={item.name}
+        />
+        <button
+          type="button"
+          className={styles.select}
+          aria-label={`选择${item.name}`}
+          aria-pressed={selected}
+          disabled={item.added}
+          onClick={() => onSelect(item)}
         />
       </div>
     </div>

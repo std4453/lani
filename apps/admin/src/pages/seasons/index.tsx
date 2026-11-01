@@ -27,7 +27,7 @@ import {
   SeasonFilter,
   SeasonsOrderBy,
 } from '@/generated/types';
-import { useAddFromBangumiDialog } from '@/pages/seasons/AddFromBangumiDialog';
+import { useAddFromBangumiDialog } from '@/pages/seasons/add-from-bangumi/AddFromBangumiDialog';
 import { useCreateSeasonDialog } from '@/pages/seasons/CreateSeasonDialog';
 import { useAppSelector } from '@/store/hooks';
 import { handleError } from '@/utils/error';
