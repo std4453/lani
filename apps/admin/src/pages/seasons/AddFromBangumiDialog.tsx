@@ -1,7 +1,6 @@
 import {
   CreateSeasonDocument,
   MetadataSource,
-  SearchBangumiDocument,
   SearchBangumiQuery,
   SyncEpisodeDataDocument,
   SyncMetadataDocument,
@@ -9,7 +8,7 @@ import {
 import { useJellyfinFolders } from '@/pages/seasons/useJellyfinFolders';
 import { createUseDialog, DialogProps } from '@/utils/useDialog';
 import useMobile from '@/utils/useMobile';
-import { useApolloClient, useQuery } from '@apollo/client';
+import { useApolloClient } from '@apollo/client';
 import { useDebounce } from 'ahooks';
 import {
   Button,
@@ -27,10 +26,11 @@ import {
   Typography,
 } from 'antd';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 import { handleError } from '@/utils/error';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { useBangumiSearch } from './useBangumiSearch';
 import BangumiTags from './BangumiTags';
 
 export default function AddFromBangumiDialog({
@@ -40,27 +40,42 @@ export default function AddFromBangumiDialog({
 }: DialogProps<void, { id: number }>) {
   const client = useApolloClient();
   const [keywords, setKeywords] = useState('');
-  const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(false);
+  const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(true);
   const keywordsDebounced = useDebounce(keywords, {
     wait: 500,
   });
-  const { data, loading } = useQuery(SearchBangumiDocument, {
-    variables: {
-      keywords: keywordsDebounced,
-      useNewBangumiSearchApi,
-    },
-    skip: !keywordsDebounced,
-  });
+  const searchReady =
+    visible && !!keywords.trim() && keywords === keywordsDebounced;
+  const { items, loading, hasMore, error, loadMore } = useBangumiSearch(
+    keywords,
+    useNewBangumiSearchApi,
+    searchReady,
+  );
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!searchReady || loading || error || !hasMore || !bottomRef.current)
+      return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { root: scrollRef.current },
+    );
+    observer.observe(bottomRef.current);
+    return () => observer.disconnect();
+  }, [searchReady, loading, error, hasMore, loadMore]);
   const [selected, setSelected] = useState<
     SearchBangumiQuery['searchBangumi'][0] | undefined
   >(undefined);
   useEffect(() => {
     setSelected(undefined);
-  }, [keywords]);
+    scrollRef.current?.scrollTo(0, 0);
+  }, [keywords, useNewBangumiSearchApi, visible]);
   useEffect(() => {
     if (visible) {
       setKeywords('');
-      setUseNewBangumiSearchApi(false);
+      setUseNewBangumiSearchApi(true);
     }
   }, [visible]);
 
@@ -172,22 +187,23 @@ export default function AddFromBangumiDialog({
             allowClear
           />
           <Checkbox
-            checked={useNewBangumiSearchApi}
+            checked={!useNewBangumiSearchApi}
             onChange={(e) => {
-              setUseNewBangumiSearchApi(e.target.checked);
+              setUseNewBangumiSearchApi(!e.target.checked);
             }}
             style={{
               whiteSpace: 'nowrap',
             }}
           >
-            使用新版搜索&nbsp;
-            <Tooltip title="如果旧版搜索无法找到结果，可以尝试使用新版搜索">
+            使用旧版搜索&nbsp;
+            <Tooltip title="默认使用新版搜索；找不到结果时可尝试旧版搜索，旧版通常不含标签">
               <QuestionCircleOutlined />
             </Tooltip>
           </Checkbox>
         </div>
-        <Spin spinning={loading}>
+        <Spin spinning={loading && items.length === 0}>
           <div
+            ref={scrollRef}
             style={{
               height: mobile ? 400 : 600,
               overflow: 'auto',
@@ -196,7 +212,7 @@ export default function AddFromBangumiDialog({
             }}
           >
             <List
-              dataSource={data?.searchBangumi ?? []}
+              dataSource={items}
               rowKey="id"
               grid={{
                 column: 2,
@@ -237,6 +253,24 @@ export default function AddFromBangumiDialog({
                 </div>
               )}
             />
+            <div ref={bottomRef} className={styles.searchFooter} role="status">
+              {searchReady &&
+                (loading ? (
+                  <Space>
+                    <LoadingOutlined spin />
+                    加载中
+                  </Space>
+                ) : error ? (
+                  <Space>
+                    加载失败
+                    <Button type="link" size="small" onClick={loadMore}>
+                      重试
+                    </Button>
+                  </Space>
+                ) : !hasMore ? (
+                  '到底了'
+                ) : null)}
+            </div>
           </div>
         </Spin>
       </Space>

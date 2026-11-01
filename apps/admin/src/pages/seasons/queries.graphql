@@ -118,10 +118,15 @@ mutation CreateSeason($season: SeasonInput!) {
   }
 }
 
-query SearchBangumi($keywords: String!, $useNewBangumiSearchApi: Boolean) {
+query SearchBangumi(
+  $keywords: String!
+  $useNewBangumiSearchApi: Boolean
+  $offset: Int
+) {
   searchBangumi(
     keywords: $keywords
     useNewBangumiSearchApi: $useNewBangumiSearchApi
+    offset: $offset
   ) {
     added
     airDate

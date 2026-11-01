@@ -18,7 +18,7 @@ import { DownloadJobService } from '@/download-job/index.service';
 import { env } from '@/env';
 import { SeasonEmitService } from '@/season-emit/index.service';
 import { DownloadSource, LegacyTaskStage, Prisma } from '@lani/db';
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
@@ -69,11 +69,18 @@ export class AdminResolver {
       type: () => Boolean,
     })
     useNewBangumiSearchApi = true,
+    @Args('offset', { type: () => Int, defaultValue: 0 }) offset = 0,
   ): Promise<SearchBangumiSeason[]> {
+    if (offset < 0) {
+      throw new BadRequestException('搜索偏移量不能为负数');
+    }
     const match = keywords.match(
       /^(bgmid|bangumiid|bangumi_id):(\s)*(?<bgmid>(\d)+)$/,
     );
     if (match?.groups?.bgmid) {
+      if (offset > 0) {
+        return [];
+      }
       const bgmid = parseInt(match.groups.bgmid);
       this.logger.verbose(
         `Input keyword '${keywords}' is precise search, bgmid = ${bgmid}`,
@@ -117,7 +124,7 @@ export class AdminResolver {
     // 兼容新旧bangumi搜索API
     const entries = useNewBangumiSearchApi
       ? (
-          await BangumiAPIService.searchSubjects(50, 0, {
+          await BangumiAPIService.searchSubjects(20, offset, {
             keyword: keywords,
             sort: 'match',
             filter: {
@@ -130,8 +137,8 @@ export class AdminResolver {
             keywords,
             Legacy_SubjectType._2,
             'large',
-            0,
-            25,
+            offset,
+            20,
           )
         ).list ?? [];
     const ids = entries.map(({ id }) => `${id}`);

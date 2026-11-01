@@ -61,7 +61,7 @@ it('旧版使用 large 保留日期，缺少标签时不补查详情', async () 
     2,
     'large',
     0,
-    25,
+    20,
   );
   expect(api.getSubjectById).not.toHaveBeenCalled();
 });
@@ -117,4 +117,27 @@ it('缺失、空白和重复标签归一化且不修改来源', () => {
   const source = [...tags, { name: '奇幻', count: 1 }, { name: ' ', count: 5 }];
   expect(bangumiSearchTags(source)).toEqual(['漫画改', '奇幻']);
   expect(source[0]).toEqual(tags[0]);
+});
+
+it('新旧搜索透传分页偏移量，每页 20 条', async () => {
+  api.searchSubjects.mockResolvedValue({ data: [] } as never);
+  await resolver.searchBangumi('高达', true, 20);
+  expect(api.searchSubjects).toHaveBeenCalledWith(20, 20, expect.any(Object));
+  await resolver.searchBangumi('高达', false, 40);
+  expect(api.searchSubjectByKeywords).toHaveBeenCalledWith(
+    '高达',
+    2,
+    'large',
+    40,
+    20,
+  );
+});
+
+it('精确查找后续页为空，负偏移量拒绝请求上游', async () => {
+  expect(await resolver.searchBangumi('bgmid:400602', true, 20)).toEqual([]);
+  await expect(resolver.searchBangumi('高达', true, -1)).rejects.toThrow(
+    '搜索偏移量不能为负数',
+  );
+  expect(api.getSubjectById).not.toHaveBeenCalled();
+  expect(api.searchSubjects).not.toHaveBeenCalled();
 });
