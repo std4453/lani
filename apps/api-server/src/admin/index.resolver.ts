@@ -23,6 +23,7 @@ import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SeasonSaveEvent, SEASON_SAVE_EVENT } from '@/integrations/events';
 import { bangumiSearchTags } from './bangumi-search-tags';
+import { bangumiAliases } from '@/season-scrape/aliases';
 
 @Injectable()
 @Resolver()
@@ -102,6 +103,9 @@ export class AdminResolver {
             name: item.name_cn || item.name || '未命名',
             airDate: item.date,
             image: item.images?.small,
+            previewImage: item.images?.large,
+            platform: item.platform,
+            aliases: bangumiAliases(item.name, item.name_cn, item.infobox),
             tags: bangumiSearchTags(item.tags),
             added,
           },
@@ -154,6 +158,13 @@ export class AdminResolver {
       name: item.name_cn || item.name || '未命名',
       airDate: item.date || item.air_date,
       image: item.image || item.images?.small,
+      previewImage: item.images?.large,
+      platform: 'platform' in item ? item.platform : undefined,
+      aliases: bangumiAliases(
+        item.name,
+        item.name_cn,
+        'infobox' in item ? item.infobox : undefined,
+      ),
       tags: 'tags' in item ? bangumiSearchTags(item.tags) : [],
       added:
         added.find((season) => season.bangumiId === `${item.id}`) !== undefined,

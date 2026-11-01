@@ -13,6 +13,7 @@ export function useBangumiSearch(
   const [items, setItems] = useState<Results>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [loadMore, setLoadMore] = useState<() => void>(() => () => {});
 
@@ -23,6 +24,7 @@ export function useBangumiSearch(
     setLoading(false);
     setHasMore(true);
     setError(false);
+    setHasLoaded(false);
 
     const load = async () => {
       if (!enabled || !active || pagination.pending || !pagination.more) return;
@@ -41,6 +43,7 @@ export function useBangumiSearch(
         });
         // 切换关键词、渠道或关闭弹窗后，丢弃旧请求的迟到结果。
         if (!active) return;
+        setHasLoaded(true);
         const page = data.searchBangumi;
         pagination.offset += page.length;
         // 后端每页最多返回 20 条；整页结果继续请求，短页结束。
@@ -52,7 +55,10 @@ export function useBangumiSearch(
         });
         setHasMore(pagination.more);
       } catch {
-        if (active) setError(true);
+        if (active) {
+          setHasLoaded(true);
+          setError(true);
+        }
       } finally {
         // 同一轮搜索由 pending 锁串行请求，旧轮次的状态独立且不会再启动。
         // eslint-disable-next-line require-atomic-updates
@@ -67,5 +73,5 @@ export function useBangumiSearch(
     };
   }, [client, keywords, useNewBangumiSearchApi, enabled]);
 
-  return { items, loading, hasMore, error, loadMore };
+  return { items, loading, hasMore, error, loadMore, hasLoaded };
 }

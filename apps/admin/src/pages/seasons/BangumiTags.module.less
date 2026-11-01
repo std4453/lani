@@ -1,22 +1,33 @@
 .container {
-  position: relative;
-  margin-top: 8px;
-}
-
-.tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
+  margin-top: auto;
+  min-height: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  overflow: hidden;
 
   :global(.ant-tag) {
     max-width: 100%;
     margin: 0;
+    flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 }
-
+.container .platform {
+  max-width: 50%;
+}
+.remaining {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+.tags {
+  display: flex;
+  gap: 4px;
+}
 .measure {
   position: absolute;
   top: 0;

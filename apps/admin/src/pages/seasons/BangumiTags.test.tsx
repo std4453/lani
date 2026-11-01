@@ -48,23 +48,23 @@ const render = (tags: string[]) =>
     ReactDOM.render(<BangumiTags tags={tags} />, container);
   });
 const visible = () =>
-  Array.from(container.querySelectorAll('[aria-label="标签"] .ant-tag')).map(
-    (el) => el.textContent,
-  );
+  Array.from(container.querySelectorAll('[aria-label="标签"] .ant-tag'))
+    .filter((el) => !el.closest('[aria-hidden="true"]'))
+    .map((el) => el.textContent);
 
-it('两行溢出显示准确的 +X，宽度变化后恢复或继续折叠', () => {
+it('一行溢出显示准确的 +X，宽度变化后恢复或继续折叠', () => {
   render(['甲', '乙', '丙', '丁', '戊']);
-  expect(visible()).toEqual(['甲', '乙', '丙', '+2']);
+  expect(visible()).toEqual(['甲', '+4']);
   expect(
     container.querySelector('[tabindex="0"]')?.getAttribute('aria-label'),
-  ).toBe('另有2个标签：丁、戊');
+  ).toBe('另有4个标签：乙、丙、丁、戊');
   act(() => {
-    width = 75;
+    width = 65;
     resize();
   });
-  expect(visible()).toEqual(['甲', '+4']);
+  expect(visible()).toEqual(['+5']);
   act(() => {
-    width = 200;
+    width = 300;
     resize();
   });
   expect(visible()).toEqual(['甲', '乙', '丙', '丁', '戊']);
@@ -74,7 +74,7 @@ it('空标签不显示占位，更新结果会重新测量并清理观察器', (
   render([]);
   expect(container.textContent).toBe('');
   render(['甲', '乙', '丙', '丁', '戊']);
-  expect(visible()).toContain('+2');
+  expect(visible()).toContain('+4');
   render(['新标签']);
   expect(visible()).toEqual(['新标签']);
   expect(disconnect).toHaveBeenCalledTimes(1);

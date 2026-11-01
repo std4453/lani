@@ -1,30 +1,20 @@
-// 为 +X 预留位置，使标签和隐藏数量一起限制在两行内。
+// 为 +X 预留位置，标签与隐藏数量共同限制在一行内。
 export function visibleTagCount(
   widths: number[],
   available: number,
   moreWidth: (hidden: number) => number,
   gap: number = 4,
 ): number {
-  const fits = (items: number[]) => {
-    let row = 1;
-    let used = 0;
-    for (const width of items) {
-      const next = used ? used + gap + width : width;
-      if (next > available && used) {
-        row++;
-        used = width;
-      } else {
-        used = next;
-      }
-      if (row > 2) return false;
-    }
-    return true;
-  };
-  if (fits(widths)) return widths.length;
+  const total = (count: number) =>
+    widths.slice(0, count).reduce((sum, width) => sum + width, 0) +
+    Math.max(0, count - 1) * gap;
+  if (total(widths.length) <= available) return widths.length;
   for (let count = widths.length - 1; count >= 0; count--) {
-    if (fits([...widths.slice(0, count), moreWidth(widths.length - count)])) {
+    if (
+      total(count) + (count ? gap : 0) + moreWidth(widths.length - count) <=
+      available
+    )
       return count;
-    }
   }
   return 0;
 }

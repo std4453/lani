@@ -132,6 +132,9 @@ query SearchBangumi(
     airDate
     id
     image
+    previewImage
+    platform
+    aliases
     name
     tags
   }

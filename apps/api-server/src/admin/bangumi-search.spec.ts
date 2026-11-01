@@ -54,6 +54,7 @@ it('旧版使用 large 保留日期，缺少标签时不补查详情', async () 
       airDate: '2023-09-29',
       added: true,
       tags: [],
+      aliases: ['葬送的芙莉莲'],
     },
   ]);
   expect(api.searchSubjectByKeywords).toHaveBeenCalledWith(
@@ -140,4 +141,24 @@ it('精确查找后续页为空，负偏移量拒绝请求上游', async () => {
   );
   expect(api.getSubjectById).not.toHaveBeenCalled();
   expect(api.searchSubjects).not.toHaveBeenCalled();
+});
+
+it('直接复用搜索返回的分类、别名和大图，不补查详情', async () => {
+  api.searchSubjects.mockResolvedValue({
+    data: [
+      {
+        ...item,
+        name: '原名',
+        platform: 'TV',
+        images: { large: 'https://example.com/large.jpg' },
+        infobox: [{ key: '别名', value: [{ v: '另一名称' }] }],
+      },
+    ],
+  } as never);
+  expect((await resolver.searchBangumi('芙莉莲', true))[0]).toMatchObject({
+    platform: 'TV',
+    aliases: ['原名', '葬送的芙莉莲', '另一名称'],
+    previewImage: 'https://example.com/large.jpg',
+  });
+  expect(api.getSubjectById).not.toHaveBeenCalled();
 });

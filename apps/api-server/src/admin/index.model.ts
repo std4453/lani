@@ -19,6 +19,9 @@ export class SearchBangumiSeason {
   name: string;
   airDate?: string;
   image?: string;
+  previewImage?: string;
+  platform?: string;
+  aliases: string[];
   tags: string[];
   added: boolean;
 }

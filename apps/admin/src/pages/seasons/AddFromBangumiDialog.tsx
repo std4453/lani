@@ -11,27 +11,27 @@ import useMobile from '@/utils/useMobile';
 import { useApolloClient } from '@apollo/client';
 import { useDebounce } from 'ahooks';
 import {
+  Badge,
   Button,
+  Empty,
   Checkbox,
-  Image,
   Input,
   List,
   message,
   Modal,
+  Popover,
   Select,
   Space,
   Spin,
-  Tag,
   Tooltip,
-  Typography,
 } from 'antd';
-import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AddFromBangumiDialog.module.less';
 import { handleError } from '@/utils/error';
-import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { LoadingOutlined, SettingOutlined } from '@ant-design/icons';
 import { useBangumiSearch } from './useBangumiSearch';
-import BangumiTags from './BangumiTags';
+import BangumiSearchCard from './BangumiSearchCard';
+import { isBangumiResultVisible } from './bangumi-search-display';
 
 export default function AddFromBangumiDialog({
   visible,
@@ -41,16 +41,31 @@ export default function AddFromBangumiDialog({
   const client = useApolloClient();
   const [keywords, setKeywords] = useState('');
   const [useNewBangumiSearchApi, setUseNewBangumiSearchApi] = useState(true);
+  const [hideDoujin, setHideDoujin] = useState(true);
+  const [hideUnknown, setHideUnknown] = useState(true);
   const keywordsDebounced = useDebounce(keywords, {
     wait: 500,
   });
   const searchReady =
     visible && !!keywords.trim() && keywords === keywordsDebounced;
-  const { items, loading, hasMore, error, loadMore } = useBangumiSearch(
-    keywords,
-    useNewBangumiSearchApi,
-    searchReady,
+  const { items, loading, hasMore, error, loadMore, hasLoaded } =
+    useBangumiSearch(keywords, useNewBangumiSearchApi, searchReady);
+  const displayedItems = useMemo(
+    () =>
+      items.filter((item) =>
+        isBangumiResultVisible(item, {
+          hideDoujin,
+          hideUnknown,
+          useNewApi: useNewBangumiSearchApi,
+        }),
+      ),
+    [items, hideDoujin, hideUnknown, useNewBangumiSearchApi],
   );
+  const initialLoading =
+    !!keywords.trim() &&
+    (!searchReady ||
+      !hasLoaded ||
+      (displayedItems.length === 0 && !error && (loading || hasMore)));
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -64,18 +79,20 @@ export default function AddFromBangumiDialog({
     );
     observer.observe(bottomRef.current);
     return () => observer.disconnect();
-  }, [searchReady, loading, error, hasMore, loadMore]);
+  }, [searchReady, loading, error, hasMore, loadMore, displayedItems.length]);
   const [selected, setSelected] = useState<
     SearchBangumiQuery['searchBangumi'][0] | undefined
   >(undefined);
   useEffect(() => {
     setSelected(undefined);
     scrollRef.current?.scrollTo(0, 0);
-  }, [keywords, useNewBangumiSearchApi, visible]);
+  }, [keywords, useNewBangumiSearchApi, visible, hideDoujin, hideUnknown]);
   useEffect(() => {
     if (visible) {
       setKeywords('');
       setUseNewBangumiSearchApi(true);
+      setHideDoujin(true);
+      setHideUnknown(true);
     }
   }, [visible]);
 
@@ -186,22 +203,53 @@ export default function AddFromBangumiDialog({
             placeholder={'输入关键词，或「bgmid: 100000」精确查找'}
             allowClear
           />
-          <Checkbox
-            checked={!useNewBangumiSearchApi}
-            onChange={(e) => {
-              setUseNewBangumiSearchApi(!e.target.checked);
-            }}
-            style={{
-              whiteSpace: 'nowrap',
-            }}
+          <Popover
+            placement="bottomRight"
+            trigger="click"
+            content={
+              <Space direction="vertical">
+                <Tooltip title="找不到结果时可尝试旧版搜索；旧版通常不含标签和分类">
+                  <Checkbox
+                    checked={!useNewBangumiSearchApi}
+                    onChange={(e) =>
+                      setUseNewBangumiSearchApi(!e.target.checked)
+                    }
+                  >
+                    使用旧版搜索
+                  </Checkbox>
+                </Tooltip>
+                <Checkbox
+                  checked={hideDoujin}
+                  onChange={(e) => setHideDoujin(e.target.checked)}
+                >
+                  隐藏同人
+                </Checkbox>
+                <Tooltip title="仅显示 TV、WEB、剧场版和 OVA；旧版搜索不应用此筛选">
+                  <Checkbox
+                    checked={useNewBangumiSearchApi && hideUnknown}
+                    disabled={!useNewBangumiSearchApi}
+                    onChange={(e) => setHideUnknown(e.target.checked)}
+                  >
+                    隐藏未知分类
+                  </Checkbox>
+                </Tooltip>
+              </Space>
+            }
           >
-            使用旧版搜索&nbsp;
-            <Tooltip title="默认使用新版搜索；找不到结果时可尝试旧版搜索，旧版通常不含标签">
-              <QuestionCircleOutlined />
-            </Tooltip>
-          </Checkbox>
+            <Badge
+              count={
+                Number(!useNewBangumiSearchApi) +
+                Number(hideDoujin) +
+                Number(useNewBangumiSearchApi && hideUnknown)
+              }
+              color="var(--lani-primary)"
+              size="small"
+            >
+              <Button aria-label="搜索设置" icon={<SettingOutlined />} />
+            </Badge>
+          </Popover>
         </div>
-        <Spin spinning={loading && items.length === 0}>
+        <Spin spinning={initialLoading} delay={0}>
           <div
             ref={scrollRef}
             style={{
@@ -212,7 +260,22 @@ export default function AddFromBangumiDialog({
             }}
           >
             <List
-              dataSource={items}
+              dataSource={searchReady ? displayedItems : []}
+              locale={{
+                emptyText:
+                  initialLoading || error ? (
+                    <div className={styles.loadingPlaceholder} />
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={
+                        items.length
+                          ? '没有符合筛选条件的结果，可调整搜索设置'
+                          : '暂无数据'
+                      }
+                    />
+                  ),
+              }}
               rowKey="id"
               grid={{
                 column: 2,
@@ -220,41 +283,18 @@ export default function AddFromBangumiDialog({
                 sm: 1,
               }}
               renderItem={(item) => (
-                <div key={item.id} className={styles.itemContainer}>
-                  <div
-                    onClick={() => {
-                      setSelected(item);
-                    }}
-                    className={clsx(styles.item, {
-                      [styles.selected]: item.id === selected?.id,
-                    })}
-                  >
-                    <div className={styles.content}>
-                      <Space>
-                        {item.name}
-                        {item.added && <Tag color="green">已添加</Tag>}
-                      </Space>
-                      {item.airDate ? (
-                        <Typography.Paragraph type="secondary">
-                          放送日期：{item.airDate}
-                        </Typography.Paragraph>
-                      ) : null}
-                      <BangumiTags tags={item.tags} />
-                    </div>
-                    <Image
-                      src={item.image ?? undefined}
-                      width={75}
-                      height={106}
-                      preview={false}
-                      className={styles.image}
-                      wrapperClassName={styles.imageWrapper}
-                    />
-                  </div>
-                </div>
+                <BangumiSearchCard
+                  key={item.id}
+                  item={item}
+                  selected={item.id === selected?.id}
+                  keywords={keywordsDebounced}
+                  onSelect={setSelected}
+                />
               )}
             />
             <div ref={bottomRef} className={styles.searchFooter} role="status">
               {searchReady &&
+                !initialLoading &&
                 (loading ? (
                   <Space>
                     <LoadingOutlined spin />
@@ -267,7 +307,7 @@ export default function AddFromBangumiDialog({
                       重试
                     </Button>
                   </Space>
-                ) : !hasMore ? (
+                ) : !hasMore && displayedItems.length > 0 ? (
                   '到底了'
                 ) : null)}
             </div>
