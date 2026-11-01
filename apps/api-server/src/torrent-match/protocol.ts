@@ -1,3 +1,7 @@
+export interface EpisodeNumbers {
+  episode?: { local?: string; sort?: string };
+  sp?: { sort: string };
+}
 export interface CatalogSeason {
   id: string;
   title: string;
@@ -6,6 +10,7 @@ export interface CatalogSeason {
   quarter: number | null;
   declaredEpisodeCount?: number | null;
   premiereDate?: string | null;
+  numbers?: EpisodeNumbers;
 }
 export interface CatalogSnapshot {
   version: string;

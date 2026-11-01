@@ -15,6 +15,22 @@ export type TorrentMatchInput = Pick<
 >;
 
 export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
+  // 单集季度匹配不消费解析出的范围或明确跨季合集。
+  if (torrent.episodeNumberFrom != null || torrent.episodeNumberTo != null)
+    return null;
+  const multipleSeasons = [
+    /\bS(\d{1,2})\s*(?:\+|&|\/|~|-|to|and)\s*S(\d{1,2})\b/gi,
+    /\bSeasons?\s*(\d{1,2})\s*(?:\+|&|\/|~|-|to|and)\s*(\d{1,2})\b/gi,
+    /第\s*(\d{1,2})\s*[-~+、]\s*(\d{1,2})\s*季/g,
+  ];
+  if (
+    multipleSeasons.some((pattern) =>
+      [...torrent.title.matchAll(pattern)].some(
+        (match) => Number(match[1]) !== Number(match[2]),
+      ),
+    )
+  )
+    return null;
   const aliases = [
     ...new Set(
       [torrent.seasonTitleRaw ?? '', ...torrent.seasonTitleAliases]

@@ -158,3 +158,47 @@ it('projects persisted metadata directly without a second validation policy', ()
     premiereDate: null,
   });
 });
+
+it('hashes compact number sets, not episode titles, dates, order or duplicates', () => {
+  const episodes = [
+    {
+      episodeType: 'EPISODE',
+      episodeNumber: 1,
+      bangumiSort: 14,
+      title: '旧标题',
+      rawAirTime: new Date('2020-01-01Z'),
+    },
+  ];
+  const original = snapshot([{ ...row(), episodes }]);
+  expect(original.catalog[0].numbers).toEqual({
+    episode: { local: '1', sort: '14' },
+  });
+  const changed = {
+    ...episodes[0],
+    title: '新标题',
+    rawAirTime: new Date('2026-01-01Z'),
+  };
+  expect(snapshot([{ ...row(), episodes: [changed, changed] }]).version).toBe(
+    original.version,
+  );
+  expect(
+    snapshot([{ ...row(), episodes: [{ ...changed, bangumiSort: 15 }] }])
+      .version,
+  ).not.toBe(original.version);
+});
+
+it('uses valid premiere dates only for missing quarters when explicitly enabled', () => {
+  const catalog = snapshot([
+    { ...row(1, ''), premiereDate: '2026-10-01' },
+    { ...row(2, '202501'), premiereDate: '2026-10-01' },
+    { ...row(3, ''), premiereDate: '2026-13-01' },
+    { ...row(4, ''), premiereDate: '2026-02-30' },
+  ]);
+  expect(candidateSeasons(catalog, query, policy)).toEqual([]);
+  expect(
+    candidateSeasons(catalog, query, { ...policy, usePremiere: true }).map(
+      (c) => c.id,
+    ),
+  ).toEqual(['1']);
+  expect(catalog.catalog[0].year).toBeNull();
+});

@@ -53,14 +53,26 @@ function stateFrom(value: Prisma.JsonValue): CatalogState | null {
   return state;
 }
 
-const catalogSelect = {
-  id: true,
-  title: true,
-  aliases: true,
-  yearAndSemester: true,
-  declaredEpisodeCount: true,
-  premiereDate: true,
-} as const;
+const catalogSelect = () =>
+  ({
+    id: true,
+    title: true,
+    aliases: true,
+    yearAndSemester: true,
+    declaredEpisodeCount: true,
+    premiereDate: true,
+    episodes:
+      config.matching.backend === 'llm'
+        ? {
+            where: { bangumiSort: { not: null } },
+            select: {
+              episodeType: true,
+              episodeNumber: true,
+              bangumiSort: true,
+            },
+          }
+        : false,
+  } as const);
 
 /** 工程层只选择候选、等待目录并保存结果，不决定时间／集数的模型权重。 */
 @Injectable()
@@ -123,7 +135,7 @@ export class TorrentMatchService
 
   private async observe() {
     // 单次查询读取季度目录，数据库写入路径无需逐一挂事件。
-    const rows = await this.prisma.season.findMany({ select: catalogSelect });
+    const rows = await this.prisma.season.findMany({ select: catalogSelect() });
     const desired = snapshot(rows);
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM torrent_match_catalog WHERE id = 1 FOR UPDATE`;
@@ -237,9 +249,10 @@ export class TorrentMatchService
       if (this.activating || !catalogReady(state)) throw new QueueWaiting();
       const active = state!.active!;
       expectedCatalog = active;
-      const ids = candidateSeasons(active, query, config.matching).map(
-        (s) => s.id,
-      );
+      const ids = candidateSeasons(active, query, {
+        ...config.matching,
+        usePremiere: config.matching.backend === 'llm',
+      }).map((s) => s.id);
       const response = await this.matcher!.match(
         active,
         query,
@@ -260,7 +273,7 @@ export class TorrentMatchService
       if (expectedCatalog) {
         // 乐观核对目录，已观察到变化时交回队列等待新快照。
         const live = snapshot(
-          await tx.season.findMany({ select: catalogSelect }),
+          await tx.season.findMany({ select: catalogSelect() }),
         );
         await tx.$queryRaw`SELECT id FROM torrent_match_catalog WHERE id = 1 FOR SHARE`;
         const checkpoint = await tx.torrentMatchCatalog.findUnique({

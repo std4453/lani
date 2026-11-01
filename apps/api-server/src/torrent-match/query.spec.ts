@@ -71,8 +71,19 @@ it('keeps single fractional episode numbers but does not coerce a range or speci
         episodeNumberTo: new Prisma.Decimal(3),
       }),
     ),
-  ).not.toHaveProperty('episode');
+  ).toBeNull();
   expect(torrentQuery(torrent({ episodeType: 'OVA' }))).not.toHaveProperty(
     'episode',
   );
+});
+
+it.each(['Anime S01-S03', 'Anime Seasons 1 + 2', '动画 第1-3季'])(
+  'skips explicit multi-season collections: %s',
+  (title) => {
+    expect(torrentQuery(torrent({ title }))).toBeNull();
+  },
+);
+it('keeps a single recap episode and repeated same-season markers', () => {
+  expect(torrentQuery(torrent({ title: 'Anime Special 13.5' }))).not.toBeNull();
+  expect(torrentQuery(torrent({ title: 'Anime S01-S01 E03' }))).not.toBeNull();
 });

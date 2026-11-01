@@ -295,3 +295,32 @@ it('目录观察使用单次查询，只有写入检查点才开启事务', asyn
   expect(db.$transaction).toHaveBeenCalledTimes(1);
   expect(tx.torrentMatchCatalog.update).toHaveBeenCalled();
 });
+
+it('waits for new number evidence before committing and selects no episode titles or dates', async () => {
+  const previous = config.matching.backend;
+  config.matching.backend = 'llm';
+  try {
+    const f = fixture();
+    const commit = await f.service.match(f.job);
+    f.tx.season.findMany.mockResolvedValue([
+      {
+        ...f.season,
+        episodes: [
+          {
+            episodeType: 'EPISODE',
+            episodeNumber: new Prisma.Decimal(1),
+            bangumiSort: new Prisma.Decimal(14),
+          },
+        ],
+      },
+    ]);
+    await expect(commit(f.tx as any)).rejects.toBeInstanceOf(QueueWaiting);
+    expect(f.tx.torrent.update).not.toHaveBeenCalled();
+    expect(f.tx.season.findMany.mock.calls[0][0].select.episodes).toEqual({
+      where: { bangumiSort: { not: null } },
+      select: { episodeType: true, episodeNumber: true, bangumiSort: true },
+    });
+  } finally {
+    config.matching.backend = previous;
+  }
+});

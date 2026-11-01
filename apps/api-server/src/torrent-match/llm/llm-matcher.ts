@@ -8,8 +8,10 @@ import { MatchingLlmConfig } from '@/config/matching';
 import { describeLlmError, LlmError } from '@/llm/llm.errors';
 import { LlmService } from '@/llm/llm.service';
 import { MatcherBackend } from '../backend';
+import { hasNumberEvidence } from '../numbers';
 import {
   CatalogSnapshot,
+  EpisodeNumbers,
   MatchQuery,
   MatchResponse,
   WorkerStatus,
@@ -23,6 +25,7 @@ interface CatalogRow {
   q: number | null;
   count: number | null;
   premiere: string | null;
+  numbers?: EpisodeNumbers;
 }
 interface Snapshot {
   version: string;
@@ -30,7 +33,7 @@ interface Snapshot {
 }
 
 const explicitSeason =
-  /(?:\bS\d{1,2}(?:E\d|\b)|\b\d{1,2}(?:st|nd|rd|th)\b|\bSeason\s+\d{1,2}\b|第[一二三四五六七八九十0-9]+季)/i;
+  /(?:\bS\d{1,2}(?:E\d|\b)|\b\d{1,2}(?:st|nd|rd|th)\b|\bSeason\s+\d{1,2}\b|第[一二三四五六七八九十0-9]+[季期]|\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+season\b|シーズン\s*\d+)/i;
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 const object = (value: unknown): value is Record<string, unknown> =>
@@ -139,7 +142,7 @@ export class LlmMatcher implements MatcherBackend {
   private modelVersion(settings: MatchingLlmConfig) {
     const { apiKey: _secret, ...identity } = settings;
     const templates = this.promptTemplates();
-    return `builtin-llm-v1-${digest(
+    return `builtin-llm-v2-${digest(
       JSON.stringify(identity) + templates.primary + templates.fallback,
     ).slice(0, 24)}`;
   }
@@ -158,6 +161,13 @@ export class LlmMatcher implements MatcherBackend {
         q: season.quarter,
         count: season.declaredEpisodeCount ?? null,
         premiere: season.premiereDate ?? null,
+        ...(season.numbers
+          ? {
+              numbers: JSON.parse(
+                JSON.stringify(season.numbers),
+              ) as EpisodeNumbers,
+            }
+          : {}),
       });
     }
     return (this.snapshot = { version: catalog.version, rows });
@@ -189,7 +199,11 @@ export class LlmMatcher implements MatcherBackend {
           y: row.y,
           q: row.q,
           ...(stage === 'fallback'
-            ? { count: row.count, premiere: row.premiere }
+            ? {
+                count: row.count,
+                premiere: row.premiere,
+                ...(row.numbers ? { numbers: row.numbers } : {}),
+              }
             : {}),
         }),
       )
@@ -385,7 +399,8 @@ export class LlmMatcher implements MatcherBackend {
                 count !== null &&
                 query.episode != null &&
                 query.episode > count &&
-                explicit
+                explicit &&
+                !hasNumberEvidence(rows.get(selected)!.numbers, query)
               )
             )
               return result(selected, 'primary');
