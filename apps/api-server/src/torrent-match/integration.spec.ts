@@ -39,7 +39,7 @@ jest.mock('@/config', () => ({
 const url = process.env.LANI_LIFECYCLE_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
 
-suite('种子入库、目录等待与结果持久化', () => {
+suite.each(['external', 'llm'] as const)('%s 匹配队列', (backend) => {
   let db: PrismaClient;
   let queues: BackgroundQueueService;
   let service: TorrentMatchService;
@@ -86,7 +86,12 @@ suite('种子入库、目录等待与结果持久化', () => {
         BackgroundQueueService,
         QueueExplorer,
         TorrentMatchService,
-        { provide: LlmMatcher, useValue: {} },
+        // 两种后端共用受控替身，验证真实消费与提交，不调用外部模型。
+        {
+          provide: LlmMatcher,
+          useFactory: () =>
+            new MatcherTransport(config.matching, {} as LocalAxiosService),
+        },
         MatchCatalogConsumer,
         TorrentMatchConsumer,
       ],
@@ -125,6 +130,8 @@ suite('种子入库、目录等待与结果持久化', () => {
     await db.$connect();
   });
   beforeEach(async () => {
+    config.matching.backend = backend;
+    config.llm = { concurrency: 3, timeoutMs: 45000 };
     config.matching.enabled = true;
     await db.backgroundJob.deleteMany({
       where: { queueName: { in: [CATALOG_QUEUE, MATCH_QUEUE] } },
@@ -185,6 +192,56 @@ suite('种子入库、目录等待与结果持久化', () => {
   });
   afterAll(async () => {
     await db.$disconnect();
+  });
+
+  it('匹配队列按后端和 llm.concurrency 限制在途任务', async () => {
+    const concurrency = backend === 'llm' ? 3 : 1;
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = match.getMockImplementation()!;
+    let active = 0;
+    let maximum = 0;
+    match.mockImplementation(async (...args) => {
+      active++;
+      maximum = Math.max(maximum, active);
+      if (active === concurrency) entered();
+      try {
+        await blocked;
+        return await original(...args);
+      } finally {
+        active--;
+      }
+    });
+    for (let i = 0; i < 5; i++) await insert();
+    const consuming = queues.wake(MATCH_QUEUE);
+    try {
+      await started;
+      expect(match).toHaveBeenCalledTimes(concurrency);
+      expect(
+        await db.backgroundJob.count({
+          where: { queueName: MATCH_QUEUE, status: 'running' },
+        }),
+      ).toBe(concurrency);
+    } finally {
+      release();
+      await consuming;
+    }
+    expect(maximum).toBe(concurrency);
+    expect(match).toHaveBeenCalledTimes(5);
+    expect(
+      await db.torrent.count({
+        where: {
+          hash: { startsWith: 'matching-regression-' },
+          matchStatus: 'MATCHED',
+        },
+      }),
+    ).toBe(5);
   });
 
   it('enqueues transactionally and saves a match without recursive enqueue', async () => {

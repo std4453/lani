@@ -4,7 +4,9 @@ lani 可在 API 进程内通过兼容 Chat Completions 的接口匹配资源所�
 
 ## 配置与运行边界
 
-选择 `matching.backend: llm` 后，`matching.llm` 配置供应商、模型和匹配策略。所有外部模型调用经过共用的 `LlmService`：顶层 `llm.concurrency` 默认 2，`llm.timeoutMs` 默认 45000；匹配器不另建并发池。一个匹配操作默认最多 100000 ms，包含公共限流器中的排队、退避及两个阶段；达到截止时间会中止剩余调用。
+选择 `matching.backend: llm` 后，`matching.llm` 配置供应商、模型和匹配策略。顶层 `llm.concurrency` 同时限制单个 API 进程内的匹配任务数和共用 `LlmService` 的模型请求数，默认 2，设为 1 可恢复串行匹配；修改配置后重启生效。任务按入队顺序领取，结果可乱序完成，同一资源的新旧输入仍串行衔接。目录更新、external 匹配及其他未声明并发的队列保持串行。
+
+所有外部模型调用经过共用的 `LlmService`，`llm.timeoutMs` 默认 45000。一个匹配操作默认最多 100000 ms，从任务开始执行计时，包含公共限流器中的排队、退避及两个阶段；达到截止时间会中止剩余调用。等待后台队列空位的时间不计入该期限。
 
 ```yaml
 llm:

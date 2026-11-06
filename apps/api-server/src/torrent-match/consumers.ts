@@ -29,6 +29,10 @@ export class MatchCatalogConsumer implements QueueHandler<CatalogSnapshot> {
 export class TorrentMatchConsumer implements QueueHandler<TorrentMatchPayload> {
   constructor(private matching: TorrentMatchService) {}
 
+  get concurrency() {
+    return config.matching.backend === 'llm' ? config.llm?.concurrency ?? 2 : 1;
+  }
+
   get enabled() {
     return config.matching.enabled;
   }

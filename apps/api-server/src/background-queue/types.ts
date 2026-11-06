@@ -10,6 +10,8 @@ export type QueueJob<TPayload> = Omit<BackgroundJob, 'payload'> & {
 };
 export interface QueueHandler<TPayload> {
   enabled: boolean;
+  /** 单实例内的任务并发数，默认 1；并发处理器须允许结果乱序提交。 */
+  concurrency?: number;
   /** 默认只尝试一次；需自动重试的处理器显式声明有限次数和间隔。 */
   retry?: QueueRetry;
   ready?(job: QueueJob<TPayload>): Promise<boolean>;
