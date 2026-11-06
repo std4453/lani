@@ -10,7 +10,10 @@ export function hasExplicitSeason(title: string): boolean {
 export function hasMultipleSeasons(title: string): boolean {
   const multipleSeasons = [
     /\bS(\d{1,2})\s*(?:\+|&|\/|~|-|to|and)\s*S(\d{1,2})\b/gi,
-    /\bSeasons?\s*(\d{1,2})\s*(?:\+|&|\/|~|-|to|and)\s*(\d{1,2})\b/gi,
+    // 单数 Season 后的连字符常用来分隔集号；跨季范围须有复数或两端季标记。
+    /\bSeasons\s*(\d{1,2})\s*(?:\+|&|\/|~|-|to|and)\s*(?:Seasons?\s*)?(\d{1,2})\b/gi,
+    /\bSeason\s*(\d{1,2})\s*(?:\+|&|\/|~|to|and)\s*(?:Season\s*)?(\d{1,2})\b/gi,
+    /\bSeason\s*(\d{1,2})\s*-\s*Season\s*(\d{1,2})\b/gi,
     /第\s*(\d{1,2})\s*[-~+、]\s*(\d{1,2})\s*季/g,
   ];
   return multipleSeasons.some((pattern) =>

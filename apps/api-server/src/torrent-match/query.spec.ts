@@ -1,5 +1,9 @@
 import { Prisma } from '@lani/db';
-import { torrentQuery, TorrentMatchInput } from './query';
+import {
+  torrentQuery,
+  TorrentMatchInput,
+  unsupportedMatchReason,
+} from './query';
 
 const torrent = (
   changes: Partial<TorrentMatchInput> = {},
@@ -77,13 +81,45 @@ it('keeps single fractional episode numbers but does not coerce a range or speci
   );
 });
 
-it.each(['Anime S01-S03', 'Anime Seasons 1 + 2', '动画 第1-3季'])(
-  'skips explicit multi-season collections: %s',
-  (title) => {
-    expect(torrentQuery(torrent({ title }))).toBeNull();
-  },
-);
+it.each([
+  'Anime S01-S03',
+  'Anime Seasons 1 + 2',
+  'Anime Seasons 1-3',
+  'Anime Season 1 - Season 3',
+  '动画 第1-3季',
+])('skips explicit multi-season collections: %s', (title) => {
+  expect(torrentQuery(torrent({ title }))).toBeNull();
+  expect(unsupportedMatchReason(torrent({ title }))).toBe('multiple_seasons');
+});
 it('keeps a single recap episode and repeated same-season markers', () => {
   expect(torrentQuery(torrent({ title: 'Anime Special 13.5' }))).not.toBeNull();
   expect(torrentQuery(torrent({ title: 'Anime S01-S01 E03' }))).not.toBeNull();
+});
+
+it.each(['Season 2 - 05', 'Season 2-05', 'Season 02 - 5'])(
+  'keeps a season followed by an episode in the matcher query: %s',
+  (marker) => {
+    const input = torrent({
+      title: `[ANi] Anime ${marker} [1080P][Baha][CHT]`,
+      episodeNumber: new Prisma.Decimal(5),
+    });
+    expect(torrentQuery(input)).toMatchObject({
+      rawTitle: input.title,
+      episode: 5,
+    });
+    expect(unsupportedMatchReason(input)).toBeNull();
+  },
+);
+
+it('distinguishes episode ranges from missing titles', () => {
+  expect(
+    unsupportedMatchReason(
+      torrent({ episodeNumberFrom: new Prisma.Decimal(1) }),
+    ),
+  ).toBe('episode_range');
+  expect(
+    unsupportedMatchReason(
+      torrent({ title: ' ', seasonTitleRaw: null, seasonTitleAliases: [' '] }),
+    ),
+  ).toBe('no_title');
 });

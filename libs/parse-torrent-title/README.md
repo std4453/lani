@@ -31,6 +31,8 @@ Nyaa 等发行格式支持技术参数后的 `|` 别名、带语言说明的括�
 
 `hasExplicitSeason(title)` 和 `hasMultipleSeasons(title)` 提供独立的季数标记、明确跨季合集判断，供匹配等调用方复用。它们仅提供标题语法提示，不映射元数据季度或决定匹配策略，也不改写已有解析结果；历史标题可以直接调用，无需先重解析入库。
 
+`Season 2 - 05` 按单季加集号处理。连字符表示英文跨季范围时，需要复数标记（`Seasons 1-3`）或两端明确的季标记（`Season 1 - Season 3`、`S1-S3`）；`Season 1 to 3` 等明确的连接写法仍识别为跨季。
+
 `subtitleInfo` 返回标题中明确标注的字幕信息：
 
 - `languages` 使用 BCP 47 语言标签，包含标题中已识别的语言，例如 `zh-Hans`、`zh-Hant`、`ja` 或 `en`。
