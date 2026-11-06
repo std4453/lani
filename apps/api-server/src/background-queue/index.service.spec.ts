@@ -167,6 +167,59 @@ suite('通用队列的真实 PostgreSQL 事务与恢复', () => {
     },
   );
 
+  it('队列暂空后新任务可使用空闲并发位，不等待旧任务完成', async () => {
+    const empty = deferred();
+    const secondEntered = deferred();
+    const release = deferred();
+    const findFirst = db.backgroundJob.findFirst.bind(db.backgroundJob);
+    const spy = jest
+      .spyOn(db.backgroundJob, 'findFirst')
+      .mockImplementation((args) => {
+        const query = findFirst(args);
+        void query.then((job) => {
+          if (args?.where?.queueName === name && !job) empty.resolve();
+        });
+        return query;
+      });
+    await queues.onApplicationShutdown();
+    await create({
+      enabled: true,
+      concurrency: 2,
+      execute: async (job) => {
+        if (job.key === 'first') await release.promise;
+        else secondEntered.resolve();
+        return async () => undefined;
+      },
+    });
+    await enqueue('first', 1);
+    const running = queues.wake(name);
+    let timer!: NodeJS.Timeout;
+    try {
+      await empty.promise;
+      await enqueue('second', 2);
+      expect(queues.wake(name)).toBe(running);
+      await Promise.race([
+        secondEntered.promise,
+        new Promise<void>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error('Idle slot was not used')),
+            3000,
+          );
+        }),
+      ]);
+      expect(
+        await db.backgroundJob.findUnique({
+          where: { queueName_key: { queueName: name, key: 'first' } },
+        }),
+      ).toMatchObject({ status: 'running' });
+    } finally {
+      clearTimeout(timer);
+      release.resolve();
+      await running;
+      spy.mockRestore();
+    }
+  });
+
   it('并发中输入被替换时等待旧执行结束，旧提交回滚且新版只执行一次', async () => {
     const entered = deferred();
     const release = deferred();

@@ -124,7 +124,18 @@ export class BackgroundQueueService
         if (this.stopped || halted) break;
         if (!job) {
           if (!active.size) break;
-          await Promise.race(active.values());
+          // 队列暂空时仍定期重查，让空闲并发位领取新入队任务。
+          let timer!: NodeJS.Timeout;
+          try {
+            await Promise.race([
+              ...active.values(),
+              new Promise<void>((resolve) => {
+                timer = setTimeout(resolve, 1000);
+              }),
+            ]);
+          } finally {
+            clearTimeout(timer);
+          }
           continue;
         }
         if (job.status !== 'pending' || job.availableAt > new Date()) break;
