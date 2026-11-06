@@ -15,11 +15,26 @@ export type TorrentMatchInput = Pick<
   | 'episodeNumberTo'
 >;
 
-export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
+export function unsupportedMatchReason(
+  torrent: TorrentMatchInput,
+): 'episode_range' | 'multiple_seasons' | 'no_title' | null {
   // 单集季度匹配不消费解析出的范围或明确跨季合集。
   if (torrent.episodeNumberFrom != null || torrent.episodeNumberTo != null)
-    return null;
-  if (hasMultipleSeasons(torrent.title)) return null;
+    return 'episode_range';
+  if (hasMultipleSeasons(torrent.title)) return 'multiple_seasons';
+  if (
+    ![
+      torrent.title,
+      torrent.seasonTitleRaw ?? '',
+      ...torrent.seasonTitleAliases,
+    ].some((value) => value.trim())
+  )
+    return 'no_title';
+  return null;
+}
+
+export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
+  if (unsupportedMatchReason(torrent)) return null;
   const aliases = [
     ...new Set(
       [torrent.seasonTitleRaw ?? '', ...torrent.seasonTitleAliases]
@@ -27,7 +42,6 @@ export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
         .filter(Boolean),
     ),
   ];
-  if (!torrent.title.trim() && !aliases.length) return null;
   const single =
     torrent.episodeType === 'EPISODE' &&
     torrent.episodeNumber != null &&

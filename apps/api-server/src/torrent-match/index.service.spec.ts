@@ -125,6 +125,56 @@ it('persists the full response unchanged and uses only row locks', async () => {
   });
 });
 
+it('matches a Baha Season 2 - 05 release instead of marking it unsupported', async () => {
+  const f = fixture();
+  f.torrent.title =
+    '[ANi] Tantei wa Mō Shindeiru /  侦探已经，死了。Season 2 - 05 [1080P][Baha][WEB-DL][AAC AVC][CHT][MP4]';
+  f.torrent.episodeNumber = new Prisma.Decimal(5);
+  const commit = await f.service.match(f.job);
+  await commit(f.tx as any);
+  expect(f.transport.match).toHaveBeenCalledWith(
+    f.state.active,
+    expect.objectContaining({ rawTitle: f.torrent.title, episode: 5 }),
+    expect.any(Array),
+    expect.any(String),
+  );
+  expect(f.tx.torrent.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        matchStatus: 'MATCHED',
+        matchedSeasonId: 1,
+      }),
+    }),
+  );
+});
+
+it.each(['no_title', 'episode_range', 'multiple_seasons'])(
+  'persists the specific unsupported reason without calling the matcher: %s',
+  async (reason) => {
+    const f = fixture();
+    if (reason === 'no_title') {
+      f.torrent.title = ' ';
+      f.torrent.seasonTitleRaw = '';
+    } else if (reason === 'episode_range') {
+      Object.assign(f.torrent, { episodeNumberTo: new Prisma.Decimal(12) });
+    } else {
+      f.torrent.title = '[Group] Anime Seasons 1-3';
+    }
+    const commit = await f.service.match(f.job);
+    await commit(f.tx as any);
+    expect(f.transport.match).not.toHaveBeenCalled();
+    expect(f.tx.torrent.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          matchStatus: 'UNSUPPORTED',
+          matchedSeasonId: null,
+          matchDetails: { reason },
+        }),
+      }),
+    );
+  },
+);
+
 it('does not commit if the raw input changed without a new queue revision', async () => {
   const f = fixture();
   const commit = await f.service.match(f.job);

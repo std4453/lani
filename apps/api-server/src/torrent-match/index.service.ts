@@ -30,7 +30,7 @@ import { LlmMatcher } from './llm/llm-matcher';
 
 import { enqueueTorrentMatch, matchingEnabled } from './producer';
 import { CATALOG_QUEUE, MATCH_QUEUE, TorrentMatchPayload } from './queues';
-import { torrentQuery } from './query';
+import { torrentQuery, unsupportedMatchReason } from './query';
 export { torrentQuery } from './query';
 export { CATALOG_QUEUE, MATCH_QUEUE } from './queues';
 
@@ -237,7 +237,7 @@ export class TorrentMatchService
     let matchedSeasonId: number | null = null;
     let matchStatus: TorrentMatchStatus = 'UNSUPPORTED';
     let result: Prisma.InputJsonValue = {
-      reason: 'no_title',
+      reason: unsupportedMatchReason(torrent),
     };
     if (query) {
       const state = await this.currentCatalog();
