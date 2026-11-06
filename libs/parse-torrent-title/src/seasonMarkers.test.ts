@@ -10,7 +10,7 @@ test.each([
   "Anime 2nd Season",
   "Anime Season 2",
   "Anime Season 2 - 05",
-  "Anime Season 2-03",
+  "Anime Season 2 -03 [1080p]",
   "Anime season 02 - 2",
   "Anime SEASON 02 - 12 [1080p]",
   "Anime Second Season",
@@ -44,6 +44,11 @@ test.each([
   "Anime Seasons 1 - 03",
   "Anime Season 1 - Season 3",
   "Anime Season 1 & Season 2",
+  "Anime Season 1-4 + OVA",
+  "Anime (Season 01-02) [Batch]",
+  "Anime Season 1-2 BDRip 1080p MKV",
+  "Anime [Season 1-3 + Movie] [BD 1080p]",
+  "Anime Season 1-4 S01E03",
   "动画 第1-3季",
 ])("recognizes distinct seasons in collections: %s", (title) => {
   expect(hasMultipleSeasons(title)).toBe(true);
@@ -62,6 +67,41 @@ test.each([
 ])("keeps same-season releases and extras: %s", (title) => {
   expect(hasMultipleSeasons(title)).toBe(false);
 });
+
+test.each<[string, string[]]>([
+  [
+    "[AI-Raws] Toilet-Bound Hanako-kun 地縛少年花子くん Season 1-2 BDRip 1080p MKV",
+    ["Toilet-Bound Hanako-kun 地縛少年花子くん Season 1-2"],
+  ],
+  [
+    "[neoDESU] SPY x FAMILY [Season 1-3 + Movie] [BD 1080p x265 HEVC AV1 OPUS AAC] [Dual Audio]",
+    ["SPY x FAMILY"],
+  ],
+])(
+  "keeps real season packs blocked without parsed episodes: %s",
+  (title, aliases) => {
+    expect(parseTorrentTitle(title)).toBeUndefined();
+    expect(parseTorrentNames(title).title.aliases).toEqual(aliases);
+    expect(hasMultipleSeasons(title)).toBe(true);
+  }
+);
+
+test.each([
+  "Anime Season 2 - 12.5 [1080p]",
+  "Anime Season 2 - 01 ~ 12 [1080p]",
+  "Anime Season 3 - 02 [1080p] | Anime - S03E02",
+  "Anime - S03E02 | Anime Season 3 - 02 [1080p]",
+])(
+  "uses the local episode marker when aliases repeat numbering: %s",
+  (title) => {
+    expect(hasMultipleSeasons(title)).toBe(false);
+  }
+);
+
+test.each(["Anime Season 1-4", "Anime Season 2-03 [1080p]"])(
+  "keeps compact season ranges conservative without episode evidence: %s",
+  (title) => expect(hasMultipleSeasons(title)).toBe(true)
+);
 
 test("keeps a Baha single episode through title parsing and season detection", () => {
   const title =

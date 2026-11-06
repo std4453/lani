@@ -96,7 +96,7 @@ it('keeps a single recap episode and repeated same-season markers', () => {
   expect(torrentQuery(torrent({ title: 'Anime S01-S01 E03' }))).not.toBeNull();
 });
 
-it.each(['Season 2 - 05', 'Season 2-05', 'Season 02 - 5'])(
+it.each(['Season 2 - 05', 'Season 2 -05', 'Season 02 - 5'])(
   'keeps a season followed by an episode in the matcher query: %s',
   (marker) => {
     const input = torrent({
@@ -110,6 +110,22 @@ it.each(['Season 2 - 05', 'Season 2-05', 'Season 02 - 5'])(
     expect(unsupportedMatchReason(input)).toBeNull();
   },
 );
+
+it.each([
+  'Anime (Season 1-4 + OVA + Junior High)',
+  'Anime (Season 01-02) [1080p] [Batch]',
+  'Anime Season 1-2 BDRip 1080p MKV',
+  'Anime [Season 1-3 + Movie] [BD 1080p]',
+  'Anime 2nd Season 01-02 [1080p]',
+])('keeps unparsed collection ranges out of matcher requests: %s', (title) => {
+  const input = torrent({
+    title,
+    episodeType: null,
+    episodeNumber: null,
+  });
+  expect(torrentQuery(input)).toBeNull();
+  expect(unsupportedMatchReason(input)).toBe('multiple_seasons');
+});
 
 it('distinguishes episode ranges from missing titles', () => {
   expect(
