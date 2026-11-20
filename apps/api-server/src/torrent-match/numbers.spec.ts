@@ -80,3 +80,39 @@ test.each(['SP01', 'Special 01', 'OVA 01', 'OAD 01', 'Recap 01', '特别篇 01']
     expect(hasNumberEvidence({ sp: { sort: '1' } }, query)).toBe(true);
   },
 );
+
+test('typed queries never borrow the hidden number namespace', () => {
+  const numbers = {
+    episode: { local: '1-12', sort: '14-25' },
+    sp: { sort: '13' },
+  };
+  const query = { rawTitle: 'Anime', aliases: [], publishedAt: '2026-10-01Z' };
+  expect(
+    hasNumberEvidence(numbers, {
+      ...query,
+      episodeKind: 'episode',
+      episode: 13,
+    }),
+  ).toBe(false);
+  expect(
+    hasNumberEvidence(numbers, {
+      ...query,
+      episodeKind: 'sp',
+      specialEpisode: 14,
+    }),
+  ).toBe(false);
+  expect(
+    hasNumberEvidence(numbers, {
+      ...query,
+      episodeKind: 'sp',
+      specialEpisode: 13,
+    }),
+  ).toBe(true);
+  expect(
+    hasNumberEvidence(numbers, {
+      ...query,
+      episodeKind: 'episode',
+      episode: 14,
+    }),
+  ).toBe(true);
+});

@@ -1,4 +1,5 @@
 import { parseTorrentNames } from "@/parseTorrentNames";
+import { explicitEpisodeKind } from "./episodeKind";
 import { parseTorrentOrganization } from "@/parseTorrentOrganization";
 import escapeStringRegexp from "@/escapeStringRegexp";
 import matchEpisode from "@/matchEpisode";
@@ -879,5 +880,10 @@ export default function parseTorrentTitle(
     result.organization = parseTorrentOrganization(input);
   }
 
+  const kind = explicitEpisodeKind(input);
+  if (kind && typeof result.episodeInfo.index !== "object") {
+    result.episodeInfo = { ...result.episodeInfo, type: kind };
+    result.index = undefined;
+  }
   return result;
 }

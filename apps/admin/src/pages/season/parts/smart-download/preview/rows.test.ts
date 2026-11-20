@@ -109,3 +109,23 @@ test('不为未加载的尾部补空事件，首集在未来仍能定位', () =>
     ),
   ).toMatchObject([{ release: { episodeIds: [1] } }]);
 });
+
+test.each([
+  'Series S00E01',
+  'Series [SP][01]',
+  'Series [OVA][01]',
+  'Series [01+小剧场]',
+  'Series [附小剧场][01]',
+])('旧解析的非正片预览与后台下载门禁一致：%s', (title) => {
+  const source = { ...torrent(), title };
+  const rows = previewRows(
+    [episode()],
+    [source],
+    defaultSettings,
+    at + 7200000,
+    [],
+    { from: -Infinity, through: Infinity, completeUntil: Infinity },
+  );
+  expect(rows.find((r) => r.torrent)?.decision?.reasons).toContain('episode');
+  expect(source.episodeInfo?.type).toBe('episode');
+});

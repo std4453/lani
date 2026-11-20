@@ -21,6 +21,8 @@ export interface MatchQuery {
   aliases: string[];
   publishedAt: string;
   episode?: number;
+  episodeKind?: 'episode' | 'sp' | 'ova' | 'oad';
+  specialEpisode?: number;
   publisherSeason?: number;
 }
 export interface WorkerStatus {
@@ -32,6 +34,7 @@ export interface MatchResponse extends WorkerStatus {
   requestId: string;
   result: {
     seasonId: string | null;
+    episodeKind?: MatchQuery['episodeKind'];
     [key: string]: unknown;
   };
 }

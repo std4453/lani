@@ -186,7 +186,7 @@ describe('new recognition persistence', () => {
     };
     mockedParseTorrentTitle.mockReturnValue(result);
     expect(service.titleToCreateInput(result.raw)).toMatchObject({
-      parseVersion: 2,
+      parseVersion: 3,
       episodeType: 'EPISODE',
       episodeNumber: '12.5',
       parseResult: {
@@ -212,7 +212,7 @@ describe('new recognition persistence', () => {
   it('marks failed recognition and clears old matching identities', () => {
     mockedParseTorrentTitle.mockReturnValue(undefined);
     expect(service.titleToUpdateInput('no episode')).toMatchObject({
-      parseVersion: 2,
+      parseVersion: 3,
       parseResult: {},
       episodeType: null,
       episodeNumber: null,
@@ -257,7 +257,7 @@ describe('无编号作品标题识别持久化', () => {
     mockedParseSubtitleInfo.mockReturnValue(subtitleInfo);
 
     expect(service.titleToCreateInput(raw)).toMatchObject({
-      parseVersion: 2,
+      parseVersion: 3,
       episodeType: null,
       episodeNumber: null,
       index: null,
@@ -324,7 +324,7 @@ describe('无编号作品标题识别持久化', () => {
     mockedParseTorrentTitle.mockReturnValue(result);
 
     expect(service.titleToCreateInput(raw)).toMatchObject({
-      parseVersion: 2,
+      parseVersion: 3,
       episodeType: 'EPISODE',
       episodeNumber: '12',
       organizationRaw: 'Group',
@@ -351,7 +351,7 @@ describe('无编号作品标题识别持久化', () => {
     mockedParseSubtitleInfo.mockReturnValue(subtitleInfo);
 
     expect(service.titleToUpdateInput(raw)).toMatchObject({
-      parseVersion: 2,
+      parseVersion: 3,
       episodeType: null,
       episodeNumber: null,
       organizationRaw: null,

@@ -7,3 +7,4 @@ export * from "./detectImportOffset";
 export * from "./parseTorrentNames";
 export * from "./parseTorrentOrganization";
 export { hasExplicitSeason, hasMultipleSeasons } from "./seasonMarkers";
+export * from "./episodeKind";
