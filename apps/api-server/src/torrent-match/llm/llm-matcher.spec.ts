@@ -111,9 +111,9 @@ function fixture(responses: any[]) {
 test('preserves the frozen prompt bytes', () => {
   for (const [file, hash] of Object.entries({
     'first.system.txt':
-      'cb1c7b157d0840cab3ca2d9724d03e0c9b8f917157cbdc6300dbef6fe8a24dc3',
+      '3bd1bb123d6f4662c93c04dd75cec5519ac2d2ba90fdde606fed7b10774120ac',
     'review.system.txt':
-      'd1e727f32101806a955dcc8c199d734025d20a73724010a0a99fc1879bc72a9d',
+      '72fe0eb626cd2acd45f99b5fb2f76c997559ba8b440fc7c5372b4065ae5caf43',
   })) {
     expect(
       createHash('sha256')
@@ -140,9 +140,9 @@ test('projects primary input and forwards a single channel and abort signal', as
   expect(f.calls[0].signal).toBeInstanceOf(AbortSignal);
   const payload = f.calls[0].payload;
   expect(payload.messages[0].content).toContain(
-    '{"id":"new","aliases":["新篇","New"],"y":2026,"q":4}',
+    '{"id":"new","aliases":["新篇","New"],"y":2026,"q":4,',
   );
-  expect(payload.messages[0].content).not.toContain('"count":12');
+  expect(payload.messages[0].content).toContain('"count":12');
   expect(payload.messages[0].content).not.toContain('"id":"old"');
   expect(payload).toMatchObject({
     stream: false,
@@ -337,7 +337,7 @@ test('catalog replacement preserves the snapshot of an in-flight request', async
   expect(result.result.seasonId).toBe('new');
 });
 
-test('metadata only changes the fallback projection', async () => {
+test('metadata changes both stage projections', async () => {
   const f = fixture([
     completion(null),
     completion('new'),
@@ -356,12 +356,14 @@ test('metadata only changes the fallback projection', async () => {
       catalog.catalog[1],
     ],
   });
-  expect(f.calls[0].payload.messages[0]).toEqual(
-    f.calls[2].payload.messages[0],
-  );
-  expect(f.calls[1].payload.messages[0]).not.toEqual(
-    f.calls[3].payload.messages[0],
-  );
+  for (const index of [0, 1]) {
+    expect(f.calls[index].payload.messages[0].content).toContain(
+      '"count":12,"premiere":"2026-10-01"',
+    );
+    expect(f.calls[index + 2].payload.messages[0].content).toContain(
+      '"count":24,"premiere":"2026-10-02"',
+    );
+  }
 });
 
 test('model version tracks prompts and public settings but excludes the key', async () => {
@@ -450,12 +452,12 @@ test('small catalogs retain recent-only primary and full review on null', async 
   });
   expect(f.calls).toHaveLength(2);
   expect(f.calls[0].payload.messages[0].content).not.toContain('"id":"old"');
-  expect(f.calls[0].payload.messages[0].content).not.toContain('"numbers"');
+  expect(f.calls[0].payload.messages[0].content).toContain('"numbers"');
   expect(f.calls[1].payload.messages[0].content).toContain('"id":"old"');
   expect(f.calls[1].payload.messages[0].content).toContain('"numbers"');
 });
 
-test('number evidence waives a count conflict without enlarging the large-catalog primary prompt', async () => {
+test('number evidence waives a count conflict with kind-specific primary metadata', async () => {
   const numbered = {
     version: 'numbered',
     catalog: [
@@ -497,7 +499,7 @@ test('number evidence waives a count conflict without enlarging the large-catalo
     fallbackReason: 'numbering_conflict',
   });
   expect(f.calls).toHaveLength(4);
-  expect(f.calls[0].payload.messages[0].content).not.toContain('"numbers"');
+  expect(f.calls[0].payload.messages[0].content).toContain('"numbers"');
   expect(f.calls[3].payload.messages[0].content).toContain('"numbers"');
 });
 
@@ -527,4 +529,184 @@ test('small-catalog protocol failures still receive an independent review', asyn
     fallbackReason: 'primary_error',
   });
   expect(f.calls).toHaveLength(3);
+});
+
+test.each(['episode', 'sp', 'ova', 'oad'] as const)(
+  'projects only the %s namespace in both stages',
+  async (episodeKind) => {
+    const numbered = {
+      version: 'typed',
+      catalog: [
+        {
+          ...catalog.catalog[0],
+          numbers: {
+            episode: { local: '1-12', sort: '14-25' },
+            sp: { sort: '13.5' },
+          },
+        },
+      ],
+    };
+    const f = fixture([completion(null), completion('new')]);
+    await f.match(
+      {
+        episodeKind,
+        episode: episodeKind === 'episode' ? 15 : undefined,
+        specialEpisode: episodeKind === 'episode' ? undefined : 13.5,
+      },
+      ['new'],
+      numbered,
+    );
+    for (const call of f.calls) {
+      const system = call.payload.messages[0].content;
+      expect(system).toContain(
+        episodeKind === 'episode'
+          ? '"numbers":{"episode":{"local":"1-12","sort":"14-25"}}'
+          : '"numbers":{"sp":{"sort":"13.5"}}',
+      );
+      expect(system).not.toContain(
+        episodeKind === 'episode' ? '"sort":"13.5"' : '"local":"1-12"',
+      );
+      expect(JSON.parse(call.payload.messages[1].content)).toMatchObject({
+        episodeKind,
+        episode: episodeKind === 'episode' ? 15 : null,
+        specialEpisode: episodeKind === 'episode' ? null : 13.5,
+      });
+    }
+  },
+);
+
+test('appends exact historical names with normalized punctuation but not fuzzy or short names', async () => {
+  const extended = {
+    version: 'names',
+    catalog: [
+      catalog.catalog[0],
+      {
+        ...catalog.catalog[1],
+        title: '历史作品',
+        aliases: ['Old Anime', 'AB'],
+      },
+    ],
+  };
+  const f = fixture([completion('old'), completion('new'), completion('new')]);
+  await f.match(
+    { aliases: ['ＯＬＤ—ＡＮＩＭＥ'], publisherSeason: undefined },
+    ['new'],
+    extended,
+  );
+  const prompt = f.calls[0].payload.messages[0].content;
+  expect(prompt.indexOf('"id":"new"')).toBeLessThan(
+    prompt.indexOf('"id":"old"'),
+  );
+  for (const aliases of [['Old Anim'], ['AB']]) {
+    await f.match({ aliases }, ['new'], extended);
+    expect(
+      f.calls[f.calls.length - 1].payload.messages[0].content,
+    ).not.toContain('"id":"old"');
+  }
+});
+
+test('reviews a historical number conflict even without a season marker or count overflow', async () => {
+  const numbered = {
+    version: 'historical',
+    catalog: [
+      catalog.catalog[0],
+      {
+        ...catalog.catalog[1],
+        title: 'Historical Anime',
+        declaredEpisodeCount: 27,
+        numbers: { episode: { local: '1-13', sort: '1-13' } },
+      },
+    ],
+  };
+  const f = fixture([completion('old'), completion('new')]);
+  const result = await f.match(
+    {
+      aliases: ['Historical Anime'],
+      rawTitle: 'Historical Anime - 18',
+      episodeKind: 'episode',
+      episode: 18,
+      publisherSeason: undefined,
+    },
+    ['new'],
+    numbered,
+  );
+  expect(result.result.seasonId).toBe('new');
+  expect(result.decision).toEqual({
+    stage: 'fallback',
+    fallbackReason: 'historical_numbering_conflict',
+  });
+});
+
+test('does not turn an unknown numbering scheme into a blanket review or rejection', async () => {
+  const numbered = {
+    version: 'publisher-numbering',
+    catalog: [
+      {
+        ...catalog.catalog[0],
+        numbers: { episode: { local: '1-6', sort: '1-6' } },
+      },
+      { ...catalog.catalog[1], title: 'Historical Anime' },
+    ],
+  };
+  const f = fixture([completion('new'), completion('new'), completion('old')]);
+  for (const episode of [0, 11]) {
+    expect(
+      (
+        await f.match(
+          {
+            rawTitle: `New - ${episode}`,
+            publisherSeason: undefined,
+            episode,
+            episodeKind: 'episode',
+          },
+          ['new'],
+          numbered,
+        )
+      ).decision,
+    ).toEqual({ stage: 'primary' });
+  }
+  expect(
+    (
+      await f.match(
+        {
+          aliases: ['Historical Anime'],
+          episode: 18,
+          publisherSeason: undefined,
+        },
+        ['new'],
+        numbered,
+      )
+    ).decision,
+  ).toEqual({ stage: 'primary' });
+  expect(f.calls).toHaveLength(3);
+});
+
+test('reports SP-only and explicit mixed packages as non-main without changing their work ID', async () => {
+  const numbered = {
+    version: 'sp-only',
+    catalog: [
+      {
+        ...catalog.catalog[0],
+        numbers: {
+          episode: { local: '1-12', sort: '1-12' },
+          sp: { sort: '13' },
+        },
+      },
+    ],
+  };
+  const f = fixture([completion('new'), completion('new')]);
+  expect(
+    (await f.match({ episodeKind: 'episode', episode: 13 }, ['new'], numbered))
+      .result,
+  ).toMatchObject({ seasonId: 'new', episodeKind: 'sp' });
+  expect(
+    (
+      await f.match(
+        { rawTitle: '[New][05+小剧场]', episode: 5, episodeKind: 'episode' },
+        ['new'],
+        numbered,
+      )
+    ).result,
+  ).toMatchObject({ seasonId: 'new', episodeKind: 'sp' });
+  expect(f.calls).toHaveLength(2);
 });

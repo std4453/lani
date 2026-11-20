@@ -74,10 +74,37 @@ function contains(range: string | undefined, value: number): boolean {
 const special =
   /\b(?:SP\d*|Specials?|OVA|OAD|Recap)\b|特别篇|特別篇|特別編|总集篇|總集篇|総集編/i;
 
+export function hasMainNumber(
+  numbers: EpisodeNumbers | undefined,
+  value: number,
+): boolean {
+  return (
+    contains(numbers?.episode?.local, value) ||
+    contains(numbers?.episode?.sort, value)
+  );
+}
+
+export function isSpecialOnlyNumber(
+  numbers: EpisodeNumbers | undefined,
+  value: number,
+): boolean {
+  return (
+    !!numbers?.episode &&
+    !hasMainNumber(numbers, value) &&
+    contains(numbers.sp?.sort, value)
+  );
+}
+
 export function hasNumberEvidence(
   numbers: EpisodeNumbers | undefined,
   query: MatchQuery,
 ): boolean {
+  if (query.episodeKind !== undefined) {
+    return query.episodeKind === 'episode'
+      ? query.episode != null && hasMainNumber(numbers, query.episode)
+      : query.specialEpisode != null &&
+          contains(numbers?.sp?.sort, query.specialEpisode);
+  }
   if (!numbers || query.episode == null || !Number.isFinite(query.episode))
     return false;
   if (contains(numbers.sp?.sort, query.episode)) return true;

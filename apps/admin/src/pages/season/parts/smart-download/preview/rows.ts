@@ -6,6 +6,10 @@ import {
   evaluateTorrents,
   isMainEpisode,
 } from '@lani/smart-download';
+import {
+  explicitEpisodeKind,
+  isMixedEpisodePackage,
+} from '@lani/parse-torrent-title';
 const timestamp = (value: string | null) =>
   value === null ? NaN : Date.parse(value);
 
@@ -64,7 +68,16 @@ export function previewRows(
   excludes: readonly string[],
   coverage: { from: number; through: number; completeUntil: number },
 ): PreviewRow[] {
-  const ordered = [...torrents].sort(compareTorrents);
+  const ordered = torrents
+    .map((torrent) => {
+      const kind = isMixedEpisodePackage(torrent.title)
+        ? 'sp'
+        : explicitEpisodeKind(torrent.title);
+      return kind
+        ? { ...torrent, episodeInfo: { ...torrent.episodeInfo, type: kind } }
+        : torrent;
+    })
+    .sort(compareTorrents);
   const decisions = new Map(
     evaluateTorrents(episodes, ordered, settings, now, excludes).map((d) => [
       d.torrentId,

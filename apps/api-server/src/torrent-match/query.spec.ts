@@ -27,6 +27,7 @@ it('retains the full raw title even when the parser could not extract aliases', 
     rawTitle: '[Group] Anime S02E03 [1080p]',
     aliases: [],
     publishedAt: '2026-10-21T00:00:00.000Z',
+    episodeKind: 'episode',
     episode: 3,
   });
   expect(
@@ -138,4 +139,30 @@ it('distinguishes episode ranges from missing titles', () => {
       torrent({ title: ' ', seasonTitleRaw: null, seasonTitleAliases: [' '] }),
     ),
   ).toBe('no_title');
+});
+
+it.each(['[SP]', '[OVA]', '【特别篇】'])(
+  'routes a separate special marker even with an old ordinary parse: %s',
+  (marker) => {
+    expect(
+      torrentQuery(torrent({ title: `Anime ${marker} - 03` })),
+    ).toMatchObject({
+      episodeKind: marker === '[OVA]' ? 'ova' : 'sp',
+      specialEpisode: 3,
+    });
+    expect(
+      torrentQuery(torrent({ title: `Anime ${marker} - 03` })),
+    ).not.toHaveProperty('episode');
+  },
+);
+it('skips S00 without confusing the ordinary episode zero', () => {
+  expect(unsupportedMatchReason(torrent({ title: 'Anime S00E03' }))).toBe(
+    'season_zero',
+  );
+  expect(torrentQuery(torrent({ title: 'Anime S00E03' }))).toBeNull();
+  expect(
+    torrentQuery(
+      torrent({ title: 'Anime S01E00', episodeNumber: new Prisma.Decimal(0) }),
+    ),
+  ).toMatchObject({ episodeKind: 'episode', episode: 0 });
 });

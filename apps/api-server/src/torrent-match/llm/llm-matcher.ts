@@ -1,4 +1,7 @@
-import { hasExplicitSeason } from '@lani/parse-torrent-title';
+import {
+  hasExplicitSeason,
+  isMixedEpisodePackage,
+} from '@lani/parse-torrent-title';
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
@@ -9,7 +12,11 @@ import { MatchingLlmConfig } from '@/config/matching';
 import { describeLlmError, LlmError } from '@/llm/llm.errors';
 import { LlmService } from '@/llm/llm.service';
 import { MatcherBackend } from '../backend';
-import { hasNumberEvidence } from '../numbers';
+import {
+  hasMainNumber,
+  hasNumberEvidence,
+  isSpecialOnlyNumber,
+} from '../numbers';
 import {
   CatalogSnapshot,
   EpisodeNumbers,
@@ -31,7 +38,14 @@ interface CatalogRow {
 interface Snapshot {
   version: string;
   rows: ReadonlyMap<string, CatalogRow>;
+  names: ReadonlyMap<string, readonly string[]>;
 }
+
+const normalizedName = (name: string) =>
+  name
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, '');
 
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
@@ -141,7 +155,7 @@ export class LlmMatcher implements MatcherBackend {
   private modelVersion(settings: MatchingLlmConfig) {
     const { apiKey: _secret, ...identity } = settings;
     const templates = this.promptTemplates();
-    return `builtin-llm-v2-${digest(
+    return `builtin-llm-v3-${digest(
       JSON.stringify(identity) + templates.primary + templates.fallback,
     ).slice(0, 24)}`;
   }
@@ -169,7 +183,16 @@ export class LlmMatcher implements MatcherBackend {
           : {}),
       });
     }
-    return (this.snapshot = { version: catalog.version, rows });
+    const names = new Map<string, string[]>();
+    for (const row of rows.values()) {
+      for (const alias of new Set(row.aliases.map(normalizedName))) {
+        if (alias.length < 4) continue;
+        const ids = names.get(alias) ?? [];
+        ids.push(row.id);
+        names.set(alias, ids);
+      }
+    }
+    return (this.snapshot = { version: catalog.version, rows, names });
   }
 
   async load(catalog: CatalogSnapshot): Promise<WorkerStatus> {
@@ -187,23 +210,21 @@ export class LlmMatcher implements MatcherBackend {
     rows: ReadonlyMap<string, CatalogRow>,
     ids: string[],
     stage: Stage,
+    kind: MatchQuery['episodeKind'],
   ) {
-    const selected = new Set(ids);
-    const catalog = [...rows.values()]
-      .filter((row) => selected.has(row.id))
+    const namespace =
+      kind === 'episode' || kind === undefined ? 'episode' : 'sp';
+    const catalog = ids
+      .map((id) => rows.get(id)!)
       .map((row) =>
         JSON.stringify({
           id: row.id,
           aliases: row.aliases,
           y: row.y,
           q: row.q,
-          ...(stage === 'fallback'
-            ? {
-                count: row.count,
-                premiere: row.premiere,
-                ...(row.numbers ? { numbers: row.numbers } : {}),
-              }
-            : {}),
+          count: row.count,
+          premiere: row.premiere,
+          numbers: { [namespace]: row.numbers?.[namespace] ?? {} },
         }),
       )
       .join('\n');
@@ -272,6 +293,17 @@ export class LlmMatcher implements MatcherBackend {
     timedOut: () => boolean,
   ): Promise<MatchResponse> {
     const { rows } = snapshot;
+    const calendarIds = new Set(primary);
+    const exact = new Set(
+      query.aliases.flatMap(
+        (alias) => snapshot.names.get(normalizedName(alias)) ?? [],
+      ),
+    );
+    // 历史名称只补召回，保持近期目录前缀与目录原有顺序，且不扩展模糊近似名称。
+    const historical = new Set(
+      [...rows.keys()].filter((id) => exact.has(id) && !calendarIds.has(id)),
+    );
+    primary = [...primary, ...historical];
     const attempts: Record<string, unknown>[] = [];
     const abortError = () =>
       new LlmError(
@@ -286,7 +318,7 @@ export class LlmMatcher implements MatcherBackend {
     };
     const stage = async (name: Stage, ids: string[]) => {
       check();
-      const prompt = this.prompt(rows, ids, name);
+      const prompt = this.prompt(rows, ids, name, query.episodeKind);
       this.log(
         { event: 'llm_prompt', requestId, stage: name, hash: digest(prompt) },
         settings,
@@ -308,6 +340,8 @@ export class LlmMatcher implements MatcherBackend {
               publishedAt: query.publishedAt,
               episode: query.episode ?? null,
               publisherSeason: query.publisherSeason ?? null,
+              episodeKind: query.episodeKind ?? 'episode',
+              specialEpisode: query.specialEpisode ?? null,
             }),
           },
         ],
@@ -369,7 +403,17 @@ export class LlmMatcher implements MatcherBackend {
         requestId,
         modelVersion: this.modelVersion(settings),
         mode: 'llm',
-        result: { seasonId: selected },
+        result: {
+          seasonId: selected,
+          episodeKind:
+            isMixedEpisodePackage(query.rawTitle) ||
+            (selected !== null &&
+              (query.episodeKind ?? 'episode') === 'episode' &&
+              query.episode != null &&
+              isSpecialOnlyNumber(rows.get(selected)?.numbers, query.episode))
+              ? 'sp'
+              : query.episodeKind ?? 'episode',
+        },
         decision: {
           stage: name,
           ...(reason ? { fallbackReason: reason } : {}),
@@ -390,20 +434,32 @@ export class LlmMatcher implements MatcherBackend {
           reason = 'primary_null';
           if (selected !== null) {
             const count = rows.get(selected)!.count;
+            const numbers = rows.get(selected)!.numbers;
+            const historicalConflict =
+              historical.has(selected) &&
+              (query.episodeKind ?? 'episode') === 'episode' &&
+              query.episode != null &&
+              !!numbers?.episode &&
+              !hasMainNumber(numbers, query.episode) &&
+              !isSpecialOnlyNumber(numbers, query.episode);
             const explicit =
               (query.publisherSeason ?? 0) > 0 ||
               hasExplicitSeason(query.rawTitle);
             if (
               !(
-                count !== null &&
-                query.episode != null &&
-                query.episode > count &&
-                explicit &&
-                !hasNumberEvidence(rows.get(selected)!.numbers, query)
+                historicalConflict ||
+                (count !== null &&
+                  query.episode != null &&
+                  query.episode > count &&
+                  explicit &&
+                  !hasNumberEvidence(numbers, query) &&
+                  !isSpecialOnlyNumber(numbers, query.episode))
               )
             )
               return result(selected, 'primary');
-            reason = 'numbering_conflict';
+            reason = historicalConflict
+              ? 'historical_numbering_conflict'
+              : 'numbering_conflict';
           }
         } catch (error) {
           if (!(error instanceof LlmError) || !error.retryable) throw error;

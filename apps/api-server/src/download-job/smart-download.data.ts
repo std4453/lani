@@ -6,6 +6,10 @@ import {
   SubtitleRequirement,
 } from '@lani/smart-download';
 import { torrentSubtitleInfo } from '@/admin/torrent-subtitle';
+import {
+  explicitEpisodeKind,
+  isMixedEpisodePackage,
+} from '@lani/parse-torrent-title';
 
 export function seasonSettings(season: Season): SmartDownloadSettings {
   return {
@@ -31,16 +35,31 @@ export function smartEpisode(episode: Episode, offset: number): SmartEpisode {
   };
 }
 export function smartTorrent(torrent: Torrent): SmartTorrent {
+  const episodeInfo = (
+    torrent.parseResult as { episodeInfo?: SmartTorrent['episodeInfo'] } | null
+  )?.episodeInfo;
+  const details = torrent.matchDetails as {
+    mode?: string;
+    result?: { seasonId?: string; episodeKind?: string };
+  } | null;
+  const matchedKind =
+    torrent.matchStatus === 'MATCHED' &&
+    torrent.matchedSeasonId != null &&
+    details?.mode === 'llm' &&
+    details.result?.seasonId === String(torrent.matchedSeasonId) &&
+    ['sp', 'ova', 'oad'].includes(details.result?.episodeKind ?? '')
+      ? details.result!.episodeKind
+      : undefined;
+  // 读取时也检查确定的标题信号，避免旧解析尚未重跑时放行非正片。
+  const kind = isMixedEpisodePackage(torrent.title)
+    ? 'sp'
+    : explicitEpisodeKind(torrent.title) ?? matchedKind;
   return {
     id: torrent.id,
     hash: torrent.hash,
     title: torrent.title,
     publishDate: torrent.publishDate.toISOString(),
-    episodeInfo: (
-      torrent.parseResult as {
-        episodeInfo?: SmartTorrent['episodeInfo'];
-      } | null
-    )?.episodeInfo,
+    episodeInfo: kind ? { ...episodeInfo, type: kind } : episodeInfo,
     subtitleInfo: torrentSubtitleInfo({
       ...torrent,
       subtitleHasChs: torrent.subtitleHasCHS,

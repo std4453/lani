@@ -18,7 +18,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { isDeepStrictEqual } from 'util';
 
 // 持久化结果的版本包含解析器输出与本适配层的映射规则。
-const TORRENT_PARSE_VERSION = 2;
+const TORRENT_PARSE_VERSION = 3;
 
 class InvalidEpisodeNumberError extends Error {}
 

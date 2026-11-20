@@ -148,7 +148,7 @@ it('matches a Baha Season 2 - 05 release instead of marking it unsupported', asy
   );
 });
 
-it.each(['no_title', 'episode_range', 'multiple_seasons'])(
+it.each(['no_title', 'episode_range', 'multiple_seasons', 'season_zero'])(
   'persists the specific unsupported reason without calling the matcher: %s',
   async (reason) => {
     const f = fixture();
@@ -157,6 +157,8 @@ it.each(['no_title', 'episode_range', 'multiple_seasons'])(
       f.torrent.seasonTitleRaw = '';
     } else if (reason === 'episode_range') {
       Object.assign(f.torrent, { episodeNumberTo: new Prisma.Decimal(12) });
+    } else if (reason === 'season_zero') {
+      f.torrent.title = '[Group] Anime S00E03';
     } else {
       f.torrent.title = '[Group] Anime Seasons 1-3';
     }

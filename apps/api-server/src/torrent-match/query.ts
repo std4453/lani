@@ -1,4 +1,8 @@
-import { hasMultipleSeasons } from '@lani/parse-torrent-title';
+import {
+  explicitEpisodeKind,
+  hasMultipleSeasons,
+  hasSeasonZero,
+} from '@lani/parse-torrent-title';
 import { Torrent } from '@lani/db';
 import { MatchQuery } from './protocol';
 
@@ -17,11 +21,12 @@ export type TorrentMatchInput = Pick<
 
 export function unsupportedMatchReason(
   torrent: TorrentMatchInput,
-): 'episode_range' | 'multiple_seasons' | 'no_title' | null {
+): 'episode_range' | 'multiple_seasons' | 'season_zero' | 'no_title' | null {
   // 单集季度匹配不消费解析出的范围或明确跨季合集。
   if (torrent.episodeNumberFrom != null || torrent.episodeNumberTo != null)
     return 'episode_range';
   if (hasMultipleSeasons(torrent.title)) return 'multiple_seasons';
+  if (hasSeasonZero(torrent.title)) return 'season_zero';
   if (
     ![
       torrent.title,
@@ -42,8 +47,14 @@ export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
         .filter(Boolean),
     ),
   ];
+  const parsedKind = torrent.episodeType?.toLowerCase();
+  const episodeKind =
+    explicitEpisodeKind(torrent.title) ??
+    (parsedKind === 'sp' || parsedKind === 'ova' || parsedKind === 'oad'
+      ? parsedKind
+      : 'episode');
   const single =
-    torrent.episodeType === 'EPISODE' &&
+    ['EPISODE', 'SP', 'OVA', 'OAD'].includes(torrent.episodeType ?? '') &&
     torrent.episodeNumber != null &&
     torrent.episodeNumberFrom == null &&
     torrent.episodeNumberTo == null;
@@ -62,7 +73,12 @@ export function torrentQuery(torrent: TorrentMatchInput): MatchQuery | null {
     rawTitle: [...torrent.title].slice(0, 2048).join(''),
     aliases,
     publishedAt: torrent.publishDate.toISOString(),
-    ...(episode !== undefined && Number.isFinite(episode) ? { episode } : {}),
+    episodeKind,
+    ...(episode !== undefined && Number.isFinite(episode)
+      ? episodeKind === 'episode'
+        ? { episode }
+        : { specialEpisode: episode }
+      : {}),
     ...(publisherSeason !== undefined ? { publisherSeason } : {}),
   };
 }
